@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12002b">
+  <meta name="description" content="BetsPapa football prediction intelligence powered by HT/FT transition logic.">
+  <title>BetsPapa — Royal Football Intelligence</title>
+  <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#dashboard" aria-label="BetsPapa home">
+      <span class="brand-mark" aria-hidden="true">
+        <span class="brand-crown">♛</span>
+        <span class="brand-ball">⚽</span>
+      </span>
+      <span class="brand-copy">
+        <strong>Bets<span>Papa</span></strong>
+        <small>SMARTER PREDICTIONS. BETTER DECISIONS.</small>
+      </span>
+    </a>
+
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a class="active" href="#dashboard">Home</a>
+      <a href="#prediction-board">Predictions</a>
+      <a href="#engine">HT/FT Engine</a>
+      <a href="#bankers">Bankers</a>
+      <a href="#results">Results</a>
+      <a href="#pricing">Pricing</a>
+    </nav>
+
+    <div class="top-actions">
+      <button class="icon-button" id="searchButton" aria-label="Search">⌕</button>
+      <button class="login-button">Login</button>
+      <button class="gold-button small">Sign Up</button>
+      <button class="mobile-menu" id="mobileMenu" aria-label="Open navigation menu" aria-controls="sidebar" aria-expanded="false">
+        <span class="hamburger-lines" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+    </div>
+  </header>
+
+  <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+
+  <aside class="sidebar" id="sidebar" aria-label="Main menu">
+    <nav aria-label="Dashboard navigation">
+      <a class="side-link active" href="#dashboard"><span>⌂</span>Dashboard</a>
+      <a class="side-link" href="#prediction-board"><span>◈</span>Predictions</a>
+      <a class="side-link" href="#engine"><span>◎</span>HT/FT Engine</a>
+      <a class="side-link" href="#bankers"><span>♜</span>Bankers</a>
+      <a class="side-link" href="#results"><span>✓</span>Results</a>
+      <a class="side-link" href="#fixtures"><span>▦</span>Fixtures</a>
+      <a class="side-link" href="#stats"><span>▥</span>Stats Center</a>
+      <a class="side-link" href="#watchlist"><span>☆</span>My Watchlist</a>
+      <a class="side-link" href="#alerts"><span>♢</span>Alerts</a>
+      <a class="side-link" href="#settings"><span>⚙</span>Settings</a>
+    </nav>
+
+    <div class="premium-card" id="pricing">
+      <div class="premium-crown">♛</div>
+      <h3>Go Premium</h3>
+      <p>Unlock stronger filters, transition reports and full match reasoning.</p>
+      <button class="gold-button">Upgrade Now <span>→</span></button>
+    </div>
+
+    <div class="responsible-card">
+      <div class="age-badge">18+</div>
+      <div>
+        <strong>Use responsibly</strong>
+        <p>Predictions are statistical forecasts, not guarantees.</p>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main" id="dashboard">
+    <section class="hero-section">
+      <div class="hero-card">
+        <div class="hero-copy">
+          <span class="kicker">ROYAL FOOTBALL INTELLIGENCE</span>
+          <h1>Smarter Football <span>Predictions</span></h1>
+          <p>HT/FT transition logic, latest scoring thresholds and common-sense filters work together to identify one strongest market per match.</p>
+          <div class="hero-actions">
+            <a class="gold-button" href="#prediction-board">View Predictions <span>→</span></a>
+            <button class="glass-button" id="howItWorks">How it works</button>
+          </div>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="orbit orbit-a"></div>
+          <div class="orbit orbit-b"></div>
+          <div class="football">⚽</div>
+          <div class="spark spark-a"></div>
+          <div class="spark spark-b"></div>
+          <div class="spark spark-c"></div>
+        </div>
+      </div>
+
+      <div class="metric-grid" id="stats">
+        <article class="metric-card">
+          <div class="metric-icon gold">♛</div>
+          <div><span>WIN RATE</span><strong id="winRate">68.7%</strong><small>+7.4% last 30d</small></div>
+          <svg viewBox="0 0 220 46" aria-hidden="true"><path d="M2 35 C24 14,38 35,58 24 S88 38,108 19 S142 37,162 22 S190 28,218 8"/></svg>
+        </article>
+        <article class="metric-card">
+          <div class="metric-icon">◇</div>
+          <div><span>QUALIFIED PICKS</span><strong>842</strong><small>+112 last 30d</small></div>
+          <svg viewBox="0 0 220 46" aria-hidden="true"><path d="M2 33 C26 13,39 35,59 21 S88 36,112 25 S147 8,166 25 S195 28,218 10"/></svg>
+        </article>
+        <article class="metric-card">
+          <div class="metric-icon">⚽</div>
+          <div><span>GG SIGNALS</span><strong>611</strong><small>+81 last 30d</small></div>
+          <svg viewBox="0 0 220 46" aria-hidden="true"><path d="M2 37 C27 24,38 10,61 28 S91 12,111 25 S147 35,166 17 S195 30,218 6"/></svg>
+        </article>
+        <article class="metric-card">
+          <div class="metric-icon gold">U3.5</div>
+          <div><span>UNDER 3.5 SIGNALS</span><strong>572</strong><small>+76 last 30d</small></div>
+          <svg viewBox="0 0 220 46" aria-hidden="true"><path d="M2 31 C27 8,41 35,60 25 S87 33,112 15 S145 34,168 22 S198 30,218 4"/></svg>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-grid" id="prediction-board">
+      <article class="panel matrix-panel" id="engine">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">MATCH STATE MODEL</span>
+            <h2>HT/FT Transition Matrix</h2>
+          </div>
+          <button class="info-button" title="Matrix probabilities">i</button>
+        </div>
+        <div class="matrix-grid" id="transitionMatrix"></div>
+        <div class="matrix-footer">
+          <span>Venue + recent + overall profiles</span>
+          <button class="text-button" id="matrixHelp">How it works?</button>
+        </div>
+      </article>
+
+      <article class="panel primary-panel" id="bankers">
+        <div class="primary-label">★ PRIMARY PREDICTION</div>
+        <div class="match-meta"><span id="leagueLabel">ARGENTINA · PRIMERA B</span><span id="kickoffLabel">TODAY · 20:30</span></div>
+        <div class="matchup">
+          <div class="club">
+            <div class="club-badge home" id="homeBadge">DM</div>
+            <strong id="homeTeam">Deportivo Merlo</strong>
+          </div>
+          <div class="versus"><span>VS</span></div>
+          <div class="club">
+            <div class="club-badge away" id="awayBadge">RP</div>
+            <strong id="awayTeam">Real Pilar</strong>
+          </div>
+        </div>
+        <div class="pick-box">
+          <span>BEST MARKET</span>
+          <strong id="primaryPick">Deportivo Merlo 1X</strong>
+          <small id="primaryReason">Home resistance plus away instability creates the safest directional edge.</small>
+        </div>
+        <div class="confidence-row">
+          <div>
+            <span>CONFIDENCE LEVEL</span>
+            <div class="confidence-track"><div id="confidenceBar" style="width:78%"></div></div>
+          </div>
+          <div class="confidence-score"><strong id="confidenceScore">78%</strong><small id="confidenceTier">Qualified</small></div>
+        </div>
+        <div class="primary-stats">
+          <div><span>HT STORY</span><strong id="htStory">X / 1</strong></div>
+          <div><span>GOAL ROUTE</span><strong id="goalRoute">GG + O1.5</strong></div>
+          <div><span>VALUE</span><strong class="positive">Good</strong></div>
+          <div><span>RISK</span><strong id="riskLabel">Balanced</strong></div>
+        </div>
+      </article>
+
+      <article class="panel insights-panel">
+        <div class="panel-heading compact">
+          <div><span class="eyebrow">COMMON-SENSE FILTERS</span><h2>Market Insights</h2></div>
+          <button class="text-button">View all</button>
+        </div>
+        <div class="insight-list" id="marketInsights"></div>
+        <div class="insight-note">Each goal market must be supported by both teams’ scoring and conceding pathways.</div>
+      </article>
+
+      <article class="panel fixture-panel" id="fixtures">
+        <div class="panel-heading compact">
+          <div><span class="eyebrow">TODAY</span><h2>Upcoming Fixtures</h2></div>
+          <button class="text-button">View all</button>
+        </div>
+        <div class="fixture-list" id="fixtureList"></div>
+      </article>
+
+      <article class="panel results-panel" id="results">
+        <div class="panel-heading compact">
+          <div><span class="eyebrow">VERIFIED</span><h2>Recent Results</h2></div>
+          <span class="live-pill">LIVE GRADING</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Match</th><th>Competition</th><th>Prediction</th><th>Result</th><th>Outcome</th><th>Odd</th></tr></thead>
+            <tbody id="resultsTable"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section class="principles-section">
+      <article><span>01</span><h3>Two-team agreement</h3><p>Every prediction must be supported by the selected team and the opponent’s matching weakness.</p></article>
+      <article><span>02</span><h3>Latest GG thresholds</h3><p>GG only qualifies when both teams independently have credible scoring routes.</p></article>
+      <article><span>03</span><h3>Dominant-team route</h3><p>Over 2.5 can qualify through one team alone when scoring and conceding 2+ thresholds agree.</p></article>
+      <article><span>04</span><h3>Reject first</h3><p>The engine searches for reasons to reject a market before publishing one strongest prediction.</p></article>
+    </section>
+
+    <footer>
+      <div class="footer-brand"><span>♛</span><strong>BetsPapa</strong></div>
+      <p>Sports analytics only. No prediction is a guarantee. 18+.</p>
+      <div><a href="responsible.html">Responsible Use</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>
+    </footer>
+  </main>
+
+  <nav class="mobile-tabbar" id="mobileTabbar" aria-label="Mobile navigation">
+    <a class="mobile-tab active" href="#dashboard" data-mobile-tab="dashboard" aria-label="Dashboard">
+      <span aria-hidden="true">⌂</span><small>Home</small>
+    </a>
+    <a class="mobile-tab" href="#prediction-board" data-mobile-tab="prediction-board" aria-label="Predictions">
+      <span aria-hidden="true">◈</span><small>Picks</small>
+    </a>
+    <a class="mobile-tab mobile-tab-primary" href="#engine" data-mobile-tab="engine" aria-label="HT/FT Engine">
+      <span aria-hidden="true">◎</span><small>Engine</small>
+    </a>
+    <a class="mobile-tab" href="#results" data-mobile-tab="results" aria-label="Results">
+      <span aria-hidden="true">✓</span><small>Results</small>
+    </a>
+    <button class="mobile-tab" id="mobileMore" type="button" aria-label="More navigation options">
+      <span aria-hidden="true">☰</span><small>More</small>
+    </button>
+  </nav>
+
+  <dialog class="modal" id="methodModal">
+    <button class="modal-close" id="modalClose" aria-label="Close">×</button>
+    <span class="kicker">PAPASENSE ENGINE</span>
+    <h2>How the prediction engine thinks</h2>
+    <ol>
+      <li>Resolve the true home and away teams before translating W/W into 1/1 or 2/2.</li>
+      <li>Compare opposite HT/FT transitions from both teams and smooth small samples.</li>
+      <li>Build full-time, half-time, GG, Over 1.5, Over 2.5 and Under 3.5 signals.</li>
+      <li>Apply latest scoring, conceding, comeback, volatility and one-sided dominance thresholds.</li>
+      <li>Reject unstable or contradictory markets and publish one strongest qualified pick.</li>
+    </ol>
+  </dialog>
+
+  <div class="search-drawer" id="searchDrawer" hidden>
+    <div class="search-card">
+      <button class="search-close" id="searchClose">×</button>
+      <span class="kicker">SEARCH BETSPAPA</span>
+      <input id="globalSearch" type="search" placeholder="Search team, league or market" autocomplete="off">
+      <div id="searchResults"></div>
+    </div>
+  </div>
+
+  <script src="assets/js/engine.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
