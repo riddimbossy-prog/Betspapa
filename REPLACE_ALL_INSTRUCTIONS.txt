@@ -1,37 +1,54 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.9.1
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.9.2
 ================================================
 
-This hotfix resolves:
-
-targetTeamIds is not defined
+FIXES INCLUDED
+--------------
+1. Simple English explanations.
+2. Rounded readable samples instead of long decimal numbers.
+3. Faster hydration and automatic prediction processing.
+4. Broader market filters.
 
 DEPLOY
 ------
 1. Extract this ZIP.
-2. Replace every file in your local Betspapa repository.
+2. Replace every file in the local Betspapa repository.
 3. Commit:
-   BetsPapa v1.9.1 targetTeamIds hotfix
+   BetsPapa v1.9.2 simple English fast broad filters
 4. Push origin.
-5. Wait for Render to finish redeploying.
+5. Wait for Render and GitHub Pages.
 6. Confirm:
    https://api.betspapa.com/api/health
-   Version must show 1.9.1.
+   Version must show 1.9.2.
+7. Open once:
+   https://betspapa.com/reset.html
+8. Run GitHub → Actions → BetsPapa Automatic Picks → Run workflow.
 
-RUN AGAIN
----------
-GitHub
-→ Actions
-→ BetsPapa Automatic Picks
-→ Run workflow
-→ Run workflow
+SPEED
+-----
+- Supabase profile coverage is loaded in one bulk query.
+- Team history uses four parallel workers by default.
+- The browser switches API endpoints after 35 seconds instead of waiting 150.
 
-The failed workflow does not need a new secret. Re-run it only after Render
-shows version 1.9.1.
+Optional GitHub Actions variable:
+HYDRATION_WORKERS=4
 
-WHAT WAS WRONG
+Use 3 or 4 normally. Do not exceed 6.
+
+MARKET FILTERS
 --------------
-The code used targetTeamIds inside hydrateProfilesForFixtures, but the option
-was accidentally declared on planHydrationForFixtures. Both targeted history
-hydration and final prediction generation therefore failed with a ReferenceError.
+The market dropdown now includes grouped options for:
+- Full-Time Result
+- Home/Away Win
+- DNB
+- Double Chance 1X/X2/12
+- Over 1.5
+- Over 2.5
+- Under 3.5
+- Home/Away Team Over 0.5
+- Favourite Team Over 1.5
+- GG Yes/No
+- Half-Time Result
+- Half-Time Double Chance
+- Exact HT/FT
 
 Do not commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET.

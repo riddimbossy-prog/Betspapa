@@ -49,6 +49,7 @@ jobs:
       PIPELINE_DATE: ${{ inputs.date }}
       FORCE_HYDRATION: ${{ inputs.force_hydration }}
       MAX_HYDRATION_TEAMS: ${{ inputs.max_hydration_teams }}
+      HYDRATION_WORKERS: ${{ vars.HYDRATION_WORKERS }}
 
     steps:
       - name: Check out repository

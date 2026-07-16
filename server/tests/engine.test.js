@@ -151,3 +151,23 @@ test("every engine pick contains a match-specific explanation paragraph", () => 
     );
   }
 });
+
+
+test("explanations use simple rounded samples instead of floating counts", () => {
+  const prediction = predictMatch(demoFixtures[0]);
+  for (const pick of Object.values(prediction.enginePicks)) {
+    assert.ok(pick.explanationEvidence);
+    assert.ok(pick.explanationEvidence.strongestRoute);
+    assert.doesNotMatch(pick.explanationParagraph, /\d+\.\d{4,}/);
+    assert.doesNotMatch(pick.explanationParagraph, /unclear half-time state/i);
+  }
+});
+
+test("explanation evidence gives a plain-English market decision", () => {
+  const prediction = predictMatch(demoFixtures[1]);
+  for (const pick of Object.values(prediction.enginePicks)) {
+    assert.ok(pick.explanationEvidence.decision.length > 25);
+    assert.ok(pick.explanationEvidence.homeSupport.text);
+    assert.ok(pick.explanationEvidence.awaySupport.text);
+  }
+});

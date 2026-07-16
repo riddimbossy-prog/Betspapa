@@ -16,6 +16,10 @@ const REQUEST_TIMEOUT_MS = Math.max(
   30000,
   Math.min(Number(process.env.REQUEST_TIMEOUT_MS || 180000), 600000)
 );
+const HYDRATION_WORKERS = Math.max(
+  1,
+  Math.min(Number(process.env.HYDRATION_WORKERS || 4), 6)
+);
 
 if (!ADMIN_SECRET) {
   console.error(
@@ -51,6 +55,25 @@ const tomorrow = addDays(targetDate, 1);
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function mapPool(items, limit, worker) {
+  const results = new Array(items.length);
+  let cursor = 0;
+
+  async function run() {
+    while (true) {
+      const index = cursor;
+      cursor += 1;
+      if (index >= items.length) return;
+      results[index] = await worker(items[index], index);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => run())
+  );
+  return results;
 }
 
 async function request(path, {
@@ -176,11 +199,14 @@ async function hydrateDate(date) {
   let ready = 0;
   let failed = 0;
   let importedFixtures = 0;
+  let completed = 0;
 
-  for (let index = 0; index < queue.length; index += 1) {
-    const team = queue[index];
+  console.log(`Hydration workers: ${HYDRATION_WORKERS}`);
+
+  await mapPool(queue, HYDRATION_WORKERS, async (team) => {
     const label = team.teamName || `Team ${team.teamId}`;
-    console.log(`[${index + 1}/${queue.length}] ${label}`);
+    const slot = completed + 1;
+    console.log(`[start ${slot}/${queue.length}] ${label}`);
 
     try {
       const payload = await request("/api/admin/hydrate-team", {
@@ -198,22 +224,21 @@ async function hydrateDate(date) {
       if (audit?.ready) {
         ready += 1;
         console.log(
-          `  Ready | provider=${audit.providerResults || 0} | imported=${
-            result.importedFixtures || 0
-          }`
+          `[ready] ${label} | provider=${audit.providerResults || 0} | imported=${result.importedFixtures || 0}`
         );
       } else {
         failed += 1;
-        console.log(`  Not ready | ${audit?.error || "insufficient history"}`);
+        console.log(`[not ready] ${label} | ${audit?.error || "insufficient history"}`);
       }
     } catch (error) {
       failed += 1;
-      console.log(`  Error | ${compactError(error)}`);
+      console.log(`[error] ${label} | ${compactError(error)}`);
+    } finally {
+      completed += 1;
+      console.log(`Hydration progress: ${completed}/${queue.length}`);
+      await sleep(120);
     }
-
-    // Small delay reduces short-window provider pressure.
-    await sleep(350);
-  }
+  });
 
   console.log(
     `Hydration attempted: ${queue.length} | Ready: ${ready} | Not ready/errors: ${failed}`
@@ -257,6 +282,7 @@ async function main() {
   console.log(`Tomorrow: ${tomorrow}`);
   console.log(`Previous results date: ${yesterday}`);
   console.log(`Maximum team-history requests this run: ${MAX_HYDRATION_TEAMS}`);
+  console.log(`Parallel hydration workers: ${HYDRATION_WORKERS}`);
   console.log(`Force hydration: ${FORCE_HYDRATION}`);
 
   const health = await request("/api/health", {

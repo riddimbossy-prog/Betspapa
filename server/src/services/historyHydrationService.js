@@ -6,7 +6,7 @@ import { fetchAllRows } from "./supabaseHelpers.js";
 const MIN_OVERALL_MATCHES = 6;
 const MIN_VENUE_MATCHES = 3;
 const TEAM_HISTORY_LAST = 24;
-const HYDRATION_CONCURRENCY = 2;
+const HYDRATION_CONCURRENCY = 4;
 
 function sideScopes(sideSet) {
   const scopes = [];
@@ -106,37 +106,46 @@ export async function planHydrationForFixtures(
     requirements.get(fixture.away_team_id).add("away");
   }
 
-  const jobs = [...requirements.entries()]
-    .map(([teamId, sides]) => ({
-      teamId: Number(teamId),
-      sides,
-      team: teams.get(Number(teamId))
-    }))
-    .sort((a, b) =>
-      String(a.team?.name || a.teamId).localeCompare(String(b.team?.name || b.teamId))
-    );
+  const teamIds = [...requirements.keys()].map(Number);
+  const profileRows = teamIds.length
+    ? await fetchAllRows(() =>
+        supabase
+          .from("team_htft_profiles")
+          .select("team_id,league_id,season,scope,matches_played,updated_at")
+          .in("team_id", teamIds)
+      )
+    : [];
 
-  const teamsPlan = [];
-  for (const job of jobs) {
-    const { coverage } = await loadTeamCoverage(
-      supabase,
-      job.teamId,
-      job.sides
-    );
-
-    teamsPlan.push({
-      teamId: job.teamId,
-      externalTeamId: job.team?.external_team_id || null,
-      teamName: job.team?.name || `Team ${job.teamId}`,
-      sides: [...job.sides],
-      coverage,
-      ready: coverage.ready,
-      needsHydration: force || !coverage.ready,
-      issue: job.team?.external_team_id
-        ? null
-        : "External API-Football team ID is missing."
-    });
+  const rowsByTeam = new Map();
+  for (const row of profileRows) {
+    const teamId = Number(row.team_id);
+    if (!rowsByTeam.has(teamId)) rowsByTeam.set(teamId, []);
+    rowsByTeam.get(teamId).push(row);
   }
+
+  const teamsPlan = [...requirements.entries()]
+    .map(([teamId, sides]) => {
+      const numericTeamId = Number(teamId);
+      const team = teams.get(numericTeamId);
+      const coverage = summarizeCoverage(
+        rowsByTeam.get(numericTeamId) || [],
+        sides
+      );
+
+      return {
+        teamId: numericTeamId,
+        externalTeamId: team?.external_team_id || null,
+        teamName: team?.name || `Team ${numericTeamId}`,
+        sides: [...sides],
+        coverage,
+        ready: coverage.ready,
+        needsHydration: force || !coverage.ready,
+        issue: team?.external_team_id
+          ? null
+          : "External API-Football team ID is missing."
+      };
+    })
+    .sort((a, b) => a.teamName.localeCompare(b.teamName));
 
   return {
     teamsChecked: teamsPlan.length,

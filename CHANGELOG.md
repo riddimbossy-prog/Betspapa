@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.9.2 — Simple English, Faster Pipeline and Broader Markets
+
+- Replaced raw weighted numbers such as `1.9500000000000002 of 3.9000000000000004` with readable samples such as `about 2 of 4 home matches (50%)`.
+- Added structured explanation cards for the strongest HT/FT pattern, home support, away opposite support, next pattern and final market decision.
+- Rewrote market reasons in short, plain English.
+- Added defensive number cleanup for older cached prediction rows.
+- Added broad grouped filters for result, goal, team-goal, BTTS, first-half and exact HT/FT markets.
+- Reduced frontend API failover time from 150 seconds to 35 seconds.
+- Bulk-loaded profile coverage instead of querying Supabase once per team.
+- Increased backend hydration concurrency from 2 to 4.
+- Added four parallel GitHub hydration workers, configurable with `HYDRATION_WORKERS`.
+- Engine version updated to `papasense-v1.9.2` so explanations regenerate cleanly.
+
 ## v1.9.1 — targetTeamIds Hydration Hotfix
 
 - Fixed GitHub Actions failure: `targetTeamIds is not defined`.
