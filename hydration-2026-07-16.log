@@ -1,0 +1,48 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260716185552
+Username: DESKTOP-2LDF2BJ\RiddimBoss
+RunAs User: DESKTOP-2LDF2BJ\RiddimBoss
+Configuration Name: 
+Machine: DESKTOP-2LDF2BJ (Microsoft Windows NT 10.0.22631.0)
+Host Application: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File .\scripts\hydrate-and-generate.ps1 -Date 2026-07-16
+Process ID: 11780
+PSVersion: 5.1.22621.6133
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.22621.6133
+BuildVersion: 10.0.22621.6133
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+BetsPapa hydration progress runner
+Date: 2026-07-16
+API:  https://api.betspapa.com
+Log:  C:\Users\RiddimBoss\Documents\GitHub\Betspapa\hydration-2026-07-16.log
+
+==> Checking API health
+Connected: BetsPapa Prediction API
+Version:   1.8.3
+Database:  connected
+
+==> Building the team hydration plan
+Fixtures found:        109
+Teams checked:         216
+Already ready:         216
+Need hydration:        0
+All teams already have enough individual history.
+
+==> Generating PapaSense predictions
+PS>TerminatingError(Invoke-RestMethod): "The remote server returned an error: (500) Internal Server Error."
+>> TerminatingError(): "Request failed: POST https://api.betspapa.com/api/admin/generate-predictions
+The remote server returned an error: (500) Internal Server Error."
+
+FAILED
+Request failed: POST https://api.betspapa.com/api/admin/generate-predictions
+The remote server returned an error: (500) Internal Server Error.
+Log: C:\Users\RiddimBoss\Documents\GitHub\Betspapa\hydration-2026-07-16.log
+**********************
+Windows PowerShell transcript end
+End time: 20260716185653
+**********************
