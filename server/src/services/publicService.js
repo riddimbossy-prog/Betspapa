@@ -4,81 +4,121 @@ import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 import { generatePredictionsForDate } from "./predictionService.js";
 
 
-const generationLocks = new Map();
-const generationAttempts = new Map();
-const GENERATION_COOLDOWN_MS = 5 * 60 * 1000;
+const backgroundJobs = new Map();
+const RESTART_COOLDOWN_MS = 2 * 60 * 1000;
 
-async function ensurePredictionsForDate(supabase, date, fixtures, predictions) {
-  const existingFixtureIds = new Set(
-    predictions.map((prediction) => Number(prediction.internalFixtureId))
-  );
+function publicJobState(job, { totalFixtures = 0, readyPredictions = 0 } = {}) {
+  const pending = Math.max(0, totalFixtures - readyPredictions);
+  if (!job) {
+    return {
+      state: pending ? "idle" : "complete",
+      totalFixtures,
+      readyPredictions,
+      pending,
+      withheld: 0,
+      startedAt: null,
+      completedAt: null,
+      message: pending
+        ? "Papa is preparing the remaining picks in the background."
+        : "All available picks are ready."
+    };
+  }
+  return {
+    state: job.state,
+    totalFixtures,
+    readyPredictions,
+    pending,
+    withheld: Number(job.withheld || 0),
+    startedAt: job.startedAt || null,
+    completedAt: job.completedAt || null,
+    generated: Number(job.generated || 0),
+    published: Number(job.published || readyPredictions),
+    error: job.error || null,
+    message:
+      job.state === "running"
+        ? "Papa is preparing the remaining picks in the background."
+        : job.state === "failed"
+          ? "Background preparation stopped. Existing completed picks remain available."
+          : pending
+            ? "Some fixtures are waiting for enough individual history."
+            : "All available picks are ready."
+  };
+}
 
+function startBackgroundGeneration(supabase, date, fixtures, predictions) {
   const predictableFixtures = fixtures.filter((fixture) =>
     PREDICTABLE_STATUSES.has(fixture.status)
   );
-
-  const missingFixtures = predictableFixtures.filter(
-    (fixture) => !existingFixtureIds.has(Number(fixture.id))
+  const readyFixtureIds = new Set(
+    predictions.map((prediction) => Number(prediction.internalFixtureId))
   );
-
-  if (!missingFixtures.length) {
-    return {
-      attempted: false,
-      complete: true,
-      predictableFixtures: predictableFixtures.length,
-      missingBefore: 0,
-      generated: 0,
-      published: predictions.length,
-      skipped: []
+  const missing = predictableFixtures.filter(
+    (fixture) => !readyFixtureIds.has(Number(fixture.id))
+  );
+  if (!missing.length) {
+    const complete = {
+      state: "complete", startedAt: null,
+      completedAt: new Date().toISOString(), generated: 0,
+      published: predictions.length, withheld: 0, error: null
     };
+    backgroundJobs.set(date, complete);
+    return publicJobState(complete, {
+      totalFixtures: predictableFixtures.length,
+      readyPredictions: predictions.length
+    });
   }
-
-  const previousAttempt = generationAttempts.get(date) || 0;
-  const coolingDown = Date.now() - previousAttempt < GENERATION_COOLDOWN_MS;
-
-  if (coolingDown && !generationLocks.has(date)) {
-    return {
-      attempted: false,
-      complete: false,
-      cooldown: true,
-      predictableFixtures: predictableFixtures.length,
-      missingBefore: missingFixtures.length,
-      generated: 0,
-      published: predictions.length,
-      skipped: []
-    };
+  const existing = backgroundJobs.get(date);
+  if (existing?.state === "running") {
+    return publicJobState(existing, {
+      totalFixtures: predictableFixtures.length,
+      readyPredictions: predictions.length
+    });
   }
-
-  let lock = generationLocks.get(date);
-  let waited = false;
-
-  if (!lock) {
-    generationAttempts.set(date, Date.now());
-    lock = generatePredictionsForDate(supabase, date)
-      .finally(() => generationLocks.delete(date));
-    generationLocks.set(date, lock);
-  } else {
-    waited = true;
+  const lastFinishedAt = existing?.completedAt ? new Date(existing.completedAt).getTime() : 0;
+  const coolingDown = existing && existing.state !== "running" &&
+    Date.now() - lastFinishedAt < RESTART_COOLDOWN_MS;
+  if (coolingDown) {
+    return publicJobState(existing, {
+      totalFixtures: predictableFixtures.length,
+      readyPredictions: predictions.length
+    });
   }
-
-  const result = await lock;
-
-  return {
-    attempted: !waited,
-    waited,
-    complete: Number(result.generated || 0) >= missingFixtures.length,
-    predictableFixtures: predictableFixtures.length,
-    missingBefore: missingFixtures.length,
-    generated: Number(result.generated || 0),
-    published: Number(result.published || 0),
-    hydration: result.hydration || null,
-    skipped: (result.skipped || []).map((item) => ({
-      fixtureId: item.fixtureId,
-      externalFixtureId: item.externalFixtureId,
-      code: item.code,
-      message: item.message
-    }))
+  const job = {
+    state: "running", startedAt: new Date().toISOString(), completedAt: null,
+    generated: 0, published: predictions.length, withheld: 0, error: null
   };
+  backgroundJobs.set(date, job);
+  Promise.resolve()
+    .then(() => generatePredictionsForDate(supabase, date))
+    .then((result) => {
+      job.state = "complete";
+      job.completedAt = new Date().toISOString();
+      job.generated = Number(result.generated || 0);
+      job.published = Number(result.published || 0);
+      job.withheld = Array.isArray(result.skipped) ? result.skipped.length : 0;
+      job.error = null;
+      job.skipped = (result.skipped || []).map((item) => ({
+        fixtureId: item.fixtureId,
+        externalFixtureId: item.externalFixtureId,
+        code: item.code,
+        message: item.message
+      }));
+      job.hydration = result.hydration || null;
+    })
+    .catch((error) => {
+      job.state = "failed";
+      job.completedAt = new Date().toISOString();
+      job.error = error?.message || String(error);
+      console.error(`Background prediction preparation failed for ${date}:`, error);
+    });
+  return publicJobState(job, {
+    totalFixtures: predictableFixtures.length,
+    readyPredictions: predictions.length
+  });
+}
+
+export function getBackgroundProcessingStatus(date) {
+  return publicJobState(backgroundJobs.get(date));
 }
 
 function maxIso(values) {
@@ -416,29 +456,17 @@ export async function getDashboardStats(supabase, {
 }
 
 export async function getDashboardData(supabase, date) {
-  const [fixtures, recentResults] = await Promise.all([
+  const [fixtures, recentResults, predictions] = await Promise.all([
     listFixtures(supabase, date),
-    listRecentResults(supabase, 12)
+    listRecentResults(supabase, 12),
+    listPublicPredictions(supabase, date)
   ]);
-
-  let predictions = await listPublicPredictions(supabase, date);
-  const generation = await ensurePredictionsForDate(
-    supabase,
-    date,
-    fixtures,
-    predictions
-  );
-
-  if (generation.attempted || generation.waited) {
-    predictions = await listPublicPredictions(supabase, date);
-  }
-
+  const processing = startBackgroundGeneration(supabase, date, fixtures, predictions);
   const stats = await getDashboardStats(supabase, {
     predictionsToday: predictions,
     fixturesToday: fixtures,
     recentResults
   });
-
   return {
     date,
     generatedAt: new Date().toISOString(),
@@ -446,6 +474,6 @@ export async function getDashboardData(supabase, date) {
     fixtures,
     recentResults,
     stats,
-    generation
+    processing
   };
 }

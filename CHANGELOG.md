@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.8.3 — Clean Background Picks
+
+- Removed repeated processing/history cards from the public catalogue.
+- Only completed real predictions are displayed as match cards.
+- Missing preparation runs in the Render background and the dashboard returns immediately.
+- Added one compact ready/pending/withheld notice and automatic 15-second refresh.
+- When no picks are ready, one clean preparation panel is shown instead of dozens of placeholders.
+- Added `/api/processing/status`.
+- Anti-zombie protections remain active.
+
 ## v1.8.2 — Papa's Pick, Full Explanation and Popup Close Fix
 
 - Renamed **Papa Primary** to **Papa's Pick** everywhere.

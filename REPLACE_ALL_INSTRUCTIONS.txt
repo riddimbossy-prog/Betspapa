@@ -1,26 +1,12 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.8.2
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.8.3
 ================================================
 
 1. Extract this ZIP.
 2. Replace every file in the local Betspapa repository.
-3. Commit:
-   BetsPapa v1.8.2 papas pick explanation close fix
+3. Commit: BetsPapa v1.8.3 clean background picks
 4. Push origin.
-5. Wait for GitHub Pages and Render to deploy.
-6. Open once:
-   https://betspapa.com/reset.html
-7. Confirm:
-   https://api.betspapa.com/api/health
-   Version must show 1.8.2.
-8. Open betspapa.com and allow PapaSense v1.8.2 to regenerate its prediction rows.
+5. Wait for GitHub Pages and Render.
+6. Open https://betspapa.com/reset.html once.
+7. Confirm https://api.betspapa.com/api/health shows version 1.8.3.
 
-CHANGES
--------
-- Papa Primary is now called Papa's Pick.
-- Papa's Pick is still the default.
-- The X close button now works.
-- Backdrop click and Escape also close the popup.
-- Every reason popup includes a full paragraph similar to the Real Potosí
-  explanation, using that fixture's actual venue transitions and market route.
-
-Do not commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET.
+Completed predictions are the only match cards shown. Remaining work runs in the background and appears as one compact status notice. No fake placeholder prediction is published.

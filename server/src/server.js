@@ -88,7 +88,8 @@ app.get("/", (_req, res) => {
     fixturesToday: "/api/fixtures/today",
     dashboardToday: "/api/dashboard/today",
     recentResults: "/api/results/recent",
-    engineStats: "/api/stats/engine"
+    engineStats: "/api/stats/engine",
+    processingStatus: "/api/processing/status"
   });
 });
 

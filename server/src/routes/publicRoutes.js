@@ -4,6 +4,7 @@ import { predictMatch } from "../engine/transitionEngine.js";
 import { getSupabaseAdmin } from "../supabase.js";
 import { assertIsoDate, todayUtc } from "../utils/date.js";
 import {
+  getBackgroundProcessingStatus,
   getDashboardData,
   getDashboardStats,
   listFixtures,
@@ -48,6 +49,15 @@ publicRouter.get("/dashboard/today", async (req, res, next) => {
     const date = assertIsoDate(req.query.date || todayUtc());
     const dashboard = await getDashboardData(getSupabaseAdmin(), date);
     res.json(dashboard);
+  } catch (error) {
+    next(error);
+  }
+});
+
+publicRouter.get("/processing/status", (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.query.date || todayUtc());
+    res.json({ date, processing: getBackgroundProcessingStatus(date) });
   } catch (error) {
     next(error);
   }
