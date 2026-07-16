@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.3.0 — Official Papa Branding
+
+- Added the approved BetsPapa wise-Papa mascot logo.
+- Added the official tagline: **Papa Knows the Game**.
+- Rebranded the header, hero, sidebar and footer.
+- Added favicon, Apple touch icon and PWA app icons based on the Papa mascot.
+- Added social-sharing artwork and Open Graph metadata.
+- Preserved the live API, Supabase, Render, prediction engine and search-overlay fixes.
+- Updated the service worker cache to force the new branding onto mobile devices and PWAs.
+
+## v1.2.2 — Search launch fix
+- Search overlay is now guaranteed hidden on every initial page load.
+- Search opens only after the user presses the search button.
+- Backdrop tap, Escape key, result selection, and close button all dismiss it.
+- Empty queries no longer display every fixture automatically.
+- Service-worker cache version bumped and navigation made network-first so the fix reaches installed/PWA users.
+
 ## v1.2.0
 
 - Added API-Football fixture importer with key aliases and retry handling.

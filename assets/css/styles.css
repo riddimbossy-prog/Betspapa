@@ -219,10 +219,13 @@ footer a:hover { color:var(--gold); }
 .modal li { color:var(--muted); margin:10px 0; line-height:1.55; font-size:12px; }
 .modal-close { position:absolute; top:14px; right:14px; width:36px; height:36px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.05); cursor:pointer; font-size:20px; }
 .search-drawer { position:fixed; inset:0; z-index:100; display:grid; place-items:start center; padding-top:100px; background:rgba(4,0,12,.75); backdrop-filter:blur(7px); }
+.search-drawer[hidden] { display:none !important; }
+body.search-open { overflow:hidden; }
 .search-card { width:min(620px,calc(100vw - 28px)); padding:24px; position:relative; border:1px solid rgba(180,92,255,.4); border-radius:18px; background:#18033a; box-shadow:var(--shadow); }
 .search-card input { width:100%; margin-top:12px; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.055); color:white; padding:14px; outline:none; }
 .search-close { position:absolute; top:14px; right:14px; width:34px; height:34px; border:1px solid var(--line); border-radius:10px; background:transparent; cursor:pointer; }
 .search-result { margin-top:9px; padding:11px; border-radius:10px; background:rgba(255,255,255,.035); font-size:11px; }
+.search-empty { margin:12px 2px 0; color:var(--muted); font-size:11px; }
 
 @media (max-width: 1280px) {
   .topbar { grid-template-columns:260px 1fr auto; }
@@ -483,4 +486,234 @@ footer a:hover { color:var(--gold); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+
+/* ================================================================
+   BETSPAPA OFFICIAL PAPA BRANDING — v1.3.0
+   ================================================================ */
+:root {
+  --papa-gold: #f2c44f;
+  --papa-gold-deep: #bd7a13;
+  --papa-purple: #6f21d9;
+  --papa-purple-bright: #9b4cff;
+  --papa-ink: #090018;
+}
+
+.topbar {
+  grid-template-columns: 330px 1fr auto;
+  border-bottom-color: rgba(242,196,79,.22);
+  background:
+    linear-gradient(90deg, rgba(9,0,24,.98), rgba(13,1,35,.91)),
+    rgba(8,0,22,.92);
+}
+
+.brand { gap: 10px; }
+.brand-logo {
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  object-fit: contain;
+  border-radius: 50%;
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,.38)) drop-shadow(0 0 12px rgba(124,44,255,.24));
+}
+.brand-copy strong {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 25px;
+  font-style: italic;
+  font-weight: 950;
+  letter-spacing: -.045em;
+  color: #fff;
+}
+.brand-copy strong span {
+  color: var(--papa-gold);
+  text-shadow: 0 0 18px rgba(242,196,79,.18);
+}
+.brand-copy small {
+  margin-top: 5px;
+  color: #d7c7eb;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .18em;
+}
+
+.papa-hero {
+  min-height: 330px;
+  border-color: rgba(242,196,79,.38);
+  background:
+    radial-gradient(circle at 82% 34%, rgba(124,44,255,.28), transparent 34%),
+    linear-gradient(125deg, rgba(43,5,93,.99), rgba(14,1,36,.98));
+  box-shadow:
+    0 24px 70px rgba(0,0,0,.42),
+    inset 0 1px 0 rgba(255,255,255,.05),
+    inset 0 0 0 1px rgba(124,44,255,.05);
+}
+.papa-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, transparent 0 54%, rgba(242,196,79,.05) 54% 55%, transparent 55%),
+    radial-gradient(circle at 70% 40%, rgba(242,196,79,.08), transparent 25%);
+}
+.hero-copy h1 {
+  max-width: 720px;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-style: italic;
+  font-weight: 950;
+  letter-spacing: -.055em;
+}
+.hero-copy h1 span {
+  color: var(--papa-gold);
+  text-shadow: 0 8px 28px rgba(242,196,79,.12);
+}
+.papa-promise {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 9px 12px;
+  border: 1px solid rgba(242,196,79,.22);
+  border-radius: 999px;
+  background: rgba(255,255,255,.035);
+  color: #eadff7;
+  font-size: 10px;
+  font-weight: 800;
+}
+.papa-promise span {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #1d1100;
+  background: linear-gradient(145deg, #ffe590, #dda52d);
+}
+
+.hero-visual {
+  min-height: 290px;
+  align-self: stretch;
+  overflow: hidden;
+}
+.papa-aura {
+  position: absolute;
+  width: 330px;
+  height: 330px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(124,44,255,.33), rgba(124,44,255,.08) 42%, transparent 70%);
+  filter: blur(3px);
+}
+.hero-logo {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 365px);
+  max-height: 330px;
+  object-fit: contain;
+  border-radius: 32px;
+  filter: drop-shadow(0 22px 34px rgba(0,0,0,.45));
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 57%, rgba(0,0,0,.90) 72%, transparent 100%);
+  mask-image: radial-gradient(ellipse at center, #000 57%, rgba(0,0,0,.90) 72%, transparent 100%);
+}
+.papa-verdict {
+  position: absolute;
+  z-index: 4;
+  right: 10px;
+  bottom: 16px;
+  min-width: 170px;
+  padding: 11px 13px;
+  border: 1px solid rgba(242,196,79,.35);
+  border-radius: 13px;
+  background: rgba(11,0,30,.84);
+  box-shadow: 0 16px 32px rgba(0,0,0,.28);
+  backdrop-filter: blur(12px);
+}
+.papa-verdict span {
+  display: block;
+  color: var(--papa-gold);
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: .14em;
+}
+.papa-verdict strong {
+  display: block;
+  margin-top: 4px;
+  color: #fff;
+  font-size: 12px;
+}
+
+.sidebar-papa {
+  width: 74px;
+  height: 74px;
+  object-fit: contain;
+  border-radius: 50%;
+  margin: -6px auto 2px;
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,.35));
+}
+.premium-card .gold-button {
+  display: inline-flex;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.footer-brand img {
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0,0,0,.3);
+}
+.footer-brand small {
+  color: var(--muted);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1280px) {
+  .topbar { grid-template-columns: 280px 1fr auto; }
+  .papa-hero { min-height: 310px; }
+}
+
+@media (max-width: 1020px) {
+  .topbar { grid-template-columns: minmax(0,1fr) auto; }
+  .brand-logo { width: 50px; height: 50px; flex-basis: 50px; }
+}
+
+@media (max-width: 720px) {
+  .brand-logo { width: 42px; height: 42px; flex-basis: 42px; }
+  .brand-copy strong { font-size: 20px; }
+  .papa-hero { grid-template-columns: 1fr; }
+  .hero-visual {
+    display: grid;
+    min-height: 215px;
+    margin: 8px -6px -18px;
+  }
+  .hero-logo {
+    width: min(100%, 265px);
+    max-height: 225px;
+  }
+  .papa-aura { width: 245px; height: 245px; }
+  .papa-verdict { right: 6px; bottom: 12px; min-width: 142px; padding: 9px 10px; }
+  .papa-verdict strong { font-size: 10px; }
+  .papa-promise { font-size: 9px; }
+}
+
+@media (max-width: 420px) {
+  .brand-copy small { display: none; }
+  .brand-logo { width: 39px; height: 39px; flex-basis: 39px; }
+  .hero-copy h1 { font-size: clamp(31px, 10vw, 42px); }
+  .hero-visual { min-height: 190px; }
+  .hero-logo { width: 225px; max-height: 200px; }
+  .papa-verdict { display: none; }
+  .footer-brand small { display: none; }
+}
+
+@media (max-width: 350px) {
+  .brand-logo { width: 36px; height: 36px; flex-basis: 36px; }
+  .brand-copy strong { font-size: 17px; }
 }
