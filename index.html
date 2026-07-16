@@ -14,8 +14,11 @@
   <title>BetsPapa — Papa Knows the Game</title>
   <link rel="icon" href="assets/images/favicon-64.png" type="image/png">
   <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="assets/css/styles.v131.css">
+  <link rel="stylesheet" href="assets/css/styles.v140.css">
   <style id="betspapa-critical-search-guard">
     #searchDrawer { display: none !important; }
     #searchDrawer.is-open:not([hidden]) { display: grid !important; }
@@ -145,25 +148,34 @@
         </div>
       </div>
 
+      <div class="live-data-strip" id="liveDataStrip" data-state="loading">
+        <div class="live-data-copy">
+          <span class="live-data-dot" aria-hidden="true"></span>
+          <strong id="liveStatus">Connecting to live data…</strong>
+          <span id="liveUpdated">Checking api.betspapa.com</span>
+        </div>
+        <button class="live-refresh" id="refreshLiveData" type="button">Refresh live data</button>
+      </div>
+
       <div class="metric-grid" id="stats">
         <article class="metric-card">
           <div class="metric-icon gold">♛</div>
-          <div><span>WIN RATE</span><strong id="winRate">68.7%</strong><small>+7.4% last 30d</small></div>
+          <div><span>WIN RATE</span><strong id="winRate">—</strong><small id="winRateNote">Connecting to live results</small></div>
           <svg viewBox="0 0 220 46" aria-hidden="true"><path d="M2 35 C24 14,38 35,58 24 S88 38,108 19 S142 37,162 22 S190 28,218 8"/></svg>
         </article>
         <article class="metric-card">
           <div class="metric-icon">◇</div>
-          <div><span>QUALIFIED PICKS</span><strong>842</strong><small>+112 last 30d</small></div>
+          <div><span>QUALIFIED PICKS</span><strong id="qualifiedPicks">0</strong><small id="qualifiedPicksNote">Live published predictions</small></div>
           <svg viewBox="0 0 220 46" aria-hidden="true"><path d="M2 33 C26 13,39 35,59 21 S88 36,112 25 S147 8,166 25 S195 28,218 10"/></svg>
         </article>
         <article class="metric-card">
           <div class="metric-icon">⚽</div>
-          <div><span>GG SIGNALS</span><strong>611</strong><small>+81 last 30d</small></div>
+          <div><span>GG SIGNALS</span><strong id="ggSignals">0</strong><small id="ggSignalsNote">Live published GG selections</small></div>
           <svg viewBox="0 0 220 46" aria-hidden="true"><path d="M2 37 C27 24,38 10,61 28 S91 12,111 25 S147 35,166 17 S195 30,218 6"/></svg>
         </article>
         <article class="metric-card">
           <div class="metric-icon gold">U3.5</div>
-          <div><span>UNDER 3.5 SIGNALS</span><strong>572</strong><small>+76 last 30d</small></div>
+          <div><span>UNDER 3.5 SIGNALS</span><strong id="under35Signals">0</strong><small id="under35SignalsNote">Live published U3.5 selections</small></div>
           <svg viewBox="0 0 220 46" aria-hidden="true"><path d="M2 31 C27 8,41 35,60 25 S87 33,112 15 S145 34,168 22 S198 30,218 4"/></svg>
         </article>
       </div>
@@ -187,35 +199,35 @@
 
       <article class="panel primary-panel" id="bankers">
         <div class="primary-label">★ PRIMARY PREDICTION</div>
-        <div class="match-meta"><span id="leagueLabel">ARGENTINA · PRIMERA B</span><span id="kickoffLabel">TODAY · 20:30</span></div>
+        <div class="match-meta"><span id="leagueLabel">LIVE DATABASE</span><span id="kickoffLabel">CONNECTING</span></div>
         <div class="matchup">
           <div class="club">
             <div class="club-badge home" id="homeBadge">DM</div>
-            <strong id="homeTeam">Deportivo Merlo</strong>
+            <strong id="homeTeam">Awaiting</strong>
           </div>
           <div class="versus"><span>VS</span></div>
           <div class="club">
             <div class="club-badge away" id="awayBadge">RP</div>
-            <strong id="awayTeam">Real Pilar</strong>
+            <strong id="awayTeam">Live Data</strong>
           </div>
         </div>
         <div class="pick-box">
           <span>BEST MARKET</span>
-          <strong id="primaryPick">Deportivo Merlo 1X</strong>
-          <small id="primaryReason">Home resistance plus away instability creates the safest directional edge.</small>
+          <strong id="primaryPick">Awaiting 1X</strong>
+          <small id="primaryReason">Connecting to the BetsPapa prediction database.</small>
         </div>
         <div class="confidence-row">
           <div>
             <span>CONFIDENCE LEVEL</span>
-            <div class="confidence-track"><div id="confidenceBar" style="width:78%"></div></div>
+            <div class="confidence-track"><div id="confidenceBar" style="width:0%"></div></div>
           </div>
-          <div class="confidence-score"><strong id="confidenceScore">78%</strong><small id="confidenceTier">Qualified</small></div>
+          <div class="confidence-score"><strong id="confidenceScore">—</strong><small id="confidenceTier">Pending</small></div>
         </div>
         <div class="primary-stats">
-          <div><span>HT STORY</span><strong id="htStory">X / 1</strong></div>
-          <div><span>GOAL ROUTE</span><strong id="goalRoute">GG + O1.5</strong></div>
+          <div><span>HT STORY</span><strong id="htStory">—</strong></div>
+          <div><span>GOAL ROUTE</span><strong id="goalRoute">—</strong></div>
           <div><span>VALUE</span><strong class="positive">Good</strong></div>
-          <div><span>RISK</span><strong id="riskLabel">Balanced</strong></div>
+          <div><span>RISK</span><strong id="riskLabel">Pending</strong></div>
         </div>
       </article>
 
@@ -239,7 +251,7 @@
       <article class="panel results-panel" id="results">
         <div class="panel-heading compact">
           <div><span class="eyebrow">VERIFIED</span><h2>Recent Results</h2></div>
-          <span class="live-pill">LIVE GRADING</span>
+          <span class="live-pill">LIVE DATABASE</span>
         </div>
         <div class="table-wrap">
           <table>
@@ -304,7 +316,6 @@
     </div>
   </div>
 
-  <script src="assets/js/engine.v131.js"></script>
-  <script src="assets/js/app.v131.js"></script>
+    <script src="assets/js/app.v140.js"></script>
 </body>
 </html>

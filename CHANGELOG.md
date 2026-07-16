@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.4.0 — Modern Fonts and Complete Live Data
+
+- Added modern **Manrope** body typography and **Space Grotesk** display typography.
+- Removed hard-coded demonstration fixtures, metric totals and recent results from the public site.
+- Added one live dashboard endpoint: `/api/dashboard/today`.
+- Added live upcoming fixtures with team and league names, logos, status and kickoff.
+- Added live qualified predictions and HT/FT matrices.
+- Added live recent graded results from `prediction_results`.
+- Added live win rate, qualified-pick count, GG count and Under 3.5 count.
+- Added automatic fallback from `api.betspapa.com` to the Render service URL.
+- Added live connection state, last-updated time, refresh control and empty/error states.
+- Added no-cache API response headers.
+- Preserved the Papa branding, responsive UI, Supabase integration and Render engine.
+
 ## v1.3.1 — Search Overlay and Legacy Cache Hard Fix
 
 - Search is now controlled by an explicit `.is-open` state and cannot display on page load.

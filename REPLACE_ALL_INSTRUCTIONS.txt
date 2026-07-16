@@ -1,16 +1,23 @@
-BETSPAPA FULL REPLACEMENT v1.3.1
-================================
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.4.0
+================================================
 
 1. Extract this ZIP.
 2. Copy every file and folder into your local Betspapa GitHub repository.
 3. Choose Replace/Overwrite All.
-4. Commit: BetsPapa v1.3.1 search cache hard fix
-5. Push origin.
-6. Wait for GitHub Pages and Render deployments to finish.
-7. Open this URL once:
+4. Commit: BetsPapa v1.4 modern fonts and live dashboard
+5. Click Push origin.
+6. Wait for both GitHub Pages and Render to finish deploying.
+7. Open once:
    https://betspapa.com/reset.html
-8. It will clear the old service worker/cache and return you to the homepage.
+8. Then open:
+   https://api.betspapa.com/api/health
+   The version should be 1.4.0 and database should say connected.
+9. Open:
+   https://api.betspapa.com/api/dashboard/today
+   This should return predictions, fixtures, recentResults and stats.
+10. Refresh betspapa.com.
 
-The search box will now remain closed until the search icon is clicked.
+The site no longer uses demonstration data. When today has no qualified predictions,
+it displays imported fixtures and a clear “No qualified pick yet” state.
 
-Do not put private API keys, Supabase service-role keys or ADMIN_SYNC_SECRET in GitHub.
+Do not commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET to GitHub.

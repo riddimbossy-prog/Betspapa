@@ -3,7 +3,13 @@ import { demoFixtures } from "../data/demoFixtures.js";
 import { predictMatch } from "../engine/transitionEngine.js";
 import { getSupabaseAdmin } from "../supabase.js";
 import { assertIsoDate, todayUtc } from "../utils/date.js";
-import { listFixtures, listPublicPredictions } from "../services/publicService.js";
+import {
+  getDashboardData,
+  getDashboardStats,
+  listFixtures,
+  listPublicPredictions,
+  listRecentResults
+} from "../services/publicService.js";
 
 export const publicRouter = Router();
 
@@ -37,6 +43,16 @@ publicRouter.post("/predict", (req, res, next) => {
   }
 });
 
+publicRouter.get("/dashboard/today", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.query.date || todayUtc());
+    const dashboard = await getDashboardData(getSupabaseAdmin(), date);
+    res.json(dashboard);
+  } catch (error) {
+    next(error);
+  }
+});
+
 publicRouter.get("/predictions/today", async (req, res, next) => {
   try {
     const date = assertIsoDate(req.query.date || todayUtc());
@@ -52,6 +68,24 @@ publicRouter.get("/fixtures/today", async (req, res, next) => {
     const date = assertIsoDate(req.query.date || todayUtc());
     const fixtures = await listFixtures(getSupabaseAdmin(), date);
     res.json({ date, count: fixtures.length, fixtures });
+  } catch (error) {
+    next(error);
+  }
+});
+
+publicRouter.get("/results/recent", async (req, res, next) => {
+  try {
+    const results = await listRecentResults(getSupabaseAdmin(), req.query.limit);
+    res.json({ count: results.length, results });
+  } catch (error) {
+    next(error);
+  }
+});
+
+publicRouter.get("/stats/engine", async (_req, res, next) => {
+  try {
+    const stats = await getDashboardStats(getSupabaseAdmin());
+    res.json(stats);
   } catch (error) {
     next(error);
   }
