@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const fixtures = [
+  let fixtures = [
     {
       id:'merlo-pilar', league:'Argentina · Primera B', kickoff:'Today · 20:30', sample:13,
       home:{ name:'Deportivo Merlo', short:'DM', profile:{mp:13,'W/W':2,'W/D':0,'W/L':0,'D/W':2,'D/D':2,'D/L':2,'L/W':2,'L/D':2,'L/L':1}, goals:{scoreRate:.77,concedeRate:.69,recentBTTS:.67,btts:.62,over15:.77,over25:.54,under35:.77,recentUnder35:.67,score2plus:.46,concede2plus:.38}},
@@ -35,6 +35,7 @@
   const $ = (selector) => document.querySelector(selector);
   const pct = (n) => `${Math.round(n * 100)}%`;
   let selectedId = fixtures[0].id;
+  const API_BASE_URL = window.BETSPAPA_API_URL || 'https://api.betspapa.com';
 
   function tier(score) {
     if (score >= .85) return 'Elite';
@@ -44,9 +45,78 @@
     return 'Rejected';
   }
 
+  function shortName(name) {
+    return String(name || '')
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(word => word[0])
+      .join('')
+      .slice(0, 4)
+      .toUpperCase();
+  }
+
+  function analysisForFixture(fixture) {
+    if (!fixture.livePrediction) return BetsPapaEngine.analyze(fixture);
+    const live = fixture.livePrediction;
+    const matrix = Object.entries(live.transitionMatrix || {}).map(([code, value]) => ({
+      code,
+      probability: Number(value?.probability || 0)
+    }));
+    const strongest = live.strongestTransition || {};
+    return {
+      primary: { label: live.primary?.selection || 'No Bet' },
+      confidence: Number(live.primary?.confidence || 0),
+      reason: (live.reasons || [])[0] || `${live.primary?.market || 'Prediction'} · ${live.primary?.tier || ''}`,
+      matrix,
+      topTransition: { code: strongest.code || matrix.sort((a,b)=>b.probability-a.probability)[0]?.code || '—' },
+      derived: {
+        ggScore: Number(live.goalScores?.ggYes || 0),
+        over15Score: Number(live.goalScores?.over15 || 0),
+        over25Score: Number(live.goalScores?.over25 || 0),
+        under35Score: Number(live.goalScores?.under35 || 0),
+        fullReversal: Number(live.engine?.goalIntelligence?.metrics?.extremeReversalMass || 0)
+      }
+    };
+  }
+
+  function formatKickoff(value) {
+    if (!value) return 'TBA';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return new Intl.DateTimeFormat(undefined, {
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    }).format(date);
+  }
+
+  async function loadLivePredictions() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/predictions/today`, {
+        headers: { Accept: 'application/json' }
+      });
+      if (!response.ok) throw new Error(`API returned ${response.status}`);
+      const payload = await response.json();
+      if (!Array.isArray(payload.predictions) || payload.predictions.length === 0) return;
+
+      fixtures = payload.predictions.map(item => ({
+        id: `live-${item.id}`,
+        league: [item.league?.country, item.league?.name].filter(Boolean).join(' · '),
+        kickoff: formatKickoff(item.kickoff),
+        sample: Number(item.engine?.dataQuality?.homeSamples?.overall || 0),
+        home: { name: item.home?.name || 'Home', short: shortName(item.home?.name) },
+        away: { name: item.away?.name || 'Away', short: shortName(item.away?.name) },
+        livePrediction: item
+      }));
+      selectedId = fixtures[0].id;
+      renderFixtures();
+      renderAnalysis();
+    } catch (error) {
+      console.info('BetsPapa live predictions unavailable; showing demo data.', error.message);
+    }
+  }
+
   function renderFixtures() {
     $('#fixtureList').innerHTML = fixtures.map(f => {
-      const a = BetsPapaEngine.analyze(f);
+      const a = analysisForFixture(f);
       return `<button class="fixture-item ${f.id === selectedId ? 'active' : ''}" data-id="${f.id}">
         <div class="fixture-top"><span>${f.league}</span><span>${f.kickoff}</span></div>
         <div class="fixture-teams">
@@ -92,7 +162,7 @@
 
   function renderAnalysis() {
     const fixture = fixtures.find(f => f.id === selectedId) || fixtures[0];
-    const a = BetsPapaEngine.analyze(fixture);
+    const a = analysisForFixture(fixture);
     $('#leagueLabel').textContent = fixture.league.toUpperCase();
     $('#kickoffLabel').textContent = fixture.kickoff.toUpperCase();
     $('#homeTeam').textContent = fixture.home.name;
@@ -203,4 +273,5 @@
   setupMobile();
   setupSearch();
   registerServiceWorker();
+  loadLivePredictions();
 })();
