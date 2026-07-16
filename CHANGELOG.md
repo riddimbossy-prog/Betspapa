@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.6.0 — Balanced Markets and Reasons Popup
+
+- Fixed Double Chance dominating because its raw two-outcome probability is naturally larger.
+- Markets are now ranked by support relative to each market's own threshold.
+- Double Chance and Half-Time Double Chance receive a protection-market penalty.
+- A protection market must also show a genuine side edge before it can qualify.
+- A more informative goal, team-goal, DNB or result market wins when its calibrated evidence is close or stronger.
+- Added cross-competition team profile fallback for friendlies and data-light leagues.
+- Clicking a fixture now opens a responsive reasons popup.
+- The popup shows:
+  - selected pick and confidence
+  - full reasons and cautions
+  - calibrated comparison against other markets
+  - all nine HT/FT indicators
+- Engine version updated to `papasense-v1.6`, causing automatic regeneration.
+- Preserved filters, automatic predictions, modern fonts, Papa branding, Render and Supabase.
+
 ## v1.5.1 — Automatic Predictions and Readable Mobile UI
 
 - The public dashboard now automatically generates missing PapaSense v1.5 predictions.

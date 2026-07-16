@@ -18,14 +18,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="assets/css/styles.v151.css">
+  <link rel="stylesheet" href="assets/css/styles.v160.css">
   <style id="betspapa-critical-search-guard">
     #searchDrawer { display: none !important; }
     #searchDrawer.is-open:not([hidden]) { display: grid !important; }
   </style>
   <script>
     (function () {
-      window.__BETSPAPA_BUILD__ = "1.5.1";
+      window.__BETSPAPA_BUILD__ = "1.6.0";
       function forceSearchClosed() {
         var drawer = document.getElementById("searchDrawer");
         if (drawer) {
@@ -405,6 +405,14 @@
     </div>
   </div>
 
-    <script src="assets/js/app.v151.js"></script>
+    <script src="assets/js/app.v160.js"></script>
+
+  <dialog class="pick-reason-dialog" id="pickReasonDialog" aria-labelledby="pickReasonTitle">
+    <div class="pick-reason-shell">
+      <button class="pick-reason-close" id="pickReasonClose" type="button" aria-label="Close prediction reasons">×</button>
+      <div id="pickReasonContent"></div>
+    </div>
+  </dialog>
+
 </body>
 </html>

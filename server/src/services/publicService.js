@@ -246,6 +246,12 @@ export async function listPublicPredictions(supabase, date) {
           prediction.market_scores?.allHtftIndicators ||
           prediction.market_scores?.decisionTrace?.allHtftIndicators ||
           [],
+        marketComparison:
+          prediction.market_scores?.decisionTrace?.marketComparison ||
+          [],
+        selectionMethod:
+          prediction.market_scores?.decisionTrace?.selectionMethod ||
+          null,
         createdAt: prediction.created_at,
         updatedAt: prediction.updated_at
       };

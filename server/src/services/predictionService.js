@@ -31,9 +31,98 @@ function goalProfile(row) {
   };
 }
 
-function indexProfiles(rows) {
+function profileWeight(row, currentLeagueId, currentSeason) {
+  if (
+    Number(row.league_id) === Number(currentLeagueId) &&
+    Number(row.season) === Number(currentSeason)
+  ) return 1.5;
+  if (Number(row.league_id) === Number(currentLeagueId)) return 1.1;
+  if (Number(row.season) === Number(currentSeason)) return 0.9;
+  return 0.65;
+}
+
+function aggregateHtftProfiles(rows, currentLeagueId, currentSeason) {
+  const grouped = new Map();
+
+  for (const row of rows || []) {
+    const key = `${row.team_id}:${row.scope}`;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(row);
+  }
+
   const map = new Map();
-  for (const row of rows || []) map.set(`${row.team_id}:${row.scope}`, row);
+  for (const [key, profileRows] of grouped.entries()) {
+    const row = {
+      team_id: profileRows[0].team_id,
+      scope: profileRows[0].scope,
+      matches_played: 0
+    };
+    for (const transition of TRANSITIONS) row[transition.toLowerCase()] = 0;
+
+    for (const profile of profileRows) {
+      const weight = profileWeight(profile, currentLeagueId, currentSeason);
+      row.matches_played += Number(profile.matches_played || 0) * weight;
+      for (const transition of TRANSITIONS) {
+        row[transition.toLowerCase()] +=
+          Number(profile[transition.toLowerCase()] || 0) * weight;
+      }
+    }
+    map.set(key, row);
+  }
+
+  return map;
+}
+
+function aggregateGoalProfiles(rows, currentLeagueId, currentSeason) {
+  const rateColumns = [
+    "scoring_rate",
+    "conceding_rate",
+    "failed_to_score_rate",
+    "clean_sheet_rate",
+    "btts_rate",
+    "over_15_rate",
+    "over_25_rate",
+    "under_35_rate",
+    "scored_2plus_rate",
+    "conceded_2plus_rate",
+    "first_half_scoring_rate",
+    "second_half_scoring_rate"
+  ];
+  const grouped = new Map();
+
+  for (const row of rows || []) {
+    const key = `${row.team_id}:${row.scope}`;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(row);
+  }
+
+  const map = new Map();
+  for (const [key, profileRows] of grouped.entries()) {
+    const row = {
+      team_id: profileRows[0].team_id,
+      scope: profileRows[0].scope,
+      matches_played: 0
+    };
+    const weightedTotals = Object.fromEntries(rateColumns.map((column) => [column, 0]));
+    let totalWeight = 0;
+
+    for (const profile of profileRows) {
+      const matches = Number(profile.matches_played || 0);
+      const weight = profileWeight(profile, currentLeagueId, currentSeason);
+      const sampleWeight = matches * weight;
+      row.matches_played += sampleWeight;
+      totalWeight += sampleWeight;
+      for (const column of rateColumns) {
+        weightedTotals[column] += Number(profile[column] || 0) * sampleWeight;
+      }
+    }
+
+    for (const column of rateColumns) {
+      row[column] = totalWeight ? weightedTotals[column] / totalWeight : 0;
+    }
+    map.set(key, row);
+  }
+
   return map;
 }
 
@@ -76,6 +165,31 @@ async function loadLeague(supabase, leagueId) {
     .single();
   throwIfSupabaseError(error, "Unable to load league");
   return data;
+}
+
+async function loadTeamHistoryProfiles(supabase, teamId, cache) {
+  const key = `team-history:${teamId}`;
+  if (cache.has(key)) return cache.get(key);
+
+  const promise = Promise.all([
+    fetchAllRows(() =>
+      supabase
+        .from("team_htft_profiles")
+        .select("*")
+        .eq("team_id", teamId)
+        .order("season", { ascending: false })
+    ),
+    fetchAllRows(() =>
+      supabase
+        .from("team_goal_profiles")
+        .select("*")
+        .eq("team_id", teamId)
+        .order("season", { ascending: false })
+    )
+  ]).then(([htftRows, goalRows]) => ({ htftRows, goalRows }));
+
+  cache.set(key, promise);
+  return promise;
 }
 
 async function loadProfiles(supabase, leagueId, season) {
@@ -197,8 +311,31 @@ async function predictFixture(supabase, fixture, cached) {
   const awayTeam = teams.get(fixture.away_team_id);
   if (!homeTeam || !awayTeam) throw new Error(`Fixture ${fixture.id} has unresolved teams`);
 
-  const htftMap = indexProfiles(context.htftRows);
-  const goalMap = indexProfiles(context.goalRows);
+  const [homeHistory, awayHistory] = await Promise.all([
+    loadTeamHistoryProfiles(supabase, fixture.home_team_id, cached),
+    loadTeamHistoryProfiles(supabase, fixture.away_team_id, cached)
+  ]);
+
+  const historyHtftRows = [
+    ...(homeHistory.htftRows || []),
+    ...(awayHistory.htftRows || [])
+  ];
+  const historyGoalRows = [
+    ...(homeHistory.goalRows || []),
+    ...(awayHistory.goalRows || [])
+  ];
+
+  const htftMap = aggregateHtftProfiles(
+    historyHtftRows,
+    fixture.league_id,
+    fixture.season
+  );
+  const goalMap = aggregateGoalProfiles(
+    historyGoalRows,
+    fixture.league_id,
+    fixture.season
+  );
+
   const home = buildTeamInput(homeTeam, "home", htftMap, goalMap);
   const away = buildTeamInput(awayTeam, "away", htftMap, goalMap);
 

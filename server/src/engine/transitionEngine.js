@@ -405,7 +405,13 @@ function marketCandidates(input, matrix, direct, goals, quality) {
       score: direct.doubleChance.homeOrDraw,
       threshold: MARKET_THRESHOLDS.doubleChance,
       risk: dataPenalty,
-      reasons: ["Home-win and draw transition mass combined", "Protects against the main draw route"]
+      blockers: direct.ft.home < direct.ft.away + 0.05
+        ? ["Home result mass does not lead the away result mass by enough"]
+        : [],
+      reasons: [
+        "Home-win and draw transition mass combined",
+        "Protection is justified only when the home-result route leads the away-result route"
+      ]
     }),
     makeMarket({
       key: "away-x2",
@@ -414,7 +420,13 @@ function marketCandidates(input, matrix, direct, goals, quality) {
       score: direct.doubleChance.awayOrDraw,
       threshold: MARKET_THRESHOLDS.doubleChance,
       risk: dataPenalty,
-      reasons: ["Away-win and draw transition mass combined", "Protects against the main draw route"]
+      blockers: direct.ft.away < direct.ft.home + 0.05
+        ? ["Away result mass does not lead the home result mass by enough"]
+        : [],
+      reasons: [
+        "Away-win and draw transition mass combined",
+        "Protection is justified only when the away-result route leads the home-result route"
+      ]
     }),
     makeMarket({
       key: "no-draw",
@@ -423,7 +435,10 @@ function marketCandidates(input, matrix, direct, goals, quality) {
       score: direct.doubleChance.noDraw,
       threshold: MARKET_THRESHOLDS.noDraw,
       risk: dataPenalty,
-      reasons: ["Low normalized draw-transition mass"]
+      blockers: direct.ft.draw > 0.28
+        ? ["Draw transition mass is too high for the 12 route"]
+        : [],
+      reasons: ["Low normalized draw-transition mass supports either team winning"]
     }),
     makeMarket({
       key: "home-dnb",
@@ -638,40 +653,92 @@ function marketCandidates(input, matrix, direct, goals, quality) {
   return candidates;
 }
 
+function marketFamily(market) {
+  if (market.market === "Total Goals") return "Goals";
+  if (market.market === "Team Goals") return "Team Goals";
+  if (market.market === "Both Teams to Score") return "BTTS";
+  if (market.market === "Full-Time Result") return "Match Result";
+  if (market.market === "Draw No Bet") return "Result Protection";
+  if (market.market === "Double Chance") return "Result Protection";
+  if (market.market === "Half-Time Double Chance") return "Half-Time Protection";
+  if (market.market === "Half-Time Result") return "Half-Time";
+  if (market.market === "HT/FT") return "Exact HT/FT";
+  return market.market;
+}
+
+function isProtectionMarket(market) {
+  return ["Double Chance", "Half-Time Double Chance"].includes(market.market);
+}
+
+function isExactMarket(market) {
+  return ["HT/FT", "Half-Time Result"].includes(market.market);
+}
+
 function rankMarkets(candidates) {
-  const riskPriority = {
-    "Double Chance": 0.035,
-    "Total Goals": 0.025,
-    "Team Goals": 0.02,
-    "Draw No Bet": 0.015,
-    "Both Teams to Score": 0.01,
-    "Half-Time Double Chance": 0.005,
-    "Full-Time Result": 0,
-    "Half-Time Result": -0.015,
-    "HT/FT": -0.06
+  // Raw probabilities cannot be compared directly across unlike markets:
+  // a union such as 1X naturally starts higher than Over 2.5 or a straight win.
+  // Every market is therefore measured against its own qualification threshold.
+  const familyBias = {
+    "Total Goals": 0.065,
+    "Team Goals": 0.055,
+    "Both Teams to Score": 0.05,
+    "Full-Time Result": 0.04,
+    "Draw No Bet": 0.02,
+    "Double Chance": -0.075,
+    "Half-Time Double Chance": -0.09,
+    "Half-Time Result": -0.025,
+    "HT/FT": -0.11
   };
 
   return candidates
     .map((market) => {
-      const broadMarketBonus = ["Double Chance", "Draw No Bet", "Total Goals", "Team Goals", "Both Teams to Score"]
-        .includes(market.market) ? 0.012 : 0;
-      const directionalRankScore = clamp(
-        market.safetyAdjustedScore +
-        (riskPriority[market.market] || 0) +
-        broadMarketBonus -
-        market.blockerPenalty
-      );
+      const supportRatio = market.safetyAdjustedScore / Math.max(0.01, market.threshold);
+      const thresholdEdge = market.safetyAdjustedScore - market.threshold;
+      const blockerPenalty = Math.min(0.24, market.blockers.length * 0.075);
+      const qualifiedBonus = market.qualified ? 0.085 : 0;
+      const comparisonScore =
+        supportRatio +
+        (familyBias[market.market] || 0) +
+        qualifiedBonus -
+        blockerPenalty;
 
       return {
         ...market,
-        rankScore: round(market.safetyAdjustedScore + (riskPriority[market.market] || 0)),
-        directionalRankScore: round(directionalRankScore)
+        family: marketFamily(market),
+        supportRatio: round(supportRatio),
+        thresholdEdge: round(thresholdEdge),
+        comparisonScore: round(comparisonScore),
+        rankScore: round(comparisonScore),
+        directionalRankScore: round(comparisonScore)
       };
     })
     .sort((a, b) => {
       if (a.qualified !== b.qualified) return a.qualified ? -1 : 1;
-      return b.directionalRankScore - a.directionalRankScore;
+      return b.comparisonScore - a.comparisonScore;
     });
+}
+
+function choosePrimaryMarket(rankedMarkets) {
+  const qualified = rankedMarkets.filter((market) => market.qualified);
+  const fallback = rankedMarkets.filter((market) => !isExactMarket(market));
+  const pool = qualified.length ? qualified : fallback;
+  let selected = pool[0] || rankedMarkets[0];
+
+  // A broad protection market should not beat a more informative market solely
+  // because it combines two outcomes. When a non-protection market is close,
+  // the more specific common-sense direction wins.
+  if (selected && isProtectionMarket(selected)) {
+    const informative = pool.find(
+      (market) =>
+        !isProtectionMarket(market) &&
+        !isExactMarket(market) &&
+        market.comparisonScore >= selected.comparisonScore - 0.055 &&
+        market.safetyAdjustedScore >= 0.48
+    );
+    if (informative) selected = informative;
+  }
+
+  return selected;
 }
 
 function matchStory(input, matrix, direct, goals) {
@@ -721,7 +788,7 @@ function buildDecisionTrace({
   const mode = primary.qualified ? "qualified" : "directional";
   const topAlternatives = rankedMarkets
     .filter((market) => market.key !== primary.key)
-    .slice(0, 4)
+    .slice(0, 5)
     .map((market) => ({
       key: market.key,
       market: market.market,
@@ -731,7 +798,10 @@ function buildDecisionTrace({
       qualified: market.qualified,
       tier: market.tier,
       reasons: market.reasons,
-      blockers: market.blockers
+      blockers: market.blockers,
+      comparisonScore: market.comparisonScore,
+      supportRatio: market.supportRatio,
+      thresholdEdge: market.thresholdEdge
     }));
 
   const allHtftIndicators = TRANSITIONS.map((transition) => {
@@ -766,6 +836,9 @@ function buildDecisionTrace({
 
   const whyChosen = [
     ...primary.reasons,
+    primary.market === "Double Chance"
+      ? "Double Chance remained on top even after its protection-market penalty, so the safer two-outcome route was genuinely strongest."
+      : `The ${primary.market} route beat the protected Double Chance routes after threshold-relative comparison.` ,
     `Model score: ${round(primary.modelScore * 100, 1)}%; safety-adjusted score: ${round(confidence * 100, 1)}%.`,
     thresholdStatus,
     `Leading half-time direction: ${story.likelyHalfTime}; leading full-time direction: ${story.likelyFullTime}.`,
@@ -797,6 +870,23 @@ function buildDecisionTrace({
         }
       : null,
     alternatives: topAlternatives,
+    marketComparison: rankedMarkets.slice(0, 10).map((market) => ({
+      key: market.key,
+      family: market.family,
+      market: market.market,
+      selection: market.selection,
+      score: market.safetyAdjustedScore,
+      threshold: market.threshold,
+      supportRatio: market.supportRatio,
+      thresholdEdge: market.thresholdEdge,
+      comparisonScore: market.comparisonScore,
+      qualified: market.qualified,
+      selected: market.key === primary.key,
+      reasons: market.reasons,
+      blockers: market.blockers
+    })),
+    selectionMethod:
+      "Markets are compared by support relative to their own thresholds. Double Chance receives a protection penalty so its naturally larger union probability cannot dominate by default.",
     allHtftIndicators,
     directReadout: {
       fullTime: Object.fromEntries(Object.entries(direct.ft).map(([key, value]) => [key, round(value)])),
@@ -839,11 +929,7 @@ export function predictMatch(input) {
   const goals = goalLogic(input, matrix, homeProfile, awayProfile, quality);
   const candidates = marketCandidates(input, matrix, direct, goals, quality);
   const rankedMarkets = rankMarkets(candidates);
-  const qualifiedPrimary = rankedMarkets.find((market) => market.qualified) || null;
-  const directionalPool = rankedMarkets.filter(
-    (market) => !["HT/FT", "Half-Time Result"].includes(market.market)
-  );
-  const primary = qualifiedPrimary || directionalPool[0] || rankedMarkets[0];
+  const primary = choosePrimaryMarket(rankedMarkets);
   const supporting = rankedMarkets.find(
     (market) =>
       market.key !== primary.key &&

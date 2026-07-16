@@ -1,27 +1,27 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.5.1
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.6.0
 ================================================
 
 1. Extract this ZIP.
 2. Copy every file and folder into your local Betspapa GitHub repository.
 3. Choose Replace/Overwrite All.
 4. Commit:
-   BetsPapa v1.5.1 automatic predictions readable mobile
+   BetsPapa v1.6 balanced markets reasons popup
 5. Push origin.
-6. Wait for GitHub Pages and Render deployments.
+6. Wait for GitHub Pages and Render to deploy.
 7. Open once:
    https://betspapa.com/reset.html
-8. Open:
+8. Confirm:
    https://api.betspapa.com/api/health
-   Version must show 1.5.1.
-9. Open betspapa.com and wait for the first live load.
+   Version must show 1.6.0.
+9. Open betspapa.com and allow the first load to regenerate PapaSense v1.6 picks.
+10. Tap any fixture. The full reasoning opens as a popup.
 
-The first dashboard request automatically creates missing PapaSense v1.5
-predictions from the fixtures and stored profiles. It can take several seconds
-when many fixtures are being processed. A fixture is labelled Processing until
-a real saved market is returned.
-
-No PowerShell command is required for this one-time prediction backfill.
-Scheduled daily sync is still recommended for importing fresh fixtures and
-building updated profiles.
+WHY DOUBLE CHANCE WAS OVER-SELECTED
+-----------------------------------
+The previous version compared raw probabilities. Double Chance combines two
+outcomes, so its raw number was naturally larger than a straight win, GG or
+goal line. v1.6 compares each market against its own threshold and applies a
+protection penalty. Double Chance now wins only when it is genuinely the best
+common-sense route.
 
 Do not commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET.

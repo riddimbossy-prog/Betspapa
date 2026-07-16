@@ -49,3 +49,20 @@ test("decision trace reviews all nine HT/FT indicators", () => {
   assert.equal(prediction.decisionTrace.allHtftIndicators.length, 9);
   assert.ok(prediction.decisionTrace.whyChosen.length >= 3);
 });
+
+
+test("market ranking uses threshold-relative comparison", () => {
+  const prediction = predictMatch(demoFixtures[0]);
+  assert.ok(Number.isFinite(prediction.primaryPrediction.comparisonScore));
+  assert.ok(prediction.decisionTrace.selectionMethod.includes("threshold"));
+  assert.ok(prediction.decisionTrace.marketComparison.length >= 8);
+});
+
+test("reason trace explains why the selected market beat Double Chance", () => {
+  const prediction = predictMatch(demoFixtures[1]);
+  assert.ok(
+    prediction.decisionTrace.whyChosen.some(
+      (reason) => reason.includes("Double Chance") || reason.includes("protection")
+    )
+  );
+});
