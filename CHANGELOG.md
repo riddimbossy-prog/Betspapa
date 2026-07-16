@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.5.1 — Automatic Predictions and Readable Mobile UI
+
+- The public dashboard now automatically generates missing PapaSense v1.5 predictions.
+- No admin secret or PowerShell command is required just to populate the public page.
+- Added a generation lock and cooldown to prevent duplicate server work.
+- Increased the API timeout for the first automatic generation pass.
+- Fixed unprocessed fixtures being incorrectly labelled Directional.
+- Added a clear Processing state until a real market is saved.
+- Increased fixture, filter, explanation, navigation and mobile-tab text sizes.
+- Uses one fixture column on narrow phones and Z Fold portrait layouts.
+- Preserved all filters, explanations, Papa branding, Render and Supabase.
+
 ## v1.5.0 — Every Match Gets a Pick + Full Explanation
 
 - Every imported fixture now receives one selected market direction.

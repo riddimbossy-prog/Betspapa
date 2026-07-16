@@ -1,25 +1,27 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.5.0
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.5.1
 ================================================
 
 1. Extract this ZIP.
 2. Copy every file and folder into your local Betspapa GitHub repository.
 3. Choose Replace/Overwrite All.
 4. Commit:
-   BetsPapa v1.5 all matches picks filters explanations
+   BetsPapa v1.5.1 automatic predictions readable mobile
 5. Push origin.
-6. Wait for GitHub Pages and Render to deploy.
+6. Wait for GitHub Pages and Render deployments.
 7. Open once:
    https://betspapa.com/reset.html
-8. Confirm:
+8. Open:
    https://api.betspapa.com/api/health
-   Version must show 1.5.0.
-9. IMPORTANT: regenerate today's predictions because the engine version changed.
-   In PowerShell from the repository, run:
-   powershell -ExecutionPolicy Bypass -File .\scripts\run-daily.ps1 -Date YYYY-MM-DD
-10. Refresh betspapa.com.
+   Version must show 1.5.1.
+9. Open betspapa.com and wait for the first live load.
 
-Every imported fixture will receive one pick after the v1.5 generation run.
-Qualified = passed the strong threshold.
-Directional = best common-sense direction but below the strong threshold.
+The first dashboard request automatically creates missing PapaSense v1.5
+predictions from the fixtures and stored profiles. It can take several seconds
+when many fixtures are being processed. A fixture is labelled Processing until
+a real saved market is returned.
+
+No PowerShell command is required for this one-time prediction backfill.
+Scheduled daily sync is still recommended for importing fresh fixtures and
+building updated profiles.
 
 Do not commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET.

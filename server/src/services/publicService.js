@@ -1,6 +1,82 @@
-import { ENGINE_VERSION } from "../config.js";
+import { ENGINE_VERSION, PREDICTABLE_STATUSES } from "../config.js";
 import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
+import { generatePredictionsForDate } from "./predictionService.js";
+
+
+const generationLocks = new Map();
+const generationAttempts = new Map();
+const GENERATION_COOLDOWN_MS = 5 * 60 * 1000;
+
+async function ensurePredictionsForDate(supabase, date, fixtures, predictions) {
+  const existingFixtureIds = new Set(
+    predictions.map((prediction) => Number(prediction.internalFixtureId))
+  );
+
+  const predictableFixtures = fixtures.filter((fixture) =>
+    PREDICTABLE_STATUSES.has(fixture.status)
+  );
+
+  const missingFixtures = predictableFixtures.filter(
+    (fixture) => !existingFixtureIds.has(Number(fixture.id))
+  );
+
+  if (!missingFixtures.length) {
+    return {
+      attempted: false,
+      complete: true,
+      predictableFixtures: predictableFixtures.length,
+      missingBefore: 0,
+      generated: 0,
+      published: predictions.length,
+      skipped: []
+    };
+  }
+
+  const previousAttempt = generationAttempts.get(date) || 0;
+  const coolingDown = Date.now() - previousAttempt < GENERATION_COOLDOWN_MS;
+
+  if (coolingDown && !generationLocks.has(date)) {
+    return {
+      attempted: false,
+      complete: false,
+      cooldown: true,
+      predictableFixtures: predictableFixtures.length,
+      missingBefore: missingFixtures.length,
+      generated: 0,
+      published: predictions.length,
+      skipped: []
+    };
+  }
+
+  let lock = generationLocks.get(date);
+  let waited = false;
+
+  if (!lock) {
+    generationAttempts.set(date, Date.now());
+    lock = generatePredictionsForDate(supabase, date)
+      .finally(() => generationLocks.delete(date));
+    generationLocks.set(date, lock);
+  } else {
+    waited = true;
+  }
+
+  const result = await lock;
+
+  return {
+    attempted: !waited,
+    waited,
+    complete: Number(result.generated || 0) >= missingFixtures.length,
+    predictableFixtures: predictableFixtures.length,
+    missingBefore: missingFixtures.length,
+    generated: Number(result.generated || 0),
+    published: Number(result.published || 0),
+    skipped: (result.skipped || []).map((item) => ({
+      fixtureId: item.fixtureId,
+      message: item.message
+    }))
+  };
+}
 
 function maxIso(values) {
   return values
@@ -319,11 +395,22 @@ export async function getDashboardStats(supabase, {
 }
 
 export async function getDashboardData(supabase, date) {
-  const [predictions, fixtures, recentResults] = await Promise.all([
-    listPublicPredictions(supabase, date),
+  const [fixtures, recentResults] = await Promise.all([
     listFixtures(supabase, date),
     listRecentResults(supabase, 12)
   ]);
+
+  let predictions = await listPublicPredictions(supabase, date);
+  const generation = await ensurePredictionsForDate(
+    supabase,
+    date,
+    fixtures,
+    predictions
+  );
+
+  if (generation.attempted || generation.waited) {
+    predictions = await listPublicPredictions(supabase, date);
+  }
 
   const stats = await getDashboardStats(supabase, {
     predictionsToday: predictions,
@@ -337,6 +424,7 @@ export async function getDashboardData(supabase, date) {
     predictions,
     fixtures,
     recentResults,
-    stats
+    stats,
+    generation
   };
 }
