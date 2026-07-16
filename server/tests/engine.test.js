@@ -133,3 +133,21 @@ test("Prediction output carries an analysis fingerprint when supplied", () => {
   assert.equal(prediction.analysisFingerprint, "abc12345");
   assert.ok(prediction.profileAudit);
 });
+
+
+test("default engine is named Papa's Pick", () => {
+  const prediction = predictMatch(demoFixtures[0]);
+  assert.equal(prediction.enginePicks.primary.engineName, "Papa's Pick");
+});
+
+test("every engine pick contains a match-specific explanation paragraph", () => {
+  const prediction = predictMatch(demoFixtures[0]);
+  for (const pick of Object.values(prediction.enginePicks)) {
+    assert.ok(pick.explanationParagraph);
+    assert.match(pick.explanationParagraph, /strongest exact transition/i);
+    assert.ok(
+      pick.explanationParagraph.includes(demoFixtures[0].home.name) ||
+      pick.explanationParagraph.includes(demoFixtures[0].away.name)
+    );
+  }
+});

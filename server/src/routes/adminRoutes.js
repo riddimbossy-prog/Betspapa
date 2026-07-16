@@ -8,7 +8,10 @@ import { gradePredictionsForDate } from "../services/gradingService.js";
 import { generatePredictionsForDate } from "../services/predictionService.js";
 import { rebuildProfiles } from "../services/profileService.js";
 import { syncDate, syncLeagueHistory } from "../services/syncService.js";
-import { hydrateProfilesForFixtures } from "../services/historyHydrationService.js";
+import {
+  hydrateProfilesForFixtures,
+  planHydrationForFixtures
+} from "../services/historyHydrationService.js";
 import { fetchAllRows } from "../services/supabaseHelpers.js";
 
 export const adminRouter = Router();
@@ -20,6 +23,49 @@ function positiveInt(value, field) {
     throw new HttpError(400, `${field} must be a positive integer`);
   }
   return parsed;
+}
+
+
+async function loadHydrationContext(supabase, date) {
+  const { dateRangeUtc } = await import("../utils/date.js");
+  const { start, end } = dateRangeUtc(date);
+
+  const fixtures = await fetchAllRows(() =>
+    supabase
+      .from("fixtures")
+      .select("*")
+      .gte("fixture_date", start)
+      .lt("fixture_date", end)
+      .order("fixture_date", { ascending: true })
+  );
+
+  const teamIds = [...new Set(
+    fixtures.flatMap((fixture) => [
+      fixture.home_team_id,
+      fixture.away_team_id
+    ])
+  )];
+
+  if (!teamIds.length) {
+    return {
+      fixtures,
+      teams: new Map(),
+      teamIds: []
+    };
+  }
+
+  const { data: teamRows, error } = await supabase
+    .from("teams")
+    .select("id,external_team_id,name,country,logo_url")
+    .in("id", teamIds);
+
+  if (error) throw error;
+
+  return {
+    fixtures,
+    teams: new Map((teamRows || []).map((team) => [team.id, team])),
+    teamIds
+  };
 }
 
 adminRouter.get("/provider-status", async (_req, res, next) => {
@@ -75,40 +121,76 @@ adminRouter.post("/rebuild-profiles", async (req, res, next) => {
 });
 
 
+adminRouter.get("/hydration-plan", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.query?.date || todayUtc());
+    const force = String(req.query?.force || "").toLowerCase() === "true";
+    const supabase = getSupabaseAdmin();
+    const context = await loadHydrationContext(supabase, date);
+    const result = await planHydrationForFixtures(
+      supabase,
+      context.fixtures,
+      context.teams,
+      { force }
+    );
+
+    res.json({
+      status: "ok",
+      action: "hydration-plan",
+      date,
+      fixtures: context.fixtures.length,
+      result
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.post("/hydrate-team", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.body?.date || todayUtc());
+    const teamId = positiveInt(req.body?.teamId, "teamId");
+    const supabase = getSupabaseAdmin();
+    const context = await loadHydrationContext(supabase, date);
+
+    if (!context.teamIds.includes(teamId)) {
+      throw new HttpError(
+        404,
+        `Team ${teamId} is not part of the fixtures for ${date}`
+      );
+    }
+
+    const result = await hydrateProfilesForFixtures(
+      supabase,
+      context.fixtures,
+      context.teams,
+      {
+        force: Boolean(req.body?.force),
+        targetTeamIds: [teamId]
+      }
+    );
+
+    res.json({
+      status: "ok",
+      action: "hydrate-team",
+      date,
+      teamId,
+      result
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 adminRouter.post("/hydrate-date", async (req, res, next) => {
   try {
     const date = assertIsoDate(req.body?.date || todayUtc());
     const supabase = getSupabaseAdmin();
-    const { start, end } = await import("../utils/date.js")
-      .then(({ dateRangeUtc }) => dateRangeUtc(date));
-
-    const fixtures = await fetchAllRows(() =>
-      supabase
-        .from("fixtures")
-        .select("*")
-        .gte("fixture_date", start)
-        .lt("fixture_date", end)
-        .order("fixture_date", { ascending: true })
-    );
-
-    const teamIds = [...new Set(
-      fixtures.flatMap((fixture) => [
-        fixture.home_team_id,
-        fixture.away_team_id
-      ])
-    )];
-
-    const { data: teamRows, error } = await supabase
-      .from("teams")
-      .select("id,external_team_id,name,country,logo_url")
-      .in("id", teamIds);
-    if (error) throw error;
-
-    const teams = new Map((teamRows || []).map((team) => [team.id, team]));
+    const context = await loadHydrationContext(supabase, date);
     const result = await hydrateProfilesForFixtures(
       supabase,
-      fixtures,
-      teams,
+      context.fixtures,
+      context.teams,
       { force: Boolean(req.body?.force) }
     );
 

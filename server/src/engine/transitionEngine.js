@@ -854,6 +854,7 @@ function copyEnginePick(market, engineKey, engineName, {
   reasons = [],
   cautions = [],
   description = "",
+  explanationParagraph = "",
   venueRoute = null
 } = {}) {
   return {
@@ -874,6 +875,7 @@ function copyEnginePick(market, engineKey, engineName, {
     reasons: [...reasons, ...(market.reasons || [])],
     cautions: [...cautions, ...(market.blockers || [])],
     description,
+    explanationParagraph,
     venueRoute
   };
 }
@@ -1045,6 +1047,160 @@ function chooseVenuePatternMarket(rankedMarkets, venue, input, goals) {
   };
 }
 
+
+function countPhrase(count, matches) {
+  const safeCount = Math.max(0, Number(count) || 0);
+  const safeMatches = Math.max(0, Number(matches) || 0);
+  if (!safeMatches) return "no confirmed venue sample";
+  return `${safeCount} of ${safeMatches} venue matches`;
+}
+
+function transitionPhrase(transition, teamName) {
+  const [half, full] = String(transition || "").split("/");
+  const halfText = {
+    W: "led at half-time",
+    D: "were level at half-time",
+    L: "trailed at half-time"
+  }[half] || "had an unclear half-time state";
+
+  const fullText = {
+    W: "won",
+    D: "drew",
+    L: "lost"
+  }[full] || "finished without a clear result";
+
+  return `${teamName} ${halfText} and ${fullText}`;
+}
+
+function practicalMarketReason(market, input, venue, goals) {
+  const top = venue.topTransitions[0];
+  const second = venue.topTransitions[1];
+  const topFt = top?.code?.split("/")[1];
+  const secondFt = second?.code?.split("/")[1];
+  const bothHome = topFt === "1" && secondFt === "1";
+  const bothAway = topFt === "2" && secondFt === "2";
+
+  if (market.key === "home-win") {
+    return bothHome
+      ? `The full-time ${input.home.name} win covers both leading routes (${top.code} and ${second.code}) and is more informative than weakening the call to Double Chance.`
+      : `${input.home.name} retain the strongest full-time route, so the straight home win is preferred to a broader protection market.`;
+  }
+
+  if (market.key === "away-win") {
+    return bothAway
+      ? `The full-time ${input.away.name} win covers both leading routes (${top.code} and ${second.code}) and is more informative than weakening the call to Double Chance.`
+      : `${input.away.name} retain the strongest full-time route, so the straight away win is preferred to a broader protection market.`;
+  }
+
+  if (market.key === "home-dnb") {
+    return `${input.home.name} have the stronger full-time direction, but the draw route remains meaningful; Draw No Bet keeps the side edge while returning the stake on a draw.`;
+  }
+
+  if (market.key === "away-dnb") {
+    return `${input.away.name} have the stronger full-time direction, but the draw route remains meaningful; Draw No Bet keeps the side edge while returning the stake on a draw.`;
+  }
+
+  if (market.key === "home-1x") {
+    return `${input.home.name} have the stronger side of the venue matrix, but the straight-win route is not strong enough; 1X protects the live draw route.`;
+  }
+
+  if (market.key === "away-x2") {
+    return `${input.away.name} have the stronger side of the venue matrix, but the straight-win route is not strong enough; X2 protects the live draw route.`;
+  }
+
+  if (market.key === "no-draw") {
+    return `The combined home-and-away win routes outweigh the draw routes, so Either Team to Win (12) is the practical expression of the matrix.`;
+  }
+
+  if (market.key === "exact-htft") {
+    return `${top?.code || market.selection} is the single strongest exact transition, making it the aggressive route rather than the default safer market.`;
+  }
+
+  if (market.key === "ht-draw") {
+    return `Draw is the leading first-half state across the compatible venue routes, so Draw at Half-Time is preferred without forcing the full-time result.`;
+  }
+
+  if (market.key === "ht-home") {
+    return `${input.home.name} lead the first-half transition mass, so the home half-time result is the clearest early-game direction.`;
+  }
+
+  if (market.key === "ht-away") {
+    return `${input.away.name} lead the first-half transition mass, so the away half-time result is the clearest early-game direction.`;
+  }
+
+  if (market.key === "under-35") {
+    return `The venue routes do not support a sustained four-goal game, while the Under 3.5 score is ${round(goals.scores.under35 * 100, 1)}%; the wider ceiling is safer than forcing an exact result.`;
+  }
+
+  if (market.key === "over-15") {
+    return `Both the transition story and goal support favour at least two match goals; Over 1.5 keeps the line below the more demanding Over 2.5 threshold.`;
+  }
+
+  if (market.key === "over-25") {
+    return `The transition volatility and goal support are strong enough to clear the three-goal line, so Over 2.5 is preferred to the lower-value Over 1.5 route.`;
+  }
+
+  if (market.key === "gg-yes") {
+    return `Both teams have independent scoring support and the compatible transition routes allow each side a credible goal, so GG — Yes is the clearest two-team market.`;
+  }
+
+  if (market.key === "gg-no") {
+    return `One side lacks a dependable scoring route and the stronger transition story is one-sided, so GG — No is preferred.`;
+  }
+
+  if (market.key === "home-over-05") {
+    return `${input.home.name} have the more dependable scoring path, so one home goal is the practical minimum target.`;
+  }
+
+  if (market.key === "away-over-05") {
+    return `${input.away.name} have the more dependable scoring path, so one away goal is the practical minimum target.`;
+  }
+
+  if (market.key === "favourite-over-15") {
+    return `${market.selection} is supported by the dominant-team route and the opponent's conceding profile, making two team goals more informative than a broad match result.`;
+  }
+
+  return `${market.selection} is the highest-ranked practical market after the HT/FT, venue, goal and contradiction checks.`;
+}
+
+function buildPotosiStyleExplanation({
+  market,
+  input,
+  venue,
+  goals,
+  engineName
+}) {
+  const top = venue.topTransitions[0];
+  const second = venue.topTransitions[1];
+  const homeName = input.home.name;
+  const awayName = input.away.name;
+
+  if (!top) {
+    return `${engineName}'s pick is ${market.selection}. The market ranked first after the individual HT/FT, venue, recent-form, goal-support and contradiction checks.`;
+  }
+
+  const topHomeText = transitionPhrase(top.transition, homeName);
+  const topAwayText = transitionPhrase(top.opposite, awayName);
+  const secondText = second
+    ? ` The next compatible route is ${second.code}, supported by ${countPhrase(
+        second.homeCount,
+        second.homeMatches
+      )} for ${homeName} and ${countPhrase(
+        second.awayOppositeCount,
+        second.awayMatches
+      )} for ${awayName}.`
+    : "";
+
+  return (
+    `${engineName}'s pick is ${market.selection}. ` +
+    `${topHomeText} in ${countPhrase(top.homeCount, top.homeMatches)}, while ` +
+    `${topAwayText} in ${countPhrase(top.awayOppositeCount, top.awayMatches)}. ` +
+    `The strongest exact transition is ${top.code}.${secondText} ` +
+    practicalMarketReason(market, input, venue, goals)
+  );
+}
+
+
 function buildEngineSuite({
   rankedMarkets,
   primary,
@@ -1062,6 +1218,35 @@ function buildEngineSuite({
     quality
   );
   const venueSelection = chooseVenuePatternMarket(rankedMarkets, venue, input, goals);
+
+  const primaryExplanation = buildPotosiStyleExplanation({
+    market: primary,
+    input,
+    venue,
+    goals,
+    engineName: "Papa"
+  });
+  const aggressiveExplanation = buildPotosiStyleExplanation({
+    market: aggressive,
+    input,
+    venue,
+    goals,
+    engineName: "Aggressive"
+  });
+  const saferExplanation = buildPotosiStyleExplanation({
+    market: safer,
+    input,
+    venue,
+    goals,
+    engineName: "Safer"
+  });
+  const venueExplanation = buildPotosiStyleExplanation({
+    market: venueSelection.market,
+    input,
+    venue,
+    goals,
+    engineName: "Venue Pattern"
+  });
 
   const primaryVenueAligned = marketVenueAlignment(primary, venue, input) > 0.01;
   const audit = input.profileAudit || {};
@@ -1082,13 +1267,14 @@ function buildEngineSuite({
       ];
 
   return {
-    primary: copyEnginePick(primary, "primary", "Papa Primary", {
+    primary: copyEnginePick(primary, "primary", "Papa's Pick", {
       reasons: primaryReasons,
       cautions: !primary.qualified
         ? ["This is the default direction, but it remains below the strong-pick threshold."]
         : [],
       description:
-        "Default pick. Uses venue, overall, recent HT/FT, goal support, market calibration and contradiction checks."
+        "Papa's default pick uses venue, overall and recent HT/FT, goal support, market calibration and contradiction checks.",
+      explanationParagraph: primaryExplanation
     }),
     aggressive: copyEnginePick(aggressive, "aggressive", "Aggressive", {
       reasons: [
@@ -1099,7 +1285,8 @@ function buildEngineSuite({
         "Aggressive picks carry more variance and should not be treated as safer than Papa Primary."
       ],
       description:
-        "Higher-specificity route such as exact HT/FT, straight result, O2.5, GG or team O1.5."
+        "Higher-specificity route such as exact HT/FT, straight result, O2.5, GG or team O1.5.",
+      explanationParagraph: aggressiveExplanation
     }),
     safer: copyEnginePick(safer, "safer", "Safer", {
       reasons: [
@@ -1110,7 +1297,8 @@ function buildEngineSuite({
         "Safer means broader coverage, not certainty."
       ],
       description:
-        "Lower-risk expression of the same match direction: DNB, Double Chance, O1.5, U3.5 or team O0.5."
+        "Lower-risk expression of the same match direction: DNB, Double Chance, O1.5, U3.5 or team O0.5.",
+      explanationParagraph: saferExplanation
     }),
     venue: copyEnginePick(venueSelection.market, "venue", "Venue Pattern", {
       reasons: venueSelection.reasons,
@@ -1119,6 +1307,7 @@ function buildEngineSuite({
         : [],
       description:
         "Uses the home venue HT/FT profile against the away venue's opposite transitions, Potosi-style.",
+      explanationParagraph: venueExplanation,
       venueRoute: venueSelection.route
     })
   };

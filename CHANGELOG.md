@@ -1,5 +1,40 @@
 # Changelog
 
+## v1.8.2 — Papa's Pick, Full Explanation and Popup Close Fix
+
+- Renamed **Papa Primary** to **Papa's Pick** everywhere.
+- Papa's Pick remains the default engine.
+- Fixed the reason-popup close button:
+  - the application script now loads after the dialog exists
+  - added delegated close handling
+  - added backdrop click
+  - added Escape/cancel handling
+  - restored body scrolling after close
+- Added a full match-specific explanation paragraph in the Real Potosí style.
+- The explanation now states:
+  - the selected pick
+  - the leading home venue HT/FT pattern
+  - the away team's opposite pattern
+  - the strongest exact transition
+  - the next compatible route
+  - why the practical market captures those routes
+  - why a broader Double Chance market was or was not needed
+- Added the explanation to every engine output.
+- Engine version updated to `papasense-v1.8.2`.
+
+## v1.8.1 — Hydration Progress and No-Hang Runner
+
+- Diagnosed the apparent PowerShell freeze: the old script made one long synchronous request and printed nothing until every team completed.
+- Added a protected hydration-plan endpoint.
+- Added a protected one-team hydration endpoint.
+- Rebuilt the PowerShell runner to process one thin-data team at a time.
+- Added visible team-by-team progress, counts, errors and a percentage progress bar.
+- Added an API health/database check before hydration starts.
+- Added a local transcript log: `hydration-YYYY-MM-DD.log`.
+- Removed forced rehydration by default. Use `-Force` only when a complete refresh is intentional.
+- Added configurable request timeout and optional `-SkipGenerate`.
+- Preserved PapaSense v1.8 anti-zombie rules and engine logic.
+
 ## v1.8.0 — Individual History Hydration / Anti-Zombie Engine
 
 - Diagnosed the repeated 57% 1X cards as prior-only predictions produced when team profiles were empty.

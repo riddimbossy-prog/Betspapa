@@ -18,14 +18,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="assets/css/styles.v180.css">
+  <link rel="stylesheet" href="assets/css/styles.v182.css">
   <style id="betspapa-critical-search-guard">
     #searchDrawer { display: none !important; }
     #searchDrawer.is-open:not([hidden]) { display: grid !important; }
   </style>
   <script>
     (function () {
-      window.__BETSPAPA_BUILD__ = "1.8.0";
+      window.__BETSPAPA_BUILD__ = "1.8.2";
       function forceSearchClosed() {
         var drawer = document.getElementById("searchDrawer");
         if (drawer) {
@@ -160,7 +160,7 @@
 
       <div class="engine-switcher" id="engineSwitcher" aria-label="Prediction engine filter">
         <button class="engine-tab active" type="button" data-engine="primary">
-          <span>01</span><strong>Papa Primary</strong><small>Default all-evidence pick</small>
+          <span>01</span><strong>Papa's Pick</strong><small>Default all-evidence pick</small>
         </button>
         <button class="engine-tab" type="button" data-engine="aggressive">
           <span>02</span><strong>Aggressive</strong><small>Sharper, higher-variance route</small>
@@ -214,7 +214,7 @@
       </article>
 
       <article class="panel primary-panel" id="bankers">
-        <div class="primary-label" id="activeEngineLabel">★ PAPA PRIMARY</div>
+        <div class="primary-label" id="activeEngineLabel">★ PAPA'S PICK</div>
         <div class="match-meta"><span id="leagueLabel">LIVE DATABASE</span><span id="kickoffLabel">CONNECTING</span></div>
         <div class="matchup">
           <div class="club">
@@ -228,7 +228,7 @@
           </div>
         </div>
         <div class="pick-box">
-          <span id="activeMarketLabel">PAPA PRIMARY MARKET</span>
+          <span id="activeMarketLabel">PAPA'S PICK MARKET</span>
           <strong id="primaryPick">Awaiting 1X</strong>
           <small id="primaryReason">Connecting to the BetsPapa prediction database.</small>
         </div>
@@ -278,7 +278,7 @@
           <label>
             <span>Engine pick</span>
             <select id="engineFilter">
-              <option value="primary">Papa Primary — Default</option>
+              <option value="primary">Papa's Pick — Default</option>
               <option value="aggressive">Aggressive</option>
               <option value="safer">Safer</option>
               <option value="venue">Venue Pattern</option>
@@ -313,7 +313,7 @@
         <div class="panel-heading">
           <div>
             <span class="eyebrow">CLICKED FIXTURE EXPLANATION</span>
-            <h2 id="explanationTitle">Why Papa Primary Chose This Pick</h2>
+            <h2 id="explanationTitle">Why Papa's Pick Chose This Pick</h2>
           </div>
           <span class="decision-mode" id="decisionMode">Loading</span>
         </div>
@@ -430,14 +430,15 @@
     </div>
   </div>
 
-    <script src="assets/js/app.v180.js"></script>
+  
 
   <dialog class="pick-reason-dialog" id="pickReasonDialog" aria-labelledby="pickReasonTitle">
     <div class="pick-reason-shell">
-      <button class="pick-reason-close" id="pickReasonClose" type="button" aria-label="Close prediction reasons">×</button>
+      <button class="pick-reason-close" id="pickReasonClose" data-close-pick-reason type="button" aria-label="Close prediction reasons">×</button>
       <div id="pickReasonContent"></div>
     </div>
   </dialog>
 
+  <script src="assets/js/app.v182.js"></script>
 </body>
 </html>

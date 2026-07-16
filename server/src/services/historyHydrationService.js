@@ -45,7 +45,7 @@ function summarizeCoverage(rows, sideSet) {
   };
 }
 
-async function loadTeamCoverage(supabase, teamId, sideSet) {
+export async function loadTeamCoverage(supabase, teamId, sideSet) {
   const rows = await fetchAllRows(() =>
     supabase
       .from("team_htft_profiles")
@@ -86,6 +86,69 @@ function uniqueLeagueSeasons(items) {
   return [...map.values()];
 }
 
+
+export async function planHydrationForFixtures(
+  supabase,
+  fixtures,
+  teams,
+  {
+    force = false,
+    targetTeamIds = null
+  } = {}
+) {
+  const requirements = new Map();
+
+  for (const fixture of fixtures) {
+    if (!requirements.has(fixture.home_team_id)) {
+      requirements.set(fixture.home_team_id, new Set());
+    }
+    if (!requirements.has(fixture.away_team_id)) {
+      requirements.set(fixture.away_team_id, new Set());
+    }
+    requirements.get(fixture.home_team_id).add("home");
+    requirements.get(fixture.away_team_id).add("away");
+  }
+
+  const jobs = [...requirements.entries()]
+    .map(([teamId, sides]) => ({
+      teamId: Number(teamId),
+      sides,
+      team: teams.get(Number(teamId))
+    }))
+    .sort((a, b) =>
+      String(a.team?.name || a.teamId).localeCompare(String(b.team?.name || b.teamId))
+    );
+
+  const teamsPlan = [];
+  for (const job of jobs) {
+    const { coverage } = await loadTeamCoverage(
+      supabase,
+      job.teamId,
+      job.sides
+    );
+
+    teamsPlan.push({
+      teamId: job.teamId,
+      externalTeamId: job.team?.external_team_id || null,
+      teamName: job.team?.name || `Team ${job.teamId}`,
+      sides: [...job.sides],
+      coverage,
+      ready: coverage.ready,
+      needsHydration: force || !coverage.ready,
+      issue: job.team?.external_team_id
+        ? null
+        : "External API-Football team ID is missing."
+    });
+  }
+
+  return {
+    teamsChecked: teamsPlan.length,
+    readyTeams: teamsPlan.filter((team) => team.ready).length,
+    teamsNeedingHydration: teamsPlan.filter((team) => team.needsHydration).length,
+    teams: teamsPlan
+  };
+}
+
 export async function hydrateProfilesForFixtures(
   supabase,
   fixtures,
@@ -105,11 +168,17 @@ export async function hydrateProfilesForFixtures(
     requirements.get(fixture.away_team_id).add("away");
   }
 
-  const jobs = [...requirements.entries()].map(([teamId, sides]) => ({
-    teamId: Number(teamId),
-    sides,
-    team: teams.get(Number(teamId))
-  }));
+  const targetSet = Array.isArray(targetTeamIds) && targetTeamIds.length
+    ? new Set(targetTeamIds.map(Number))
+    : null;
+
+  const jobs = [...requirements.entries()]
+    .filter(([teamId]) => !targetSet || targetSet.has(Number(teamId)))
+    .map(([teamId, sides]) => ({
+      teamId: Number(teamId),
+      sides,
+      team: teams.get(Number(teamId))
+    }));
 
   const rebuildCache = new Set();
   let providerCalls = 0;

@@ -1,39 +1,26 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.8.0
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.8.2
 ================================================
 
 1. Extract this ZIP.
-2. Copy every file and folder into your local Betspapa GitHub repository.
-3. Choose Replace/Overwrite All.
-4. Commit:
-   BetsPapa v1.8 anti zombie individual history
-5. Push origin.
-6. Wait for GitHub Pages and Render to deploy.
-7. Open once:
+2. Replace every file in the local Betspapa repository.
+3. Commit:
+   BetsPapa v1.8.2 papas pick explanation close fix
+4. Push origin.
+5. Wait for GitHub Pages and Render to deploy.
+6. Open once:
    https://betspapa.com/reset.html
-8. Confirm:
+7. Confirm:
    https://api.betspapa.com/api/health
-   Version must show 1.8.0.
-9. Open betspapa.com. The first load may take longer because thin-data teams are
-   being hydrated from completed API-Football fixtures.
+   Version must show 1.8.2.
+8. Open betspapa.com and allow PapaSense v1.8.2 to regenerate its prediction rows.
 
-RECOMMENDED ONE-TIME FULL BACKFILL
-----------------------------------
-From PowerShell inside the repository:
-
-powershell -ExecutionPolicy Bypass -File .\scripts\hydrate-and-generate.ps1 -Date 2026-07-16
-
-Enter the same ADMIN_SYNC_SECRET stored in Render.
-
-WHAT CHANGED
-------------
-The repeated 57% 1X cards were not genuine individual analysis. They occurred
-when empty team profiles fell back to the same league defaults. v1.8 blocks
-that behaviour.
-
-A prediction is now published only after:
-- both teams have real completed HT/FT history
-- home Overall/Home/Recent and away Overall/Away/Recent profiles are built
-- all nine opposite transitions are calculated
-- the fixture receives its own analysis fingerprint
+CHANGES
+-------
+- Papa Primary is now called Papa's Pick.
+- Papa's Pick is still the default.
+- The X close button now works.
+- Backdrop click and Escape also close the popup.
+- Every reason popup includes a full paragraph similar to the Real Potosí
+  explanation, using that fixture's actual venue transitions and market route.
 
 Do not commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET.
