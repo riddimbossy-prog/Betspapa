@@ -56,3 +56,7 @@ The interface now includes:
 - Safe-area support for devices with notches and gesture bars.
 - Mobile card rendering for the results table instead of a cramped horizontal desktop table.
 - Escape-key, backdrop and resize handling for the navigation drawer.
+
+## Render backend
+
+This repository now includes a Node.js backend in `server/` for deployment to Render. See `RENDER_SETUP.md`.

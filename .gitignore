@@ -1,4 +1,6 @@
-.DS_Store
-Thumbs.db
 .env
+server/.env
+server/node_modules/
 node_modules/
+.DS_Store
+npm-debug.log*

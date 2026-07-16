@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: betspapa-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://betspapa.com,https://www.betspapa.com
+      - key: ODDS_API_KEY
+        sync: false
+      - key: FOOTBALL_API_KEY
+        sync: false
+      - key: API_STATS_KEY
+        sync: false
