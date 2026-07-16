@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.9.1 — targetTeamIds Hydration Hotfix
+
+- Fixed GitHub Actions failure: `targetTeamIds is not defined`.
+- Moved `targetTeamIds` into the correct `hydrateProfilesForFixtures` options.
+- Removed the unused option from `planHydrationForFixtures`.
+- Fixed both `/api/admin/hydrate-team` and `/api/admin/generate-predictions`.
+- Added a regression test that exercises targeted hydration.
+- Automatic fixture and prediction workflow remains unchanged.
+
 ## v1.9.0 — Automatic Fixture and Prediction Pipeline
 
 - Added a GitHub Actions scheduler that runs every four hours.

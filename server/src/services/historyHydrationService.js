@@ -91,10 +91,7 @@ export async function planHydrationForFixtures(
   supabase,
   fixtures,
   teams,
-  {
-    force = false,
-    targetTeamIds = null
-  } = {}
+  { force = false } = {}
 ) {
   const requirements = new Map();
 
@@ -153,7 +150,10 @@ export async function hydrateProfilesForFixtures(
   supabase,
   fixtures,
   teams,
-  { force = false } = {}
+  {
+    force = false,
+    targetTeamIds = null
+  } = {}
 ) {
   const requirements = new Map();
 
