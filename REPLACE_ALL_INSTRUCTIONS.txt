@@ -1,0 +1,16 @@
+BETSPAPA FULL REPOSITORY REPLACEMENT
+====================================
+
+1. Back up your current local Betspapa repository folder.
+2. Extract this ZIP.
+3. Copy every extracted file and folder into your local Betspapa repository.
+4. Choose Replace/Overwrite when Windows asks.
+5. Do NOT delete or expose any Render environment variables or secret keys.
+6. In GitHub Desktop, commit all changes and click Push origin.
+7. Render will redeploy automatically from the server folder.
+8. GitHub Pages will redeploy the frontend automatically.
+
+This package includes the complete frontend, responsive royal-purple UI,
+Render backend, Supabase integration, API-Football importer, HT/FT engine,
+profile builders, prediction generator, grading service, scripts, tests,
+GitHub Pages workflow, and documentation.
