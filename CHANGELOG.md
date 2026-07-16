@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.9.0 — Automatic Fixture and Prediction Pipeline
+
+- Added a GitHub Actions scheduler that runs every four hours.
+- Added an automatic run after successful GitHub Pages deployments.
+- Added manual workflow dispatch with optional date, force-hydration and team-limit controls.
+- Added `scripts/automatic-pipeline.mjs`.
+- Automatically refreshes yesterday, today and tomorrow.
+- Automatically grades previous results.
+- Automatically imports today's and tomorrow's fixtures.
+- Automatically hydrates thin-data team histories.
+- Automatically generates all four engine picks.
+- Rotates hydration order so permanently unavailable teams do not block later teams.
+- Caps hydration work per run to protect API usage.
+- The website no longer depends on a PowerShell window or visitor-triggered fetching.
+- Preserved anti-zombie rules and the clean completed-picks-only catalogue.
+
 ## v1.8.3 — Clean Background Picks
 
 - Removed repeated processing/history cards from the public catalogue.

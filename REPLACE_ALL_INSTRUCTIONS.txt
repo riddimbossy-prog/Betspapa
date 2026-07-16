@@ -1,12 +1,58 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.8.3
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.9.0
 ================================================
 
-1. Extract this ZIP.
-2. Replace every file in the local Betspapa repository.
-3. Commit: BetsPapa v1.8.3 clean background picks
-4. Push origin.
-5. Wait for GitHub Pages and Render.
-6. Open https://betspapa.com/reset.html once.
-7. Confirm https://api.betspapa.com/api/health shows version 1.8.3.
+This release fixes the missing automatic fixture fetching.
 
-Completed predictions are the only match cards shown. Remaining work runs in the background and appears as one compact status notice. No fake placeholder prediction is published.
+DEPLOY
+------
+1. Extract this ZIP.
+2. Replace every file in your local Betspapa repository.
+3. Commit:
+   BetsPapa v1.9 automatic fixture pipeline
+4. Push origin.
+5. Wait for GitHub Pages and Render to deploy.
+6. Open:
+   https://api.betspapa.com/api/health
+   Version must show 1.9.0.
+7. Open once:
+   https://betspapa.com/reset.html
+
+ONE REQUIRED GITHUB SETTING
+---------------------------
+Add a GitHub Actions repository secret named:
+
+ADMIN_SYNC_SECRET
+
+Use the exact same value stored in Render.
+
+Path:
+GitHub repository
+→ Settings
+→ Secrets and variables
+→ Actions
+→ New repository secret
+
+START IT NOW
+------------
+GitHub
+→ Actions
+→ BetsPapa Automatic Picks
+→ Run workflow
+→ Run workflow
+
+After that, the workflow runs automatically every four hours and after future
+successful website deployments.
+
+WHAT IT DOES
+------------
+- refreshes yesterday and grades results
+- fetches today's fixtures
+- fetches tomorrow's fixtures
+- hydrates thin-data teams
+- generates Papa's Pick, Aggressive, Safer and Venue Pattern
+- stores completed picks in Supabase
+- keeps unfinished fixtures off the public catalogue
+
+No PowerShell window is required for normal updates.
+
+Do not commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET.
