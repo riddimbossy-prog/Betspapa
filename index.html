@@ -18,14 +18,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="assets/css/styles.v140.css">
+  <link rel="stylesheet" href="assets/css/styles.v150.css">
   <style id="betspapa-critical-search-guard">
     #searchDrawer { display: none !important; }
     #searchDrawer.is-open:not([hidden]) { display: grid !important; }
   </style>
   <script>
     (function () {
-      window.__BETSPAPA_BUILD__ = "1.3.1";
+      window.__BETSPAPA_BUILD__ = "1.5.0";
       function forceSearchClosed() {
         var drawer = document.getElementById("searchDrawer");
         if (drawer) {
@@ -130,9 +130,9 @@
       <div class="hero-card papa-hero">
         <div class="hero-copy">
           <span class="kicker">PAPA'S FOOTBALL INTELLIGENCE</span>
-          <h1>Smarter Picks. <span>Papa Knows the Game.</span></h1>
-          <p>HT/FT transitions, latest goal thresholds and common-sense rejection filters work together to identify one strongest qualified market per match.</p>
-          <div class="papa-promise"><span>✓</span> Reject uncertainty first. Publish only qualified picks.</div>
+          <h1>Every Match Gets a Direction. <span>Papa Explains Why.</span></h1>
+          <p>Every imported fixture is read through all nine HT/FT transitions, venue form, recent form, goal support and common-sense risk checks before one direction is selected.</p>
+          <div class="papa-promise"><span>✓</span> Strong calls are Qualified. Weaker calls are clearly marked Directional.</div>
           <div class="hero-actions">
             <a class="gold-button" href="#prediction-board">View Papa's Picks <span>→</span></a>
             <button class="glass-button" id="howItWorks">How Papa Thinks</button>
@@ -165,7 +165,7 @@
         </article>
         <article class="metric-card">
           <div class="metric-icon">◇</div>
-          <div><span>QUALIFIED PICKS</span><strong id="qualifiedPicks">0</strong><small id="qualifiedPicksNote">Live published predictions</small></div>
+          <div><span>MATCH DIRECTIONS</span><strong id="qualifiedPicks">0</strong><small id="qualifiedPicksNote">Every imported fixture receives one direction</small></div>
           <svg viewBox="0 0 220 46" aria-hidden="true"><path d="M2 33 C26 13,39 35,59 21 S88 36,112 25 S147 8,166 25 S195 28,218 10"/></svg>
         </article>
         <article class="metric-card">
@@ -242,10 +242,99 @@
 
       <article class="panel fixture-panel" id="fixtures">
         <div class="panel-heading compact">
-          <div><span class="eyebrow">TODAY</span><h2>Upcoming Fixtures</h2></div>
-          <button class="text-button">View all</button>
+          <div><span class="eyebrow">MATCH CATALOGUE</span><h2>Every Fixture, One Direction</h2></div>
+          <span class="panel-note" id="fixtureSummary">Loading live fixtures</span>
         </div>
+
+        <div class="fixture-filters" aria-label="Fixture filters">
+          <label>
+            <span>Date</span>
+            <input type="date" id="dateFilter">
+          </label>
+          <label>
+            <span>League</span>
+            <select id="leagueFilter"><option value="">All leagues</option></select>
+          </label>
+          <label>
+            <span>Market</span>
+            <select id="marketFilter"><option value="">All markets</option></select>
+          </label>
+          <label>
+            <span>Strength</span>
+            <select id="strengthFilter">
+              <option value="">All strengths</option>
+              <option value="qualified">Qualified only</option>
+              <option value="directional">Directional only</option>
+              <option value="elite">Elite / Strong</option>
+              <option value="lean">Lean / Cautious / Low</option>
+            </select>
+          </label>
+          <label class="fixture-search-field">
+            <span>Team or competition</span>
+            <input type="search" id="fixtureSearch" placeholder="Search fixtures" autocomplete="off">
+          </label>
+          <button class="clear-filter-button" id="clearFixtureFilters" type="button">Clear filters</button>
+        </div>
+
         <div class="fixture-list" id="fixtureList"></div>
+        <div class="fixture-pagination">
+          <button id="fixturePrev" type="button">← Previous</button>
+          <span id="fixturePageInfo">Page 1</span>
+          <button id="fixtureNext" type="button">Next →</button>
+        </div>
+      </article>
+
+      <article class="panel explanation-panel" id="why-this-pick">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">CLICKED FIXTURE EXPLANATION</span>
+            <h2>Why Papa Chose This Pick</h2>
+          </div>
+          <span class="decision-mode" id="decisionMode">Loading</span>
+        </div>
+
+        <div class="explanation-summary">
+          <strong id="decisionHeadline">Select a fixture to see the full reasoning.</strong>
+          <p id="decisionSummary">The engine explanation will appear here.</p>
+        </div>
+
+        <div class="explanation-columns">
+          <section>
+            <h3>Why it points this way</h3>
+            <ul class="reason-list" id="decisionReasons"></ul>
+          </section>
+          <section>
+            <h3>Cautions</h3>
+            <ul class="caution-list" id="decisionCautions"></ul>
+          </section>
+          <section>
+            <h3>Next-best alternatives</h3>
+            <div class="alternative-list" id="decisionAlternatives"></div>
+          </section>
+        </div>
+
+        <div class="indicator-heading">
+          <div>
+            <span class="eyebrow">ALL NINE INDICATORS</span>
+            <h3>HT/FT Compatibility Review</h3>
+          </div>
+          <span id="indicatorQuality">Data quality: —</span>
+        </div>
+
+        <div class="indicator-table-wrap">
+          <table class="indicator-table">
+            <thead>
+              <tr>
+                <th>HT/FT</th>
+                <th>Home profile</th>
+                <th>Away opposite</th>
+                <th>Combined</th>
+                <th>Engine reading</th>
+              </tr>
+            </thead>
+            <tbody id="indicatorTable"></tbody>
+          </table>
+        </div>
       </article>
 
       <article class="panel results-panel" id="results">
@@ -266,7 +355,7 @@
       <article><span>01</span><h3>Two-team agreement</h3><p>Every prediction must be supported by the selected team and the opponent’s matching weakness.</p></article>
       <article><span>02</span><h3>Latest GG thresholds</h3><p>GG only qualifies when both teams independently have credible scoring routes.</p></article>
       <article><span>03</span><h3>Dominant-team route</h3><p>Over 2.5 can qualify through one team alone when scoring and conceding 2+ thresholds agree.</p></article>
-      <article><span>04</span><h3>Reject first</h3><p>The engine searches for reasons to reject a market before publishing one strongest prediction.</p></article>
+      <article><span>04</span><h3>Direction with honesty</h3><p>Every fixture receives one market direction, but weaker calls are never presented as bankers.</p></article>
     </section>
 
     <footer>
@@ -303,7 +392,7 @@
       <li>Compare opposite HT/FT transitions from both teams and smooth small samples.</li>
       <li>Build full-time, half-time, GG, Over 1.5, Over 2.5 and Under 3.5 signals.</li>
       <li>Apply latest scoring, conceding, comeback, volatility and one-sided dominance thresholds.</li>
-      <li>Reject unstable or contradictory markets and publish one strongest qualified pick.</li>
+      <li>Rank every market, publish one direction for every fixture, and clearly separate Qualified from Directional calls.</li>
     </ol>
   </dialog>
 
@@ -316,6 +405,6 @@
     </div>
   </div>
 
-    <script src="assets/js/app.v140.js"></script>
+    <script src="assets/js/app.v150.js"></script>
 </body>
 </html>

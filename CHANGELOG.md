@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.5.0 — Every Match Gets a Pick + Full Explanation
+
+- Every imported fixture now receives one selected market direction.
+- Strong selections remain **Qualified**; weaker selections are clearly labelled **Directional**.
+- The fallback logic avoids forcing weak exact HT/FT and half-time-result calls.
+- The engine reviews all nine HT/FT transition indicators before ranking markets.
+- Added date, league, market, strength and team/competition filters.
+- Added pagination so every fixture remains accessible without an excessively long page.
+- Clicking any fixture now opens a full explanation:
+  - why the market was chosen
+  - cautions and sample-quality warnings
+  - next-best alternatives
+  - all nine HT/FT profile/opposite/combined readings
+- Added PapaSense engine version `papasense-v1.5`.
+- Preserved live Render, Supabase, modern fonts, Papa branding and result grading.
+
+## v1.4.1 — Compact Fixtures and Layout Repair
+
+- Limited the homepage to six upcoming fixtures.
+- Qualified predictions are shown before fixtures with no published pick.
+- Added a live summary showing qualified, displayed and imported fixture counts.
+- Moved upcoming fixtures out of the tall right sidebar and into a compact responsive grid.
+- Removed the large blank vertical space beneath the main prediction area.
+- Preserved modern fonts, Papa branding, live data, Render, Supabase and the HT/FT engine.
+
 ## v1.4.0 — Modern Fonts and Complete Live Data
 
 - Added modern **Manrope** body typography and **Space Grotesk** display typography.

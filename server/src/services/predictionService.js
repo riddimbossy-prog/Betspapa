@@ -125,10 +125,11 @@ function buildTeamInput(team, side, htftMap, goalMap) {
 function predictionRow(fixture, prediction) {
   const primary = prediction.primaryPrediction;
   const strongest = prediction.story?.topTransitions?.[0] || null;
-  const reasons = primary?.reasons || [];
+  const reasons = prediction.decisionTrace?.whyChosen || primary?.reasons || [];
   const warnings = [
     ...(prediction.dataQuality?.label === "Small sample" ? ["Small profile sample"] : []),
-    ...(primary?.blockers || [])
+    ...(primary?.blockers || []),
+    ...(!primary?.qualified ? ["Directional pick — below the strong-pick threshold"] : [])
   ];
 
   return {
@@ -155,13 +156,17 @@ function predictionRow(fixture, prediction) {
       story: prediction.story,
       goalIntelligence: prediction.goalIntelligence,
       directProbabilities: prediction.directProbabilities,
-      dataQuality: prediction.dataQuality
+      dataQuality: prediction.dataQuality,
+      directionMode: prediction.directionMode,
+      qualified: prediction.qualified,
+      decisionTrace: prediction.decisionTrace,
+      allHtftIndicators: prediction.decisionTrace?.allHtftIndicators || []
     },
     transition_matrix: prediction.transitionMatrix,
     reasons,
     warnings,
     rejected_markets: prediction.markets
-      .filter((market) => !market.qualified)
+      .filter((market) => market.key !== primary?.key && !market.qualified)
       .slice(0, 12)
       .map((market) => ({
         market: market.market,
@@ -169,7 +174,7 @@ function predictionRow(fixture, prediction) {
         blockers: market.blockers,
         score: market.safetyAdjustedScore
       })),
-    published: !prediction.noBet,
+    published: true,
     updated_at: new Date().toISOString()
   };
 }

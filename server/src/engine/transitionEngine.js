@@ -363,12 +363,14 @@ function confidenceBand(score) {
   if (score >= 0.8) return "Strong";
   if (score >= 0.75) return "Qualified";
   if (score >= 0.7) return "Lean";
-  return "No bet";
+  if (score >= 0.62) return "Cautious";
+  return "Low";
 }
 
 function makeMarket({ key, market, selection, score, threshold, risk = 0, reasons = [], blockers = [] }) {
   const adjusted = clamp(score - risk);
   const qualified = adjusted >= threshold && blockers.length === 0;
+  const blockerPenalty = Math.min(0.14, blockers.length * 0.035);
   return {
     key,
     market,
@@ -376,8 +378,11 @@ function makeMarket({ key, market, selection, score, threshold, risk = 0, reason
     modelScore: round(score),
     safetyAdjustedScore: round(adjusted),
     threshold,
+    thresholdGap: round(adjusted - threshold),
+    blockerPenalty: round(blockerPenalty),
     qualified,
-    tier: qualified ? confidenceBand(adjusted) : "Rejected",
+    directional: !qualified,
+    tier: qualified ? confidenceBand(adjusted) : `Directional · ${confidenceBand(adjusted)}`,
     reasons,
     blockers
   };
@@ -647,13 +652,25 @@ function rankMarkets(candidates) {
   };
 
   return candidates
-    .map((market) => ({
-      ...market,
-      rankScore: round(market.safetyAdjustedScore + (riskPriority[market.market] || 0))
-    }))
+    .map((market) => {
+      const broadMarketBonus = ["Double Chance", "Draw No Bet", "Total Goals", "Team Goals", "Both Teams to Score"]
+        .includes(market.market) ? 0.012 : 0;
+      const directionalRankScore = clamp(
+        market.safetyAdjustedScore +
+        (riskPriority[market.market] || 0) +
+        broadMarketBonus -
+        market.blockerPenalty
+      );
+
+      return {
+        ...market,
+        rankScore: round(market.safetyAdjustedScore + (riskPriority[market.market] || 0)),
+        directionalRankScore: round(directionalRankScore)
+      };
+    })
     .sort((a, b) => {
       if (a.qualified !== b.qualified) return a.qualified ? -1 : 1;
-      return b.rankScore - a.rankScore;
+      return b.directionalRankScore - a.directionalRankScore;
     });
 }
 
@@ -687,6 +704,127 @@ function matchStory(input, matrix, direct, goals) {
   return { topTransitions, likelyHalfTime: sideName[htState], likelyFullTime: sideName[ftState], narrative };
 }
 
+
+function buildDecisionTrace({
+  input,
+  primary,
+  supporting,
+  rankedMarkets,
+  matrix,
+  direct,
+  goals,
+  quality,
+  homeProfile,
+  awayProfile,
+  story
+}) {
+  const mode = primary.qualified ? "qualified" : "directional";
+  const topAlternatives = rankedMarkets
+    .filter((market) => market.key !== primary.key)
+    .slice(0, 4)
+    .map((market) => ({
+      key: market.key,
+      market: market.market,
+      selection: market.selection,
+      score: market.safetyAdjustedScore,
+      threshold: market.threshold,
+      qualified: market.qualified,
+      tier: market.tier,
+      reasons: market.reasons,
+      blockers: market.blockers
+    }));
+
+  const allHtftIndicators = TRANSITIONS.map((transition) => {
+    const homeRate = homeProfile.probabilities[transition];
+    const awayOppositeRate = awayProfile.probabilities[OPPOSITE[transition]];
+    const combined = matrix.normalized[transition];
+    const code = HTFT_CODE[transition];
+
+    let interpretation = "Secondary transition";
+    if (combined === Math.max(...Object.values(matrix.normalized))) {
+      interpretation = "Strongest compatible HT/FT route";
+    } else if (combined >= 0.14) {
+      interpretation = "Important supporting route";
+    } else if (combined <= 0.04) {
+      interpretation = "Weak route";
+    }
+
+    return {
+      transition,
+      code,
+      homeRate: round(homeRate),
+      awayOppositeRate: round(awayOppositeRate),
+      combinedProbability: round(combined),
+      interpretation
+    };
+  });
+
+  const confidence = primary.safetyAdjustedScore;
+  const thresholdStatus = primary.qualified
+    ? `Passed the ${round(primary.threshold * 100, 1)}% publication threshold.`
+    : `Best available direction, but below the ${round(primary.threshold * 100, 1)}% strong-pick threshold.`;
+
+  const whyChosen = [
+    ...primary.reasons,
+    `Model score: ${round(primary.modelScore * 100, 1)}%; safety-adjusted score: ${round(confidence * 100, 1)}%.`,
+    thresholdStatus,
+    `Leading half-time direction: ${story.likelyHalfTime}; leading full-time direction: ${story.likelyFullTime}.`,
+    `Home goal support ${round(goals.metrics.homeGoalSupport * 100, 1)}% vs away goal support ${round(goals.metrics.awayGoalSupport * 100, 1)}%.`
+  ];
+
+  const cautions = [
+    ...(primary.blockers || []),
+    ...(quality.score < 0.52 ? ["Historical sample is small, so league smoothing has more influence."] : []),
+    ...(!primary.qualified ? ["Treat this as a direction, not a banker or high-confidence pick."] : [])
+  ];
+
+  return {
+    mode,
+    qualified: primary.qualified,
+    headline: primary.qualified
+      ? "Papa’s strongest qualified market"
+      : "Papa’s best available direction",
+    summary: `${primary.selection}. ${story.narrative}`,
+    whyChosen,
+    cautions,
+    supportingPick: supporting
+      ? {
+          market: supporting.market,
+          selection: supporting.selection,
+          score: supporting.safetyAdjustedScore,
+          qualified: supporting.qualified,
+          tier: supporting.tier
+        }
+      : null,
+    alternatives: topAlternatives,
+    allHtftIndicators,
+    directReadout: {
+      fullTime: Object.fromEntries(Object.entries(direct.ft).map(([key, value]) => [key, round(value)])),
+      halfTime: Object.fromEntries(Object.entries(direct.ht).map(([key, value]) => [key, round(value)])),
+      doubleChance: Object.fromEntries(
+        Object.entries(direct.doubleChance).map(([key, value]) => [key, round(value)])
+      ),
+      drawNoBet: Object.fromEntries(Object.entries(direct.dnb).map(([key, value]) => [key, round(value)]))
+    },
+    dataQuality: {
+      score: round(quality.score),
+      label: quality.label,
+      homeSamples: quality.homeSamples,
+      awaySamples: quality.awaySamples
+    },
+    goalReadout: {
+      homeGoalSupport: round(goals.metrics.homeGoalSupport),
+      awayGoalSupport: round(goals.metrics.awayGoalSupport),
+      ggYes: round(goals.scores.ggYes),
+      ggNo: round(goals.scores.ggNo),
+      over15: round(goals.scores.over15),
+      over25: round(goals.scores.over25),
+      under35: round(goals.scores.under35),
+      favouriteOver15: round(goals.scores.favouriteOver15)
+    }
+  };
+}
+
 export function predictMatch(input) {
   if (!input?.home?.name || !input?.away?.name) {
     throw new Error("Both home.name and away.name are required.");
@@ -701,10 +839,31 @@ export function predictMatch(input) {
   const goals = goalLogic(input, matrix, homeProfile, awayProfile, quality);
   const candidates = marketCandidates(input, matrix, direct, goals, quality);
   const rankedMarkets = rankMarkets(candidates);
-  const primary = rankedMarkets.find((market) => market.qualified) || null;
+  const qualifiedPrimary = rankedMarkets.find((market) => market.qualified) || null;
+  const directionalPool = rankedMarkets.filter(
+    (market) => !["HT/FT", "Half-Time Result"].includes(market.market)
+  );
+  const primary = qualifiedPrimary || directionalPool[0] || rankedMarkets[0];
   const supporting = rankedMarkets.find(
-    (market) => market.qualified && market.key !== primary?.key && market.market !== primary?.market
+    (market) =>
+      market.key !== primary.key &&
+      market.market !== primary.market &&
+      (market.qualified || market.directionalRankScore >= 0.58)
   ) || null;
+  const story = matchStory(input, matrix, direct, goals);
+  const decisionTrace = buildDecisionTrace({
+    input,
+    primary,
+    supporting,
+    rankedMarkets,
+    matrix,
+    direct,
+    goals,
+    quality,
+    homeProfile,
+    awayProfile,
+    story
+  });
 
   return {
     fixtureId: input.fixtureId || null,
@@ -721,8 +880,11 @@ export function predictMatch(input) {
     },
     primaryPrediction: primary,
     supportingPrediction: supporting,
-    noBet: !primary,
-    story: matchStory(input, matrix, direct, goals),
+    noBet: false,
+    qualified: primary.qualified,
+    directionMode: primary.qualified ? "qualified" : "directional",
+    decisionTrace,
+    story,
     directProbabilities: {
       fullTime: Object.fromEntries(Object.entries(direct.ft).map(([key, value]) => [key, round(value)])),
       halfTime: Object.fromEntries(Object.entries(direct.ht).map(([key, value]) => [key, round(value)])),
@@ -752,7 +914,8 @@ export function predictMatch(input) {
       "GG requires two independent scoring routes; one strong team cannot create GG alone.",
       "Under 3.5 cannot qualify from stable transitions alone.",
       "Small samples are smoothed toward the league baseline and receive a confidence penalty.",
-      "Only one highest-ranked qualified market is published; otherwise the engine returns No Bet."
+      "Every fixture receives one direction; only threshold-passing selections are labelled Qualified.",
+      "Directional picks are clearly marked when the best available market remains below the strong-pick threshold."
     ]
   };
 }

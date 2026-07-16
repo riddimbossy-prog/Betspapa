@@ -145,7 +145,9 @@ export async function listPublicPredictions(supabase, date) {
           selection: prediction.primary_selection,
           probability: prediction.probability,
           confidence: prediction.confidence,
-          tier: prediction.confidence_tier
+          tier: prediction.confidence_tier,
+          qualified: Boolean(prediction.market_scores?.qualified),
+          mode: prediction.market_scores?.directionMode || "directional"
         },
         strongestTransition: {
           code: prediction.strongest_transition,
@@ -163,6 +165,11 @@ export async function listPublicPredictions(supabase, date) {
         reasons: prediction.reasons,
         warnings: prediction.warnings,
         engine: prediction.market_scores,
+        explanation: prediction.market_scores?.decisionTrace || null,
+        allHtftIndicators:
+          prediction.market_scores?.allHtftIndicators ||
+          prediction.market_scores?.decisionTrace?.allHtftIndicators ||
+          [],
         createdAt: prediction.created_at,
         updatedAt: prediction.updated_at
       };
@@ -250,7 +257,7 @@ export async function getDashboardStats(supabase, {
     fetchAllRows(() =>
       supabase
         .from("predictions")
-        .select("id,primary_market,primary_selection,confidence,created_at,updated_at")
+        .select("id,primary_market,primary_selection,confidence,market_scores,created_at,updated_at")
         .eq("engine_version", ENGINE_VERSION)
         .eq("published", true)
     ),
@@ -291,7 +298,13 @@ export async function getDashboardStats(supabase, {
     losses,
     voids: gradedResults.filter((result) => result.outcome === "VOID").length,
     graded: gradedResults.length,
-    qualifiedPicks: publishedPredictions.length,
+    matchDirections: publishedPredictions.length,
+    qualifiedPicks: publishedPredictions.filter(
+      (prediction) => Boolean(prediction.market_scores?.qualified)
+    ).length,
+    directionalPicks: publishedPredictions.filter(
+      (prediction) => !prediction.market_scores?.qualified
+    ).length,
     ggSignals,
     under35Signals,
     today: {

@@ -1,23 +1,25 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.4.0
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.5.0
 ================================================
 
 1. Extract this ZIP.
 2. Copy every file and folder into your local Betspapa GitHub repository.
 3. Choose Replace/Overwrite All.
-4. Commit: BetsPapa v1.4 modern fonts and live dashboard
-5. Click Push origin.
-6. Wait for both GitHub Pages and Render to finish deploying.
+4. Commit:
+   BetsPapa v1.5 all matches picks filters explanations
+5. Push origin.
+6. Wait for GitHub Pages and Render to deploy.
 7. Open once:
    https://betspapa.com/reset.html
-8. Then open:
+8. Confirm:
    https://api.betspapa.com/api/health
-   The version should be 1.4.0 and database should say connected.
-9. Open:
-   https://api.betspapa.com/api/dashboard/today
-   This should return predictions, fixtures, recentResults and stats.
+   Version must show 1.5.0.
+9. IMPORTANT: regenerate today's predictions because the engine version changed.
+   In PowerShell from the repository, run:
+   powershell -ExecutionPolicy Bypass -File .\scripts\run-daily.ps1 -Date YYYY-MM-DD
 10. Refresh betspapa.com.
 
-The site no longer uses demonstration data. When today has no qualified predictions,
-it displays imported fixtures and a clear “No qualified pick yet” state.
+Every imported fixture will receive one pick after the v1.5 generation run.
+Qualified = passed the strong threshold.
+Directional = best common-sense direction but below the strong threshold.
 
-Do not commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET to GitHub.
+Do not commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET.

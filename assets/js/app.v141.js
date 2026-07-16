@@ -3,15 +3,7 @@
 
   const $ = (selector) => document.querySelector(selector);
   const TRANSITIONS = ["1/1", "1/2", "1/X", "2/1", "2/2", "2/X", "X/1", "X/2", "X/X"];
-  const FIXTURES_PER_PAGE = 12;
-  const filterState = {
-    date: "",
-    league: "",
-    market: "",
-    strength: "",
-    query: "",
-    page: 1
-  };
+  const MAX_VISIBLE_FIXTURES = 6;
 
   const API_BASES = [
     window.BETSPAPA_API_URL,
@@ -173,9 +165,7 @@
         short: shortName(away.name),
         logo: away.logo_url || away.logo || ""
       },
-      livePrediction: prediction,
-      predictionMode: prediction?.primary?.mode || "directional",
-      predictionQualified: Boolean(prediction?.primary?.qualified)
+      livePrediction: prediction
     };
   }
 
@@ -206,7 +196,7 @@
 
   function emptyAnalysis() {
     return {
-      primary: { label: "Best available direction" },
+      primary: { label: "No qualified pick yet" },
       confidence: 0,
       reason: "Papa has not qualified a market for this fixture yet.",
       matrix: TRANSITIONS.map((code) => ({ code, probability: 0 })),
@@ -271,7 +261,7 @@
 
   function renderMetrics(stats = {}) {
     $("#winRate").textContent = stats.winRate == null ? "—" : percent(stats.winRate, 1);
-    $("#qualifiedPicks").textContent = String(stats.matchDirections ?? stats.qualifiedPicks ?? 0);
+    $("#qualifiedPicks").textContent = String(stats.qualifiedPicks ?? 0);
     $("#ggSignals").textContent = String(stats.ggSignals ?? 0);
     $("#under35Signals").textContent = String(stats.under35Signals ?? 0);
 
@@ -279,126 +269,40 @@
       ? `${stats.wins || 0} wins from ${stats.graded} graded`
       : "Awaiting graded predictions";
 
-    $("#qualifiedPicksNote").textContent =
-      `${stats.qualifiedPicks || 0} qualified · ${stats.directionalPicks || 0} directional`;
+    $("#qualifiedPicksNote").textContent = `${stats.today?.predictions || 0} qualified today`;
     $("#ggSignalsNote").textContent = "Live published GG selections";
     $("#under35SignalsNote").textContent = "Live published U3.5 selections";
-  }
-
-  function filteredFixtures() {
-    const leagueNeedle = filterState.league;
-    const marketNeedle = filterState.market;
-    const strengthNeedle = filterState.strength;
-    const query = filterState.query.toLowerCase();
-
-    return fixtures.filter((fixture) => {
-      const analysis = analysisForFixture(fixture);
-      const prediction = fixture.livePrediction;
-      const leagueValue = fixture.league;
-      const marketValue = prediction?.primary?.market || "";
-      const tierValue = String(prediction?.primary?.tier || "");
-      const qualified = Boolean(prediction?.primary?.qualified);
-
-      if (leagueNeedle && leagueValue !== leagueNeedle) return false;
-      if (marketNeedle && marketValue !== marketNeedle) return false;
-
-      if (strengthNeedle === "qualified" && !qualified) return false;
-      if (strengthNeedle === "directional" && qualified) return false;
-      if (strengthNeedle === "elite" && !/(Elite|Strong)/i.test(tierValue)) return false;
-      if (strengthNeedle === "lean" && !/(Lean|Cautious|Low)/i.test(tierValue)) return false;
-
-      if (query) {
-        const haystack = [
-          fixture.home.name,
-          fixture.away.name,
-          fixture.league,
-          analysis.primary.label,
-          prediction?.primary?.market || ""
-        ].join(" ").toLowerCase();
-        if (!haystack.includes(query)) return false;
-      }
-
-      return true;
-    });
-  }
-
-  function updateFilterOptions() {
-    const leagueSelect = $("#leagueFilter");
-    const marketSelect = $("#marketFilter");
-    if (!leagueSelect || !marketSelect) return;
-
-    const leagues = [...new Set(fixtures.map((fixture) => fixture.league).filter(Boolean))].sort();
-    const markets = [...new Set(
-      fixtures.map((fixture) => fixture.livePrediction?.primary?.market).filter(Boolean)
-    )].sort();
-
-    const selectedLeague = filterState.league;
-    const selectedMarket = filterState.market;
-
-    leagueSelect.innerHTML =
-      '<option value="">All leagues</option>' +
-      leagues.map((league) => `<option value="${escapeHtml(league)}">${escapeHtml(league)}</option>`).join("");
-
-    marketSelect.innerHTML =
-      '<option value="">All markets</option>' +
-      markets.map((market) => `<option value="${escapeHtml(market)}">${escapeHtml(market)}</option>`).join("");
-
-    leagueSelect.value = selectedLeague;
-    marketSelect.value = selectedMarket;
   }
 
   function renderFixtures() {
     const container = $("#fixtureList");
     const summary = $("#fixtureSummary");
-    const prev = $("#fixturePrev");
-    const next = $("#fixtureNext");
-    const pageInfo = $("#fixturePageInfo");
     if (!container) return;
 
     if (!fixtures.length) {
       if (summary) summary.textContent = "0 imported";
       container.innerHTML = `
         <div class="data-empty">
-          <strong>No fixtures imported for this date</strong>
-          <span>Choose another date or run the daily sync for the selected date.</span>
+          <strong>No fixtures imported for today</strong>
+          <span>Run the daily sync or check again after the provider updates.</span>
         </div>`;
-      if (pageInfo) pageInfo.textContent = "Page 0 of 0";
-      if (prev) prev.disabled = true;
-      if (next) next.disabled = true;
       return;
     }
 
-    const filtered = filteredFixtures();
-    const totalPages = Math.max(1, Math.ceil(filtered.length / FIXTURES_PER_PAGE));
-    filterState.page = Math.min(Math.max(1, filterState.page), totalPages);
-    const start = (filterState.page - 1) * FIXTURES_PER_PAGE;
-    const visibleFixtures = filtered.slice(start, start + FIXTURES_PER_PAGE);
-    const qualifiedCount = filtered.filter((fixture) => fixture.livePrediction?.primary?.qualified).length;
-    const directionalCount = Math.max(0, filtered.length - qualifiedCount);
+    const qualified = fixtures.filter((fixture) => fixture.livePrediction);
+    const pending = fixtures.filter((fixture) => !fixture.livePrediction);
+    const visibleFixtures = [...qualified, ...pending].slice(0, MAX_VISIBLE_FIXTURES);
 
     if (summary) {
-      summary.textContent = `${filtered.length} matches · ${qualifiedCount} qualified · ${directionalCount} directional`;
-    }
-    if (pageInfo) pageInfo.textContent = `Page ${filterState.page} of ${totalPages}`;
-    if (prev) prev.disabled = filterState.page <= 1;
-    if (next) next.disabled = filterState.page >= totalPages;
-
-    if (!visibleFixtures.length) {
-      container.innerHTML = `
-        <div class="data-empty">
-          <strong>No matches fit these filters</strong>
-          <span>Clear one or more filters to reveal fixtures.</span>
-        </div>`;
-      return;
+      const hiddenCount = Math.max(0, fixtures.length - visibleFixtures.length);
+      summary.textContent = hiddenCount
+        ? `${qualified.length} qualified · showing ${visibleFixtures.length} of ${fixtures.length}`
+        : `${qualified.length} qualified · ${fixtures.length} imported`;
     }
 
     container.innerHTML = visibleFixtures.map((fixture) => {
       const analysis = analysisForFixture(fixture);
-      const prediction = fixture.livePrediction;
-      const qualified = Boolean(prediction?.primary?.qualified);
-      const confidence = prediction ? percent(analysis.confidence, 1) : "Generate";
-      const mode = qualified ? "Qualified" : "Directional";
-      const modeClass = qualified ? "qualified" : "directional";
+      const confidence = fixture.livePrediction ? percent(analysis.confidence, 1) : "No pick";
 
       return `<button class="fixture-item ${fixture.id === selectedId ? "active" : ""}" data-id="${escapeHtml(fixture.id)}">
         <div class="fixture-top">
@@ -415,15 +319,10 @@
             ${escapeHtml(fixture.away.name)}
           </div>
         </div>
-        <div class="fixture-decision">
-          <span class="fixture-mode ${modeClass}">${mode}</span>
-          <strong>${escapeHtml(prediction ? analysis.primary.label : "Generate prediction")}</strong>
-        </div>
         <div class="fixture-bottom">
-          <span>${escapeHtml(prediction?.primary?.market || "Awaiting engine run")}</span>
-          <b>${confidence}</b>
+          <strong>${escapeHtml(fixture.livePrediction ? analysis.primary.label : "No qualified pick")}</strong>
+          <span>${confidence}</span>
         </div>
-        <small class="fixture-why">Click for full HT/FT reasoning →</small>
       </button>`;
     }).join("");
 
@@ -432,11 +331,6 @@
         selectedId = button.dataset.id;
         renderFixtures();
         renderAnalysis();
-        renderExplanation();
-
-        if (window.innerWidth <= 900) {
-          $("#why-this-pick")?.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
       });
     });
   }
@@ -555,105 +449,6 @@
     renderInsights(analysis);
   }
 
-  function renderExplanation() {
-    const fixture = fixtures.find((item) => item.id === selectedId) || fixtures[0];
-    const modeBadge = $("#decisionMode");
-    const headline = $("#decisionHeadline");
-    const summary = $("#decisionSummary");
-    const reasons = $("#decisionReasons");
-    const cautions = $("#decisionCautions");
-    const alternatives = $("#decisionAlternatives");
-    const table = $("#indicatorTable");
-    const quality = $("#indicatorQuality");
-
-    if (!fixture?.livePrediction) {
-      if (modeBadge) {
-        modeBadge.textContent = "Awaiting engine";
-        modeBadge.dataset.mode = "pending";
-      }
-      if (headline) headline.textContent = "This fixture has not been regenerated with PapaSense v1.5 yet.";
-      if (summary) summary.textContent = "Run Generate Predictions for this date. The new engine will save one direction for every imported fixture.";
-      if (reasons) reasons.innerHTML = "<li>Fixture imported successfully.</li><li>Prediction row still needs the v1.5 generation run.</li>";
-      if (cautions) cautions.innerHTML = "<li>No market should be shown until the current engine has processed the fixture.</li>";
-      if (alternatives) alternatives.innerHTML = '<div class="alternative-card">No alternatives available yet.</div>';
-      if (table) table.innerHTML = '<tr><td colspan="5">Awaiting prediction generation.</td></tr>';
-      if (quality) quality.textContent = "Data quality: pending";
-      return;
-    }
-
-    const prediction = fixture.livePrediction;
-    const explanation = prediction.explanation || prediction.engine?.decisionTrace || {};
-    const qualified = Boolean(prediction.primary?.qualified);
-
-    if (modeBadge) {
-      modeBadge.textContent = qualified ? "Qualified pick" : "Directional pick";
-      modeBadge.dataset.mode = qualified ? "qualified" : "directional";
-    }
-    if (headline) headline.textContent = explanation.headline || prediction.primary.selection;
-    if (summary) summary.textContent = explanation.summary || prediction.reasons?.[0] || "Common-sense ranking selected this market.";
-
-    const reasonRows = explanation.whyChosen?.length
-      ? explanation.whyChosen
-      : prediction.reasons || ["Highest-ranked market after all HT/FT and goal checks."];
-
-    if (reasons) {
-      reasons.innerHTML = reasonRows.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("");
-    }
-
-    const cautionRows = explanation.cautions?.length
-      ? explanation.cautions
-      : prediction.warnings || [];
-
-    if (cautions) {
-      cautions.innerHTML = cautionRows.length
-        ? cautionRows.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("")
-        : "<li>No major contradiction passed the engine’s risk checks.</li>";
-    }
-
-    if (alternatives) {
-      const rows = explanation.alternatives || [];
-      alternatives.innerHTML = rows.length
-        ? rows.slice(0, 4).map((alternative) => `
-          <div class="alternative-card">
-            <span>${escapeHtml(alternative.market || "Market")}</span>
-            <strong>${escapeHtml(alternative.selection || "Alternative")}</strong>
-            <small>${scorePercent(alternative.score || 0)} · ${escapeHtml(alternative.tier || "Directional")}</small>
-          </div>`).join("")
-        : '<div class="alternative-card">No alternative market outranked the primary direction.</div>';
-    }
-
-    const indicators =
-      prediction.allHtftIndicators ||
-      explanation.allHtftIndicators ||
-      prediction.engine?.allHtftIndicators ||
-      [];
-
-    if (table) {
-      table.innerHTML = indicators.length
-        ? indicators.map((indicator) => `
-          <tr>
-            <td><strong>${escapeHtml(indicator.code || indicator.transition)}</strong><small>${escapeHtml(indicator.transition || "")}</small></td>
-            <td>${scorePercent(indicator.homeRate || 0)}</td>
-            <td>${scorePercent(indicator.awayOppositeRate || 0)}</td>
-            <td><b>${scorePercent(indicator.combinedProbability || 0)}</b></td>
-            <td>${escapeHtml(indicator.interpretation || "Reviewed")}</td>
-          </tr>`).join("")
-        : '<tr><td colspan="5">Detailed indicator review is unavailable for this older prediction row. Regenerate this date with v1.5.</td></tr>';
-    }
-
-    const qualityLabel =
-      explanation.dataQuality?.label ||
-      prediction.engine?.dataQuality?.label ||
-      "Unknown";
-    const qualityScore =
-      explanation.dataQuality?.score ??
-      prediction.engine?.dataQuality?.score;
-
-    if (quality) {
-      quality.textContent = `Data quality: ${qualityLabel}${Number.isFinite(Number(qualityScore)) ? ` · ${scorePercent(qualityScore)}` : ""}`;
-    }
-  }
-
   function renderResults() {
     const table = $("#resultsTable");
     if (!table) return;
@@ -690,7 +485,7 @@
   }
 
   async function loadDashboard({ silent = false } = {}) {
-    const date = filterState.date || localIsoDate();
+    const date = localIsoDate();
     if (!silent) setLiveState("loading", "Connecting to live data…", `Date: ${date}`);
 
     try {
@@ -700,10 +495,8 @@
       selectedId = fixtures.find((fixture) => fixture.livePrediction)?.id || fixtures[0]?.id || null;
 
       renderMetrics(payload.stats || {});
-      updateFilterOptions();
       renderFixtures();
       renderAnalysis();
-      renderExplanation();
       renderResults();
 
       const source = activeApiBase?.includes("onrender.com") ? "Render fallback" : "api.betspapa.com";
@@ -721,7 +514,6 @@
       renderMetrics({});
       renderFixtures();
       clearAnalysis();
-      renderExplanation();
       renderResults();
       setLiveState(
         "error",
@@ -857,75 +649,6 @@
     });
   }
 
-  function setupFixtureFilters() {
-    const dateInput = $("#dateFilter");
-    const leagueSelect = $("#leagueFilter");
-    const marketSelect = $("#marketFilter");
-    const strengthSelect = $("#strengthFilter");
-    const searchInput = $("#fixtureSearch");
-    const clearButton = $("#clearFixtureFilters");
-    const prev = $("#fixturePrev");
-    const next = $("#fixtureNext");
-
-    filterState.date = localIsoDate();
-    if (dateInput) dateInput.value = filterState.date;
-
-    dateInput?.addEventListener("change", () => {
-      filterState.date = dateInput.value || localIsoDate();
-      filterState.page = 1;
-      loadDashboard();
-    });
-
-    leagueSelect?.addEventListener("change", () => {
-      filterState.league = leagueSelect.value;
-      filterState.page = 1;
-      renderFixtures();
-    });
-
-    marketSelect?.addEventListener("change", () => {
-      filterState.market = marketSelect.value;
-      filterState.page = 1;
-      renderFixtures();
-    });
-
-    strengthSelect?.addEventListener("change", () => {
-      filterState.strength = strengthSelect.value;
-      filterState.page = 1;
-      renderFixtures();
-    });
-
-    searchInput?.addEventListener("input", () => {
-      filterState.query = searchInput.value.trim();
-      filterState.page = 1;
-      renderFixtures();
-    });
-
-    clearButton?.addEventListener("click", () => {
-      filterState.league = "";
-      filterState.market = "";
-      filterState.strength = "";
-      filterState.query = "";
-      filterState.page = 1;
-      if (leagueSelect) leagueSelect.value = "";
-      if (marketSelect) marketSelect.value = "";
-      if (strengthSelect) strengthSelect.value = "";
-      if (searchInput) searchInput.value = "";
-      renderFixtures();
-    });
-
-    prev?.addEventListener("click", () => {
-      filterState.page = Math.max(1, filterState.page - 1);
-      renderFixtures();
-      $("#fixtures")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-
-    next?.addEventListener("click", () => {
-      filterState.page += 1;
-      renderFixtures();
-      $("#fixtures")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  }
-
   function setupLiveRefresh() {
     $("#refreshLiveData")?.addEventListener("click", () => loadDashboard());
 
@@ -948,7 +671,6 @@
   setupModal();
   setupMobile();
   setupSearch();
-  setupFixtureFilters();
   setupLiveRefresh();
   loadDashboard();
 })();

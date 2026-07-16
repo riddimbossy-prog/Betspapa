@@ -33,3 +33,19 @@ test("small samples receive a data-quality downgrade", () => {
 test("invalid input is rejected", () => {
   assert.throws(() => predictMatch({ home: {}, away: {} }), /required/);
 });
+
+
+test("every valid fixture receives one market direction", () => {
+  for (const fixture of demoFixtures) {
+    const prediction = predictMatch(fixture);
+    assert.ok(prediction.primaryPrediction);
+    assert.equal(prediction.noBet, false);
+    assert.ok(["qualified", "directional"].includes(prediction.directionMode));
+  }
+});
+
+test("decision trace reviews all nine HT/FT indicators", () => {
+  const prediction = predictMatch(demoFixtures[0]);
+  assert.equal(prediction.decisionTrace.allHtftIndicators.length, 9);
+  assert.ok(prediction.decisionTrace.whyChosen.length >= 3);
+});
