@@ -1,27 +1,44 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.6.0
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.7.0
 ================================================
 
 1. Extract this ZIP.
-2. Copy every file and folder into your local Betspapa GitHub repository.
+2. Copy every file and folder into the local Betspapa GitHub repository.
 3. Choose Replace/Overwrite All.
 4. Commit:
-   BetsPapa v1.6 balanced markets reasons popup
+   BetsPapa v1.7 four engines desktop layout
 5. Push origin.
 6. Wait for GitHub Pages and Render to deploy.
 7. Open once:
    https://betspapa.com/reset.html
 8. Confirm:
    https://api.betspapa.com/api/health
-   Version must show 1.6.0.
-9. Open betspapa.com and allow the first load to regenerate PapaSense v1.6 picks.
-10. Tap any fixture. The full reasoning opens as a popup.
+   Version must show 1.7.0.
+9. Open betspapa.com and allow PapaSense v1.7 to regenerate the fixtures.
 
-WHY DOUBLE CHANCE WAS OVER-SELECTED
------------------------------------
-The previous version compared raw probabilities. Double Chance combines two
-outcomes, so its raw number was naturally larger than a straight win, GG or
-goal line. v1.6 compares each market against its own threshold and applies a
-protection penalty. Double Chance now wins only when it is genuinely the best
-common-sense route.
+ENGINE FILTERS
+--------------
+Papa Primary is the default.
+Use the engine tabs or Engine Pick dropdown to switch every card to:
+- Aggressive
+- Safer
+- Venue Pattern
+
+Click any fixture to see reasons for the currently selected engine.
+
+POTOSI-STYLE APPROACH
+---------------------
+The Venue Pattern engine explicitly compares:
+Home W/W ↔ Away L/L
+Home W/D ↔ Away L/D
+Home W/L ↔ Away L/W
+Home D/W ↔ Away D/L
+Home D/D ↔ Away D/D
+Home D/L ↔ Away D/W
+Home L/W ↔ Away W/L
+Home L/D ↔ Away W/D
+Home L/L ↔ Away W/W
+
+Papa Primary also receives venue support when the venue route agrees with the
+overall, recent and goal evidence.
 
 Do not commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET.

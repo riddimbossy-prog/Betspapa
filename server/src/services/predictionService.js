@@ -274,7 +274,10 @@ function predictionRow(fixture, prediction) {
       directionMode: prediction.directionMode,
       qualified: prediction.qualified,
       decisionTrace: prediction.decisionTrace,
-      allHtftIndicators: prediction.decisionTrace?.allHtftIndicators || []
+      allHtftIndicators: prediction.decisionTrace?.allHtftIndicators || [],
+      enginePicks: prediction.enginePicks,
+      defaultEngine: prediction.defaultEngine,
+      venuePattern: prediction.venuePattern
     },
     transition_matrix: prediction.transitionMatrix,
     reasons,

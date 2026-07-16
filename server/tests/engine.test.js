@@ -66,3 +66,38 @@ test("reason trace explains why the selected market beat Double Chance", () => {
     )
   );
 });
+
+
+test("PapaSense v1.7 returns all four engine picks", () => {
+  const prediction = predictMatch(demoFixtures[0]);
+  assert.deepEqual(Object.keys(prediction.enginePicks).sort(), [
+    "aggressive",
+    "primary",
+    "safer",
+    "venue"
+  ]);
+  for (const pick of Object.values(prediction.enginePicks)) {
+    assert.ok(pick.market);
+    assert.ok(pick.selection);
+    assert.ok(Number.isFinite(pick.confidence));
+  }
+  assert.equal(prediction.defaultEngine, "primary");
+  assert.equal(
+    prediction.enginePicks.primary.selection,
+    prediction.primaryPrediction.selection
+  );
+});
+
+test("Venue Pattern includes Potosi-style opposite transition evidence", () => {
+  const prediction = predictMatch(demoFixtures[1]);
+  assert.equal(prediction.venuePattern.indicators.length, 9);
+  assert.ok(prediction.enginePicks.venue.reasons.length >= 3);
+  assert.ok(prediction.enginePicks.venue.venueRoute);
+});
+
+test("Aggressive and safer engines use distinct selection policies", () => {
+  const prediction = predictMatch(demoFixtures[2]);
+  assert.notEqual(prediction.enginePicks.aggressive.engineKey, prediction.enginePicks.safer.engineKey);
+  assert.match(prediction.enginePicks.aggressive.description, /specific/i);
+  assert.match(prediction.enginePicks.safer.description, /lower-risk/i);
+});

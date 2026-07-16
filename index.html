@@ -18,14 +18,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="assets/css/styles.v160.css">
+  <link rel="stylesheet" href="assets/css/styles.v170.css">
   <style id="betspapa-critical-search-guard">
     #searchDrawer { display: none !important; }
     #searchDrawer.is-open:not([hidden]) { display: grid !important; }
   </style>
   <script>
     (function () {
-      window.__BETSPAPA_BUILD__ = "1.6.0";
+      window.__BETSPAPA_BUILD__ = "1.7.0";
       function forceSearchClosed() {
         var drawer = document.getElementById("searchDrawer");
         if (drawer) {
@@ -157,6 +157,22 @@
         <button class="live-refresh" id="refreshLiveData" type="button">Refresh live data</button>
       </div>
 
+
+      <div class="engine-switcher" id="engineSwitcher" aria-label="Prediction engine filter">
+        <button class="engine-tab active" type="button" data-engine="primary">
+          <span>01</span><strong>Papa Primary</strong><small>Default all-evidence pick</small>
+        </button>
+        <button class="engine-tab" type="button" data-engine="aggressive">
+          <span>02</span><strong>Aggressive</strong><small>Sharper, higher-variance route</small>
+        </button>
+        <button class="engine-tab" type="button" data-engine="safer">
+          <span>03</span><strong>Safer</strong><small>Protected version of the story</small>
+        </button>
+        <button class="engine-tab" type="button" data-engine="venue">
+          <span>04</span><strong>Venue Pattern</strong><small>Home venue vs away opposite</small>
+        </button>
+      </div>
+
       <div class="metric-grid" id="stats">
         <article class="metric-card">
           <div class="metric-icon gold">♛</div>
@@ -198,7 +214,7 @@
       </article>
 
       <article class="panel primary-panel" id="bankers">
-        <div class="primary-label">★ PRIMARY PREDICTION</div>
+        <div class="primary-label" id="activeEngineLabel">★ PAPA PRIMARY</div>
         <div class="match-meta"><span id="leagueLabel">LIVE DATABASE</span><span id="kickoffLabel">CONNECTING</span></div>
         <div class="matchup">
           <div class="club">
@@ -212,7 +228,7 @@
           </div>
         </div>
         <div class="pick-box">
-          <span>BEST MARKET</span>
+          <span id="activeMarketLabel">PAPA PRIMARY MARKET</span>
           <strong id="primaryPick">Awaiting 1X</strong>
           <small id="primaryReason">Connecting to the BetsPapa prediction database.</small>
         </div>
@@ -242,7 +258,7 @@
 
       <article class="panel fixture-panel" id="fixtures">
         <div class="panel-heading compact">
-          <div><span class="eyebrow">MATCH CATALOGUE</span><h2>Every Fixture, One Direction</h2></div>
+          <div><span class="eyebrow">MATCH CATALOGUE</span><h2>Every Fixture, Four Engine Picks</h2></div>
           <span class="panel-note" id="fixtureSummary">Loading live fixtures</span>
         </div>
 
@@ -258,6 +274,15 @@
           <label>
             <span>Market</span>
             <select id="marketFilter"><option value="">All markets</option></select>
+          </label>
+          <label>
+            <span>Engine pick</span>
+            <select id="engineFilter">
+              <option value="primary">Papa Primary — Default</option>
+              <option value="aggressive">Aggressive</option>
+              <option value="safer">Safer</option>
+              <option value="venue">Venue Pattern</option>
+            </select>
           </label>
           <label>
             <span>Strength</span>
@@ -288,7 +313,7 @@
         <div class="panel-heading">
           <div>
             <span class="eyebrow">CLICKED FIXTURE EXPLANATION</span>
-            <h2>Why Papa Chose This Pick</h2>
+            <h2 id="explanationTitle">Why Papa Primary Chose This Pick</h2>
           </div>
           <span class="decision-mode" id="decisionMode">Loading</span>
         </div>
@@ -405,7 +430,7 @@
     </div>
   </div>
 
-    <script src="assets/js/app.v160.js"></script>
+    <script src="assets/js/app.v170.js"></script>
 
   <dialog class="pick-reason-dialog" id="pickReasonDialog" aria-labelledby="pickReasonTitle">
     <div class="pick-reason-shell">

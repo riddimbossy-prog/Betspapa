@@ -216,6 +216,8 @@ export async function listPublicPredictions(supabase, date) {
         league,
         home,
         away,
+        defaultEngine: prediction.market_scores?.defaultEngine || "primary",
+        engines: prediction.market_scores?.enginePicks || null,
         primary: {
           market: prediction.primary_market,
           selection: prediction.primary_selection,
@@ -251,6 +253,10 @@ export async function listPublicPredictions(supabase, date) {
           [],
         selectionMethod:
           prediction.market_scores?.decisionTrace?.selectionMethod ||
+          null,
+        venuePattern:
+          prediction.market_scores?.venuePattern ||
+          prediction.market_scores?.decisionTrace?.venuePatternReview ||
           null,
         createdAt: prediction.created_at,
         updatedAt: prediction.updated_at

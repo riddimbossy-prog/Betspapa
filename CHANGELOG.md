@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.7.0 — Four Engine Picks and Desktop Layout Repair
+
+- Every fixture now has four named engine outputs:
+  - Papa Primary
+  - Aggressive
+  - Safer
+  - Venue Pattern
+- Papa Primary is the default everywhere.
+- Added an engine switcher and engine filter.
+- Date, league, market and strength filters now use the active engine pick.
+- Clicking a fixture explains the currently selected engine.
+- Venue Pattern reads the home venue HT/FT profile against the away venue's opposite transitions, Potosi-style.
+- Papa Primary receives a venue-alignment adjustment when the venue pattern supports the same route.
+- Aggressive removes broad protection markets and prefers sharper outcomes.
+- Safer converts the primary story into DNB, Double Chance, O1.5, U3.5 or team O0.5 where appropriate.
+- Fixed desktop header, hero, metric and dashboard grid alignment.
+- Removed the mobile-style layout from normal desktop widths.
+- Engine version updated to `papasense-v1.7`, causing automatic regeneration.
+
 ## v1.6.0 — Balanced Markets and Reasons Popup
 
 - Fixed Double Chance dominating because its raw two-outcome probability is naturally larger.

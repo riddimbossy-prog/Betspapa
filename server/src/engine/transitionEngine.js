@@ -653,6 +653,111 @@ function marketCandidates(input, matrix, direct, goals, quality) {
   return candidates;
 }
 
+
+function rawProfileRate(profile = {}, transition) {
+  const matches = profileMatches(profile);
+  return matches ? clamp((Number(profile[transition]) || 0) / matches) : 0;
+}
+
+function venuePatternContext(input, leagueBaseline) {
+  const homeRaw = input.home.htft?.venue || {};
+  const awayRaw = input.away.htft?.venue || {};
+  const home = smoothedProfile(homeRaw, leagueBaseline, 3);
+  const away = smoothedProfile(awayRaw, leagueBaseline, 3);
+  const matrix = buildTransitionMatrix(home, away);
+  const direct = directProbabilities(matrix);
+
+  const indicators = TRANSITIONS.map((transition) => ({
+    transition,
+    code: HTFT_CODE[transition],
+    opposite: OPPOSITE[transition],
+    homeCount: Number(homeRaw[transition]) || 0,
+    homeMatches: home.matches,
+    homeRate: round(rawProfileRate(homeRaw, transition)),
+    awayOppositeCount: Number(awayRaw[OPPOSITE[transition]]) || 0,
+    awayMatches: away.matches,
+    awayOppositeRate: round(rawProfileRate(awayRaw, OPPOSITE[transition])),
+    compatibility: round(matrix.normalized[transition])
+  })).sort((a, b) => b.compatibility - a.compatibility);
+
+  const ftRows = Object.entries(direct.ft).sort((a, b) => b[1] - a[1]);
+  const htRows = Object.entries(direct.ht).sort((a, b) => b[1] - a[1]);
+  const top = indicators[0];
+  const second = indicators[1];
+
+  const stateName = {
+    home: input.home.name,
+    draw: "Draw",
+    away: input.away.name
+  };
+
+  const reasons = [];
+  if (top) {
+    reasons.push(
+      `${top.code} is the strongest venue-compatible route: ` +
+      `${input.home.name} ${top.transition} ${round(top.homeRate * 100, 1)}% ` +
+      `against ${input.away.name} ${top.opposite} ${round(top.awayOppositeRate * 100, 1)}%.`
+    );
+  }
+  if (second) {
+    reasons.push(
+      `${second.code} is the next venue route at ${round(second.compatibility * 100, 1)}% compatibility.`
+    );
+  }
+  reasons.push(
+    `${stateName[htRows[0][0]]} leads the venue half-time direction; ` +
+    `${stateName[ftRows[0][0]]} leads the venue full-time direction.`
+  );
+
+  return {
+    home,
+    away,
+    matrix,
+    direct,
+    indicators,
+    topTransitions: indicators.slice(0, 3),
+    ftRows,
+    htRows,
+    ftGap: ftRows[0][1] - ftRows[1][1],
+    htGap: htRows[0][1] - htRows[1][1],
+    reasons,
+    samples: {
+      homeVenue: home.matches,
+      awayVenue: away.matches
+    }
+  };
+}
+
+function marketVenueAlignment(market, venue, input) {
+  const topExact = venue.topTransitions[0]?.code;
+  const homeName = input.home.name;
+  const awayName = input.away.name;
+  let evidence = 0.5;
+
+  if (market.key === "home-win") evidence = venue.direct.ft.home;
+  else if (market.key === "away-win") evidence = venue.direct.ft.away;
+  else if (market.key === "home-dnb") evidence = venue.direct.dnb.home;
+  else if (market.key === "away-dnb") evidence = venue.direct.dnb.away;
+  else if (market.key === "home-1x") evidence = venue.direct.doubleChance.homeOrDraw;
+  else if (market.key === "away-x2") evidence = venue.direct.doubleChance.awayOrDraw;
+  else if (market.key === "no-draw") evidence = venue.direct.doubleChance.noDraw;
+  else if (market.key === "ht-home") evidence = venue.direct.ht.home;
+  else if (market.key === "ht-draw") evidence = venue.direct.ht.draw;
+  else if (market.key === "ht-away") evidence = venue.direct.ht.away;
+  else if (market.key === "ht-home-or-draw") evidence = venue.direct.halfTimeDoubleChance.homeOrDraw;
+  else if (market.key === "ht-away-or-draw") evidence = venue.direct.halfTimeDoubleChance.awayOrDraw;
+  else if (market.key === "exact-htft") {
+    evidence = venue.topTransitions.find((row) => row.code === market.selection)?.compatibility || 0;
+  } else if (market.key === "home-over-05" || market.selection?.startsWith(homeName)) {
+    evidence = Math.max(venue.direct.ft.home, 0.5);
+  } else if (market.key === "away-over-05" || market.selection?.startsWith(awayName)) {
+    evidence = Math.max(venue.direct.ft.away, 0.5);
+  }
+
+  const centered = (evidence - 0.5) * 0.14;
+  return clamp(centered, -0.055, 0.075);
+}
+
 function marketFamily(market) {
   if (market.market === "Total Goals") return "Goals";
   if (market.market === "Team Goals") return "Team Goals";
@@ -674,7 +779,7 @@ function isExactMarket(market) {
   return ["HT/FT", "Half-Time Result"].includes(market.market);
 }
 
-function rankMarkets(candidates) {
+function rankMarkets(candidates, venue, input) {
   // Raw probabilities cannot be compared directly across unlike markets:
   // a union such as 1X naturally starts higher than Over 2.5 or a straight win.
   // Every market is therefore measured against its own qualification threshold.
@@ -696,10 +801,12 @@ function rankMarkets(candidates) {
       const thresholdEdge = market.safetyAdjustedScore - market.threshold;
       const blockerPenalty = Math.min(0.24, market.blockers.length * 0.075);
       const qualifiedBonus = market.qualified ? 0.085 : 0;
+      const venueBonus = marketVenueAlignment(market, venue, input);
       const comparisonScore =
         supportRatio +
         (familyBias[market.market] || 0) +
-        qualifiedBonus -
+        qualifiedBonus +
+        venueBonus -
         blockerPenalty;
 
       return {
@@ -707,6 +814,7 @@ function rankMarkets(candidates) {
         family: marketFamily(market),
         supportRatio: round(supportRatio),
         thresholdEdge: round(thresholdEdge),
+        venueBonus: round(venueBonus),
         comparisonScore: round(comparisonScore),
         rankScore: round(comparisonScore),
         directionalRankScore: round(comparisonScore)
@@ -739,6 +847,245 @@ function choosePrimaryMarket(rankedMarkets) {
   }
 
   return selected;
+}
+
+
+function copyEnginePick(market, engineKey, engineName, {
+  reasons = [],
+  cautions = [],
+  description = "",
+  venueRoute = null
+} = {}) {
+  return {
+    engineKey,
+    engineName,
+    key: market.key,
+    family: market.family,
+    market: market.market,
+    selection: market.selection,
+    score: market.safetyAdjustedScore,
+    confidence: round(market.safetyAdjustedScore * 100, 2),
+    modelScore: market.modelScore,
+    threshold: market.threshold,
+    comparisonScore: market.comparisonScore,
+    qualified: market.qualified,
+    mode: market.qualified ? "qualified" : "directional",
+    tier: market.tier,
+    reasons: [...reasons, ...(market.reasons || [])],
+    cautions: [...cautions, ...(market.blockers || [])],
+    description,
+    venueRoute
+  };
+}
+
+function chooseAggressiveMarket(rankedMarkets, primary) {
+  const aggressiveBias = {
+    "HT/FT": 0.22,
+    "Full-Time Result": 0.16,
+    "Team Goals": 0.13,
+    "Total Goals": 0.11,
+    "Both Teams to Score": 0.1,
+    "Half-Time Result": 0.08,
+    "Draw No Bet": 0.01,
+    "Double Chance": -0.16,
+    "Half-Time Double Chance": -0.18
+  };
+
+  const ranked = rankedMarkets
+    .filter((market) => !isProtectionMarket(market))
+    .map((market) => ({
+      market,
+      score:
+        market.comparisonScore +
+        (aggressiveBias[market.market] || 0) -
+        Math.min(0.12, market.blockers.length * 0.035)
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  return (
+    ranked.find(({ market }) => market.key !== primary.key)?.market ||
+    ranked[0]?.market ||
+    primary
+  );
+}
+
+function selectionSide(market, input) {
+  const value = `${market.key} ${market.selection}`.toLowerCase();
+  if (
+    value.includes("home-win") ||
+    value.includes("home-dnb") ||
+    value.includes("home-1x") ||
+    value.includes(input.home.name.toLowerCase())
+  ) return "home";
+  if (
+    value.includes("away-win") ||
+    value.includes("away-dnb") ||
+    value.includes("away-x2") ||
+    value.includes(input.away.name.toLowerCase())
+  ) return "away";
+  return null;
+}
+
+function chooseSaferMarket(rankedMarkets, primary, input) {
+  const byKey = new Map(rankedMarkets.map((market) => [market.key, market]));
+  const side = selectionSide(primary, input);
+  const priorities = [];
+
+  if (side === "home") {
+    priorities.push("home-dnb", "home-1x", "home-over-05", "over-15", "under-35");
+  } else if (side === "away") {
+    priorities.push("away-dnb", "away-x2", "away-over-05", "over-15", "under-35");
+  } else if (primary.key === "over-25" || primary.key === "gg-yes") {
+    priorities.push("over-15", "home-over-05", "away-over-05", "under-35");
+  } else if (primary.key === "favourite-over-15") {
+    priorities.push(
+      primary.selection.startsWith(input.home.name) ? "home-over-05" : "away-over-05",
+      "over-15",
+      "under-35"
+    );
+  } else if (primary.key === "under-35") {
+    priorities.push("under-35", "ht-draw", "home-1x", "away-x2");
+  } else if (primary.key === "gg-no") {
+    priorities.push("under-35", "home-over-05", "away-over-05");
+  } else {
+    priorities.push("over-15", "under-35", "home-1x", "away-x2", "no-draw");
+  }
+
+  const directChoice = priorities
+    .map((key) => byKey.get(key))
+    .find((market) => market && market.key !== primary.key && market.safetyAdjustedScore >= 0.45);
+
+  if (directChoice) return directChoice;
+
+  return (
+    rankedMarkets
+      .filter((market) => market.key !== primary.key && !isExactMarket(market))
+      .map((market) => ({
+        market,
+        safety:
+          market.comparisonScore +
+          ({
+            "Draw No Bet": 0.12,
+            "Double Chance": 0.1,
+            "Total Goals": market.key === "over-15" || market.key === "under-35" ? 0.12 : 0,
+            "Team Goals": market.key.endsWith("over-05") ? 0.1 : 0
+          }[market.market] || 0)
+      }))
+      .sort((a, b) => b.safety - a.safety)[0]?.market ||
+    primary
+  );
+}
+
+function chooseVenuePatternMarket(rankedMarkets, venue, input, goals) {
+  const byKey = new Map(rankedMarkets.map((market) => [market.key, market]));
+  const [ftState, ftProbability] = venue.ftRows[0];
+  const [htState, htProbability] = venue.htRows[0];
+  const topExact = venue.topTransitions[0];
+  const secondExact = venue.topTransitions[1];
+
+  let key;
+  if (ftState === "home" && venue.ftGap >= 0.065) {
+    key = ftProbability >= 0.5 ? "home-win" : "home-dnb";
+  } else if (ftState === "away" && venue.ftGap >= 0.065) {
+    key = ftProbability >= 0.5 ? "away-win" : "away-dnb";
+  } else if (htState === "draw" && htProbability >= 0.42) {
+    key = "ht-draw";
+  } else if (venue.direct.doubleChance.noDraw >= 0.7) {
+    key = "no-draw";
+  } else if (goals.scores.under35 >= goals.scores.over15) {
+    key = "under-35";
+  } else {
+    key = "over-15";
+  }
+
+  const market = byKey.get(key) || byKey.get("exact-htft") || rankedMarkets[0];
+  const sameFtStory =
+    topExact &&
+    secondExact &&
+    topExact.code.split("/")[1] === secondExact.code.split("/")[1];
+
+  const routeExplanation = sameFtStory
+    ? `${topExact.code} and ${secondExact.code} finish in the same full-time state, so ${market.selection} covers both leading venue routes.`
+    : `${topExact?.code || "The leading route"} is the strongest direct venue story.`;
+
+  return {
+    market,
+    reasons: [
+      ...venue.reasons,
+      routeExplanation
+    ],
+    route: {
+      top: topExact || null,
+      second: secondExact || null,
+      likelyHalfTime: htState,
+      likelyFullTime: ftState,
+      homeVenueMatches: venue.samples.homeVenue,
+      awayVenueMatches: venue.samples.awayVenue
+    }
+  };
+}
+
+function buildEngineSuite({
+  rankedMarkets,
+  primary,
+  venue,
+  input,
+  goals,
+  quality
+}) {
+  const aggressive = chooseAggressiveMarket(rankedMarkets, primary);
+  const safer = chooseSaferMarket(rankedMarkets, primary, input);
+  const venueSelection = chooseVenuePatternMarket(rankedMarkets, venue, input, goals);
+
+  const primaryVenueAligned = marketVenueAlignment(primary, venue, input) > 0.01;
+  const primaryReasons = primaryVenueAligned
+    ? [
+        "Venue HT/FT direction agrees with the overall PapaSense market direction.",
+        ...venue.reasons.slice(0, 2)
+      ]
+    : ["Overall, recent, venue and goal evidence were compared before the final market was chosen."];
+
+  return {
+    primary: copyEnginePick(primary, "primary", "Papa Primary", {
+      reasons: primaryReasons,
+      cautions: !primary.qualified
+        ? ["This is the default direction, but it remains below the strong-pick threshold."]
+        : [],
+      description:
+        "Default pick. Uses venue, overall, recent HT/FT, goal support, market calibration and contradiction checks."
+    }),
+    aggressive: copyEnginePick(aggressive, "aggressive", "Aggressive", {
+      reasons: [
+        "Selects the most specific credible route after removing broad protection markets.",
+        "Designed for users who accept higher variance for a sharper outcome."
+      ],
+      cautions: [
+        "Aggressive picks carry more variance and should not be treated as safer than Papa Primary."
+      ],
+      description:
+        "Higher-specificity route such as exact HT/FT, straight result, O2.5, GG or team O1.5."
+    }),
+    safer: copyEnginePick(safer, "safer", "Safer", {
+      reasons: [
+        "Protects the main match story with a lower line or result cushion.",
+        "Chosen only when it remains aligned with the primary direction."
+      ],
+      cautions: [
+        "Safer means broader coverage, not certainty."
+      ],
+      description:
+        "Lower-risk expression of the same match direction: DNB, Double Chance, O1.5, U3.5 or team O0.5."
+    }),
+    venue: copyEnginePick(venueSelection.market, "venue", "Venue Pattern", {
+      reasons: venueSelection.reasons,
+      cautions: quality.score < 0.52
+        ? ["Venue samples are small, so the venue engine is partly smoothed toward league norms."]
+        : [],
+      description:
+        "Uses the home venue HT/FT profile against the away venue's opposite transitions, Potosi-style.",
+      venueRoute: venueSelection.route
+    })
+  };
 }
 
 function matchStory(input, matrix, direct, goals) {
@@ -783,7 +1130,9 @@ function buildDecisionTrace({
   quality,
   homeProfile,
   awayProfile,
-  story
+  story,
+  enginePicks,
+  venue
 }) {
   const mode = primary.qualified ? "qualified" : "directional";
   const topAlternatives = rankedMarkets
@@ -869,6 +1218,19 @@ function buildDecisionTrace({
           tier: supporting.tier
         }
       : null,
+    enginePicks,
+    venuePatternReview: {
+      reasons: venue.reasons,
+      indicators: venue.indicators,
+      topTransitions: venue.topTransitions,
+      samples: venue.samples,
+      fullTime: Object.fromEntries(
+        Object.entries(venue.direct.ft).map(([key, value]) => [key, round(value)])
+      ),
+      halfTime: Object.fromEntries(
+        Object.entries(venue.direct.ht).map(([key, value]) => [key, round(value)])
+      )
+    },
     alternatives: topAlternatives,
     marketComparison: rankedMarkets.slice(0, 10).map((market) => ({
       key: market.key,
@@ -927,9 +1289,18 @@ export function predictMatch(input) {
   const direct = directProbabilities(matrix);
   const quality = dataQuality(input.home, input.away, homeProfile, awayProfile);
   const goals = goalLogic(input, matrix, homeProfile, awayProfile, quality);
+  const venue = venuePatternContext(input, leagueBaseline);
   const candidates = marketCandidates(input, matrix, direct, goals, quality);
-  const rankedMarkets = rankMarkets(candidates);
+  const rankedMarkets = rankMarkets(candidates, venue, input);
   const primary = choosePrimaryMarket(rankedMarkets);
+  const enginePicks = buildEngineSuite({
+    rankedMarkets,
+    primary,
+    venue,
+    input,
+    goals,
+    quality
+  });
   const supporting = rankedMarkets.find(
     (market) =>
       market.key !== primary.key &&
@@ -948,7 +1319,9 @@ export function predictMatch(input) {
     quality,
     homeProfile,
     awayProfile,
-    story
+    story,
+    enginePicks,
+    venue
   });
 
   return {
@@ -965,6 +1338,8 @@ export function predictMatch(input) {
       awaySamples: quality.awaySamples
     },
     primaryPrediction: primary,
+    enginePicks,
+    defaultEngine: "primary",
     supportingPrediction: supporting,
     noBet: false,
     qualified: primary.qualified,
@@ -978,6 +1353,17 @@ export function predictMatch(input) {
         Object.entries(direct.doubleChance).map(([key, value]) => [key, round(value)])
       ),
       drawNoBet: Object.fromEntries(Object.entries(direct.dnb).map(([key, value]) => [key, round(value)]))
+    },
+    venuePattern: {
+      topTransitions: venue.topTransitions,
+      indicators: venue.indicators,
+      samples: venue.samples,
+      fullTime: Object.fromEntries(
+        Object.entries(venue.direct.ft).map(([key, value]) => [key, round(value)])
+      ),
+      halfTime: Object.fromEntries(
+        Object.entries(venue.direct.ht).map(([key, value]) => [key, round(value)])
+      )
     },
     transitionMatrix: Object.fromEntries(
       TRANSITIONS.map((transition) => [
