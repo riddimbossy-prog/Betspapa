@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.3.1 — Search Overlay and Legacy Cache Hard Fix
+
+- Search is now controlled by an explicit `.is-open` state and cannot display on page load.
+- Added an inline critical search guard before the main stylesheet.
+- Added unique v1.3.1 CSS and JavaScript filenames to bypass old service-worker caches.
+- Removed active frontend service-worker registration during development.
+- Added automatic cleanup of legacy service-worker registrations and caches.
+- Added `reset.html` as a one-click emergency cache reset page.
+- Preserved the official Papa branding, live API, Render backend, Supabase integration and prediction engine.
+
 ## v1.3.0 — Official Papa Branding
 
 - Added the approved BetsPapa wise-Papa mascot logo.

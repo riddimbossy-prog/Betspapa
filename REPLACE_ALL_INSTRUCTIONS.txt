@@ -1,19 +1,16 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.3.0
-================================================
+BETSPAPA FULL REPLACEMENT v1.3.1
+================================
 
-1. Back up your current local Betspapa repository.
-2. Extract this ZIP.
-3. Copy every file and folder into your local Betspapa repository.
-4. Choose Replace/Overwrite All when Windows asks.
-5. Open GitHub Desktop.
-6. Commit with: BetsPapa v1.3 official Papa branding
-7. Click Push origin.
-8. GitHub Pages will redeploy the website.
-9. Render will redeploy the backend because the server folder is included.
-10. On phone/desktop, hard refresh the site or reopen it after the new service-worker cache activates.
+1. Extract this ZIP.
+2. Copy every file and folder into your local Betspapa GitHub repository.
+3. Choose Replace/Overwrite All.
+4. Commit: BetsPapa v1.3.1 search cache hard fix
+5. Push origin.
+6. Wait for GitHub Pages and Render deployments to finish.
+7. Open this URL once:
+   https://betspapa.com/reset.html
+8. It will clear the old service worker/cache and return you to the homepage.
 
-This ZIP is complete. It includes the frontend, responsive mobile/tablet/Z Fold UI,
-official logo assets, Render backend, Supabase integration, prediction engine,
-PowerShell scripts, workflows, tests and documentation.
+The search box will now remain closed until the search icon is clicked.
 
-Do not add API keys or Supabase service-role secrets to GitHub.
+Do not put private API keys, Supabase service-role keys or ADMIN_SYNC_SECRET in GitHub.

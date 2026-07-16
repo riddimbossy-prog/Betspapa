@@ -15,7 +15,48 @@
   <link rel="icon" href="assets/images/favicon-64.png" type="image/png">
   <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/styles.v131.css">
+  <style id="betspapa-critical-search-guard">
+    #searchDrawer { display: none !important; }
+    #searchDrawer.is-open:not([hidden]) { display: grid !important; }
+  </style>
+  <script>
+    (function () {
+      window.__BETSPAPA_BUILD__ = "1.3.1";
+      function forceSearchClosed() {
+        var drawer = document.getElementById("searchDrawer");
+        if (drawer) {
+          drawer.classList.remove("is-open");
+          drawer.hidden = true;
+          drawer.setAttribute("aria-hidden", "true");
+        }
+        if (document.body) document.body.classList.remove("search-open");
+      }
+
+      forceSearchClosed();
+      document.addEventListener("DOMContentLoaded", forceSearchClosed, { once: true });
+      window.addEventListener("pageshow", forceSearchClosed);
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations()
+          .then(function (registrations) {
+            return Promise.all(registrations.map(function (registration) {
+              return registration.unregister();
+            }));
+          })
+          .catch(function () {});
+      }
+
+      if ("caches" in window) {
+        caches.keys()
+          .then(function (keys) {
+            return Promise.all(keys.map(function (key) { return caches.delete(key); }));
+          })
+          .catch(function () {});
+      }
+    })();
+  </script>
+
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -40,7 +81,7 @@
     </nav>
 
     <div class="top-actions">
-      <button class="icon-button" id="searchButton" aria-label="Search">⌕</button>
+      <button class="icon-button" id="searchButton" aria-label="Search" aria-controls="searchDrawer" aria-expanded="false">⌕</button>
       <button class="login-button">Login</button>
       <button class="gold-button small">Sign Up</button>
       <button class="mobile-menu" id="mobileMenu" aria-label="Open navigation menu" aria-controls="sidebar" aria-expanded="false">
@@ -254,16 +295,16 @@
     </ol>
   </dialog>
 
-  <div class="search-drawer" id="searchDrawer" hidden>
+  <div class="search-drawer" id="searchDrawer" hidden aria-hidden="true">
     <div class="search-card">
-      <button class="search-close" id="searchClose">×</button>
+      <button class="search-close" id="searchClose" type="button" aria-label="Close search">×</button>
       <span class="kicker">SEARCH BETSPAPA</span>
       <input id="globalSearch" type="search" placeholder="Search team, league or market" autocomplete="off">
       <div id="searchResults"></div>
     </div>
   </div>
 
-  <script src="assets/js/engine.js"></script>
-  <script src="assets/js/app.js"></script>
+  <script src="assets/js/engine.v131.js"></script>
+  <script src="assets/js/app.v131.js"></script>
 </body>
 </html>

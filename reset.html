@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>BetsPapa Cache Reset</title>
+  <style>
+    body{min-height:100vh;margin:0;display:grid;place-items:center;background:#090018;color:#fff;font-family:Arial,sans-serif}
+    main{width:min(520px,calc(100vw - 32px));padding:28px;border:1px solid #6f21d9;border-radius:20px;background:#16032f;text-align:center}
+    h1{color:#f2c44f}p{line-height:1.6;color:#d7c7eb}a{display:inline-block;margin-top:12px;padding:13px 18px;border-radius:12px;background:#f2c44f;color:#16032f;font-weight:800;text-decoration:none}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Refreshing BetsPapa</h1>
+    <p id="status">Removing the old website cache…</p>
+    <a id="continue" href="/?v=131" hidden>Open BetsPapa</a>
+  </main>
+  <script>
+    (async function () {
+      try {
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+        }
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        }
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) {}
+      document.getElementById('status').textContent = 'Old cache removed. BetsPapa is ready.';
+      document.getElementById('continue').hidden = false;
+      setTimeout(() => location.replace('/?v=131'), 900);
+    })();
+  </script>
+</body>
+</html>
