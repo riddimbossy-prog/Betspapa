@@ -18,10 +18,6 @@ services:
         sync: false
       - key: ALLOWED_ORIGINS
         value: https://betspapa.com,https://www.betspapa.com
-      - key: ADMIN_SYNC_SECRET
-        sync: false
-      - key: API_FOOTBALL_KEY
-        sync: false
       - key: ODDS_API_KEY
         sync: false
       - key: FOOTBALL_API_KEY

@@ -1,53 +1,62 @@
-# BetsPapa
+# Betspapa
 
-Royal-purple responsive football prediction platform with a private Render backend, Supabase database, API-Football importer, HT/FT profile builder, common-sense prediction engine, and automatic result grading.
+Royal-purple football prediction dashboard and client-side HT/FT common-sense engine.
 
-## Architecture
+## What is included
 
-```text
-betspapa.com             GitHub Pages frontend
-api.betspapa.com         Render Node.js backend
-Supabase                 Database and authentication
-API-Football             Fixtures, teams, halftime and fulltime scores
-The Odds API             Reserved for bookmaker-odds validation
-```
+- Royal purple and gold responsive dashboard
+- HT/FT transition matrix: 1/1 through 2/2
+- Correct home/away orientation
+- Two-team transition agreement
+- GG confirmation using both teams' scoring/conceding pathways
+- Over 1.5, Over 2.5 and Under 3.5 support scores
+- Dominant-team Over 2.5 route
+- Result, double chance and half-time markets
+- Mobile, tablet and desktop layouts
+- GitHub Pages workflow
+- `CNAME` already set to `betspapa.com`
+- PWA manifest and offline cache
 
-## Main features
+## Publish from GitHub Desktop
 
-- Responsive royal-purple UI for desktop, tablet, phone and Z Fold.
-- Hamburger drawer and mobile bottom navigation.
-- HT/FT transition matrix covering 1/1 through 2/2.
-- Correct home/away orientation.
-- Overall, Home, Away and Recent-6 profiles.
-- Latest GG confirmation from both teams' scoring and conceding thresholds.
-- One-sided dominant-team Over 2.5 route.
-- Under 3.5 ceiling safeguards.
-- Protected API-Football fixture importer.
-- Automatic prediction storage in Supabase.
-- Automatic grading after fixtures finish.
-- Live frontend feed with demo fallback.
+1. Extract the `Betspapa` folder.
+2. In GitHub Desktop, choose **File → Add Local Repository**.
+3. Select the extracted `Betspapa` folder.
+4. When prompted, create/publish the repository as **Betspapa**.
+5. Commit all files and push to the `main` branch.
+6. In GitHub: **Settings → Pages → Build and deployment → GitHub Actions**.
+7. Under **Custom domain**, enter `betspapa.com` and enable **Enforce HTTPS** after DNS is verified.
 
-## Deploy frontend
+## Hostinger DNS for GitHub Pages
 
-Push the repository root to `riddimbossy-prog/Betspapa`. GitHub Pages serves the root through `betspapa.com`.
+Remove the old `A` record pointing `@` to the Hostinger server, then add these four `A` records:
 
-## Deploy backend
+- `185.199.108.153`
+- `185.199.109.153`
+- `185.199.110.153`
+- `185.199.111.153`
 
-Render settings:
+Set `www` as a `CNAME` to:
 
-```text
-Root Directory: server
-Build Command: npm install
-Start Command: npm start
-Health Check Path: /api/health
-```
+`YOUR-GITHUB-USERNAME.github.io`
 
-See `RENDER_SETUP.md` and `ADMIN_PIPELINE_GUIDE.md`.
+Replace `YOUR-GITHUB-USERNAME` with the account that owns the repository.
 
-## Test
+## Important production note
 
-```bash
-cd server
-npm install
-npm test
-```
+GitHub Pages hosts static files only. Keep API keys out of this repository. A live data pipeline or private prediction API should run separately and the frontend can call it securely.
+
+## Responsive navigation
+
+The interface now includes:
+
+- Off-canvas hamburger navigation on phones, tablets and Z Fold layouts.
+- A thumb-friendly five-tab mobile navigation bar for Home, Picks, Engine, Results and More.
+- Responsive layouts for narrow cover screens from 320px, normal phones, tablets and unfolded foldables.
+- Safe-area support for devices with notches and gesture bars.
+- Mobile card rendering for the results table instead of a cramped horizontal desktop table.
+- Escape-key, backdrop and resize handling for the navigation drawer.
+
+## Render backend
+
+This repository now includes a Node.js backend in `server/` for deployment to Render. See `RENDER_SETUP.md`.

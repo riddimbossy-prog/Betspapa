@@ -1,53 +1,37 @@
 # BetsPapa Render Setup
 
-## Web service
+Use these values when creating the Render Web Service:
 
-```text
-Name: betspapa-api
-Language: Node
-Branch: main
-Root Directory: server
-Build Command: npm install
-Start Command: npm start
-Health Check Path: /api/health
-```
+- Name: `betspapa-api`
+- Language: `Node`
+- Branch: `main`
+- Root Directory: `server`
+- Build Command: `npm install`
+- Start Command: `npm start`
+- Health Check Path: `/api/health`
 
-## Required environment variables
+Required environment variables:
 
-```env
-NODE_ENV=production
-SUPABASE_URL=
-SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-ALLOWED_ORIGINS=https://betspapa.com,https://www.betspapa.com
-API_FOOTBALL_KEY=
-ODDS_API_KEY=
-ADMIN_SYNC_SECRET=
-```
+- `NODE_ENV=production`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `ALLOWED_ORIGINS=https://betspapa.com,https://www.betspapa.com`
+- `ODDS_API_KEY`
+- `FOOTBALL_API_KEY`
+- `API_STATS_KEY`
 
-The API-Football key can alternatively be stored as `FOOTBALL_API_KEY` or `API_STATS_KEY`.
+After deployment, test:
 
-## Custom domain
+`https://YOUR-RENDER-SERVICE.onrender.com/api/health`
 
-Add `api.betspapa.com` in Render and point the Hostinger DNS `api` CNAME to `betspapa.onrender.com`.
-
-## Health check
-
-```text
-https://api.betspapa.com/api/health
-```
-
-A healthy response includes:
+Expected database-connected response:
 
 ```json
 {
   "status": "ok",
   "service": "BetsPapa Prediction API",
-  "version": "1.2.0",
-  "database": "connected",
-  "providerKeyConfigured": true,
-  "adminSecretConfigured": true
+  "version": "1.1.0",
+  "database": "connected"
 }
 ```
-
-Then follow `ADMIN_PIPELINE_GUIDE.md` to import the first league.
