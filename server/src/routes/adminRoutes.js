@@ -8,6 +8,8 @@ import { gradePredictionsForDate } from "../services/gradingService.js";
 import { generatePredictionsForDate } from "../services/predictionService.js";
 import { rebuildProfiles } from "../services/profileService.js";
 import { syncDate, syncLeagueHistory } from "../services/syncService.js";
+import { hydrateProfilesForFixtures } from "../services/historyHydrationService.js";
+import { fetchAllRows } from "../services/supabaseHelpers.js";
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
@@ -67,6 +69,50 @@ adminRouter.post("/rebuild-profiles", async (req, res, next) => {
     const season = positiveInt(req.body?.season, "season");
     const result = await rebuildProfiles(getSupabaseAdmin(), leagueId, season);
     res.json({ status: "ok", action: "rebuild-profiles", result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+adminRouter.post("/hydrate-date", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.body?.date || todayUtc());
+    const supabase = getSupabaseAdmin();
+    const { start, end } = await import("../utils/date.js")
+      .then(({ dateRangeUtc }) => dateRangeUtc(date));
+
+    const fixtures = await fetchAllRows(() =>
+      supabase
+        .from("fixtures")
+        .select("*")
+        .gte("fixture_date", start)
+        .lt("fixture_date", end)
+        .order("fixture_date", { ascending: true })
+    );
+
+    const teamIds = [...new Set(
+      fixtures.flatMap((fixture) => [
+        fixture.home_team_id,
+        fixture.away_team_id
+      ])
+    )];
+
+    const { data: teamRows, error } = await supabase
+      .from("teams")
+      .select("id,external_team_id,name,country,logo_url")
+      .in("id", teamIds);
+    if (error) throw error;
+
+    const teams = new Map((teamRows || []).map((team) => [team.id, team]));
+    const result = await hydrateProfilesForFixtures(
+      supabase,
+      fixtures,
+      teams,
+      { force: Boolean(req.body?.force) }
+    );
+
+    res.json({ status: "ok", action: "hydrate-date", date, result });
   } catch (error) {
     next(error);
   }

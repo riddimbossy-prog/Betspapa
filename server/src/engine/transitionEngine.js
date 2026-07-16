@@ -926,15 +926,15 @@ function selectionSide(market, input) {
   return null;
 }
 
-function chooseSaferMarket(rankedMarkets, primary, input) {
+function chooseSaferMarket(rankedMarkets, primary, input, venue, quality) {
   const byKey = new Map(rankedMarkets.map((market) => [market.key, market]));
   const side = selectionSide(primary, input);
   const priorities = [];
 
   if (side === "home") {
-    priorities.push("home-dnb", "home-1x", "home-over-05", "over-15", "under-35");
+    priorities.push("home-dnb", "home-over-05", "over-15", "under-35", "home-1x");
   } else if (side === "away") {
-    priorities.push("away-dnb", "away-x2", "away-over-05", "over-15", "under-35");
+    priorities.push("away-dnb", "away-over-05", "over-15", "under-35", "away-x2");
   } else if (primary.key === "over-25" || primary.key === "gg-yes") {
     priorities.push("over-15", "home-over-05", "away-over-05", "under-35");
   } else if (primary.key === "favourite-over-15") {
@@ -951,9 +951,29 @@ function chooseSaferMarket(rankedMarkets, primary, input) {
     priorities.push("over-15", "under-35", "home-1x", "away-x2", "no-draw");
   }
 
+  const protectionAllowed = (market) => {
+    if (!market || market.market !== "Double Chance") return true;
+    const sideEdge = side === "home"
+      ? venue.direct.ft.home - venue.direct.ft.away
+      : side === "away"
+        ? venue.direct.ft.away - venue.direct.ft.home
+        : 0;
+    return (
+      market.qualified &&
+      quality.score >= 0.52 &&
+      sideEdge >= 0.07
+    );
+  };
+
   const directChoice = priorities
     .map((key) => byKey.get(key))
-    .find((market) => market && market.key !== primary.key && market.safetyAdjustedScore >= 0.45);
+    .find(
+      (market) =>
+        market &&
+        market.key !== primary.key &&
+        market.safetyAdjustedScore >= 0.45 &&
+        protectionAllowed(market)
+    );
 
   if (directChoice) return directChoice;
 
@@ -966,7 +986,7 @@ function chooseSaferMarket(rankedMarkets, primary, input) {
           market.comparisonScore +
           ({
             "Draw No Bet": 0.12,
-            "Double Chance": 0.1,
+            "Double Chance": market.qualified && quality.score >= 0.52 ? -0.02 : -0.22,
             "Total Goals": market.key === "over-15" || market.key === "under-35" ? 0.12 : 0,
             "Team Goals": market.key.endsWith("over-05") ? 0.1 : 0
           }[market.market] || 0)
@@ -1034,16 +1054,32 @@ function buildEngineSuite({
   quality
 }) {
   const aggressive = chooseAggressiveMarket(rankedMarkets, primary);
-  const safer = chooseSaferMarket(rankedMarkets, primary, input);
+  const safer = chooseSaferMarket(
+    rankedMarkets,
+    primary,
+    input,
+    venue,
+    quality
+  );
   const venueSelection = chooseVenuePatternMarket(rankedMarkets, venue, input, goals);
 
   const primaryVenueAligned = marketVenueAlignment(primary, venue, input) > 0.01;
+  const audit = input.profileAudit || {};
+  const sampleReason = audit.home && audit.away
+    ? `Individual history used: ${audit.home.teamName} overall ${audit.home.evidence.overall}, venue ${audit.home.evidence.venue}; ` +
+      `${audit.away.teamName} overall ${audit.away.evidence.overall}, venue ${audit.away.evidence.venue}.`
+    : "Individual team history was used before market ranking.";
+
   const primaryReasons = primaryVenueAligned
     ? [
+        sampleReason,
         "Venue HT/FT direction agrees with the overall PapaSense market direction.",
         ...venue.reasons.slice(0, 2)
       ]
-    : ["Overall, recent, venue and goal evidence were compared before the final market was chosen."];
+    : [
+        sampleReason,
+        "Overall, recent, venue and goal evidence were compared before the final market was chosen."
+      ];
 
   return {
     primary: copyEnginePick(primary, "primary", "Papa Primary", {
@@ -1277,10 +1313,33 @@ function buildDecisionTrace({
   };
 }
 
+
+function inputSampleCount(team) {
+  return (
+    Number(team.htft?.overall?.matches || 0) +
+    Number(team.htft?.venue?.matches || 0) +
+    Number(team.htft?.recent?.matches || 0)
+  );
+}
+
+function requireTeamEvidence(input) {
+  const homeSamples = inputSampleCount(input.home);
+  const awaySamples = inputSampleCount(input.away);
+
+  if (homeSamples <= 0 || awaySamples <= 0) {
+    const error = new Error(
+      "PapaSense refuses to publish a prior-only prediction. Both teams need real HT/FT history."
+    );
+    error.code = "PRIOR_ONLY_PREDICTION_BLOCKED";
+    throw error;
+  }
+}
+
 export function predictMatch(input) {
   if (!input?.home?.name || !input?.away?.name) {
     throw new Error("Both home.name and away.name are required.");
   }
+  requireTeamEvidence(input);
 
   const leagueBaseline = { ...DEFAULT_LEAGUE_BASELINE, ...(input.league?.transitionBaseline || {}) };
   const homeProfile = blendTeamProfile(input.home, leagueBaseline);
@@ -1331,6 +1390,8 @@ export function predictMatch(input) {
     home: input.home.name,
     away: input.away.name,
     generatedAt: new Date().toISOString(),
+    profileAudit: input.profileAudit || null,
+    analysisFingerprint: input.analysisFingerprint || null,
     dataQuality: {
       score: round(quality.score),
       label: quality.label,
@@ -1382,6 +1443,7 @@ export function predictMatch(input) {
     },
     markets: rankedMarkets,
     safeguards: [
+      "Prior-only predictions are blocked; both teams must contribute real HT/FT history.",
       "Home and away orientation is resolved before translating W/W into 1/1 or 2/2.",
       "GG requires two independent scoring routes; one strong team cannot create GG alone.",
       "Under 3.5 cannot qualify from stable transitions alone.",

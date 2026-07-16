@@ -1,44 +1,39 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.7.0
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.8.0
 ================================================
 
 1. Extract this ZIP.
-2. Copy every file and folder into the local Betspapa GitHub repository.
+2. Copy every file and folder into your local Betspapa GitHub repository.
 3. Choose Replace/Overwrite All.
 4. Commit:
-   BetsPapa v1.7 four engines desktop layout
+   BetsPapa v1.8 anti zombie individual history
 5. Push origin.
 6. Wait for GitHub Pages and Render to deploy.
 7. Open once:
    https://betspapa.com/reset.html
 8. Confirm:
    https://api.betspapa.com/api/health
-   Version must show 1.7.0.
-9. Open betspapa.com and allow PapaSense v1.7 to regenerate the fixtures.
+   Version must show 1.8.0.
+9. Open betspapa.com. The first load may take longer because thin-data teams are
+   being hydrated from completed API-Football fixtures.
 
-ENGINE FILTERS
---------------
-Papa Primary is the default.
-Use the engine tabs or Engine Pick dropdown to switch every card to:
-- Aggressive
-- Safer
-- Venue Pattern
+RECOMMENDED ONE-TIME FULL BACKFILL
+----------------------------------
+From PowerShell inside the repository:
 
-Click any fixture to see reasons for the currently selected engine.
+powershell -ExecutionPolicy Bypass -File .\scripts\hydrate-and-generate.ps1 -Date 2026-07-16
 
-POTOSI-STYLE APPROACH
----------------------
-The Venue Pattern engine explicitly compares:
-Home W/W ↔ Away L/L
-Home W/D ↔ Away L/D
-Home W/L ↔ Away L/W
-Home D/W ↔ Away D/L
-Home D/D ↔ Away D/D
-Home D/L ↔ Away D/W
-Home L/W ↔ Away W/L
-Home L/D ↔ Away W/D
-Home L/L ↔ Away W/W
+Enter the same ADMIN_SYNC_SECRET stored in Render.
 
-Papa Primary also receives venue support when the venue route agrees with the
-overall, recent and goal evidence.
+WHAT CHANGED
+------------
+The repeated 57% 1X cards were not genuine individual analysis. They occurred
+when empty team profiles fell back to the same league defaults. v1.8 blocks
+that behaviour.
+
+A prediction is now published only after:
+- both teams have real completed HT/FT history
+- home Overall/Home/Recent and away Overall/Away/Recent profiles are built
+- all nine opposite transitions are calculated
+- the fixture receives its own analysis fingerprint
 
 Do not commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET.

@@ -116,6 +116,17 @@ export async function fetchLeagueFixtures({ leagueId, season, from, to }) {
   });
 }
 
+
+export async function fetchTeamRecentFixtures({ teamId, last = 24 }) {
+  const safeLast = Math.max(6, Math.min(Number(last) || 24, 40));
+  return apiFootballRequest("/fixtures", {
+    team: Number(teamId),
+    last: safeLast,
+    status: "FT",
+    timezone: "UTC"
+  });
+}
+
 export async function fetchProviderStatus() {
   return apiFootballRequest("/status");
 }

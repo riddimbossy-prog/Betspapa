@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.8.0 — Individual History Hydration / Anti-Zombie Engine
+
+- Diagnosed the repeated 57% 1X cards as prior-only predictions produced when team profiles were empty.
+- PapaSense now fetches each thin-data team's recent completed fixtures from API-Football.
+- Imported history is persisted to Supabase and the affected league/season profiles are rebuilt.
+- Predictions require real HT/FT evidence from both teams.
+- Prior-only league-default predictions are blocked.
+- Added profile audits with Overall, Venue and Recent sample counts.
+- Added an analysis fingerprint so each fixture's actual input set can be verified.
+- Added honest `History unavailable` states instead of copied predictions.
+- Safer engine now places Double Chance last and only allows it with:
+  - sufficient data quality
+  - a real side edge
+  - a qualified protection score
+- Added `/api/admin/hydrate-date`.
+- Added `scripts/hydrate-and-generate.ps1`.
+- Engine version updated to `papasense-v1.8`, causing clean regeneration.
+
 ## v1.7.0 — Four Engine Picks and Desktop Layout Repair
 
 - Every fixture now has four named engine outputs:

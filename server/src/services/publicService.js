@@ -71,8 +71,11 @@ async function ensurePredictionsForDate(supabase, date, fixtures, predictions) {
     missingBefore: missingFixtures.length,
     generated: Number(result.generated || 0),
     published: Number(result.published || 0),
+    hydration: result.hydration || null,
     skipped: (result.skipped || []).map((item) => ({
       fixtureId: item.fixtureId,
+      externalFixtureId: item.externalFixtureId,
+      code: item.code,
       message: item.message
     }))
   };
@@ -257,6 +260,12 @@ export async function listPublicPredictions(supabase, date) {
         venuePattern:
           prediction.market_scores?.venuePattern ||
           prediction.market_scores?.decisionTrace?.venuePatternReview ||
+          null,
+        profileAudit:
+          prediction.market_scores?.profileAudit ||
+          null,
+        analysisFingerprint:
+          prediction.market_scores?.analysisFingerprint ||
           null,
         createdAt: prediction.created_at,
         updatedAt: prediction.updated_at

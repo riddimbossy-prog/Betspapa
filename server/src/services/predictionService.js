@@ -2,6 +2,7 @@ import { ENGINE_VERSION, PREDICTABLE_STATUSES } from "../config.js";
 import { predictMatch } from "../engine/transitionEngine.js";
 import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
+import { hydrateProfilesForFixtures } from "./historyHydrationService.js";
 
 const TRANSITIONS = ["WW", "WD", "WL", "DW", "DD", "DL", "LW", "LD", "LL"];
 
@@ -124,6 +125,132 @@ function aggregateGoalProfiles(rows, currentLeagueId, currentSeason) {
   }
 
   return map;
+}
+
+
+function roundedSample(value) {
+  return Number(Number(value || 0).toFixed(2));
+}
+
+function teamEvidence(team) {
+  return {
+    overall: roundedSample(team.htft?.overall?.matches),
+    venue: roundedSample(team.htft?.venue?.matches),
+    recent: roundedSample(team.htft?.recent?.matches),
+    goalOverall: roundedSample(team.goals?.overall?.matches),
+    goalVenue: roundedSample(team.goals?.venue?.matches)
+  };
+}
+
+function hasIndividualEvidence(evidence) {
+  return (
+    evidence.overall >= 4 &&
+    (evidence.venue >= 2 || evidence.recent >= 4)
+  );
+}
+
+function simpleHash(text) {
+  let hash = 2166136261;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+function teamProfileVector(team) {
+  const htft = ["overall", "venue", "recent"].flatMap((scope) => {
+    const row = team.htft?.[scope] || {};
+    return [
+      row.matches || 0,
+      ...TRANSITIONS.map((transition) => row[transition] || 0)
+    ];
+  });
+
+  const goals = ["overall", "venue", "recent"].flatMap((scope) => {
+    const row = team.goals?.[scope] || {};
+    return [
+      row.matches || 0,
+      row.scoreRate || 0,
+      row.concedeRate || 0,
+      row.bttsRate || 0,
+      row.over15Rate || 0,
+      row.over25Rate || 0,
+      row.under35Rate || 0
+    ];
+  });
+
+  return [...htft, ...goals].map((value) => Number(value || 0).toFixed(4));
+}
+
+function buildProfileAudit({
+  fixture,
+  homeTeam,
+  awayTeam,
+  home,
+  away,
+  hydrationByTeam
+}) {
+  const homeEvidence = teamEvidence(home);
+  const awayEvidence = teamEvidence(away);
+  const homeHydration = hydrationByTeam?.[String(fixture.home_team_id)] || null;
+  const awayHydration = hydrationByTeam?.[String(fixture.away_team_id)] || null;
+
+  const evidenceFingerprint = simpleHash(JSON.stringify({
+    home: teamProfileVector(home),
+    away: teamProfileVector(away)
+  }));
+
+  const analysisFingerprint = simpleHash(JSON.stringify({
+    fixture: fixture.external_fixture_id,
+    homeTeamId: homeTeam.external_team_id,
+    awayTeamId: awayTeam.external_team_id,
+    evidenceFingerprint
+  }));
+
+  return {
+    minimums: {
+      overall: 4,
+      venueOrRecent: 2
+    },
+    home: {
+      teamId: homeTeam.id,
+      externalTeamId: homeTeam.external_team_id,
+      teamName: homeTeam.name,
+      evidence: homeEvidence,
+      source: homeHydration?.source || "supabase-profile-cache",
+      ready: hasIndividualEvidence(homeEvidence),
+      hydration: homeHydration
+    },
+    away: {
+      teamId: awayTeam.id,
+      externalTeamId: awayTeam.external_team_id,
+      teamName: awayTeam.name,
+      evidence: awayEvidence,
+      source: awayHydration?.source || "supabase-profile-cache",
+      ready: hasIndividualEvidence(awayEvidence),
+      hydration: awayHydration
+    },
+    evidenceFingerprint,
+    analysisFingerprint,
+    individuallyAnalysed:
+      hasIndividualEvidence(homeEvidence) &&
+      hasIndividualEvidence(awayEvidence)
+  };
+}
+
+function requireIndividualEvidence(profileAudit) {
+  if (profileAudit.individuallyAnalysed) return;
+
+  const error = new Error(
+    `Individual HT/FT history is insufficient after hydration. ` +
+    `${profileAudit.home.teamName}: overall ${profileAudit.home.evidence.overall}, ` +
+    `venue ${profileAudit.home.evidence.venue}, recent ${profileAudit.home.evidence.recent}; ` +
+    `${profileAudit.away.teamName}: overall ${profileAudit.away.evidence.overall}, ` +
+    `venue ${profileAudit.away.evidence.venue}, recent ${profileAudit.away.evidence.recent}.`
+  );
+  error.code = "INSUFFICIENT_INDIVIDUAL_HISTORY";
+  throw error;
 }
 
 function deriveLeagueBaseline(profileRows) {
@@ -277,7 +404,9 @@ function predictionRow(fixture, prediction) {
       allHtftIndicators: prediction.decisionTrace?.allHtftIndicators || [],
       enginePicks: prediction.enginePicks,
       defaultEngine: prediction.defaultEngine,
-      venuePattern: prediction.venuePattern
+      venuePattern: prediction.venuePattern,
+      profileAudit: prediction.profileAudit,
+      analysisFingerprint: prediction.analysisFingerprint
     },
     transition_matrix: prediction.transitionMatrix,
     reasons,
@@ -309,7 +438,11 @@ async function predictFixture(supabase, fixture, cached) {
     cached.set(cacheKey, context);
   }
 
-  const teams = await loadTeams(supabase, [fixture.home_team_id, fixture.away_team_id]);
+  const allTeams = cached.get("__teams");
+  const teams = allTeams || await loadTeams(
+    supabase,
+    [fixture.home_team_id, fixture.away_team_id]
+  );
   const homeTeam = teams.get(fixture.home_team_id);
   const awayTeam = teams.get(fixture.away_team_id);
   if (!homeTeam || !awayTeam) throw new Error(`Fixture ${fixture.id} has unresolved teams`);
@@ -342,12 +475,24 @@ async function predictFixture(supabase, fixture, cached) {
   const home = buildTeamInput(homeTeam, "home", htftMap, goalMap);
   const away = buildTeamInput(awayTeam, "away", htftMap, goalMap);
 
+  const profileAudit = buildProfileAudit({
+    fixture,
+    homeTeam,
+    awayTeam,
+    home,
+    away,
+    hydrationByTeam: cached.get("__hydrationByTeam") || {}
+  });
+  requireIndividualEvidence(profileAudit);
+
   const input = {
     fixtureId: String(fixture.external_fixture_id),
     competition: `${context.league.country || ""} · ${context.league.name}`.replace(/^ · /, ""),
     kickoff: fixture.fixture_date,
     home,
     away,
+    profileAudit,
+    analysisFingerprint: profileAudit.analysisFingerprint,
     league: {
       transitionBaseline: deriveLeagueBaseline(context.htftRows),
       goals: {
@@ -376,6 +521,25 @@ export async function generatePredictionsForDate(supabase, date) {
   const saved = [];
   const skipped = [];
 
+  const teamIds = [...new Set(
+    predictable.flatMap((fixture) => [
+      fixture.home_team_id,
+      fixture.away_team_id
+    ])
+  )];
+  const teams = teamIds.length
+    ? await loadTeams(supabase, teamIds)
+    : new Map();
+
+  const hydration = await hydrateProfilesForFixtures(
+    supabase,
+    predictable,
+    teams
+  );
+
+  cached.set("__teams", teams);
+  cached.set("__hydrationByTeam", hydration.byTeamId);
+
   for (const fixture of predictable) {
     try {
       const prediction = await predictFixture(supabase, fixture, cached);
@@ -388,7 +552,12 @@ export async function generatePredictionsForDate(supabase, date) {
       throwIfSupabaseError(error, "Unable to save prediction");
       saved.push(data);
     } catch (error) {
-      skipped.push({ fixtureId: fixture.id, message: error.message || String(error) });
+      skipped.push({
+        fixtureId: fixture.id,
+        externalFixtureId: fixture.external_fixture_id,
+        code: error.code || "PREDICTION_ERROR",
+        message: error.message || String(error)
+      });
     }
   }
 
@@ -398,6 +567,7 @@ export async function generatePredictionsForDate(supabase, date) {
     predictableFixtures: predictable.length,
     generated: saved.length,
     published: saved.filter((item) => item.published).length,
+    hydration,
     skipped,
     predictions: saved
   };

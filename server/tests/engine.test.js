@@ -101,3 +101,35 @@ test("Aggressive and safer engines use distinct selection policies", () => {
   assert.match(prediction.enginePicks.aggressive.description, /specific/i);
   assert.match(prediction.enginePicks.safer.description, /lower-risk/i);
 });
+
+
+test("PapaSense blocks prior-only zombie predictions", () => {
+  assert.throws(
+    () => predictMatch({
+      fixtureId: "zombie-test",
+      home: { name: "Empty Home", htft: {}, goals: {} },
+      away: { name: "Empty Away", htft: {}, goals: {} },
+      league: {}
+    }),
+    /refuses to publish a prior-only prediction/i
+  );
+});
+
+test("Safer engine does not automatically force Double Chance", () => {
+  const markets = demoFixtures.map(
+    (fixture) => predictMatch(fixture).enginePicks.safer.market
+  );
+  assert.ok(markets.some((market) => market !== "Double Chance"));
+});
+
+test("Prediction output carries an analysis fingerprint when supplied", () => {
+  const input = structuredClone(demoFixtures[0]);
+  input.profileAudit = {
+    home: { teamName: input.home.name, evidence: { overall: 10, venue: 5, recent: 6 } },
+    away: { teamName: input.away.name, evidence: { overall: 10, venue: 5, recent: 6 } }
+  };
+  input.analysisFingerprint = "abc12345";
+  const prediction = predictMatch(input);
+  assert.equal(prediction.analysisFingerprint, "abc12345");
+  assert.ok(prediction.profileAudit);
+});
