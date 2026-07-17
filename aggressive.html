@@ -9,8 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/portal.v110.css">
+  <link rel="stylesheet" href="assets/css/portal.v111.css">
   <script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
+  <link rel="stylesheet" href="assets/css/mobile-nav.v111.css">
 </head>
 <body data-page="engine" data-engine="aggressive">
   <header class="portal-header">
@@ -18,12 +19,12 @@
       <img src="assets/images/betspapa-papa-mark.png" alt="">
       <span><strong>BETS<span>PAPA</span></strong><small>PAPA KNOWS THE GAME</small></span>
     </a>
-    <nav class="portal-nav" id="portalNav"><a class="" href="index.html">Home</a><a class="" href="papas-pick.html">Papa's Pick</a><a class="active" href="aggressive.html">Aggressive</a><a class="" href="safer.html">Safer</a><a class="" href="venue-pattern.html">Venue Pattern</a><a class="" href="bankers.html">Bankers</a><a class="" href="results-intelligence.html">Results</a><a class="" href="diagnostics.html">Diagnostics</a></nav>
-    <button class="portal-menu" id="portalMenu" type="button" aria-label="Open navigation">☰</button>
+    <nav class="portal-nav" id="portalNav" aria-label="Primary navigation"><a class="" href="index.html">Home</a><a class="" href="papas-pick.html">Papa's Pick</a><a class="active" href="aggressive.html">Aggressive</a><a class="" href="safer.html">Safer</a><a class="" href="venue-pattern.html">Venue Pattern</a><a class="" href="bankers.html">Bankers</a><a class="" href="results-intelligence.html">Results</a></nav>
+    <button class="portal-menu" id="portalMenu" type="button" aria-label="Open navigation" aria-controls="portalNav" aria-expanded="false">☰</button>
   </header>
   <main class="portal-main">
     <section class="portal-hero">
-      <span class="eyebrow">BetsPapa v1.10</span>
+      <span class="eyebrow">BetsPapa v1.10.1</span>
       <h1 id="portalTitle">Aggressive Engine</h1>
       <p id="portalDescription">Sharper markets for users who accept higher variance.</p>
     </section>
@@ -32,13 +33,21 @@
   <label><span>Date</span><input type="date" id="dateFilter"></label>
   <label><span>League</span><select id="leagueFilter"><option value="">All leagues</option></select></label>
   <label><span>Market</span><select id="marketFilter"><option value="">All markets</option></select></label>
-  <label><span>Strength</span><select id="strengthFilter"><option value="">All strengths</option><option value="qualified">Qualified</option><option value="directional">Directional</option></select></label>
+  <label><span>Strength</span><select id="strengthFilter"><option value="">All strengths</option><option value="qualified">Strong — Qualified</option><option value="directional">Best direction — Not a banker</option></select></label>
   <label><span>Search</span><input type="search" id="searchFilter" placeholder="Team, league or market"></label>
   <button type="button" id="clearFilters">Clear</button>
   <button type="button" id="refreshButton">Refresh</button>
 </div>
     <section class="metric-row" id="portalMetrics"></section>
     <div class="section-title"><h2>Completed selections</h2><p><span id="marketCount">0</span> market families</p></div><section class="portal-grid" id="portalContent"></section>
+    <footer class="portal-footer">
+      <span>Sports analytics only. Predictions are not guarantees. 18+.</span>
+      <div>
+        <a href="responsible.html">Responsible Use</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+      </div>
+    </footer>
   </main>
   <dialog class="portal-dialog" id="portalDialog">
     <div class="dialog-shell">
@@ -46,6 +55,7 @@
       <div id="portalDialogContent"></div>
     </div>
   </dialog>
-  <script src="assets/js/portal.v110.js"></script>
+  <script src="assets/js/portal.v111.js"></script>
+  <script src="assets/js/mobile-nav.v111.js"></script>
 </body>
 </html>

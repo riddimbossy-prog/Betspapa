@@ -18,14 +18,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="assets/css/styles.v1100.css">
+  <link rel="stylesheet" href="assets/css/styles.v1101.css">
   <style id="betspapa-critical-search-guard">
     #searchDrawer { display: none !important; }
     #searchDrawer.is-open:not([hidden]) { display: grid !important; }
   </style>
   <script>
     (function () {
-      window.__BETSPAPA_BUILD__ = "1.10.0";
+      window.__BETSPAPA_BUILD__ = "1.10.1";
       function forceSearchClosed() {
         var drawer = document.getElementById("searchDrawer");
         if (drawer) {
@@ -60,6 +60,7 @@
     })();
   </script>
 
+  <link rel="stylesheet" href="assets/css/mobile-nav.v111.css">
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -85,8 +86,6 @@
 
     <div class="top-actions">
       <button class="icon-button" id="searchButton" aria-label="Search" aria-controls="searchDrawer" aria-expanded="false">⌕</button>
-      <button class="login-button">Login</button>
-      <button class="gold-button small">Sign Up</button>
       <button class="mobile-menu" id="mobileMenu" aria-label="Open navigation menu" aria-controls="sidebar" aria-expanded="false">
         <span class="hamburger-lines" aria-hidden="true"><i></i><i></i><i></i></span>
       </button>
@@ -103,10 +102,6 @@
       <a class="side-link" href="bankers.html"><span>♜</span>Bankers</a>
       <a class="side-link" href="results-intelligence.html"><span>✓</span>Results</a>
       <a class="side-link" href="#fixtures"><span>▦</span>Fixtures</a>
-      <a class="side-link" href="diagnostics.html"><span>▥</span>Diagnostics</a>
-      <a class="side-link" href="#watchlist"><span>☆</span>My Watchlist</a>
-      <a class="side-link" href="#alerts"><span>♢</span>Alerts</a>
-      <a class="side-link" href="#settings"><span>⚙</span>Settings</a>
     </nav>
 
     <div class="premium-card" id="pricing">
@@ -175,7 +170,6 @@
       <div class="engine-page-actions">
         <a id="enginePageLink" href="papas-pick.html">Open Papa’s Pick page <span>→</span></a>
         <a href="bankers.html">View today’s bankers <span>→</span></a>
-        <a href="diagnostics.html">Admin diagnostics <span>→</span></a>
       </div>
 
       <div class="metric-grid" id="stats">
@@ -255,7 +249,7 @@
       <article class="panel insights-panel">
         <div class="panel-heading compact">
           <div><span class="eyebrow">COMMON-SENSE FILTERS</span><h2>Market Insights</h2></div>
-          <button class="text-button">View all</button>
+          <a class="text-button" href="papas-pick.html">Open all picks</a>
         </div>
         <div class="insight-list" id="marketInsights"></div>
         <div class="insight-note">Each goal market must be supported by both teams’ scoring and conceding pathways.</div>
@@ -318,7 +312,7 @@
         <div class="panel-heading">
           <div>
             <span class="eyebrow">CLICKED FIXTURE EXPLANATION</span>
-            <h2 id="explanationTitle">Why Papa's Pick Chose This Pick</h2>
+            <h2 id="explanationTitle">Why Papa Chose This Pick</h2>
           </div>
           <span class="decision-mode" id="decisionMode">Loading</span>
         </div>
@@ -395,24 +389,6 @@
     </footer>
   </main>
 
-  <nav class="mobile-tabbar" id="mobileTabbar" aria-label="Mobile navigation">
-    <a class="mobile-tab active" href="#dashboard" data-mobile-tab="dashboard" aria-label="Dashboard">
-      <span aria-hidden="true">⌂</span><small>Home</small>
-    </a>
-    <a class="mobile-tab" href="#prediction-board" data-mobile-tab="prediction-board" aria-label="Predictions">
-      <span aria-hidden="true">◈</span><small>Picks</small>
-    </a>
-    <a class="mobile-tab mobile-tab-primary" href="#engine" data-mobile-tab="engine" aria-label="HT/FT Engine">
-      <span aria-hidden="true">◎</span><small>Engine</small>
-    </a>
-    <a class="mobile-tab" href="#results" data-mobile-tab="results" aria-label="Results">
-      <span aria-hidden="true">✓</span><small>Results</small>
-    </a>
-    <button class="mobile-tab" id="mobileMore" type="button" aria-label="More navigation options">
-      <span aria-hidden="true">☰</span><small>More</small>
-    </button>
-  </nav>
-
   <dialog class="modal" id="methodModal">
     <button class="modal-close" id="modalClose" aria-label="Close">×</button>
     <span class="kicker">PAPASENSE ENGINE</span>
@@ -444,6 +420,7 @@
     </div>
   </dialog>
 
-  <script src="assets/js/app.v1100.js"></script>
+  <script src="assets/js/app.v1101.js"></script>
+  <script src="assets/js/mobile-nav.v111.js"></script>
 </body>
 </html>

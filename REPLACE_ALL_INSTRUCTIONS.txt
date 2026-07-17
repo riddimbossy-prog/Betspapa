@@ -1,44 +1,57 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.10.0
-=================================================
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.10.1
+================================================
 
+DEPLOY
+------
 1. Extract this ZIP.
-2. Replace every file in the local Betspapa repository.
+2. Replace every file in your local Betspapa repository.
 3. Commit:
-   BetsPapa v1.10 engine pages bankers diagnostics
-4. Push to GitHub.
-5. Wait for Render and GitHub Pages to deploy.
+   BetsPapa v1.10.1 readability admin mobile nav
+4. Push origin.
+5. Wait for GitHub Pages and Render to deploy.
 6. Confirm:
    https://api.betspapa.com/api/health
-   Version must show 1.10.0.
+   Version must show 1.10.1.
 7. Open once:
    https://betspapa.com/reset.html
-8. Run:
-   GitHub → Actions → BetsPapa Automatic Picks → Run workflow
 
-NEW PAGES
----------
-https://betspapa.com/papas-pick.html
-https://betspapa.com/aggressive.html
-https://betspapa.com/safer.html
-https://betspapa.com/venue-pattern.html
-https://betspapa.com/bankers.html
-https://betspapa.com/results-intelligence.html
-https://betspapa.com/diagnostics.html
-
-DIAGNOSTICS LOGIN
+PRIVATE ADMIN URL
 -----------------
-Use the same ADMIN_SYNC_SECRET already stored in Render.
-The page stores it only for the current browser tab.
+Diagnostics has been removed from the public navigation.
 
-BANKER RULE
+Use:
+https://betspapa.com/admin/
+
+The admin page still requires the same ADMIN_SYNC_SECRET stored in Render.
+The separate URL and robots exclusion improve separation, but the secret is
+the actual security control.
+
+MOBILE NAVIGATION
+-----------------
+A fixed mobile tab is now injected on:
+- Home
+- Papa's Pick
+- Aggressive
+- Safer
+- Venue Pattern
+- Bankers
+- Results
+- Privacy
+- Terms
+- Responsible Use
+- 404 pages
+
+The mobile tabs are:
+Home | Papa's Pick | Bankers | Results | More
+
+OTHER FIXES
 -----------
-No match is forced into the banker board. Each engine can publish zero to three
-strict selections. A pick must be Qualified, have adequate confidence, pass
-individual sample requirements and contain no critical caution.
+- larger readable text everywhere
+- simpler metric labels
+- duplicate Cautions heading removed
+- repeated filter event handlers fixed
+- non-working public buttons and placeholder menu items removed
+- public Diagnostics links removed
+- improved mobile dialog and menu behavior
 
-ANTI-ZOMBIE RULE
-----------------
-Three or more fixtures sharing the same evidence fingerprint and four-engine
-score pattern are withheld automatically for review.
-
-Do not commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET.
+No prediction regeneration is required because the engine version did not change.

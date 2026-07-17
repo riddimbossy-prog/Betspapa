@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.10.1 — Readability, Private Admin URL and Universal Mobile Navigation
+
+- Increased text sizes, line spacing and contrast across all engine, banker and results pages.
+- Enlarged filters, status messages, metrics, fixture cards, explanations and tables.
+- Reworded technical metrics in simpler English.
+- Fixed the duplicate “Cautions” heading in prediction popups.
+- Prevented engine-filter event listeners from multiplying after date refreshes.
+- Improved dialog closing, body-scroll restoration and mobile header navigation.
+- Removed Diagnostics from every public menu and homepage link.
+- Removed inactive Login, Sign Up, Watchlist, Alerts and Settings controls.
+- Created a separate private admin URL: `/admin/`.
+- Added `noindex` and `robots.txt` exclusions for the admin area.
+- Added a consistent fixed mobile navigation tab to every public mobile page.
+- Rebuilt Privacy, Terms, Responsible Use and 404 pages with readable modern typography.
+- Added public footers to the dedicated engine pages.
+- Engine logic remains `papasense-v1.10.0`; this is a UI and navigation release.
+
 ## v1.10.0 — Engine Pages, Bankers and Prediction Diagnostics
 
 - Added dedicated branded pages for Papa's Pick, Aggressive, Safer and Venue Pattern.

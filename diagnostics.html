@@ -2,55 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#12002b">
-  <title>Prediction Diagnostics — BetsPapa</title>
-  <link rel="icon" href="assets/images/favicon-64.png" type="image/png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/portal.v110.css">
-  <script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta http-equiv="refresh" content="0;url=/admin/">
+  <title>Moving to BetsPapa Admin</title>
+  <script>location.replace("/admin/");</script>
 </head>
-<body data-page="diagnostics">
-  <header class="portal-header">
-    <a class="portal-brand" href="index.html">
-      <img src="assets/images/betspapa-papa-mark.png" alt="">
-      <span><strong>BETS<span>PAPA</span></strong><small>PAPA KNOWS THE GAME</small></span>
-    </a>
-    <nav class="portal-nav" id="portalNav"><a class="" href="index.html">Home</a><a class="" href="papas-pick.html">Papa's Pick</a><a class="" href="aggressive.html">Aggressive</a><a class="" href="safer.html">Safer</a><a class="" href="venue-pattern.html">Venue Pattern</a><a class="" href="bankers.html">Bankers</a><a class="" href="results-intelligence.html">Results</a><a class="active" href="diagnostics.html">Diagnostics</a></nav>
-    <button class="portal-menu" id="portalMenu" type="button" aria-label="Open navigation">☰</button>
-  </header>
-  <main class="portal-main">
-    <section class="portal-hero">
-      <span class="eyebrow">BetsPapa v1.10</span>
-      <h1 id="portalTitle">Prediction Diagnostics</h1>
-      <p id="portalDescription">Admin-only visibility into fixture imports, team profile readiness, prediction generation, withheld rows, market distribution and similarity warnings.</p>
-    </section>
-    <div class="status-strip" id="portalStatus"><span>Connecting to live data…</span><small></small></div>
-    <div class="portal-toolbar">
-  <label><span>Date</span><input type="date" id="dateFilter"></label>
-  <button type="button" id="refreshButton">Refresh diagnostics</button>
-</div>
-    <section class="admin-login" id="adminLogin">
-  <span class="eyebrow">Admin only</span>
-  <h2>Unlock prediction diagnostics</h2>
-  <p>Use the same ADMIN_SYNC_SECRET stored in Render. It is kept only in this browser tab.</p>
-  <label><span>Admin secret</span><input type="password" id="adminSecret" autocomplete="current-password"></label>
-  <button class="gold-action" id="adminLoginButton" type="button">Open diagnostics</button>
-</section>
-<section id="diagnosticsDashboard" hidden>
-  <div class="section-title"><h2>Pipeline health</h2><p>Fixtures, profiles, predictions and anti-zombie review.</p></div>
-  <section class="metric-row" id="portalMetrics"></section>
-  <div id="portalContent"></div>
-</section>
-  </main>
-  <dialog class="portal-dialog" id="portalDialog">
-    <div class="dialog-shell">
-      <button class="dialog-close" id="portalDialogClose" type="button" aria-label="Close">×</button>
-      <div id="portalDialogContent"></div>
-    </div>
-  </dialog>
-  <script src="assets/js/portal.v110.js"></script>
+<body>
+  <p>Opening the private BetsPapa admin page… <a href="/admin/">Continue</a></p>
 </body>
 </html>

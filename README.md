@@ -61,7 +61,7 @@ npm test
 - `/venue-pattern.html`
 - `/bankers.html`
 - `/results-intelligence.html`
-- `/diagnostics.html`
+- `/admin/` — private diagnostics (not linked publicly)
 
 See `BETSPAPA_V1_10_GUIDE.md` for banker criteria, diagnostics access and the
 anti-zombie similarity policy.

@@ -38,7 +38,7 @@ stored final and half-time scores. It shows:
 
 ## Prediction diagnostics
 
-`diagnostics.html` is protected by `ADMIN_SYNC_SECRET`. It shows:
+`/admin/` is protected by `ADMIN_SYNC_SECRET`. It shows:
 
 - fixtures imported
 - current engine prediction rows
