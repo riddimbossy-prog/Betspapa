@@ -3,6 +3,7 @@ import { predictMatch } from "../engine/transitionEngine.js";
 import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 import { hydrateProfilesForFixtures } from "./historyHydrationService.js";
+import { detectSuspiciousPredictionCandidates } from "./intelligenceService.js";
 
 const TRANSITIONS = ["WW", "WD", "WL", "DW", "DD", "DL", "LW", "LD", "LL"];
 
@@ -516,10 +517,13 @@ export async function generatePredictionsForDate(supabase, date) {
       .order("fixture_date", { ascending: true })
   );
 
-  const predictable = fixtures.filter((fixture) => PREDICTABLE_STATUSES.has(fixture.status));
+  const predictable = fixtures.filter((fixture) =>
+    PREDICTABLE_STATUSES.has(fixture.status)
+  );
   const cached = new Map();
   const saved = [];
   const skipped = [];
+  const prepared = [];
 
   const teamIds = [...new Set(
     predictable.flatMap((fixture) => [
@@ -543,7 +547,53 @@ export async function generatePredictionsForDate(supabase, date) {
   for (const fixture of predictable) {
     try {
       const prediction = await predictFixture(supabase, fixture, cached);
-      const row = predictionRow(fixture, prediction);
+      prepared.push({
+        fixture,
+        prediction,
+        row: predictionRow(fixture, prediction)
+      });
+    } catch (error) {
+      skipped.push({
+        fixtureId: fixture.id,
+        externalFixtureId: fixture.external_fixture_id,
+        code: error.code || "PREDICTION_ERROR",
+        message: error.message || String(error)
+      });
+    }
+  }
+
+  const similarityAudit = detectSuspiciousPredictionCandidates(prepared);
+
+  for (const candidate of prepared) {
+    const { fixture, row } = candidate;
+    const suspicious = similarityAudit.withheldFixtureIds.has(Number(fixture.id));
+
+    if (suspicious) {
+      row.published = false;
+      row.warnings = [
+        ...(row.warnings || []),
+        "Withheld by anti-zombie similarity detector: repeated profile and engine signature."
+      ];
+      row.market_scores = {
+        ...(row.market_scores || {}),
+        similarityAudit: {
+          status: "withheld",
+          reason: "Repeated evidence fingerprint and engine-score pattern",
+          groupCount: similarityAudit.flaggedGroups.find((group) =>
+            group.fixtureIds.includes(fixture.id)
+          )?.count || null
+        }
+      };
+    } else {
+      row.market_scores = {
+        ...(row.market_scores || {}),
+        similarityAudit: {
+          status: "clear"
+        }
+      };
+    }
+
+    try {
       const { data, error } = await supabase
         .from("predictions")
         .upsert(row, { onConflict: "fixture_id,engine_version" })
@@ -551,11 +601,20 @@ export async function generatePredictionsForDate(supabase, date) {
         .single();
       throwIfSupabaseError(error, "Unable to save prediction");
       saved.push(data);
+
+      if (suspicious) {
+        skipped.push({
+          fixtureId: fixture.id,
+          externalFixtureId: fixture.external_fixture_id,
+          code: "SIMILARITY_WITHHELD",
+          message: "Prediction withheld because three or more fixtures shared the same evidence and engine-score signature."
+        });
+      }
     } catch (error) {
       skipped.push({
         fixtureId: fixture.id,
         externalFixtureId: fixture.external_fixture_id,
-        code: error.code || "PREDICTION_ERROR",
+        code: error.code || "PREDICTION_SAVE_ERROR",
         message: error.message || String(error)
       });
     }
@@ -567,6 +626,8 @@ export async function generatePredictionsForDate(supabase, date) {
     predictableFixtures: predictable.length,
     generated: saved.length,
     published: saved.filter((item) => item.published).length,
+    withheldBySimilarity: similarityAudit.withheld,
+    similarityGroups: similarityAudit.flaggedGroups,
     hydration,
     skipped,
     predictions: saved

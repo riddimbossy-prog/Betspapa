@@ -18,14 +18,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="assets/css/styles.v192.css">
+  <link rel="stylesheet" href="assets/css/styles.v1100.css">
   <style id="betspapa-critical-search-guard">
     #searchDrawer { display: none !important; }
     #searchDrawer.is-open:not([hidden]) { display: grid !important; }
   </style>
   <script>
     (function () {
-      window.__BETSPAPA_BUILD__ = "1.9.2";
+      window.__BETSPAPA_BUILD__ = "1.10.0";
       function forceSearchClosed() {
         var drawer = document.getElementById("searchDrawer");
         if (drawer) {
@@ -76,10 +76,10 @@
 
     <nav class="desktop-nav" aria-label="Primary navigation">
       <a class="active" href="#dashboard">Home</a>
-      <a href="#prediction-board">Predictions</a>
-      <a href="#engine">HT/FT Engine</a>
-      <a href="#bankers">Bankers</a>
-      <a href="#results">Results</a>
+      <a href="papas-pick.html">Predictions</a>
+      <a href="venue-pattern.html">HT/FT Engine</a>
+      <a href="bankers.html">Bankers</a>
+      <a href="results-intelligence.html">Results</a>
       <a href="#pricing">Pricing</a>
     </nav>
 
@@ -98,12 +98,12 @@
   <aside class="sidebar" id="sidebar" aria-label="Main menu">
     <nav aria-label="Dashboard navigation">
       <a class="side-link active" href="#dashboard"><span>⌂</span>Dashboard</a>
-      <a class="side-link" href="#prediction-board"><span>◈</span>Predictions</a>
-      <a class="side-link" href="#engine"><span>◎</span>HT/FT Engine</a>
-      <a class="side-link" href="#bankers"><span>♜</span>Bankers</a>
-      <a class="side-link" href="#results"><span>✓</span>Results</a>
+      <a class="side-link" href="papas-pick.html"><span>◈</span>Predictions</a>
+      <a class="side-link" href="venue-pattern.html"><span>◎</span>HT/FT Engine</a>
+      <a class="side-link" href="bankers.html"><span>♜</span>Bankers</a>
+      <a class="side-link" href="results-intelligence.html"><span>✓</span>Results</a>
       <a class="side-link" href="#fixtures"><span>▦</span>Fixtures</a>
-      <a class="side-link" href="#stats"><span>▥</span>Stats Center</a>
+      <a class="side-link" href="diagnostics.html"><span>▥</span>Diagnostics</a>
       <a class="side-link" href="#watchlist"><span>☆</span>My Watchlist</a>
       <a class="side-link" href="#alerts"><span>♢</span>Alerts</a>
       <a class="side-link" href="#settings"><span>⚙</span>Settings</a>
@@ -171,6 +171,11 @@
         <button class="engine-tab" type="button" data-engine="venue">
           <span>04</span><strong>Venue Pattern</strong><small>Home venue vs away opposite</small>
         </button>
+      </div>
+      <div class="engine-page-actions">
+        <a id="enginePageLink" href="papas-pick.html">Open Papa’s Pick page <span>→</span></a>
+        <a href="bankers.html">View today’s bankers <span>→</span></a>
+        <a href="diagnostics.html">Admin diagnostics <span>→</span></a>
       </div>
 
       <div class="metric-grid" id="stats">
@@ -439,6 +444,6 @@
     </div>
   </dialog>
 
-  <script src="assets/js/app.v192.js"></script>
+  <script src="assets/js/app.v1100.js"></script>
 </body>
 </html>

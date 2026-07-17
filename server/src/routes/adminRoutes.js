@@ -13,6 +13,8 @@ import {
   planHydrationForFixtures
 } from "../services/historyHydrationService.js";
 import { fetchAllRows } from "../services/supabaseHelpers.js";
+import { getPredictionDiagnostics } from "../services/intelligenceService.js";
+import { getBackgroundProcessingStatus } from "../services/publicService.js";
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
@@ -67,6 +69,41 @@ async function loadHydrationContext(supabase, date) {
     teamIds
   };
 }
+
+
+adminRouter.get("/diagnostics", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.query?.date || todayUtc());
+    const supabase = getSupabaseAdmin();
+    const diagnostics = await getPredictionDiagnostics(supabase, date);
+
+    let provider = null;
+    try {
+      const status = await fetchProviderStatus();
+      provider = {
+        available: true,
+        results: status.results ?? null,
+        quota: status.quota || null,
+        response: status.response || null
+      };
+    } catch (error) {
+      provider = {
+        available: false,
+        error: error.message || String(error)
+      };
+    }
+
+    res.json({
+      status: "ok",
+      date,
+      diagnostics,
+      processing: getBackgroundProcessingStatus(date),
+      provider
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 adminRouter.get("/provider-status", async (_req, res, next) => {
   try {

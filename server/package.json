@@ -1,6 +1,6 @@
 {
   "name": "betspapa-api",
-  "version": "1.9.2",
+  "version": "1.10.0",
   "private": true,
   "description": "BetsPapa Render API with Supabase, API-Football importers, HT/FT profile builder, common-sense prediction engine, and grading.",
   "type": "module",

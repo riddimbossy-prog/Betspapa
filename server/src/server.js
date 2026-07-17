@@ -89,7 +89,14 @@ app.get("/", (_req, res) => {
     dashboardToday: "/api/dashboard/today",
     recentResults: "/api/results/recent",
     engineStats: "/api/stats/engine",
-    processingStatus: "/api/processing/status"
+    processingStatus: "/api/processing/status",
+    papasPick: "/api/engines/primary",
+    aggressive: "/api/engines/aggressive",
+    safer: "/api/engines/safer",
+    venuePattern: "/api/engines/venue",
+    bankers: "/api/bankers/today",
+    resultsIntelligence: "/api/results/intelligence",
+    adminDiagnostics: "/api/admin/diagnostics"
   });
 });
 

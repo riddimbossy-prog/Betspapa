@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12002b">
+  <title>Venue Pattern Engine — BetsPapa</title>
+  <link rel="icon" href="assets/images/favicon-64.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/portal.v110.css">
+  <script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
+</head>
+<body data-page="engine" data-engine="venue">
+  <header class="portal-header">
+    <a class="portal-brand" href="index.html">
+      <img src="assets/images/betspapa-papa-mark.png" alt="">
+      <span><strong>BETS<span>PAPA</span></strong><small>PAPA KNOWS THE GAME</small></span>
+    </a>
+    <nav class="portal-nav" id="portalNav"><a class="" href="index.html">Home</a><a class="" href="papas-pick.html">Papa's Pick</a><a class="" href="aggressive.html">Aggressive</a><a class="" href="safer.html">Safer</a><a class="active" href="venue-pattern.html">Venue Pattern</a><a class="" href="bankers.html">Bankers</a><a class="" href="results-intelligence.html">Results</a><a class="" href="diagnostics.html">Diagnostics</a></nav>
+    <button class="portal-menu" id="portalMenu" type="button" aria-label="Open navigation">☰</button>
+  </header>
+  <main class="portal-main">
+    <section class="portal-hero">
+      <span class="eyebrow">BetsPapa v1.10</span>
+      <h1 id="portalTitle">Venue Pattern Engine</h1>
+      <p id="portalDescription">Potosí-style home venue patterns versus away opposite transitions.</p>
+    </section>
+    <div class="status-strip" id="portalStatus"><span>Connecting to live data…</span><small></small></div>
+    <div class="portal-toolbar">
+  <label><span>Date</span><input type="date" id="dateFilter"></label>
+  <label><span>League</span><select id="leagueFilter"><option value="">All leagues</option></select></label>
+  <label><span>Market</span><select id="marketFilter"><option value="">All markets</option></select></label>
+  <label><span>Strength</span><select id="strengthFilter"><option value="">All strengths</option><option value="qualified">Qualified</option><option value="directional">Directional</option></select></label>
+  <label><span>Search</span><input type="search" id="searchFilter" placeholder="Team, league or market"></label>
+  <button type="button" id="clearFilters">Clear</button>
+  <button type="button" id="refreshButton">Refresh</button>
+</div>
+    <section class="metric-row" id="portalMetrics"></section>
+    <div class="section-title"><h2>Completed selections</h2><p><span id="marketCount">0</span> market families</p></div><section class="portal-grid" id="portalContent"></section>
+  </main>
+  <dialog class="portal-dialog" id="portalDialog">
+    <div class="dialog-shell">
+      <button class="dialog-close" id="portalDialogClose" type="button" aria-label="Close">×</button>
+      <div id="portalDialogContent"></div>
+    </div>
+  </dialog>
+  <script src="assets/js/portal.v110.js"></script>
+</body>
+</html>

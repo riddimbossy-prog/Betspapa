@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.10.0 — Engine Pages, Bankers and Prediction Diagnostics
+
+- Added dedicated branded pages for Papa's Pick, Aggressive, Safer and Venue Pattern.
+- Added strict Today's Bankers page with up to three picks per engine.
+- Added banker eligibility checks for qualification, confidence, overall samples, venue samples and cautions.
+- Added Results Intelligence with separate grading for all four engines.
+- Added admin-only Prediction Diagnostics.
+- Diagnostics reports imported fixtures, current predictions, pending rows, withheld rows, profile readiness, thin teams, market distribution and provider status.
+- Added anti-zombie similarity detection before publication.
+- Suspicious groups of three or more cloned evidence/engine signatures are withheld.
+- Updated home navigation and added direct links to every engine page.
+- Added responsive desktop, tablet, mobile and Z Fold layouts for all new pages.
+- Added public API endpoints for engine pages, bankers and results intelligence.
+- Added protected admin diagnostics endpoint.
+- Added regression tests for banker selection and similarity detection.
+- Engine version updated to `papasense-v1.10.0`.
+
 ## v1.9.2 — Simple English, Faster Pipeline and Broader Markets
 
 - Replaced raw weighted numbers such as `1.9500000000000002 of 3.9000000000000004` with readable samples such as `about 2 of 4 home matches (50%)`.

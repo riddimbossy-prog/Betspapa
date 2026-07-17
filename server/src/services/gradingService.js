@@ -29,13 +29,16 @@ function teamNameStarts(selection, name) {
   return String(selection || "").toLowerCase().startsWith(String(name || "").toLowerCase());
 }
 
-function gradeMarket(key, prediction, fixture, homeName, awayName) {
+export function gradeEnginePick(pick, fixture, homeName, awayName) {
   const h = Number(fixture.fulltime_home);
   const a = Number(fixture.fulltime_away);
   const hh = Number(fixture.halftime_home);
   const ha = Number(fixture.halftime_away);
   const total = h + a;
-  const selection = prediction.primary_selection;
+  const key = pick?.key;
+  const selection = pick?.selection || "";
+
+  if (![h, a, hh, ha].every(Number.isFinite)) return "UNABLE_TO_GRADE";
 
   switch (key) {
     case "home-1x": return h >= a ? "WIN" : "LOSS";
@@ -69,6 +72,15 @@ function gradeMarket(key, prediction, fixture, homeName, awayName) {
     default:
       return "UNABLE_TO_GRADE";
   }
+}
+
+function gradeMarket(key, prediction, fixture, homeName, awayName) {
+  return gradeEnginePick(
+    { key, selection: prediction.primary_selection },
+    fixture,
+    homeName,
+    awayName
+  );
 }
 
 export async function gradePredictionsForDate(supabase, date) {

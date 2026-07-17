@@ -1,54 +1,44 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.9.2
-================================================
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.10.0
+=================================================
 
-FIXES INCLUDED
---------------
-1. Simple English explanations.
-2. Rounded readable samples instead of long decimal numbers.
-3. Faster hydration and automatic prediction processing.
-4. Broader market filters.
-
-DEPLOY
-------
 1. Extract this ZIP.
 2. Replace every file in the local Betspapa repository.
 3. Commit:
-   BetsPapa v1.9.2 simple English fast broad filters
-4. Push origin.
-5. Wait for Render and GitHub Pages.
+   BetsPapa v1.10 engine pages bankers diagnostics
+4. Push to GitHub.
+5. Wait for Render and GitHub Pages to deploy.
 6. Confirm:
    https://api.betspapa.com/api/health
-   Version must show 1.9.2.
+   Version must show 1.10.0.
 7. Open once:
    https://betspapa.com/reset.html
-8. Run GitHub → Actions → BetsPapa Automatic Picks → Run workflow.
+8. Run:
+   GitHub → Actions → BetsPapa Automatic Picks → Run workflow
 
-SPEED
------
-- Supabase profile coverage is loaded in one bulk query.
-- Team history uses four parallel workers by default.
-- The browser switches API endpoints after 35 seconds instead of waiting 150.
+NEW PAGES
+---------
+https://betspapa.com/papas-pick.html
+https://betspapa.com/aggressive.html
+https://betspapa.com/safer.html
+https://betspapa.com/venue-pattern.html
+https://betspapa.com/bankers.html
+https://betspapa.com/results-intelligence.html
+https://betspapa.com/diagnostics.html
 
-Optional GitHub Actions variable:
-HYDRATION_WORKERS=4
+DIAGNOSTICS LOGIN
+-----------------
+Use the same ADMIN_SYNC_SECRET already stored in Render.
+The page stores it only for the current browser tab.
 
-Use 3 or 4 normally. Do not exceed 6.
+BANKER RULE
+-----------
+No match is forced into the banker board. Each engine can publish zero to three
+strict selections. A pick must be Qualified, have adequate confidence, pass
+individual sample requirements and contain no critical caution.
 
-MARKET FILTERS
---------------
-The market dropdown now includes grouped options for:
-- Full-Time Result
-- Home/Away Win
-- DNB
-- Double Chance 1X/X2/12
-- Over 1.5
-- Over 2.5
-- Under 3.5
-- Home/Away Team Over 0.5
-- Favourite Team Over 1.5
-- GG Yes/No
-- Half-Time Result
-- Half-Time Double Chance
-- Exact HT/FT
+ANTI-ZOMBIE RULE
+----------------
+Three or more fixtures sharing the same evidence fingerprint and four-engine
+score pattern are withheld automatically for review.
 
 Do not commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET.

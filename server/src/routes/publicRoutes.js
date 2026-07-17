@@ -4,6 +4,11 @@ import { predictMatch } from "../engine/transitionEngine.js";
 import { getSupabaseAdmin } from "../supabase.js";
 import { assertIsoDate, todayUtc } from "../utils/date.js";
 import {
+  ENGINE_KEYS,
+  getResultsIntelligence,
+  selectBankerSlate
+} from "../services/intelligenceService.js";
+import {
   getBackgroundProcessingStatus,
   getDashboardData,
   getDashboardStats,
@@ -49,6 +54,81 @@ publicRouter.get("/dashboard/today", async (req, res, next) => {
     const date = assertIsoDate(req.query.date || todayUtc());
     const dashboard = await getDashboardData(getSupabaseAdmin(), date);
     res.json(dashboard);
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+publicRouter.get("/engines/:engineKey", async (req, res, next) => {
+  try {
+    const engineKey = String(req.params.engineKey || "").toLowerCase();
+    if (!ENGINE_KEYS.includes(engineKey)) {
+      return res.status(400).json({
+        error: "Unknown engine",
+        allowed: ENGINE_KEYS
+      });
+    }
+
+    const date = assertIsoDate(req.query.date || todayUtc());
+    const supabase = getSupabaseAdmin();
+    const predictions = await listPublicPredictions(supabase, date);
+
+    const items = predictions
+      .map((prediction) => {
+        const pick = prediction.engines?.[engineKey];
+        return pick
+          ? {
+              ...prediction,
+              activeEngine: engineKey,
+              pick
+            }
+          : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => {
+        const confidenceA = Number(a.pick?.confidence ?? a.pick?.score ?? 0);
+        const confidenceB = Number(b.pick?.confidence ?? b.pick?.score ?? 0);
+        return confidenceB - confidenceA;
+      });
+
+    res.json({
+      date,
+      engineKey,
+      generatedAt: new Date().toISOString(),
+      count: items.length,
+      items
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+publicRouter.get("/bankers/today", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.query.date || todayUtc());
+    const limit = Math.max(1, Math.min(Number(req.query.limit) || 3, 5));
+    const supabase = getSupabaseAdmin();
+    const predictions = await listPublicPredictions(supabase, date);
+    const slate = selectBankerSlate(predictions, { limit });
+
+    res.json({
+      date,
+      generatedAt: new Date().toISOString(),
+      predictionsReviewed: predictions.length,
+      ...slate
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+publicRouter.get("/results/intelligence", async (req, res, next) => {
+  try {
+    const days = Math.max(1, Math.min(Number(req.query.days) || 30, 90));
+    const supabase = getSupabaseAdmin();
+    const result = await getResultsIntelligence(supabase, days);
+    res.json(result);
   } catch (error) {
     next(error);
   }

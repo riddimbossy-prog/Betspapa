@@ -51,3 +51,17 @@ cd server
 npm install
 npm test
 ```
+
+
+## v1.10 portal pages
+
+- `/papas-pick.html`
+- `/aggressive.html`
+- `/safer.html`
+- `/venue-pattern.html`
+- `/bankers.html`
+- `/results-intelligence.html`
+- `/diagnostics.html`
+
+See `BETSPAPA_V1_10_GUIDE.md` for banker criteria, diagnostics access and the
+anti-zombie similarity policy.
