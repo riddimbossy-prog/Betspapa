@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.10.3 — Bigger PWA Install and Custom Splash Screen
+
+- Restored a real service worker instead of unregistering it on every visit.
+- Added a large branded install card with a 78px app icon and 56px install button.
+- Added a prominent Install BetsPapa App button to the homepage hero.
+- Added iPhone and iPad Add to Home Screen instructions.
+- Added custom portrait and landscape BetsPapa launch artwork.
+- Added Apple startup images for common iPhone and iPad screen sizes.
+- Added an installed-app launch screen with BetsPapa branding and animation.
+- Added maskable Android icons with a safe crop zone.
+- Added richer manifest screenshots, app shortcuts and install metadata.
+- Added offline fallback handling.
+- Added the PWA metadata and install experience across every public page.
+- Prediction engine remains `papasense-v1.10.0`; no prediction regeneration is required.
+
 ## v1.10.2 — Match Card Contrast Fix
 
 - Fixed invisible/black fixture text on the dark Bankers and engine pages.

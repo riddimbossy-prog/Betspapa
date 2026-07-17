@@ -13,11 +13,9 @@
   <meta name="twitter:card" content="summary_large_image">
   <title>BetsPapa — Papa Knows the Game</title>
   <link rel="icon" href="assets/images/favicon-64.png" type="image/png">
-  <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="assets/css/styles.v1101.css">
   <style id="betspapa-critical-search-guard">
     #searchDrawer { display: none !important; }
@@ -25,7 +23,7 @@
   </style>
   <script>
     (function () {
-      window.__BETSPAPA_BUILD__ = "1.10.2";
+      window.__BETSPAPA_BUILD__ = "1.10.3";
       function forceSearchClosed() {
         var drawer = document.getElementById("searchDrawer");
         if (drawer) {
@@ -39,30 +37,44 @@
       forceSearchClosed();
       document.addEventListener("DOMContentLoaded", forceSearchClosed, { once: true });
       window.addEventListener("pageshow", forceSearchClosed);
-
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.getRegistrations()
-          .then(function (registrations) {
-            return Promise.all(registrations.map(function (registration) {
-              return registration.unregister();
-            }));
-          })
-          .catch(function () {});
-      }
-
-      if ("caches" in window) {
-        caches.keys()
-          .then(function (keys) {
-            return Promise.all(keys.map(function (key) { return caches.delete(key); }));
-          })
-          .catch(function () {});
-      }
     })();
   </script>
 
   <link rel="stylesheet" href="assets/css/mobile-nav.v111.css">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BetsPapa">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon-180.png">
+  <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-1290x2796.jpg" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2796x1290.jpg" media="(device-width: 932px) and (device-height: 430px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-1170x2532.jpg" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2532x1170.jpg" media="(device-width: 844px) and (device-height: 390px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-750x1334.jpg" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-1334x750.jpg" media="(device-width: 667px) and (device-height: 375px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2048x2732.jpg" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2732x2048.jpg" media="(device-width: 1366px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
+  <link rel="stylesheet" href="/assets/css/pwa.v1103.css">
+  <script>
+    (function () {
+      var standalone = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
+      var iosStandalone = window.navigator.standalone === true;
+      if (standalone || iosStandalone || new URLSearchParams(location.search).get("source") === "pwa") {
+        document.documentElement.classList.add("pwa-launching");
+      }
+      window.addEventListener("beforeinstallprompt", function (event) {
+        event.preventDefault();
+        window.__BETSPAPA_INSTALL_PROMPT__ = event;
+      });
+    })();
+  </script>
 </head>
 <body>
+  <div class="pwa-launch-splash" id="pwaSplash" role="status" aria-live="polite">
+    <span class="pwa-splash-accessible">Launching BetsPapa — Papa Knows the Game</span>
+  </div>
+
   <div class="ambient ambient-one"></div>
   <div class="ambient ambient-two"></div>
 
@@ -130,6 +142,7 @@
           <div class="papa-promise"><span>✓</span> Strong calls are Qualified. Weaker calls are clearly marked Directional.</div>
           <div class="hero-actions">
             <a class="gold-button" href="#prediction-board">View Papa's Picks <span>→</span></a>
+            <button class="gold-button pwa-install-primary" id="pwaInstallPrimary" data-pwa-install type="button" hidden>Install BetsPapa App</button>
             <button class="glass-button" id="howItWorks">How Papa Thinks</button>
           </div>
         </div>
@@ -422,5 +435,6 @@
 
   <script src="assets/js/app.v1101.js"></script>
   <script src="assets/js/mobile-nav.v111.js"></script>
+  <script src="/assets/js/pwa.v1103.js"></script>
 </body>
 </html>

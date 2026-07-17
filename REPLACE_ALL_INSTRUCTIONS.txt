@@ -1,33 +1,46 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.10.2
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.10.3
 ================================================
 
-FIXED
------
-The prediction cards are HTML buttons. Some browsers were applying black
-default button text, making the teams and selections almost invisible on the
-dark-purple cards.
-
-v1.10.2 explicitly restores:
-- white team names
-- white prediction selections
-- readable fixture details
-- green market labels
-- gold confidence figures
-- visible keyboard focus
+PWA UPGRADES
+------------
+- larger custom install card
+- larger Install BetsPapa App hero button
+- proper service worker registration
+- custom BetsPapa splash screen
+- Android maskable icons
+- iPhone/iPad startup images
+- app shortcuts for Papa's Pick, Bankers and Results
+- offline fallback page
+- install available across all public pages
 
 DEPLOY
 ------
 1. Extract this ZIP.
 2. Replace every file in the Betspapa repository.
 3. Commit:
-   BetsPapa v1.10.2 match card contrast fix
+   BetsPapa v1.10.3 PWA install splash
 4. Push origin.
 5. Wait for GitHub Pages and Render.
 6. Confirm:
    https://api.betspapa.com/api/health
-   Version must show 1.10.2.
-7. Open:
+   Version must show 1.10.3.
+7. Open once:
    https://betspapa.com/reset.html
+8. Reload betspapa.com and wait a few seconds for the larger install card.
 
-No workflow run or prediction regeneration is required because the engine logic
-did not change.
+ANDROID / DESKTOP
+-----------------
+Tap Install BetsPapa. The browser's native install confirmation will open.
+
+IPHONE / IPAD
+-------------
+Tap Install BetsPapa, then follow:
+Safari Share → Add to Home Screen → Add.
+
+TEST THE SPLASH
+---------------
+Launch BetsPapa from the installed home-screen icon. The operating-system
+splash uses the purple background and BetsPapa icon, followed by the customised
+BetsPapa launch artwork.
+
+No prediction workflow run is required.

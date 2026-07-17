@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12002b">
+  <title>BetsPapa — Offline</title>
+  <link rel="icon" href="/assets/images/favicon-64.png" type="image/png">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;display:grid;place-items:center;padding:22px;color:#fff;background:
+      radial-gradient(circle at 80% 8%,rgba(125,44,255,.28),transparent 36%),
+      linear-gradient(155deg,#080018,#1b053d);font-family:Arial,sans-serif}
+    main{width:min(540px,100%);padding:34px;border:1px solid rgba(245,201,94,.25);border-radius:25px;
+      text-align:center;background:rgba(17,2,40,.9);box-shadow:0 28px 80px rgba(0,0,0,.48)}
+    img{width:116px;height:116px;border-radius:30px}
+    h1{margin:20px 0 10px;font-size:34px}
+    p{margin:0;color:#d2c1e4;line-height:1.65}
+    button{min-height:54px;margin-top:22px;padding:0 22px;border:0;border-radius:15px;color:#241100;
+      background:linear-gradient(135deg,#ffe79a,#dfa72e);font-weight:900;font-size:15px}
+  </style>
+</head>
+<body>
+  <main>
+    <img src="/assets/images/icon-maskable-192.png" alt="">
+    <h1>Papa is waiting for a connection.</h1>
+    <p>Your installed app is working, but live fixtures and predictions need internet access. Reconnect and try again.</p>
+    <button type="button" onclick="location.reload()">Try again</button>
+  </main>
+</body>
+</html>
