@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.10.2 — Match Card Contrast Fix
+
+- Fixed invisible/black fixture text on the dark Bankers and engine pages.
+- Explicitly reset button-based prediction cards to the BetsPapa light text color.
+- Restored bright team names, selections, market labels and confidence figures.
+- Added stronger keyboard focus styling for fixture cards.
+- Added a fresh `portal.v112.css` asset so old cached CSS cannot keep the bug.
+- Applied the correction to Papa's Pick, Aggressive, Safer, Venue Pattern, Bankers, Results and private Admin pages.
+- Prediction engine remains `papasense-v1.10.0`; no prediction regeneration is needed.
+
 ## v1.10.1 — Readability, Private Admin URL and Universal Mobile Navigation
 
 - Increased text sizes, line spacing and contrast across all engine, banker and results pages.

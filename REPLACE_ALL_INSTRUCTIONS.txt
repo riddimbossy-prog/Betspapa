@@ -1,57 +1,33 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.10.1
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.10.2
 ================================================
+
+FIXED
+-----
+The prediction cards are HTML buttons. Some browsers were applying black
+default button text, making the teams and selections almost invisible on the
+dark-purple cards.
+
+v1.10.2 explicitly restores:
+- white team names
+- white prediction selections
+- readable fixture details
+- green market labels
+- gold confidence figures
+- visible keyboard focus
 
 DEPLOY
 ------
 1. Extract this ZIP.
-2. Replace every file in your local Betspapa repository.
+2. Replace every file in the Betspapa repository.
 3. Commit:
-   BetsPapa v1.10.1 readability admin mobile nav
+   BetsPapa v1.10.2 match card contrast fix
 4. Push origin.
-5. Wait for GitHub Pages and Render to deploy.
+5. Wait for GitHub Pages and Render.
 6. Confirm:
    https://api.betspapa.com/api/health
-   Version must show 1.10.1.
-7. Open once:
+   Version must show 1.10.2.
+7. Open:
    https://betspapa.com/reset.html
 
-PRIVATE ADMIN URL
------------------
-Diagnostics has been removed from the public navigation.
-
-Use:
-https://betspapa.com/admin/
-
-The admin page still requires the same ADMIN_SYNC_SECRET stored in Render.
-The separate URL and robots exclusion improve separation, but the secret is
-the actual security control.
-
-MOBILE NAVIGATION
------------------
-A fixed mobile tab is now injected on:
-- Home
-- Papa's Pick
-- Aggressive
-- Safer
-- Venue Pattern
-- Bankers
-- Results
-- Privacy
-- Terms
-- Responsible Use
-- 404 pages
-
-The mobile tabs are:
-Home | Papa's Pick | Bankers | Results | More
-
-OTHER FIXES
------------
-- larger readable text everywhere
-- simpler metric labels
-- duplicate Cautions heading removed
-- repeated filter event handlers fixed
-- non-working public buttons and placeholder menu items removed
-- public Diagnostics links removed
-- improved mobile dialog and menu behavior
-
-No prediction regeneration is required because the engine version did not change.
+No workflow run or prediction regeneration is required because the engine logic
+did not change.
