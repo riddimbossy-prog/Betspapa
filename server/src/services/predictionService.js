@@ -506,7 +506,7 @@ async function predictFixture(supabase, fixture, cached) {
   return predictMatch(input);
 }
 
-export async function generatePredictionsForDate(supabase, date) {
+export async function generatePredictionsForDate(supabase, date, { skipHydration = false } = {}) {
   const { start, end } = dateRangeUtc(date);
   const fixtures = await fetchAllRows(() =>
     supabase
@@ -535,11 +535,23 @@ export async function generatePredictionsForDate(supabase, date) {
     ? await loadTeams(supabase, teamIds)
     : new Map();
 
-  const hydration = await hydrateProfilesForFixtures(
-    supabase,
-    predictable,
-    teams
-  );
+  const hydration = skipHydration
+    ? {
+        teamsChecked: 0,
+        hydratedTeams: 0,
+        readyTeams: 0,
+        providerCalls: 0,
+        importedFixtures: 0,
+        rebuiltLeagueSeasons: [],
+        audits: [],
+        byTeamId: new Map(),
+        skippedBecauseAlreadyReady: true
+      }
+    : await hydrateProfilesForFixtures(
+        supabase,
+        predictable,
+        teams
+      );
 
   cached.set("__teams", teams);
   cached.set("__hydrationByTeam", hydration.byTeamId);

@@ -6,25 +6,26 @@ const API_BASE = String(
 
 const ADMIN_SECRET = String(process.env.ADMIN_SYNC_SECRET || "").trim();
 const CUSTOM_DATE = String(process.env.PIPELINE_DATE || "").trim();
+const MODE = String(process.env.PIPELINE_MODE || "today").trim().toLowerCase();
+const RUN_ID = String(process.env.PIPELINE_RUN_ID || Date.now()).trim();
 const FORCE_HYDRATION =
   String(process.env.FORCE_HYDRATION || "false").toLowerCase() === "true";
+
 const MAX_HYDRATION_TEAMS = Math.max(
   1,
   Math.min(Number(process.env.MAX_HYDRATION_TEAMS || 40), 200)
-);
-const REQUEST_TIMEOUT_MS = Math.max(
-  30000,
-  Math.min(Number(process.env.REQUEST_TIMEOUT_MS || 180000), 600000)
 );
 const HYDRATION_WORKERS = Math.max(
   1,
   Math.min(Number(process.env.HYDRATION_WORKERS || 4), 6)
 );
+const REQUEST_TIMEOUT_MS = Math.max(
+  30000,
+  Math.min(Number(process.env.REQUEST_TIMEOUT_MS || 180000), 600000)
+);
 
 if (!ADMIN_SECRET) {
-  console.error(
-    "ADMIN_SYNC_SECRET is missing. Add it at GitHub → Settings → Secrets and variables → Actions."
-  );
+  console.error("ADMIN_SYNC_SECRET is missing.");
   process.exit(1);
 }
 
@@ -40,21 +41,163 @@ function addDays(dateString, amount) {
 
 function assertDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    throw new Error(`Invalid PIPELINE_DATE: ${value}. Use YYYY-MM-DD.`);
-  }
-  const date = new Date(`${value}T00:00:00.000Z`);
-  if (Number.isNaN(date.getTime()) || isoDate(date) !== value) {
-    throw new Error(`Invalid calendar date: ${value}`);
+    throw new Error(`Invalid PIPELINE_DATE: ${value}`);
   }
   return value;
 }
 
-const targetDate = assertDate(CUSTOM_DATE || isoDate(new Date()));
-const yesterday = addDays(targetDate, -1);
-const tomorrow = addDays(targetDate, 1);
+const baseDate = assertDate(CUSTOM_DATE || isoDate(new Date()));
+const targetDate =
+  MODE === "tomorrow"
+    ? addDays(baseDate, 1)
+    : MODE === "results"
+      ? addDays(baseDate, -1)
+      : baseDate;
+const runKey = `${RUN_ID}:${MODE}:${targetDate}`;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function heading(message) {
+  console.log(`\n=== ${message} ===`);
+}
+
+function compactError(error) {
+  return error?.message || String(error);
+}
+
+async function request(path, {
+  method = "GET",
+  body,
+  timeoutMs = REQUEST_TIMEOUT_MS,
+  admin = true,
+  retries = 3
+} = {}) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= retries; attempt += 1) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(`${API_BASE}${path}`, {
+        method,
+        headers: {
+          Accept: "application/json",
+          ...(body ? { "Content-Type": "application/json" } : {}),
+          ...(admin ? { "x-admin-secret": ADMIN_SECRET } : {})
+        },
+        body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal
+      });
+
+      const text = await response.text();
+      let payload = {};
+      try {
+        payload = text ? JSON.parse(text) : {};
+      } catch {
+        payload = { raw: text };
+      }
+
+      if (!response.ok) {
+        const message =
+          payload?.message ||
+          payload?.error ||
+          payload?.raw ||
+          `${response.status} ${response.statusText}`;
+        const error = new Error(`${method} ${path} failed: ${message}`);
+        error.status = response.status;
+        throw error;
+      }
+
+      return payload;
+    } catch (error) {
+      lastError = error;
+      const retryable =
+        error?.name === "AbortError" ||
+        Number(error?.status) === 429 ||
+        Number(error?.status) >= 500 ||
+        /aborted|timeout|fetch failed|socket/i.test(compactError(error));
+
+      if (!retryable || attempt >= retries) throw error;
+
+      const wait = attempt * 2500;
+      console.log(
+        `Retry ${attempt}/${retries - 1} after ${compactError(error)}`
+      );
+      await sleep(wait);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  throw lastError;
+}
+
+async function bestEffortProgress(stage, status, completedStages, progress = {}, lastError = null) {
+  try {
+    await request("/api/admin/pipeline-progress", {
+      method: "POST",
+      body: {
+        runKey,
+        date: targetDate,
+        mode: MODE,
+        stage,
+        status,
+        completedStages,
+        progress,
+        lastError
+      },
+      timeoutMs: 30000,
+      retries: 1
+    });
+  } catch (error) {
+    console.log(`Pipeline ledger warning: ${compactError(error)}`);
+  }
+}
+
+async function loadCompletedStages() {
+  try {
+    const payload = await request(
+      `/api/admin/pipeline-status?runKey=${encodeURIComponent(runKey)}`,
+      { timeoutMs: 30000, retries: 1 }
+    );
+    return Array.isArray(payload.result?.completed_stages)
+      ? payload.result.completed_stages
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+async function runStage(name, completedStages, worker) {
+  if (completedStages.includes(name)) {
+    console.log(`Resume: ${name} was already completed`);
+    return null;
+  }
+
+  await bestEffortProgress(name, "running", completedStages);
+  try {
+    const result = await worker();
+    completedStages.push(name);
+    await bestEffortProgress(
+      name,
+      "running",
+      completedStages,
+      { [name]: result || {} }
+    );
+    return result;
+  } catch (error) {
+    await bestEffortProgress(
+      name,
+      "failed",
+      completedStages,
+      {},
+      compactError(error)
+    );
+    throw error;
+  }
 }
 
 async function mapPool(items, limit, worker) {
@@ -63,8 +206,7 @@ async function mapPool(items, limit, worker) {
 
   async function run() {
     while (true) {
-      const index = cursor;
-      cursor += 1;
+      const index = cursor++;
       if (index >= items.length) return;
       results[index] = await worker(items[index], index);
     }
@@ -76,137 +218,44 @@ async function mapPool(items, limit, worker) {
   return results;
 }
 
-async function request(path, {
-  method = "GET",
-  body,
-  timeoutMs = REQUEST_TIMEOUT_MS,
-  admin = true
-} = {}) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(`${API_BASE}${path}`, {
-      method,
-      headers: {
-        Accept: "application/json",
-        ...(body ? { "Content-Type": "application/json" } : {}),
-        ...(admin ? { "x-admin-secret": ADMIN_SECRET } : {})
-      },
-      body: body ? JSON.stringify(body) : undefined,
-      signal: controller.signal
-    });
-
-    const text = await response.text();
-    let payload = {};
-    try {
-      payload = text ? JSON.parse(text) : {};
-    } catch {
-      payload = { raw: text };
-    }
-
-    if (!response.ok) {
-      const message =
-        payload?.message ||
-        payload?.error ||
-        payload?.raw ||
-        `${response.status} ${response.statusText}`;
-      throw new Error(`${method} ${path} failed: ${message}`);
-    }
-
-    return payload;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-function heading(message) {
-  console.log(`\n=== ${message} ===`);
-}
-
-function compactError(error) {
-  return error?.message || String(error);
-}
-
 async function syncDate(date) {
-  heading(`Sync fixtures: ${date}`);
   const payload = await request("/api/admin/sync-date", {
     method: "POST",
     body: { date }
   });
   const result = payload.result || {};
   console.log(
-    `Provider results: ${result.providerResults || 0} | Imported: ${result.imported || 0}`
-  );
-  if (result.quota) {
-    console.log(
-      `API quota remaining: ${result.quota.dailyRemaining ?? "unknown"}`
-    );
-  }
-  return result;
-}
-
-async function gradeDate(date) {
-  heading(`Grade results: ${date}`);
-  const payload = await request("/api/admin/grade-results", {
-    method: "POST",
-    body: { date }
-  });
-  const result = payload.result || {};
-  console.log(
-    `Graded: ${result.graded ?? result.updated ?? 0} | Skipped: ${
-      Array.isArray(result.skipped) ? result.skipped.length : 0
-    }`
+    `Fixtures imported: ${result.imported || 0} | Provider results: ${result.providerResults || 0}`
   );
   return result;
-}
-
-async function getHydrationPlan(date) {
-  const force = FORCE_HYDRATION ? "true" : "false";
-  return request(
-    `/api/admin/hydration-plan?date=${encodeURIComponent(date)}&force=${force}`
-  );
 }
 
 async function hydrateDate(date) {
-  heading(`Prepare individual team histories: ${date}`);
-  const planPayload = await getHydrationPlan(date);
+  const force = FORCE_HYDRATION ? "true" : "false";
+  const planPayload = await request(
+    `/api/admin/hydration-plan?date=${encodeURIComponent(date)}&force=${force}`
+  );
   const plan = planPayload.result || {};
-  const allTeams = Array.isArray(plan.teams) ? plan.teams : [];
-  const needed = allTeams.filter((team) => team.needsHydration);
+  const needed = (plan.teams || []).filter((team) => team.needsHydration);
 
-  console.log(`Fixtures: ${planPayload.fixtures || 0}`);
-  console.log(`Teams checked: ${plan.teamsChecked || allTeams.length}`);
-  console.log(`Already ready: ${plan.readyTeams || 0}`);
-  console.log(`Need history: ${needed.length}`);
+  console.log(
+    `Teams ready: ${plan.readyTeams || 0} | Need history: ${needed.length}`
+  );
 
   if (!needed.length) {
-    return {
-      checked: allTeams.length,
-      attempted: 0,
-      ready: plan.readyTeams || allTeams.length,
-      failed: 0,
-      importedFixtures: 0
-    };
+    return { attempted: 0, ready: plan.readyTeams || 0, failed: 0 };
   }
 
-  // Rotate the starting point by UTC hour so a permanently unavailable team
-  // cannot prevent later teams from being attempted on every scheduled run.
   const offset = new Date().getUTCHours() % needed.length;
   const rotated = [...needed.slice(offset), ...needed.slice(0, offset)];
   const queue = rotated.slice(0, MAX_HYDRATION_TEAMS);
 
   let ready = 0;
   let failed = 0;
-  let importedFixtures = 0;
   let completed = 0;
-
-  console.log(`Hydration workers: ${HYDRATION_WORKERS}`);
 
   await mapPool(queue, HYDRATION_WORKERS, async (team) => {
     const label = team.teamName || `Team ${team.teamId}`;
-    const slot = completed + 1;
-    console.log(`[start ${slot}/${queue.length}] ${label}`);
 
     try {
       const payload = await request("/api/admin/hydrate-team", {
@@ -215,111 +264,156 @@ async function hydrateDate(date) {
           date,
           teamId: Number(team.teamId),
           force: FORCE_HYDRATION
-        }
+        },
+        timeoutMs: 180000,
+        retries: 2
       });
-      const result = payload.result || {};
-      const audit = Array.isArray(result.audits) ? result.audits[0] : null;
 
-      importedFixtures += Number(result.importedFixtures || 0);
+      const audit = payload.result?.audits?.[0];
       if (audit?.ready) {
         ready += 1;
-        console.log(
-          `[ready] ${label} | provider=${audit.providerResults || 0} | imported=${result.importedFixtures || 0}`
-        );
+        console.log(`[ready] ${label}`);
       } else {
         failed += 1;
-        console.log(`[not ready] ${label} | ${audit?.error || "insufficient history"}`);
+        console.log(`[not ready] ${label}`);
       }
     } catch (error) {
       failed += 1;
-      console.log(`[error] ${label} | ${compactError(error)}`);
+      console.log(`[error] ${label}: ${compactError(error)}`);
     } finally {
       completed += 1;
-      console.log(`Hydration progress: ${completed}/${queue.length}`);
-      await sleep(120);
+      console.log(`Hydration ${completed}/${queue.length}`);
     }
   });
 
-  console.log(
-    `Hydration attempted: ${queue.length} | Ready: ${ready} | Not ready/errors: ${failed}`
-  );
-
-  return {
-    checked: allTeams.length,
-    attempted: queue.length,
-    ready,
-    failed,
-    importedFixtures
-  };
+  return { attempted: queue.length, ready, failed };
 }
 
 async function generateDate(date) {
-  heading(`Generate PapaSense picks: ${date}`);
   const payload = await request("/api/admin/generate-predictions", {
     method: "POST",
-    body: { date },
-    timeoutMs: 300000
+    body: {
+      date,
+      skipHydration: true
+    },
+    timeoutMs: 420000,
+    retries: 3
   });
   const result = payload.result || {};
-  console.log(`Generated: ${result.generated || 0}`);
-  console.log(`Published: ${result.published || 0}`);
   console.log(
-    `Withheld/skipped: ${Array.isArray(result.skipped) ? result.skipped.length : 0}`
+    `Generated: ${result.generated || 0} | Published: ${result.published || 0} | Skipped: ${result.skipped?.length || 0}`
   );
   return result;
 }
 
-async function processPredictionDate(date) {
-  await syncDate(date);
-  await hydrateDate(date);
-  await generateDate(date);
+async function gradeDate(date) {
+  const payload = await request("/api/admin/grade-results", {
+    method: "POST",
+    body: { date },
+    timeoutMs: 180000,
+    retries: 3
+  });
+  return payload.result || {};
+}
+
+async function notify(eventType, date, summary = {}) {
+  try {
+    const payload = await request("/api/admin/dispatch-notifications", {
+      method: "POST",
+      body: {
+        eventType,
+        date,
+        eventKey: `${eventType}:${date}:${RUN_ID}`,
+        summary
+      },
+      timeoutMs: 120000,
+      retries: 2
+    });
+    console.log(
+      `${eventType} notifications sent: ${payload.result?.sent || 0}`
+    );
+    return payload.result || {};
+  } catch (error) {
+    console.log(`Notification warning: ${compactError(error)}`);
+    return { warning: compactError(error) };
+  }
 }
 
 async function main() {
-  heading("BetsPapa automatic pipeline");
-  console.log(`API: ${API_BASE}`);
-  console.log(`Target date: ${targetDate}`);
-  console.log(`Tomorrow: ${tomorrow}`);
-  console.log(`Previous results date: ${yesterday}`);
-  console.log(`Maximum team-history requests this run: ${MAX_HYDRATION_TEAMS}`);
-  console.log(`Parallel hydration workers: ${HYDRATION_WORKERS}`);
-  console.log(`Force hydration: ${FORCE_HYDRATION}`);
+  heading("BetsPapa resumable automatic pipeline");
+  console.log(`Mode: ${MODE}`);
+  console.log(`Date: ${targetDate}`);
+  console.log(`Run key: ${runKey}`);
 
   const health = await request("/api/health", {
     admin: false,
     timeoutMs: 45000
   });
-  console.log(
-    `Health: ${health.status} | Version: ${health.version} | Database: ${health.database}`
-  );
 
   if (health.status !== "ok" || health.database !== "connected") {
-    throw new Error("BetsPapa API or Supabase is not healthy.");
+    throw new Error("BetsPapa API or Supabase is unhealthy.");
   }
 
-  // Update yesterday first so final scores and result grading are current.
-  try {
-    await syncDate(yesterday);
-    await gradeDate(yesterday);
-  } catch (error) {
-    console.log(`Yesterday update warning: ${compactError(error)}`);
+  const completedStages = await loadCompletedStages();
+  await bestEffortProgress("starting", "running", completedStages);
+
+  if (MODE === "results") {
+    await runStage("sync-results", completedStages, () => syncDate(targetDate));
+    const graded = await runStage(
+      "grade-results",
+      completedStages,
+      () => gradeDate(targetDate)
+    );
+    await runStage(
+      "notify-results",
+      completedStages,
+      () => notify("results", targetDate, graded || {})
+    );
+  } else {
+    await runStage("sync-fixtures", completedStages, () => syncDate(targetDate));
+    await runStage("hydrate-teams", completedStages, () => hydrateDate(targetDate));
+    const generated = await runStage(
+      "generate-picks",
+      completedStages,
+      () => generateDate(targetDate)
+    );
+
+    if (MODE === "today") {
+      await runStage(
+        "notify-papa-picks",
+        completedStages,
+        () => notify("papa-picks", targetDate, {
+          count: generated?.published || 0
+        })
+      );
+      await runStage(
+        "notify-bankers",
+        completedStages,
+        () => notify("bankers", targetDate, {
+          count: generated?.published || 0
+        })
+      );
+    }
   }
 
-  // Today's games and tomorrow's early catalogue are always refreshed.
-  await processPredictionDate(targetDate);
-  try {
-    await gradeDate(targetDate);
-  } catch (error) {
-    console.log(`Today grading warning: ${compactError(error)}`);
-  }
-
-  await processPredictionDate(tomorrow);
+  await bestEffortProgress(
+    "complete",
+    "complete",
+    completedStages,
+    { completedAt: new Date().toISOString() }
+  );
 
   heading("Pipeline complete");
-  console.log("The website can now load completed picks from Supabase.");
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
   console.error(`\nPIPELINE FAILED\n${compactError(error)}`);
+  await bestEffortProgress(
+    "failed",
+    "failed",
+    [],
+    {},
+    compactError(error)
+  );
   process.exit(1);
 });

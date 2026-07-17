@@ -2,6 +2,7 @@ import { Router } from "express";
 import { demoFixtures } from "../data/demoFixtures.js";
 import { predictMatch } from "../engine/transitionEngine.js";
 import { getSupabaseAdmin } from "../supabase.js";
+import { getLatestPipelineStatus } from "../services/pipelineService.js";
 import { assertIsoDate, todayUtc } from "../utils/date.js";
 import {
   ENGINE_KEYS,
@@ -131,6 +132,31 @@ publicRouter.get("/results/intelligence", async (req, res, next) => {
     res.json(result);
   } catch (error) {
     next(error);
+  }
+});
+
+
+publicRouter.get("/pipeline/latest", async (_req, res, next) => {
+  try {
+    const rows = await getLatestPipelineStatus(getSupabaseAdmin());
+    res.json({
+      updatedAt: rows[0]?.updated_at || null,
+      runs: rows.map((row) => ({
+        mode: row.mode,
+        date: row.target_date,
+        stage: row.stage,
+        status: row.status,
+        updatedAt: row.updated_at,
+        completedAt: row.completed_at
+      }))
+    });
+  } catch (error) {
+    // Keep the public prediction pages available before the v1.11 migration.
+    res.json({
+      updatedAt: null,
+      runs: [],
+      migrationRequired: true
+    });
   }
 });
 

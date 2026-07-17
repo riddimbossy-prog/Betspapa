@@ -1,46 +1,77 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.10.3
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.11.0
 ================================================
 
-PWA UPGRADES
-------------
-- larger custom install card
-- larger Install BetsPapa App hero button
-- proper service worker registration
-- custom BetsPapa splash screen
-- Android maskable icons
-- iPhone/iPad startup images
-- app shortcuts for Papa's Pick, Bankers and Results
-- offline fallback page
-- install available across all public pages
-
-DEPLOY
-------
+DEPLOY CODE
+-----------
 1. Extract this ZIP.
-2. Replace every file in the Betspapa repository.
+2. Replace every file in your Betspapa repository.
 3. Commit:
-   BetsPapa v1.10.3 PWA install splash
+   BetsPapa v1.11 accounts watchlist alerts
 4. Push origin.
 5. Wait for GitHub Pages and Render.
 6. Confirm:
    https://api.betspapa.com/api/health
-   Version must show 1.10.3.
-7. Open once:
-   https://betspapa.com/reset.html
-8. Reload betspapa.com and wait a few seconds for the larger install card.
+   Version must show 1.11.0.
 
-ANDROID / DESKTOP
+ONE-TIME SUPABASE DATABASE STEP
+-------------------------------
+Open Supabase → SQL Editor and run:
+
+server/supabase/migrations/20260717_v111_accounts_watchlist_push.sql
+
+AUTH SETUP
+----------
+Render environment variables:
+- SUPABASE_URL
+- SUPABASE_ANON_KEY
+- SUPABASE_SERVICE_ROLE_KEY
+
+Supabase → Authentication → URL Configuration:
+Site URL:
+https://betspapa.com
+
+Redirect URLs:
+https://betspapa.com/account.html
+https://www.betspapa.com/account.html
+
+For Google sign-in:
+Supabase → Authentication → Providers → Google → Enable
+Then add the Google client ID and client secret.
+
+PUSH SETUP
+----------
+The server package now includes web-push.
+
+After Render installs dependencies, generate keys locally from the server folder:
+
+npm run vapid
+
+Add the displayed values to Render:
+- VAPID_PUBLIC_KEY
+- VAPID_PRIVATE_KEY
+- PUSH_SUBJECT=mailto:admin@betspapa.com
+
+PIPELINE
+--------
+The automatic workflow now has separate jobs:
+- previous results
+- today
+- tomorrow
+
+It retries aborted requests, records progress in Supabase and resumes completed
+stages when the same GitHub run is retried.
+
+PWA UPDATE
+----------
+Installed users receive an Update Now card when a new service worker is ready.
+
+FINAL CACHE RESET
 -----------------
-Tap Install BetsPapa. The browser's native install confirmation will open.
+Open once:
+https://betspapa.com/reset.html
 
-IPHONE / IPAD
--------------
-Tap Install BetsPapa, then follow:
-Safari Share → Add to Home Screen → Add.
+Then open:
+https://betspapa.com/account.html
 
-TEST THE SPLASH
----------------
-Launch BetsPapa from the installed home-screen icon. The operating-system
-splash uses the purple background and BetsPapa icon, followed by the customised
-BetsPapa launch artwork.
-
-No prediction workflow run is required.
+No engine regeneration is required for the UI features, but running the normal
+automatic workflow will update the pipeline ledger and send configured alerts.

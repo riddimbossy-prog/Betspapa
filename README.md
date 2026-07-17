@@ -65,3 +65,12 @@ npm test
 
 See `BETSPAPA_V1_10_GUIDE.md` for banker criteria, diagnostics access and the
 anti-zombie similarity policy.
+
+
+## v1.11 user pages
+
+- `/account.html`
+- `/watchlist.html`
+- `/settings.html`
+
+Run the v1.11 Supabase migration before opening these pages in production.

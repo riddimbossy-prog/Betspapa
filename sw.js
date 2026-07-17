@@ -1,4 +1,4 @@
-const CACHE_NAME = "betspapa-pwa-v1103";
+const CACHE_NAME = "betspapa-pwa-v1110";
 const OFFLINE_URL = "/offline.html";
 
 const CORE_ASSETS = [
@@ -12,6 +12,9 @@ const CORE_ASSETS = [
   "/venue-pattern.html",
   "/bankers.html",
   "/results-intelligence.html",
+  "/account.html",
+  "/watchlist.html",
+  "/settings.html",
   "/privacy.html",
   "/terms.html",
   "/responsible.html",
@@ -19,11 +22,14 @@ const CORE_ASSETS = [
   "/assets/css/portal.v112.css",
   "/assets/css/mobile-nav.v111.css",
   "/assets/css/content.v111.css",
-  "/assets/css/pwa.v1103.css",
+  "/assets/css/pwa.v1110.css",
+  "/assets/css/account.v1110.css",
   "/assets/js/app.v1101.js",
   "/assets/js/portal.v111.js",
   "/assets/js/mobile-nav.v111.js",
-  "/assets/js/pwa.v1103.js",
+  "/assets/js/pwa.v1110.js",
+  "/assets/js/auth.v1110.js",
+  "/assets/js/account-pages.v1110.js",
   "/assets/images/icon-192.png",
   "/assets/images/icon-512.png",
   "/assets/images/icon-maskable-192.png",
@@ -39,7 +45,6 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(CORE_ASSETS))
-      .then(() => self.skipWaiting())
   );
 });
 
@@ -104,4 +109,51 @@ self.addEventListener("message", (event) => {
   if (event.data?.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
+});
+
+
+self.addEventListener("push", (event) => {
+  let payload = {
+    title: "BetsPapa update",
+    body: "Open BetsPapa for the latest football intelligence.",
+    url: "/",
+    tag: "betspapa-update"
+  };
+
+  try {
+    if (event.data) payload = { ...payload, ...event.data.json() };
+  } catch {
+    payload.body = event.data?.text() || payload.body;
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: payload.icon || "/assets/images/icon-maskable-192.png",
+      badge: payload.badge || "/assets/images/favicon-64.png",
+      tag: payload.tag,
+      data: {
+        url: payload.url || "/"
+      },
+      timestamp: payload.timestamp || Date.now(),
+      renotify: false
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = new URL(
+    event.notification.data?.url || "/",
+    self.location.origin
+  ).href;
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true })
+      .then((windows) => {
+        const existing = windows.find((client) => client.url === target);
+        if (existing) return existing.focus();
+        return clients.openWindow(target);
+      })
+  );
 });

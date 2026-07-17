@@ -6,9 +6,11 @@ import {
   SERVICE_NAME,
   SERVICE_VERSION
 } from "./config.js";
+import { accountRouter } from "./routes/accountRoutes.js";
 import { adminRouter } from "./routes/adminRoutes.js";
 import { publicRouter } from "./routes/publicRoutes.js";
 import { getSupabaseAdmin } from "./supabase.js";
+import { authFeaturesConfigured, pushFeaturesConfigured } from "./config.js";
 import { getErrorDetails, HttpError } from "./utils/errors.js";
 
 const app = express();
@@ -96,7 +98,9 @@ app.get("/", (_req, res) => {
     venuePattern: "/api/engines/venue",
     bankers: "/api/bankers/today",
     resultsIntelligence: "/api/results/intelligence",
-    adminDiagnostics: "/api/admin/diagnostics"
+    adminDiagnostics: "/api/admin/diagnostics",
+    accountConfig: "/api/account/config",
+    account: "/api/account/me"
   });
 });
 
@@ -115,6 +119,8 @@ app.get("/api/health", async (_req, res) => {
           process.env.API_STATS_KEY
       ),
       adminSecretConfigured: Boolean(process.env.ADMIN_SYNC_SECRET),
+      authConfigured: authFeaturesConfigured(),
+      pushConfigured: pushFeaturesConfigured(),
       environment: process.env.NODE_ENV || "development",
       timestamp: new Date().toISOString()
     });
@@ -135,6 +141,7 @@ app.get("/api/health", async (_req, res) => {
   }
 });
 
+app.use("/api/account", accountRouter);
 app.use("/api", publicRouter);
 app.use("/api/admin", adminRouter);
 
