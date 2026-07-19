@@ -2,21 +2,22 @@ name: BetsPapa Automatic Picks
 
 on:
   schedule:
+    # GitHub schedules use UTC. Refresh fixtures and picks every four hours.
     - cron: "17 */4 * * *"
 
   workflow_dispatch:
     inputs:
       date:
-        description: "Optional base date in YYYY-MM-DD. Blank uses today in UTC."
+        description: "Optional target date in YYYY-MM-DD. Blank uses today in UTC."
         required: false
         type: string
       force_hydration:
-        description: "Re-download history for teams already ready"
+        description: "Re-download history even for teams already ready"
         required: false
         default: false
         type: boolean
       max_hydration_teams:
-        description: "Maximum thin-data teams per job"
+        description: "Maximum thin-data teams to hydrate in this run"
         required: false
         default: "40"
         type: string
@@ -32,56 +33,39 @@ concurrency:
   group: betspapa-automatic-picks
   cancel-in-progress: false
 
-env:
-  ADMIN_SYNC_SECRET: ${{ secrets.ADMIN_SYNC_SECRET }}
-  BETSPAPA_API_BASE: ${{ vars.BETSPAPA_API_BASE }}
-  PIPELINE_DATE: ${{ inputs.date }}
-  FORCE_HYDRATION: ${{ inputs.force_hydration }}
-  MAX_HYDRATION_TEAMS: ${{ inputs.max_hydration_teams }}
-  HYDRATION_WORKERS: ${{ vars.HYDRATION_WORKERS }}
-  PIPELINE_RUN_ID: ${{ github.run_id }}
-
 jobs:
-  results:
+  update-picks:
+    # Run after a successful Pages deployment, on schedule, or manually.
     if: >
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v4
-      - name: Validate admin secret
-        run: test -n "$ADMIN_SYNC_SECRET"
-      - name: Refresh and grade previous results
-        env:
-          PIPELINE_MODE: results
-        run: node scripts/automatic-pipeline.mjs
 
-  today:
-    if: >
-      github.event_name != 'workflow_run' ||
-      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v4
-      - name: Validate admin secret
-        run: test -n "$ADMIN_SYNC_SECRET"
-      - name: Prepare today's fixtures and picks
-        env:
-          PIPELINE_MODE: today
-        run: node scripts/automatic-pipeline.mjs
+    timeout-minutes: 55
 
-  tomorrow:
-    needs: today
-    if: success()
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
+    env:
+      ADMIN_SYNC_SECRET: ${{ secrets.ADMIN_SYNC_SECRET }}
+      BETSPAPA_API_BASE: ${{ vars.BETSPAPA_API_BASE }}
+      PIPELINE_DATE: ${{ inputs.date }}
+      FORCE_HYDRATION: ${{ inputs.force_hydration }}
+      MAX_HYDRATION_TEAMS: ${{ inputs.max_hydration_teams }}
+      HYDRATION_WORKERS: ${{ vars.HYDRATION_WORKERS }}
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Validate admin secret
-        run: test -n "$ADMIN_SYNC_SECRET"
-      - name: Prepare tomorrow's fixtures and early picks
-        env:
-          PIPELINE_MODE: tomorrow
-        run: node scripts/automatic-pipeline.mjs
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate automation secret
+        shell: bash
+        run: |
+          if [ -z "$ADMIN_SYNC_SECRET" ]; then
+            echo "::error::ADMIN_SYNC_SECRET is missing."
+            echo "Add the same value used on Render under:"
+            echo "GitHub repository → Settings → Secrets and variables → Actions → New repository secret"
+            exit 1
+          fi
+
+      - name: Run automatic fixture and prediction pipeline
+        shell: bash
+        run: |
+          node scripts/automatic-pipeline.mjs

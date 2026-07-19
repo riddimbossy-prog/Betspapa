@@ -1,22 +1,26 @@
 # Changelog
 
-## v1.11.0 — Accounts, Watchlist, Push Alerts and Pipeline Recovery
+## v1.12.1 — Unlimited Papa’s Boss Picks
 
-- Added Supabase email/password authentication.
-- Added Google sign-in support.
-- Added password reset and profile editing.
-- Added personal Watchlist for teams, leagues, fixtures, predictions and engines.
-- Added notification settings with quiet hours and kickoff timing.
-- Added opt-in Web Push subscriptions and test notifications.
-- Added Papa's Pick, Banker and result notification dispatch.
-- Added PWA update notification with an Update Now button.
-- Added prediction transparency showing samples, last update and engine version.
-- Added resumable pipeline progress stored in Supabase.
-- Added retry handling for aborted, timed-out, 429 and server requests.
-- Split previous results, today and tomorrow into separate GitHub Actions jobs.
-- Skipped the duplicate hydration pass during final generation.
-- Added a public latest-pipeline timestamp endpoint.
-- Prediction engine logic remains `papasense-v1.10.0`.
+- Removed the maximum-three Boss Pick cap.
+- Every fixture passing all OMNI gates at 80 or higher is published.
+- PRIME picks remain ranked above Qualified picks.
+- Removed the Boss Picks `limit=3` API request and backend clamp.
+- No account, subscription or database migration was added.
+
+## v1.12.0 — Papa’s Boss Picks
+
+- Replaced the public Bankers page with Papa’s Boss Picks.
+- Integrated the uploaded OMNI HT/FT Gatekeeper Engine v2.0.
+- Added a live `/api/boss-picks/today` endpoint.
+- Evaluates 48 markets and publishes one final market per accepted fixture.
+- Qualified threshold is 80; Prime threshold is 87.
+- Limits the board to the strongest three fixtures and never forces a selection.
+- Uses eight overall matches, six relevant venue matches and a 30-match league minimum.
+- Added score breakdowns for HT/FT, components, streaks and context.
+- Added rejection summaries explaining why other fixtures stayed off the board.
+- Kept the site free and public with no account, login, subscription or watchlist system.
+- Preserved the larger PWA install prompt, custom splash screen and mobile navigation.
 
 ## v1.10.3 — Bigger PWA Install and Custom Splash Screen
 

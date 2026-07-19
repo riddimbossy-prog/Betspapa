@@ -16,15 +16,6 @@ import { fetchAllRows } from "../services/supabaseHelpers.js";
 import { getPredictionDiagnostics } from "../services/intelligenceService.js";
 import { getBackgroundProcessingStatus } from "../services/publicService.js";
 
-import {
-  dispatchNotificationEvent
-} from "../services/notificationService.js";
-import {
-  getLatestPipelineStatus,
-  getPipelineProgress,
-  savePipelineProgress
-} from "../services/pipelineService.js";
-
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
 
@@ -249,11 +240,7 @@ adminRouter.post("/hydrate-date", async (req, res, next) => {
 adminRouter.post("/generate-predictions", async (req, res, next) => {
   try {
     const date = assertIsoDate(req.body?.date || todayUtc());
-    const result = await generatePredictionsForDate(
-      getSupabaseAdmin(),
-      date,
-      { skipHydration: Boolean(req.body?.skipHydration) }
-    );
+    const result = await generatePredictionsForDate(getSupabaseAdmin(), date);
     res.json({ status: "ok", action: "generate-predictions", result });
   } catch (error) {
     next(error);
@@ -265,47 +252,6 @@ adminRouter.post("/grade-results", async (req, res, next) => {
     const date = assertIsoDate(req.body?.date || todayUtc());
     const result = await gradePredictionsForDate(getSupabaseAdmin(), date);
     res.json({ status: "ok", action: "grade-results", result });
-  } catch (error) {
-    next(error);
-  }
-});
-
-
-adminRouter.get("/pipeline-status", async (req, res, next) => {
-  try {
-    const runKey = String(req.query?.runKey || "").trim();
-    const supabase = getSupabaseAdmin();
-    const result = runKey
-      ? await getPipelineProgress(supabase, runKey)
-      : await getLatestPipelineStatus(supabase);
-    res.json({ status: "ok", result });
-  } catch (error) {
-    next(error);
-  }
-});
-
-adminRouter.post("/pipeline-progress", async (req, res, next) => {
-  try {
-    const result = await savePipelineProgress(getSupabaseAdmin(), req.body);
-    res.json({ status: "ok", result });
-  } catch (error) {
-    next(error);
-  }
-});
-
-adminRouter.post("/dispatch-notifications", async (req, res, next) => {
-  try {
-    const date = assertIsoDate(req.body?.date || todayUtc());
-    const eventType = String(req.body?.eventType || "papa-picks").trim();
-    const result = await dispatchNotificationEvent(getSupabaseAdmin(), {
-      eventType,
-      date,
-      eventKey: req.body?.eventKey,
-      summary: req.body?.summary || {},
-      payload: req.body?.payload || null,
-      force: Boolean(req.body?.force)
-    });
-    res.json({ status: "ok", action: "dispatch-notifications", result });
   } catch (error) {
     next(error);
   }

@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "BetsPapa \u2014 Picks, Watchlist and Alerts",
+  "name": "BetsPapa \u2014 Papa Knows the Game",
   "short_name": "BetsPapa",
-  "description": "Football intelligence with Papa's Pick, Bankers, personal watchlists, account sync and optional push alerts.",
+  "description": "Football intelligence with Papa's Pick, Papa's Boss Picks, HT/FT venue patterns and clear match explanations.",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
@@ -61,10 +61,10 @@
       ]
     },
     {
-      "name": "Today's Bankers",
-      "short_name": "Bankers",
-      "description": "Open today's strict selections",
-      "url": "/bankers.html?source=shortcut",
+      "name": "Papa's Boss Picks",
+      "short_name": "Boss Picks",
+      "description": "Open the strongest OMNI-gated selections",
+      "url": "/boss-picks.html?source=shortcut",
       "icons": [
         {
           "src": "/assets/images/icon-192.png",
@@ -77,18 +77,6 @@
       "short_name": "Results",
       "description": "Open engine result intelligence",
       "url": "/results-intelligence.html?source=shortcut",
-      "icons": [
-        {
-          "src": "/assets/images/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "My Watchlist",
-      "short_name": "Watchlist",
-      "description": "Open your saved teams, fixtures and predictions",
-      "url": "/watchlist.html?source=shortcut",
       "icons": [
         {
           "src": "/assets/images/icon-192.png",

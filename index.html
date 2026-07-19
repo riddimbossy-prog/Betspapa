@@ -16,14 +16,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.v1110.css">
+  <link rel="stylesheet" href="assets/css/styles.v1101.css">
   <style id="betspapa-critical-search-guard">
     #searchDrawer { display: none !important; }
     #searchDrawer.is-open:not([hidden]) { display: grid !important; }
   </style>
   <script>
     (function () {
-      window.__BETSPAPA_BUILD__ = "1.11.0";
+      window.__BETSPAPA_BUILD__ = "1.12.1";
       function forceSearchClosed() {
         var drawer = document.getElementById("searchDrawer");
         if (drawer) {
@@ -55,7 +55,7 @@
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-1334x750.jpg" media="(device-width: 667px) and (device-height: 375px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2048x2732.jpg" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2732x2048.jpg" media="(device-width: 1366px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
-  <link rel="stylesheet" href="/assets/css/pwa.v1110.css">
+  <link rel="stylesheet" href="/assets/css/pwa.v1103.css">
   <script>
     (function () {
       var standalone = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
@@ -91,9 +91,9 @@
       <a class="active" href="#dashboard">Home</a>
       <a href="papas-pick.html">Predictions</a>
       <a href="venue-pattern.html">HT/FT Engine</a>
-      <a href="bankers.html">Bankers</a>
+      <a href="boss-picks.html">Boss Picks</a>
       <a href="results-intelligence.html">Results</a>
-      <a href="#pricing">Pricing</a>
+      <a href="responsible.html">Responsible</a>
     </nav>
 
     <div class="top-actions">
@@ -111,12 +111,12 @@
       <a class="side-link active" href="#dashboard"><span>⌂</span>Dashboard</a>
       <a class="side-link" href="papas-pick.html"><span>◈</span>Predictions</a>
       <a class="side-link" href="venue-pattern.html"><span>◎</span>HT/FT Engine</a>
-      <a class="side-link" href="bankers.html"><span>♜</span>Bankers</a>
+      <a class="side-link" href="boss-picks.html"><span>♛</span>Boss Picks</a>
       <a class="side-link" href="results-intelligence.html"><span>✓</span>Results</a>
       <a class="side-link" href="#fixtures"><span>▦</span>Fixtures</a>
     </nav>
 
-    <div class="premium-card" id="pricing">
+    <div class="premium-card" id="papa-edge">
       <img class="sidebar-papa" src="assets/images/betspapa-papa-mark.png" alt="">
       <h3>Papa’s Edge</h3>
       <p>See the strongest transition, the supporting goal route and the exact reasons other markets were rejected.</p>
@@ -182,7 +182,7 @@
       </div>
       <div class="engine-page-actions">
         <a id="enginePageLink" href="papas-pick.html">Open Papa’s Pick page <span>→</span></a>
-        <a href="bankers.html">View today’s bankers <span>→</span></a>
+        <a href="boss-picks.html">Open Papa’s Boss Picks <span>→</span></a>
       </div>
 
       <div class="metric-grid" id="stats">
@@ -392,7 +392,7 @@
       <article><span>01</span><h3>Two-team agreement</h3><p>Every prediction must be supported by the selected team and the opponent’s matching weakness.</p></article>
       <article><span>02</span><h3>Latest GG thresholds</h3><p>GG only qualifies when both teams independently have credible scoring routes.</p></article>
       <article><span>03</span><h3>Dominant-team route</h3><p>Over 2.5 can qualify through one team alone when scoring and conceding 2+ thresholds agree.</p></article>
-      <article><span>04</span><h3>Direction with honesty</h3><p>Every fixture receives one market direction, but weaker calls are never presented as bankers.</p></article>
+      <article><span>04</span><h3>Direction with honesty</h3><p>Every fixture receives one market direction, but weaker calls are never presented as Boss Picks.</p></article>
     </section>
 
     <footer>
@@ -433,9 +433,8 @@
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/auth.v1110.js"></script>
   <script src="assets/js/app.v1101.js"></script>
-  <script src="assets/js/mobile-nav.v1110.js"></script>
-  <script src="/assets/js/pwa.v1110.js"></script>
+  <script src="assets/js/mobile-nav.v120.js"></script>
+  <script src="/assets/js/pwa.v1103.js"></script>
 </body>
 </html>

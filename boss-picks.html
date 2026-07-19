@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#12002b">
-  <title>Papa’s Pick — BetsPapa</title>
+  <title>Papa’s Boss Picks — BetsPapa</title>
   <link rel="icon" href="assets/images/favicon-64.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,7 +41,7 @@
     })();
   </script>
 </head>
-<body data-page="engine" data-engine="primary">
+<body data-page="boss-picks">
   <div class="pwa-launch-splash" id="pwaSplash" role="status" aria-live="polite">
     <span class="pwa-splash-accessible">Launching BetsPapa — Papa Knows the Game</span>
   </div>
@@ -51,27 +51,22 @@
       <img src="assets/images/betspapa-papa-mark.png" alt="">
       <span><strong>BETS<span>PAPA</span></strong><small>PAPA KNOWS THE GAME</small></span>
     </a>
-    <nav class="portal-nav" id="portalNav" aria-label="Primary navigation"><a class="" href="index.html">Home</a><a class="active" href="papas-pick.html">Papa's Pick</a><a class="" href="aggressive.html">Aggressive</a><a class="" href="safer.html">Safer</a><a class="" href="venue-pattern.html">Venue Pattern</a><a class="" href="boss-picks.html">Boss Picks</a><a class="" href="results-intelligence.html">Results</a></nav>
+    <nav class="portal-nav" id="portalNav" aria-label="Primary navigation"><a class="" href="index.html">Home</a><a class="" href="papas-pick.html">Papa's Pick</a><a class="" href="aggressive.html">Aggressive</a><a class="" href="safer.html">Safer</a><a class="" href="venue-pattern.html">Venue Pattern</a><a class="active" href="boss-picks.html">Boss Picks</a><a class="" href="results-intelligence.html">Results</a></nav>
     <button class="portal-menu" id="portalMenu" type="button" aria-label="Open navigation" aria-controls="portalNav" aria-expanded="false">☰</button>
   </header>
   <main class="portal-main">
     <section class="portal-hero">
-      <span class="eyebrow">BetsPapa v1.10.2</span>
-      <h1 id="portalTitle">Papa’s Pick</h1>
-      <p id="portalDescription">Default all-evidence predictions for every completed fixture.</p>
+      <span class="eyebrow">BetsPapa v1.12.0</span>
+      <h1 id="portalTitle">Papa’s Boss Picks</h1>
+      <p id="portalDescription">Only the matches Papa is willing to put his name on. OMNI starts with HT/FT, checks the exact market evidence, weighs streaks, and rejects every conflict that survives.</p>
     </section>
     <div class="status-strip" id="portalStatus"><span>Connecting to live data…</span><small></small></div>
     <div class="portal-toolbar">
   <label><span>Date</span><input type="date" id="dateFilter"></label>
-  <label><span>League</span><select id="leagueFilter"><option value="">All leagues</option></select></label>
-  <label><span>Market</span><select id="marketFilter"><option value="">All markets</option></select></label>
-  <label><span>Strength</span><select id="strengthFilter"><option value="">All strengths</option><option value="qualified">Strong — Qualified</option><option value="directional">Best direction — Not a banker</option></select></label>
-  <label><span>Search</span><input type="search" id="searchFilter" placeholder="Team, league or market"></label>
-  <button type="button" id="clearFilters">Clear</button>
-  <button type="button" id="refreshButton">Refresh</button>
+  <button type="button" id="refreshButton">Refresh Boss Picks</button>
 </div>
     <section class="metric-row" id="portalMetrics"></section>
-    <div class="section-title"><h2>Completed selections</h2><p><span id="marketCount">0</span> market families</p></div><section class="portal-grid" id="portalContent"></section>
+    <div class="section-title"><h2>Boss-level selections</h2><p>All qualifying matches are shown. Prime begins at 87. Qualified begins at 80. No threshold, no Boss Pick.</p></div><div id="portalContent"></div><section class="boss-method"><strong>OMNI rule</strong><p>HT/FT creates the candidate. Market-specific goals, results, clean sheets, failed-to-score patterns and streaks must confirm it. Missing mandatory evidence rejects that market.</p></section>
     <footer class="portal-footer">
       <span>Sports analytics only. Predictions are not guarantees. 18+.</span>
       <div>

@@ -1,77 +1,17 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.11.0
-================================================
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.12.1 UNLIMITED BOSS PICKS
+====================================================================
 
-DEPLOY CODE
------------
+Papa's Boss Picks no longer has a maximum-three limit.
+Every fixture scoring at least 80 and passing every mandatory OMNI gate is shown.
+PRIME picks rank first, followed by score and kickoff time.
+
+DEPLOY
 1. Extract this ZIP.
-2. Replace every file in your Betspapa repository.
-3. Commit:
-   BetsPapa v1.11 accounts watchlist alerts
-4. Push origin.
-5. Wait for GitHub Pages and Render.
-6. Confirm:
-   https://api.betspapa.com/api/health
-   Version must show 1.11.0.
+2. Replace every file in the Betspapa repository.
+3. Open GitHub Desktop.
+4. Commit: BetsPapa v1.12.1 unlimited Boss Picks
+5. Push origin.
+6. Confirm https://api.betspapa.com/api/health shows 1.12.1.
+7. Open https://betspapa.com/reset.html once.
 
-ONE-TIME SUPABASE DATABASE STEP
--------------------------------
-Open Supabase → SQL Editor and run:
-
-server/supabase/migrations/20260717_v111_accounts_watchlist_push.sql
-
-AUTH SETUP
-----------
-Render environment variables:
-- SUPABASE_URL
-- SUPABASE_ANON_KEY
-- SUPABASE_SERVICE_ROLE_KEY
-
-Supabase → Authentication → URL Configuration:
-Site URL:
-https://betspapa.com
-
-Redirect URLs:
-https://betspapa.com/account.html
-https://www.betspapa.com/account.html
-
-For Google sign-in:
-Supabase → Authentication → Providers → Google → Enable
-Then add the Google client ID and client secret.
-
-PUSH SETUP
-----------
-The server package now includes web-push.
-
-After Render installs dependencies, generate keys locally from the server folder:
-
-npm run vapid
-
-Add the displayed values to Render:
-- VAPID_PUBLIC_KEY
-- VAPID_PRIVATE_KEY
-- PUSH_SUBJECT=mailto:admin@betspapa.com
-
-PIPELINE
---------
-The automatic workflow now has separate jobs:
-- previous results
-- today
-- tomorrow
-
-It retries aborted requests, records progress in Supabase and resumes completed
-stages when the same GitHub run is retried.
-
-PWA UPDATE
-----------
-Installed users receive an Update Now card when a new service worker is ready.
-
-FINAL CACHE RESET
------------------
-Open once:
-https://betspapa.com/reset.html
-
-Then open:
-https://betspapa.com/account.html
-
-No engine regeneration is required for the UI features, but running the normal
-automatic workflow will update the pipeline ledger and send configured alerts.
+No npm installation or database migration is required.

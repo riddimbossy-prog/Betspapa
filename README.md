@@ -59,7 +59,8 @@ npm test
 - `/aggressive.html`
 - `/safer.html`
 - `/venue-pattern.html`
-- `/bankers.html`
+- `/boss-picks.html` — Papa’s Boss Picks, powered by OMNI HT/FT Gatekeeper v2.0
+- `/bankers.html` — redirects to Boss Picks
 - `/results-intelligence.html`
 - `/admin/` — private diagnostics (not linked publicly)
 
@@ -67,10 +68,6 @@ See `BETSPAPA_V1_10_GUIDE.md` for banker criteria, diagnostics access and the
 anti-zombie similarity policy.
 
 
-## v1.11 user pages
+## Papa’s Boss Picks v1.12
 
-- `/account.html`
-- `/watchlist.html`
-- `/settings.html`
-
-Run the v1.11 Supabase migration before opening these pages in production.
+Boss Picks are free and public. No account, login, watchlist, subscription, Supabase Auth migration or VAPID setup is required. The OMNI engine evaluates up to 48 markets and returns every selection scoring 80 or higher that passes all mandatory gates.
