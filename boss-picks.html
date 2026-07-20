@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/portal.v120.css">
+  <link rel="stylesheet" href="assets/css/portal.v140.css">
   <script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
   <link rel="stylesheet" href="assets/css/mobile-nav.v111.css">
   <meta name="mobile-web-app-capable" content="yes">
@@ -56,11 +56,17 @@
   </header>
   <main class="portal-main">
     <section class="portal-hero">
-      <span class="eyebrow">BetsPapa v1.12.2</span>
+      <span class="eyebrow">BetsPapa v1.14.0</span>
       <h1 id="portalTitle">Papa’s Boss Picks</h1>
       <p id="portalDescription">Only the matches Papa is willing to put his name on. Audited OMNI v2.5.2 evaluates 44 active markets, but only six core markets can become the final Boss Pick.</p>
     </section>
     <div class="status-strip" id="portalStatus"><span>Connecting to live data…</span><small></small></div>
+    <div class="match-state-legend" aria-label="Match status legend">
+      <span><i class="pending"></i> Pending</span>
+      <span><i class="live"></i> Live</span>
+      <span><i class="finished"></i> Settling</span>
+      <span><i class="settled"></i> Settled</span>
+    </div>
     <div class="portal-toolbar">
   <label><span>Date</span><input type="date" id="dateFilter"></label>
   <button type="button" id="refreshButton">Refresh Boss Picks</button>
@@ -82,7 +88,7 @@
       <div id="portalDialogContent"></div>
     </div>
   </dialog>
-  <script src="assets/js/portal.v130.js"></script>
+  <script src="assets/js/portal.v140.js"></script>
   <script src="assets/js/mobile-nav.v120.js"></script>
   <script src="/assets/js/pwa.v1103.js"></script>
 </body>

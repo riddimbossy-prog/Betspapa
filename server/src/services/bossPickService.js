@@ -2,9 +2,11 @@ import { createRequire } from "node:module";
 
 import {
   BOSS_ENGINE_VERSION,
-  PREDICTABLE_STATUSES
+  FINISHED_PROFILE_STATUSES
 } from "../config.js";
 import { dateRangeUtc } from "../utils/date.js";
+import { fetchFixtureEvents } from "../providers/apiFootball.js";
+import { fixtureMatchState } from "./matchStateService.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 
 const require = createRequire(import.meta.url);
@@ -20,6 +22,11 @@ const MIN_VENUE_MATCHES = 6;
 const MIN_LEAGUE_MATCHES = 30;
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const cache = new Map();
+const eventCache = new Map();
+const BOSS_VISIBLE_STATUSES = new Set([
+  "NS", "TBD", "1H", "HT", "2H", "ET", "BT", "P", "INT", "LIVE",
+  "FT", "AET", "PEN"
+]);
 
 function cleanFinite(value) {
   const number = Number(value);
@@ -28,7 +35,7 @@ function cleanFinite(value) {
 
 function validFinishedFixture(fixture) {
   return (
-    fixture?.status === "FT" &&
+    FINISHED_PROFILE_STATUSES.has(fixture?.status) &&
     cleanFinite(fixture.halftime_home) !== null &&
     cleanFinite(fixture.halftime_away) !== null &&
     cleanFinite(fixture.fulltime_home) !== null &&
@@ -222,7 +229,7 @@ async function loadTeamHistory(supabase, teamIds) {
       supabase
         .from("fixtures")
         .select(select)
-        .eq("status", "FT")
+        .in("status", [...FINISHED_PROFILE_STATUSES])
         .in("home_team_id", teamIds)
         .order("fixture_date", { ascending: false })
     ),
@@ -230,7 +237,7 @@ async function loadTeamHistory(supabase, teamIds) {
       supabase
         .from("fixtures")
         .select(select)
-        .eq("status", "FT")
+        .in("status", [...FINISHED_PROFILE_STATUSES])
         .in("away_team_id", teamIds)
         .order("fixture_date", { ascending: false })
     )
@@ -259,7 +266,7 @@ async function loadLeagueSamples(supabase, fixtures) {
       .select("id,league_id,season,fixture_date,home_team_id,away_team_id,halftime_home,halftime_away,fulltime_home,fulltime_away,status")
       .eq("league_id", item.leagueId)
       .eq("season", item.season)
-      .eq("status", "FT")
+      .in("status", [...FINISHED_PROFILE_STATUSES])
       .order("fixture_date", { ascending: false })
       .limit(80);
 
@@ -295,10 +302,132 @@ export function rankBossPicks(rows) {
     });
 }
 
+
+function bossScoreParts(fixture) {
+  const h = Number(fixture.fulltime_home);
+  const a = Number(fixture.fulltime_away);
+  const hh = Number(fixture.halftime_home);
+  const ha = Number(fixture.halftime_away);
+  if (![h, a, hh, ha].every(Number.isFinite)) return null;
+  return {
+    h,
+    a,
+    hh,
+    ha,
+    sh: h - hh,
+    sa: a - ha
+  };
+}
+
+async function fixtureGoalEvents(externalFixtureId) {
+  const key = Number(externalFixtureId);
+  const cached = eventCache.get(key);
+  if (cached && Date.now() - cached.createdAt < 24 * 60 * 60 * 1000) {
+    return cached.events;
+  }
+
+  const payload = await fetchFixtureEvents(key);
+  const events = (payload.response || [])
+    .filter((event) => event?.type === "Goal" && !/missed/i.test(String(event?.detail || "")))
+    .sort((a, b) => {
+      const minuteA = Number(a?.time?.elapsed || 0) * 100 + Number(a?.time?.extra || 0);
+      const minuteB = Number(b?.time?.elapsed || 0) * 100 + Number(b?.time?.extra || 0);
+      return minuteA - minuteB;
+    });
+
+  eventCache.set(key, { createdAt: Date.now(), events });
+  return events;
+}
+
+async function settleBossPick({ fixture, selected, home, away }) {
+  if (!FINISHED_PROFILE_STATUSES.has(fixture.status)) return null;
+
+  const score = bossScoreParts(fixture);
+  if (!score) {
+    return {
+      outcome: "REVIEW",
+      reason: "Final or half-time score is incomplete",
+      persisted: false
+    };
+  }
+
+  const { h, a, hh, ha, sh, sa } = score;
+  const marketId = String(selected.marketId || "");
+  let outcome = null;
+  let reason = "Settled from the confirmed half-time and full-time scores";
+
+  if (marketId === "FIRST_HALF_OVER_0_5") {
+    outcome = hh + ha >= 1 ? "WIN" : "LOSS";
+  } else if (marketId === "SECOND_HALF_OVER_0_5") {
+    outcome = sh + sa >= 1 ? "WIN" : "LOSS";
+  } else if (marketId === "HOME_WIN_EITHER_HALF") {
+    outcome = hh > ha || sh > sa ? "WIN" : "LOSS";
+  } else if (marketId === "AWAY_WIN_EITHER_HALF") {
+    outcome = ha > hh || sa > sh ? "WIN" : "LOSS";
+  } else if (marketId === "HOME_LEAD_ANYTIME" || marketId === "AWAY_LEAD_ANYTIME") {
+    const wantsHome = marketId === "HOME_LEAD_ANYTIME";
+    const targetLedAtKnownCheckpoint = wantsHome ? hh > ha || h > a : ha > hh || a > h;
+
+    if (targetLedAtKnownCheckpoint) {
+      outcome = "WIN";
+      reason = "The selected team led at half-time or full-time";
+    } else {
+      try {
+        const events = await fixtureGoalEvents(fixture.external_fixture_id);
+        let homeGoals = 0;
+        let awayGoals = 0;
+        let led = false;
+        const homeProviderId = Number(home.external_team_id);
+        const awayProviderId = Number(away.external_team_id);
+
+        for (const event of events) {
+          const teamId = Number(event?.team?.id);
+          if (teamId === homeProviderId) homeGoals += 1;
+          if (teamId === awayProviderId) awayGoals += 1;
+          if (wantsHome ? homeGoals > awayGoals : awayGoals > homeGoals) {
+            led = true;
+            break;
+          }
+        }
+
+        outcome = led ? "WIN" : "LOSS";
+        reason = events.length
+          ? "Settled from the provider's chronological goal events"
+          : "No confirmed goal event showed the selected team taking the lead";
+      } catch (error) {
+        outcome = "REVIEW";
+        reason = `Event-order settlement is waiting: ${error.message || String(error)}`;
+      }
+    }
+  } else {
+    outcome = "REVIEW";
+    reason = "This Boss market needs a manual settlement rule";
+  }
+
+  return {
+    outcome,
+    reason,
+    fulltimeScore: `${h}-${a}`,
+    halftimeScore: `${hh}-${ha}`,
+    settledAt: outcome === "REVIEW" ? null : new Date().toISOString(),
+    persisted: false
+  };
+}
+
+export function invalidateBossPickCache(date = null) {
+  if (!date) {
+    cache.clear();
+    return;
+  }
+  for (const key of cache.keys()) {
+    if (String(key).endsWith(`:${date}`)) cache.delete(key);
+  }
+}
+
 async function buildBossPicks(supabase, date) {
   const allDateFixtures = await loadDateFixtures(supabase, date);
   const fixtures = allDateFixtures.filter((fixture) =>
-    PREDICTABLE_STATUSES.has(fixture.status)
+    BOSS_VISIBLE_STATUSES.has(fixture.status)
   );
 
   if (!fixtures.length) {
@@ -362,10 +491,13 @@ async function buildBossPicks(supabase, date) {
       continue;
     }
 
+    const kickoffTime = new Date(fixture.fixture_date).getTime();
     const homeMatches = newestFirst(historyByTeam.get(Number(fixture.home_team_id)) || [])
+      .filter((row) => new Date(row.fixture_date).getTime() < kickoffTime)
       .slice(0, 40)
       .map((row) => toTeamMatch(row, fixture.home_team_id));
     const awayMatches = newestFirst(historyByTeam.get(Number(fixture.away_team_id)) || [])
+      .filter((row) => new Date(row.fixture_date).getTime() < kickoffTime)
       .slice(0, 40)
       .map((row) => toTeamMatch(row, fixture.away_team_id));
     const homeVenue = homeMatches.filter((match) => match.venue === "home").length;
@@ -436,10 +568,24 @@ async function buildBossPicks(supabase, date) {
 
       const selected = result.selected;
       const selection = selectionLabel(selected.marketName, home.name, away.name);
+      const settlement = await settleBossPick({ fixture, selected, home, away });
       accepted.push({
         fixtureId: fixture.external_fixture_id,
         internalFixtureId: fixture.id,
         kickoff: fixture.fixture_date,
+        status: fixture.status,
+        matchState: fixtureMatchState(fixture, settlement),
+        settlement,
+        score: {
+          halftime: {
+            home: fixture.halftime_home,
+            away: fixture.halftime_away
+          },
+          current: {
+            home: fixture.fulltime_home,
+            away: fixture.fulltime_away
+          }
+        },
         venue: fixture.venue || null,
         home,
         away,

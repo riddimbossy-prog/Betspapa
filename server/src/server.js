@@ -87,6 +87,7 @@ app.get("/", (_req, res) => {
     demo: "/api/demo",
     predictionsToday: "/api/predictions/today",
     fixturesToday: "/api/fixtures/today",
+    matchStates: "/api/matches/status",
     dashboardToday: "/api/dashboard/today",
     recentResults: "/api/results/recent",
     engineStats: "/api/stats/engine",

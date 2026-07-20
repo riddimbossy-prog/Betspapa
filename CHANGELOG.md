@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.14.0 — Live Match States and Automatic Settlement
+
+- Added Pending, Live, Settling and Settled labels to prediction cards.
+- Added current scores for live and completed matches.
+- Added automatic settlement for every active PapaSense v1.13 market.
+- Added separate outcomes for Papa's Pick, Aggressive, Safer and Venue Pattern.
+- Added dynamic Boss Pick settlement, including goal-event checks for lead-at-any-time markets.
+- Added a two-minute backend live-refresh cooldown.
+- Added 60-second browser refresh while a match is live.
+- Added an hourly lightweight GitHub settlement workflow.
+- Added `/api/matches/status` and protected `/api/admin/settle-date` endpoints.
+- Extended finished-state support to FT, AET and PEN.
+- Kept BetsPapa free and public.
+
 ## v1.13.0 — Papa Common-Sense Market Intelligence
 
 - Added practical HT/FT translations.

@@ -1,0 +1,29 @@
+name: BetsPapa Live Scores and Settlement
+
+on:
+  schedule:
+    - cron: "7 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: betspapa-live-settlement
+  cancel-in-progress: true
+
+jobs:
+  refresh-live-and-settle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ADMIN_SYNC_SECRET: ${{ secrets.ADMIN_SYNC_SECRET }}
+      BETSPAPA_API_BASE: ${{ vars.BETSPAPA_API_BASE }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate admin secret
+        shell: bash
+        run: test -n "$ADMIN_SYNC_SECRET"
+      - name: Refresh current scores and settle finished games
+        shell: bash
+        run: node scripts/live-settlement.mjs

@@ -71,3 +71,11 @@ anti-zombie similarity policy.
 ## Papa’s Boss Picks v1.12
 
 Boss Picks are free and public. No account, login, watchlist, subscription, Supabase Auth migration or VAPID setup is required. The OMNI engine evaluates up to 48 markets and returns every selection scoring 80 or higher that passes all mandatory gates.
+
+
+## Live status and settlement
+
+- Public match state: `/api/matches/status`
+- Manual protected settlement: `/api/admin/settle-date`
+- Hourly workflow: `BetsPapa Live Scores and Settlement`
+- Full guide: `LIVE_MATCHES_AND_SETTLEMENT_GUIDE.md`

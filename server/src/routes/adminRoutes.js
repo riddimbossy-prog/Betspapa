@@ -257,6 +257,24 @@ adminRouter.post("/grade-results", async (req, res, next) => {
   }
 });
 
+adminRouter.post("/settle-date", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.body?.date || todayUtc());
+    const supabase = getSupabaseAdmin();
+    const synced = await syncDate(supabase, date);
+    const graded = await gradePredictionsForDate(supabase, date);
+    res.json({
+      status: "ok",
+      action: "settle-date",
+      date,
+      synced,
+      graded
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 adminRouter.post("/bootstrap-league", async (req, res, next) => {
   try {
     const providerLeagueId = positiveInt(req.body?.leagueId, "leagueId");

@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/portal.v120.css">
+  <link rel="stylesheet" href="assets/css/portal.v140.css">
   <script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
   <link rel="stylesheet" href="assets/css/mobile-nav.v111.css">
   <meta name="mobile-web-app-capable" content="yes">
@@ -56,22 +56,29 @@
   </header>
   <main class="portal-main">
     <section class="portal-hero">
-      <span class="eyebrow">BetsPapa v1.10.2</span>
+      <span class="eyebrow">BetsPapa v1.14.0</span>
       <h1 id="portalTitle">Safer Engine</h1>
       <p id="portalDescription">Broader protection markets that remain aligned with the main match story.</p>
     </section>
     <div class="status-strip" id="portalStatus"><span>Connecting to live data…</span><small></small></div>
+    <div class="match-state-legend" aria-label="Match status legend">
+      <span><i class="pending"></i> Pending</span>
+      <span><i class="live"></i> Live</span>
+      <span><i class="finished"></i> Settling</span>
+      <span><i class="settled"></i> Settled</span>
+    </div>
     <div class="portal-toolbar">
   <label><span>Date</span><input type="date" id="dateFilter"></label>
   <label><span>League</span><select id="leagueFilter"><option value="">All leagues</option></select></label>
   <label><span>Market</span><select id="marketFilter"><option value="">All markets</option></select></label>
   <label><span>Strength</span><select id="strengthFilter"><option value="">All strengths</option><option value="qualified">Strong — Qualified</option><option value="directional">Best direction — Not a banker</option></select></label>
+  <label><span>Match state</span><select id="matchStateFilter"><option value="">All states</option><option value="pending">Pending</option><option value="live">Live</option><option value="finished">Settling</option><option value="settled">Settled</option></select></label>
   <label><span>Search</span><input type="search" id="searchFilter" placeholder="Team, league or market"></label>
   <button type="button" id="clearFilters">Clear</button>
   <button type="button" id="refreshButton">Refresh</button>
 </div>
     <section class="metric-row" id="portalMetrics"></section>
-    <div class="section-title"><h2>Completed selections</h2><p><span id="marketCount">0</span> market families</p></div><section class="portal-grid" id="portalContent"></section>
+    <div class="section-title"><h2>Selections and match status</h2><p><span id="marketCount">0</span> market families</p></div><section class="portal-grid" id="portalContent"></section>
     <footer class="portal-footer">
       <span>Sports analytics only. Predictions are not guarantees. 18+.</span>
       <div>
@@ -87,7 +94,7 @@
       <div id="portalDialogContent"></div>
     </div>
   </dialog>
-  <script src="assets/js/portal.v130.js"></script>
+  <script src="assets/js/portal.v140.js"></script>
   <script src="assets/js/mobile-nav.v120.js"></script>
   <script src="/assets/js/pwa.v1103.js"></script>
 </body>

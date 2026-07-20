@@ -16,7 +16,7 @@
     primary: {
       name: "Papa's Pick",
       short: "Papa",
-      description: "The default all-evidence direction: venue, overall and recent HT/FT, goals, data quality and contradiction checks."
+      description: "Papa’s practical HT/FT translation with price value, comeback, lead-surrender, goal evidence and automatic settlement."
     },
     aggressive: {
       name: "Aggressive",
@@ -74,26 +74,31 @@
   }
 
 
-  function stateClass(item) {
+  function matchOutcome(item, engine = null) {
+    return (engine ? item?.engineOutcomes?.[engine] : null) ||
+      item?.settlement?.outcome ||
+      null;
+  }
+
+  function stateClass(item, engine = null) {
+    const outcome = matchOutcome(item, engine);
+    if (["WIN", "LOSS", "VOID"].includes(outcome)) return "settled";
     return item?.matchState?.category || "pending";
   }
 
-  function stateLabel(item) {
+  function stateLabel(item, engine = null) {
     const state = item?.matchState || {};
-    if (state.category === "settled" && item?.settlement?.outcome) {
-      return item.settlement.outcome;
-    }
+    const outcome = matchOutcome(item, engine);
+    if (outcome) return outcome;
     if (state.category === "finished") return "SETTLING";
     return String(state.label || item?.status || "PENDING").toUpperCase();
   }
 
   function matchStatusMarkup(item, engine = null) {
     const state = item?.matchState || {};
-    const category = stateClass(item);
+    const category = stateClass(item, engine);
     const score = state.score || item?.settlement?.fulltimeScore || null;
-    const engineOutcome = engine ? item?.engineOutcomes?.[engine] : null;
-    const outcome = engineOutcome || item?.settlement?.outcome || null;
-    const label = outcome || stateLabel(item);
+    const label = stateLabel(item, engine);
     return `<div class="match-state-row">
       <span class="match-state ${escapeHtml(category)}">${escapeHtml(label)}</span>
       ${score ? `<strong class="match-score">${escapeHtml(score)}</strong>` : ""}
@@ -326,7 +331,7 @@
         if (market.value && item.pick?.market !== market.value) return false;
         if (strength.value === "qualified" && !item.pick?.qualified) return false;
         if (strength.value === "directional" && item.pick?.qualified) return false;
-        if (matchState?.value && stateClass(item) !== matchState.value) return false;
+        if (matchState?.value && stateClass(item, item.activeEngine || engineKey) !== matchState.value) return false;
         if (query) {
           const text = [
             item.home?.name,
@@ -531,13 +536,13 @@
     dateInput.value = dateInput.value || localIsoDate();
 
     const load = async () => {
-      setStatus("OMNI is checking every scheduled match…");
+      setStatus("OMNI is checking every fixture for the selected date…");
       const payload = await fetchApi(
         `/api/boss-picks/today?date=${encodeURIComponent(dateInput.value)}&refresh=1`
       );
 
       $("#portalMetrics").innerHTML = `
-        <div class="metric"><span>Matches checked</span><strong>${payload.reviewedFixtures || 0}</strong><small>Scheduled fixtures evaluated by OMNI</small></div>
+        <div class="metric"><span>Matches checked</span><strong>${payload.reviewedFixtures || 0}</strong><small>Fixtures evaluated for the selected date</small></div>
         <div class="metric"><span>Boss Picks</span><strong>${payload.qualifiedCount || 0}</strong><small>Every fixture that passes the full Boss gate</small></div>
         <div class="metric"><span>Prime</span><strong>${payload.primeCount || 0}</strong><small>Rule score of 87/100 or higher</small></div>
         <div class="metric"><span>Rejected</span><strong>${payload.rejectedCount || 0}</strong><small>No eligible core market passed</small></div>`;

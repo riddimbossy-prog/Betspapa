@@ -2,7 +2,7 @@ name: BetsPapa Automatic Picks
 
 on:
   schedule:
-    # GitHub schedules use UTC. Refresh fixtures and picks every four hours.
+    # GitHub schedules use UTC. Refresh full fixture histories and picks every four hours.
     - cron: "17 */4 * * *"
 
   workflow_dispatch:

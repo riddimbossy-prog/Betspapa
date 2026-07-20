@@ -12,13 +12,24 @@ function normalizeProviderFixture(item) {
   const league = item?.league || {};
   const teams = item?.teams || {};
   const score = item?.score || {};
+  const goals = item?.goals || {};
+  const status = fixture.status?.short || "NS";
+  const terminal = ["FT", "AET", "PEN"].includes(status);
+  const providerHome = Number.isFinite(goals.home) ? Number(goals.home) : null;
+  const providerAway = Number.isFinite(goals.away) ? Number(goals.away) : null;
+  const fulltimeHome = terminal && Number.isFinite(score.fulltime?.home)
+    ? Number(score.fulltime.home)
+    : providerHome ?? (Number.isFinite(score.fulltime?.home) ? Number(score.fulltime.home) : null);
+  const fulltimeAway = terminal && Number.isFinite(score.fulltime?.away)
+    ? Number(score.fulltime.away)
+    : providerAway ?? (Number.isFinite(score.fulltime?.away) ? Number(score.fulltime.away) : null);
 
   if (!fixture.id || !league.id || !teams.home?.id || !teams.away?.id) return null;
 
   return {
     providerFixtureId: Number(fixture.id),
     kickoff: fixture.date,
-    status: fixture.status?.short || "NS",
+    status,
     venue: fixture.venue?.name || null,
     season: Number(league.season),
     league: {
@@ -42,8 +53,8 @@ function normalizeProviderFixture(item) {
     },
     halftimeHome: Number.isFinite(score.halftime?.home) ? Number(score.halftime.home) : null,
     halftimeAway: Number.isFinite(score.halftime?.away) ? Number(score.halftime.away) : null,
-    fulltimeHome: Number.isFinite(score.fulltime?.home) ? Number(score.fulltime.home) : null,
-    fulltimeAway: Number.isFinite(score.fulltime?.away) ? Number(score.fulltime.away) : null
+    fulltimeHome,
+    fulltimeAway
   };
 }
 

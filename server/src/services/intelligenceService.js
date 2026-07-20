@@ -1,4 +1,4 @@
-import { ENGINE_VERSION, PREDICTABLE_STATUSES } from "../config.js";
+import { ENGINE_VERSION, FINISHED_PROFILE_STATUSES, PREDICTABLE_STATUSES } from "../config.js";
 import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 import { gradeEnginePick } from "./gradingService.js";
@@ -105,6 +105,10 @@ export function selectBankerSlate(predictions, { limit = 3 } = {}) {
         league: prediction.league,
         home: prediction.home,
         away: prediction.away,
+        status: prediction.status,
+        matchState: prediction.matchState || null,
+        settlement: prediction.settlement || null,
+        engineOutcome: prediction.engineOutcomes?.[engineKey] || null,
         engineKey,
         engineName: ENGINE_LABELS[engineKey],
         pick,
@@ -325,7 +329,7 @@ export async function getResultsIntelligence(supabase, days = 30) {
     supabase
       .from("fixtures")
       .select("*")
-      .eq("status", "FT")
+      .in("status", [...FINISHED_PROFILE_STATUSES])
       .gte("fixture_date", start.toISOString())
       .lte("fixture_date", end.toISOString())
       .order("fixture_date", { ascending: false })
