@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#12002b">
+  <meta name="theme-color" content="#070b16">
   <meta name="description" content="BetsPapa football prediction intelligence. Papa knows the game.">
   <meta property="og:title" content="BetsPapa — Papa Knows the Game">
   <meta property="og:description" content="Common-sense football predictions powered by HT/FT transition logic and goal thresholds.">
@@ -23,7 +23,7 @@
   </style>
   <script>
     (function () {
-      window.__BETSPAPA_BUILD__ = "1.14.0";
+      window.__BETSPAPA_BUILD__ = "1.15.0";
       function forceSearchClosed() {
         var drawer = document.getElementById("searchDrawer");
         if (drawer) {
@@ -56,6 +56,7 @@
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2048x2732.jpg" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2732x2048.jpg" media="(device-width: 1366px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
   <link rel="stylesheet" href="/assets/css/pwa.v1103.css">
+  <link rel="stylesheet" href="/assets/css/ui.v150.css">
   <script>
     (function () {
       var standalone = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
@@ -87,14 +88,7 @@
       </span>
     </a>
 
-    <nav class="desktop-nav" aria-label="Primary navigation">
-      <a class="active" href="#dashboard">Home</a>
-      <a href="papas-pick.html">Predictions</a>
-      <a href="venue-pattern.html">HT/FT Engine</a>
-      <a href="boss-picks.html">Boss Picks</a>
-      <a href="results-intelligence.html">Results</a>
-      <a href="responsible.html">Responsible</a>
-    </nav>
+    <nav class="desktop-nav" aria-label="Primary navigation"><a class="active" href="index.html">Today</a><a href="papas-pick.html">Papa’s Pick</a><a href="boss-picks.html">Boss Picks</a><a href="#fixtures">Live & Fixtures</a><a href="results-intelligence.html">Results</a><a href="responsible.html">More</a></nav>
 
     <div class="top-actions">
       <button class="icon-button" id="searchButton" aria-label="Search" aria-controls="searchDrawer" aria-expanded="false">⌕</button>
@@ -137,11 +131,11 @@
       <div class="hero-card papa-hero">
         <div class="hero-copy">
           <span class="kicker">PAPA'S FOOTBALL INTELLIGENCE</span>
-          <h1>Every Match Gets a Direction. <span>Papa Explains Why.</span></h1>
-          <p>Every imported fixture is read through all nine HT/FT transitions, venue form, recent form, goal support and common-sense risk checks before one direction is selected.</p>
-          <div class="papa-promise"><span>✓</span> Strong calls are Qualified. Weaker calls are clearly marked Directional.</div>
+          <h1>Football intelligence, <span>explained clearly.</span></h1>
+          <p>Today’s fixtures, live status, model reasoning and verified results — organised around one clear match story and one practical market direction.</p>
+          <div class="papa-promise"><span>✓</span> Strong analyses are promoted. Weaker directions stay clearly labelled.</div>
           <div class="hero-actions">
-            <a class="gold-button" href="#prediction-board">View Papa's Picks <span>→</span></a>
+            <a class="gold-button" href="#prediction-board">Open Today’s Analysis <span>→</span></a>
             <button class="gold-button pwa-install-primary" id="pwaInstallPrimary" data-pwa-install type="button" hidden>Install BetsPapa App</button>
             <button class="glass-button" id="howItWorks">How Papa Thinks</button>
           </div>
@@ -213,8 +207,8 @@
       <article class="panel matrix-panel" id="engine">
         <div class="panel-heading">
           <div>
-            <span class="eyebrow">MATCH STATE MODEL</span>
-            <h2>HT/FT Transition Matrix</h2>
+            <span class="eyebrow">MATCH STORY</span>
+            <h2>HT/FT intelligence</h2>
           </div>
           <button class="info-button" title="Matrix probabilities">i</button>
         </div>
@@ -261,7 +255,7 @@
 
       <article class="panel insights-panel">
         <div class="panel-heading compact">
-          <div><span class="eyebrow">COMMON-SENSE FILTERS</span><h2>Market Insights</h2></div>
+          <div><span class="eyebrow">MARKET SUPPORT</span><h2>Why the market fits</h2></div>
           <a class="text-button" href="papas-pick.html">Open all picks</a>
         </div>
         <div class="insight-list" id="marketInsights"></div>
@@ -270,7 +264,7 @@
 
       <article class="panel fixture-panel" id="fixtures">
         <div class="panel-heading compact">
-          <div><span class="eyebrow">MATCH CATALOGUE</span><h2>Every Fixture, Four Engine Picks</h2></div>
+          <div><span class="eyebrow">TODAY’S BOARD</span><h2>Fixtures, status and analysis</h2></div>
           <span class="panel-note" id="fixtureSummary">Loading live fixtures</span>
         </div>
 
@@ -436,5 +430,6 @@
   <script src="assets/js/app.v140.js"></script>
   <script src="assets/js/mobile-nav.v120.js"></script>
   <script src="/assets/js/pwa.v1103.js"></script>
+  <script src="/assets/js/ui.v150.js"></script>
 </body>
 </html>

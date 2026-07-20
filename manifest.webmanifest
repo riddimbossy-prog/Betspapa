@@ -12,8 +12,8 @@
     "minimal-ui"
   ],
   "orientation": "any",
-  "background_color": "#090018",
-  "theme_color": "#12002b",
+  "background_color": "#070b16",
+  "theme_color": "#070b16",
   "categories": [
     "sports",
     "news",

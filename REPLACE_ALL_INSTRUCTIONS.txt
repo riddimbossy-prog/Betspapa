@@ -1,18 +1,18 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.14.0
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.15.0
 ================================================
 
-LIVE AND SETTLEMENT UPDATE
---------------------------
-- Every public prediction card indicates Pending, Live, Settling or Settled.
-- Live cards show the current score available from API-Football.
-- PapaSense v1.13 markets now settle automatically.
-- Win Either Half, Draw Either Half, half-goal and team Over 1.5 markets are graded.
-- Results are written to the existing prediction_results table.
-- OMNI Boss Picks display match state and settle supported markets.
-- Lead-at-any-time Boss Picks use chronological goal events.
-- Browser pages refresh every 60 seconds while a match is live.
-- The backend limits live provider synchronization to once every two minutes.
-- A lightweight GitHub Action refreshes scores and settlement every hour.
+NEW UI
+------
+- Unified desktop navigation across the public site.
+- Fixed five-item bottom navigation on mobile.
+- Midnight royal visual system with purple, gold and live-status accents.
+- Cleaner homepage hierarchy.
+- Modern match cards and metric cards.
+- Compact engine-mode tabs.
+- Mobile filter bottom sheet.
+- Results tables become readable cards on phones.
+- Improved Z Fold, tablet and narrow-phone layouts.
+- Existing live, pending, settlement, PapaSense and OMNI behavior is preserved.
 - BetsPapa remains free and public.
 
 DEPLOY
@@ -20,28 +20,11 @@ DEPLOY
 1. Extract this ZIP.
 2. Replace every file in the Betspapa repository.
 3. Open GitHub Desktop.
-4. Commit:
-   BetsPapa v1.14 live status and automatic settlement
+4. Commit: BetsPapa v1.15 modern unified UI
 5. Push origin.
 6. Wait for GitHub Pages and Render.
-7. Confirm:
-   https://api.betspapa.com/api/health
+7. Check https://api.betspapa.com/api/health
+8. Confirm version 1.15.0.
+9. Open https://betspapa.com/reset.html once.
 
-Expected version:
-1.14.0
-
-8. Open GitHub Actions and run once:
-   BetsPapa Live Scores and Settlement
-
-The workflow will then run hourly automatically.
-
-9. Open:
-   https://betspapa.com/reset.html
-
-NO EXTRA SETUP
---------------
-- No npm installation on your computer.
-- No Supabase migration.
-- No new Render environment variable.
-- Keep the existing API_FOOTBALL_KEY, SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY and ADMIN_SYNC_SECRET.
+No Supabase migration or new Render environment variable is required.

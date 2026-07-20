@@ -1,6 +1,6 @@
 {
   "name": "betspapa-api",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "private": true,
   "description": "BetsPapa API with live and pending match states, automatic settlement, PapaSense v1.13 and OMNI v2.5.2 Boss Picks.",
   "type": "module",

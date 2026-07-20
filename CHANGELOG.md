@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.15.0 — Modern Unified UI
+
+- Introduced one consistent navigation system.
+- Added mobile bottom navigation and mobile filter bottom sheet.
+- Reorganised the homepage around featured analysis, fixtures, status and results.
+- Redesigned match, metric, Boss Pick and result cards.
+- Improved accessibility, touch targets and responsive behavior.
+- Preserved all prediction and settlement logic.
+
 ## v1.14.0 — Live Match States and Automatic Settlement
 
 - Added Pending, Live, Settling and Settled labels to prediction cards.
