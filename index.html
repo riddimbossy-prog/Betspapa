@@ -23,7 +23,7 @@
   </style>
   <script>
     (function () {
-      window.__BETSPAPA_BUILD__ = "1.15.1";
+      window.__BETSPAPA_BUILD__ = "1.15.2";
       function forceSearchClosed() {
         var drawer = document.getElementById("searchDrawer");
         if (drawer) {
@@ -57,6 +57,7 @@
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2732x2048.jpg" media="(device-width: 1366px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
   <link rel="stylesheet" href="/assets/css/pwa.v1103.css">
   <link rel="stylesheet" href="/assets/css/ui.v151.css">
+  <link rel="stylesheet" href="/assets/css/today.v152.css">
   <script>
     (function () {
       var standalone = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
@@ -71,7 +72,7 @@
     })();
   </script>
 </head>
-<body>
+<body data-page="dashboard">
   <div class="pwa-launch-splash" id="pwaSplash" role="status" aria-live="polite">
     <span class="pwa-splash-accessible">Launching BetsPapa — Papa Knows the Game</span>
   </div>
@@ -159,6 +160,34 @@
         <button class="live-refresh" id="refreshLiveData" type="button">Refresh live data</button>
       </div>
 
+
+      <section class="today-overview" aria-labelledby="todayOverviewTitle">
+        <div class="today-overview-head">
+          <div>
+            <span class="eyebrow">TODAY AT A GLANCE</span>
+            <h2 id="todayOverviewTitle">Today’s match board</h2>
+            <p id="todayDateLabel">Loading today’s date…</p>
+          </div>
+          <a class="today-live-link" href="live-fixtures.html">Open full live centre <span>→</span></a>
+        </div>
+        <div class="today-status-grid" id="todayStatusGrid" aria-label="Today match-state summary">
+          <button type="button" class="today-status-card active" data-today-state="all">
+            <span>All</span><strong id="todayAllCount">0</strong><small>Analysed fixtures</small>
+          </button>
+          <button type="button" class="today-status-card live" data-today-state="live">
+            <span>Live</span><strong id="todayLiveCount">0</strong><small>In progress now</small>
+          </button>
+          <button type="button" class="today-status-card pending" data-today-state="pending">
+            <span>Pending</span><strong id="todayPendingCount">0</strong><small>Not started</small>
+          </button>
+          <button type="button" class="today-status-card settling" data-today-state="settling">
+            <span>Settling</span><strong id="todaySettlingCount">0</strong><small>Awaiting grading</small>
+          </button>
+          <button type="button" class="today-status-card settled" data-today-state="settled">
+            <span>Settled</span><strong id="todaySettledCount">0</strong><small>Graded results</small>
+          </button>
+        </div>
+      </section>
 
       <div class="engine-switcher" id="engineSwitcher" aria-label="Prediction engine filter">
         <button class="engine-tab active" type="button" data-engine="primary">
@@ -271,10 +300,42 @@
           </div>
         </div>
 
-        <div class="fixture-filters" aria-label="Fixture filters">
+        <div class="today-board-toolbar">
+          <label class="today-mobile-date">
+            <span>Date</span>
+            <input type="date" id="todayMobileDateFilter" aria-label="Today board date">
+          </label>
+          <div class="today-state-tabs" id="todayStateTabs" role="tablist" aria-label="Filter fixtures by match state">
+            <button type="button" class="active" data-today-state="all">All</button>
+            <button type="button" data-today-state="live">Live</button>
+            <button type="button" data-today-state="pending">Pending</button>
+            <button type="button" data-today-state="settling">Settling</button>
+            <button type="button" data-today-state="settled">Settled</button>
+          </div>
+          <button class="today-filter-toggle" id="todayFilterToggle" type="button" aria-controls="todayFilterSheet" aria-expanded="false">
+            Filters <span id="todayFilterCount">0</span>
+          </button>
+        </div>
+
+        <div class="fixture-filters" id="todayFilterSheet" aria-label="Fixture filters">
+          <div class="today-filter-sheet-head">
+            <div><span>FILTER TODAY’S BOARD</span><strong>Filters</strong></div>
+            <button type="button" id="todayFilterClose" aria-label="Close filters">×</button>
+          </div>
           <label>
             <span>Date</span>
             <input type="date" id="dateFilter">
+          </label>
+          <label>
+            <span>Match state</span>
+            <select id="matchStateFilter">
+              <option value="all">All states</option>
+              <option value="live">Live</option>
+              <option value="pending">Pending</option>
+              <option value="settling">Settling</option>
+              <option value="settled">Settled</option>
+              <option value="delayed">Delayed / postponed</option>
+            </select>
           </label>
           <label>
             <span>League</span>
@@ -430,9 +491,10 @@
     </div>
   </dialog>
 
-  <script src="assets/js/app.v140.js"></script>
+  <script src="assets/js/app.v152.js"></script>
   <script src="assets/js/mobile-nav.v120.js"></script>
   <script src="/assets/js/pwa.v1103.js"></script>
   <script src="/assets/js/ui.v151.js"></script>
+  <script src="/assets/js/today.v152.js"></script>
 </body>
 </html>
