@@ -1,30 +1,47 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.15.0
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.15.1
 ================================================
 
-NEW UI
-------
-- Unified desktop navigation across the public site.
-- Fixed five-item bottom navigation on mobile.
-- Midnight royal visual system with purple, gold and live-status accents.
-- Cleaner homepage hierarchy.
-- Modern match cards and metric cards.
-- Compact engine-mode tabs.
-- Mobile filter bottom sheet.
-- Results tables become readable cards on phones.
-- Improved Z Fold, tablet and narrow-phone layouts.
-- Existing live, pending, settlement, PapaSense and OMNI behavior is preserved.
-- BetsPapa remains free and public.
+LIVE & FIXTURES UI
+------------------
+- New dedicated page: /live-fixtures.html
+- Pending, Live, Settling, Settled and Delayed views
+- Current scores and half-time scores
+- Papa's published analysis on each match card
+- Automatic live refresh
+- Cached-board fallback
+- Mobile filter bottom sheet
+- Samsung Z Fold 6 cover and unfolded layouts
+- Full-width homepage fixture preview
+- Unified Live navigation across every public page
+
+UNCHANGED
+---------
+- PapaSense prediction logic
+- OMNI Boss Picks
+- Automatic settlement logic
+- Supabase schema
+- Render environment variables
+- BetsPapa remains free and public
 
 DEPLOY
 ------
 1. Extract this ZIP.
 2. Replace every file in the Betspapa repository.
 3. Open GitHub Desktop.
-4. Commit: BetsPapa v1.15 modern unified UI
+4. Commit:
+   BetsPapa v1.15.1 live fixtures responsive UI
 5. Push origin.
 6. Wait for GitHub Pages and Render.
-7. Check https://api.betspapa.com/api/health
-8. Confirm version 1.15.0.
-9. Open https://betspapa.com/reset.html once.
+7. Confirm:
+   https://api.betspapa.com/api/health
 
-No Supabase migration or new Render environment variable is required.
+Expected version:
+1.15.1
+
+8. Open:
+   https://betspapa.com/reset.html
+
+9. Test:
+   https://betspapa.com/live-fixtures.html
+
+No npm installation, Supabase migration or new Render variable is required.

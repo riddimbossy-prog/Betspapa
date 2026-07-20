@@ -79,3 +79,8 @@ Boss Picks are free and public. No account, login, watchlist, subscription, Supa
 - Manual protected settlement: `/api/admin/settle-date`
 - Hourly workflow: `BetsPapa Live Scores and Settlement`
 - Full guide: `LIVE_MATCHES_AND_SETTLEMENT_GUIDE.md`
+
+
+## Live & Fixtures
+
+The dedicated `/live-fixtures.html` page provides responsive pending, live, settling, settled and delayed match views, including mobile and Samsung Z Fold 6 layouts.

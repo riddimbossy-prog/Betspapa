@@ -73,6 +73,18 @@
       ]
     },
     {
+      "name": "Live & Fixtures",
+      "short_name": "Live",
+      "description": "Open the live match centre",
+      "url": "/live-fixtures.html?source=shortcut",
+      "icons": [
+        {
+          "src": "/assets/images/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
       "name": "Results",
       "short_name": "Results",
       "description": "Open engine result intelligence",

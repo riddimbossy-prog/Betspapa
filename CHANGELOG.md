@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.15.1 — Live & Fixtures Responsive UI
+
+- Added a dedicated `live-fixtures.html` match centre.
+- Added separate Pending, Live, Settling, Settled and Delayed views.
+- Added real-time score cards with Papa's published analysis.
+- Added cached-board fallback when the live API is temporarily unavailable.
+- Added automatic 60-second refresh while matches are live.
+- Added a mobile filter sheet and narrow cover-screen layout.
+- Added dedicated Samsung Z Fold 6 cover and unfolded breakpoints.
+- Redesigned the homepage fixture preview as a full-width responsive grid.
+- Updated every public navigation link and PWA shortcut to the live match centre.
+- No prediction logic, settlement rules or database schema changed.
+
 ## v1.15.0 — Modern Unified UI
 
 - Introduced one consistent navigation system.

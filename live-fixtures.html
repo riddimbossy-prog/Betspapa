@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070b16">
+  <title>Live & Fixtures — BetsPapa</title>
+  <meta name="description" content="BetsPapa live match centre with pending, live, settling and settled football fixtures.">
+  <link rel="icon" href="assets/images/favicon-64.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/portal.v140.css">
+  <link rel="stylesheet" href="assets/css/mobile-nav.v111.css">
+  <link rel="stylesheet" href="/assets/css/pwa.v1103.css">
+  <link rel="stylesheet" href="/assets/css/ui.v151.css">
+  <link rel="stylesheet" href="/assets/css/live-fixtures.v151.css">
+  <script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BetsPapa">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon-180.png">
+  <script>
+    (function () {
+      var standalone = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
+      var iosStandalone = window.navigator.standalone === true;
+      if (standalone || iosStandalone || new URLSearchParams(location.search).get("source") === "pwa") {
+        document.documentElement.classList.add("pwa-launching");
+      }
+      window.addEventListener("beforeinstallprompt", function (event) {
+        event.preventDefault();
+        window.__BETSPAPA_INSTALL_PROMPT__ = event;
+      });
+    })();
+  </script>
+</head>
+<body data-page="live-fixtures">
+  <div class="pwa-launch-splash" id="pwaSplash" role="status" aria-live="polite">
+    <span class="pwa-splash-accessible">Launching BetsPapa live match centre</span>
+  </div>
+
+  <header class="portal-header">
+    <a class="portal-brand" href="index.html" aria-label="BetsPapa home">
+      <img src="assets/images/betspapa-papa-mark.png" alt="">
+      <span><strong>BETS<span>PAPA</span></strong><small>PAPA KNOWS THE GAME</small></span>
+    </a>
+    <nav class="portal-nav" id="portalNav" aria-label="Primary navigation">
+      <a href="index.html">Today</a>
+      <a href="papas-pick.html">Papa’s Pick</a>
+      <a href="boss-picks.html">Boss Picks</a>
+      <a class="active" href="live-fixtures.html">Live & Fixtures</a>
+      <a href="results-intelligence.html">Results</a>
+      <a href="responsible.html">More</a>
+    </nav>
+    <button class="portal-menu" id="portalMenu" type="button" aria-label="Open navigation" aria-controls="portalNav" aria-expanded="false">☰</button>
+  </header>
+
+  <main class="lf-main">
+    <section class="lf-hero">
+      <div class="lf-hero-copy">
+        <span class="lf-eyebrow"><i aria-hidden="true"></i> LIVE MATCH CENTRE</span>
+        <h1>Live & Fixtures</h1>
+        <p>One clean board for pending kickoffs, live scores, matches awaiting settlement and verified results.</p>
+        <div class="lf-date-row" aria-label="Fixture date">
+          <button class="lf-date-step" id="previousDate" type="button" aria-label="Previous day">←</button>
+          <label class="lf-date-control">
+            <span>Match date</span>
+            <input type="date" id="liveDateFilter">
+          </label>
+          <button class="lf-date-step" id="nextDate" type="button" aria-label="Next day">→</button>
+          <button class="lf-today-button" id="todayDate" type="button">Today</button>
+        </div>
+      </div>
+      <div class="lf-hero-status">
+        <div class="lf-live-orbit" aria-hidden="true"><span></span></div>
+        <div>
+          <span>AUTO REFRESH</span>
+          <strong id="autoRefreshLabel">Checking match states</strong>
+          <small id="lastUpdatedLabel">Waiting for live data</small>
+        </div>
+        <button id="liveRefreshButton" type="button">Refresh now</button>
+      </div>
+    </section>
+
+    <div class="lf-connection" id="livePageStatus" data-state="loading" role="status" aria-live="polite">
+      <span class="lf-connection-dot" aria-hidden="true"></span>
+      <div><strong>Connecting to BetsPapa</strong><small>Loading fixtures and current match states…</small></div>
+    </div>
+
+    <section class="lf-summary-grid" id="liveSummary" aria-label="Match state summary">
+      <button type="button" data-summary-state="all" class="active"><span>All fixtures</span><strong id="summaryAll">0</strong><small>Complete board</small></button>
+      <button type="button" data-summary-state="live"><span>Live</span><strong id="summaryLive">0</strong><small>In progress</small></button>
+      <button type="button" data-summary-state="pending"><span>Pending</span><strong id="summaryPending">0</strong><small>Not started</small></button>
+      <button type="button" data-summary-state="finished"><span>Settling</span><strong id="summaryFinished">0</strong><small>Awaiting grade</small></button>
+      <button type="button" data-summary-state="settled"><span>Settled</span><strong id="summarySettled">0</strong><small>Result verified</small></button>
+      <button type="button" data-summary-state="delayed"><span>Delayed</span><strong id="summaryDelayed">0</strong><small>Postponed or cancelled</small></button>
+    </section>
+
+    <section class="lf-board-shell">
+      <div class="lf-board-top">
+        <div>
+          <span class="lf-eyebrow">MATCH BOARD</span>
+          <h2 id="boardTitle">All fixtures</h2>
+          <p id="boardSubtitle">Loading today’s football schedule…</p>
+        </div>
+        <button class="lf-mobile-filter-button" id="openLiveFilters" type="button" aria-controls="liveFilterSheet" aria-expanded="false">
+          Filters <b id="liveFilterCount">0</b>
+        </button>
+      </div>
+
+      <div class="lf-state-tabs" id="liveStateTabs" role="tablist" aria-label="Filter by match state">
+        <button class="active" type="button" data-state="all" role="tab" aria-selected="true">All <span>0</span></button>
+        <button type="button" data-state="live" role="tab" aria-selected="false">Live <span>0</span></button>
+        <button type="button" data-state="pending" role="tab" aria-selected="false">Pending <span>0</span></button>
+        <button type="button" data-state="finished" role="tab" aria-selected="false">Settling <span>0</span></button>
+        <button type="button" data-state="settled" role="tab" aria-selected="false">Settled <span>0</span></button>
+        <button type="button" data-state="delayed" role="tab" aria-selected="false">Delayed <span>0</span></button>
+      </div>
+
+      <div class="lf-filter-bar" id="liveFilterBar">
+        <label>
+          <span>League</span>
+          <select id="liveLeagueFilter"><option value="">All leagues</option></select>
+        </label>
+        <label class="lf-search-field">
+          <span>Search</span>
+          <input id="liveSearchFilter" type="search" placeholder="Team, league or market" autocomplete="off">
+        </label>
+        <label>
+          <span>Sort</span>
+          <select id="liveSortFilter">
+            <option value="smart">Live first</option>
+            <option value="kickoff">Kickoff time</option>
+            <option value="league">League</option>
+          </select>
+        </label>
+        <button id="clearLiveFilters" type="button">Clear filters</button>
+      </div>
+
+      <div class="lf-board-feedback" id="boardFeedback" hidden></div>
+      <section class="lf-fixture-grid" id="liveFixtureGrid" aria-live="polite"></section>
+      <div class="lf-empty-state" id="liveEmptyState" hidden>
+        <div>◎</div>
+        <strong>No fixtures match these filters</strong>
+        <span>Choose another state, league or date.</span>
+        <button id="emptyClearFilters" type="button">Show all fixtures</button>
+      </div>
+    </section>
+
+    <section class="lf-status-guide" aria-label="Status guide">
+      <article><i class="pending"></i><div><strong>Pending</strong><span>Kickoff has not started.</span></div></article>
+      <article><i class="live"></i><div><strong>Live</strong><span>Score refreshes automatically.</span></div></article>
+      <article><i class="finished"></i><div><strong>Settling</strong><span>Final score received; grading is processing.</span></div></article>
+      <article><i class="settled"></i><div><strong>Settled</strong><span>Prediction outcome has been verified.</span></div></article>
+    </section>
+
+    <footer class="portal-footer lf-footer">
+      <span>Sports analytics only. Predictions are not guarantees. 18+.</span>
+      <div><a href="responsible.html">Responsible Use</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>
+    </footer>
+  </main>
+
+  <div class="lf-filter-backdrop" id="liveFilterBackdrop" hidden></div>
+  <aside class="lf-filter-sheet" id="liveFilterSheet" aria-label="Live fixture filters" aria-hidden="true">
+    <div class="lf-filter-sheet-head">
+      <div><span>LIVE BOARD</span><strong>Filters</strong></div>
+      <button id="closeLiveFilters" type="button" aria-label="Close filters">×</button>
+    </div>
+    <label><span>League</span><select id="mobileLiveLeagueFilter"><option value="">All leagues</option></select></label>
+    <label><span>Search</span><input id="mobileLiveSearchFilter" type="search" placeholder="Team, league or market"></label>
+    <label><span>Sort</span>
+      <select id="mobileLiveSortFilter">
+        <option value="smart">Live first</option>
+        <option value="kickoff">Kickoff time</option>
+        <option value="league">League</option>
+      </select>
+    </label>
+    <div class="lf-filter-sheet-actions">
+      <button id="mobileClearLiveFilters" type="button">Clear</button>
+      <button id="applyLiveFilters" type="button">Apply filters</button>
+    </div>
+  </aside>
+
+  <dialog class="lf-match-dialog" id="liveMatchDialog">
+    <div class="lf-dialog-shell">
+      <button class="lf-dialog-close" id="liveMatchDialogClose" type="button" aria-label="Close match details">×</button>
+      <div id="liveMatchDialogContent"></div>
+    </div>
+  </dialog>
+
+  <script src="assets/js/mobile-nav.v120.js"></script>
+  <script src="/assets/js/pwa.v1103.js"></script>
+  <script src="/assets/js/ui.v151.js"></script>
+  <script src="/assets/js/live-fixtures.v151.js"></script>
+</body>
+</html>

@@ -23,7 +23,7 @@
   </style>
   <script>
     (function () {
-      window.__BETSPAPA_BUILD__ = "1.15.0";
+      window.__BETSPAPA_BUILD__ = "1.15.1";
       function forceSearchClosed() {
         var drawer = document.getElementById("searchDrawer");
         if (drawer) {
@@ -56,7 +56,7 @@
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2048x2732.jpg" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2732x2048.jpg" media="(device-width: 1366px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
   <link rel="stylesheet" href="/assets/css/pwa.v1103.css">
-  <link rel="stylesheet" href="/assets/css/ui.v150.css">
+  <link rel="stylesheet" href="/assets/css/ui.v151.css">
   <script>
     (function () {
       var standalone = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
@@ -88,7 +88,7 @@
       </span>
     </a>
 
-    <nav class="desktop-nav" aria-label="Primary navigation"><a class="active" href="index.html">Today</a><a href="papas-pick.html">Papa’s Pick</a><a href="boss-picks.html">Boss Picks</a><a href="#fixtures">Live & Fixtures</a><a href="results-intelligence.html">Results</a><a href="responsible.html">More</a></nav>
+    <nav class="desktop-nav" aria-label="Primary navigation"><a class="active" href="index.html">Today</a><a href="papas-pick.html">Papa’s Pick</a><a href="boss-picks.html">Boss Picks</a><a href="live-fixtures.html">Live & Fixtures</a><a href="results-intelligence.html">Results</a><a href="responsible.html">More</a></nav>
 
     <div class="top-actions">
       <button class="icon-button" id="searchButton" aria-label="Search" aria-controls="searchDrawer" aria-expanded="false">⌕</button>
@@ -107,7 +107,7 @@
       <a class="side-link" href="venue-pattern.html"><span>◎</span>HT/FT Engine</a>
       <a class="side-link" href="boss-picks.html"><span>♛</span>Boss Picks</a>
       <a class="side-link" href="results-intelligence.html"><span>✓</span>Results</a>
-      <a class="side-link" href="#fixtures"><span>▦</span>Fixtures</a>
+      <a class="side-link" href="live-fixtures.html"><span>▦</span>Fixtures</a>
     </nav>
 
     <div class="premium-card" id="papa-edge">
@@ -265,7 +265,10 @@
       <article class="panel fixture-panel" id="fixtures">
         <div class="panel-heading compact">
           <div><span class="eyebrow">TODAY’S BOARD</span><h2>Fixtures, status and analysis</h2></div>
-          <span class="panel-note" id="fixtureSummary">Loading live fixtures</span>
+          <div class="fixture-panel-actions">
+            <span class="panel-note" id="fixtureSummary">Loading live fixtures</span>
+            <a class="fixture-page-link" href="live-fixtures.html">Open live match centre →</a>
+          </div>
         </div>
 
         <div class="fixture-filters" aria-label="Fixture filters">
@@ -430,6 +433,6 @@
   <script src="assets/js/app.v140.js"></script>
   <script src="assets/js/mobile-nav.v120.js"></script>
   <script src="/assets/js/pwa.v1103.js"></script>
-  <script src="/assets/js/ui.v150.js"></script>
+  <script src="/assets/js/ui.v151.js"></script>
 </body>
 </html>
