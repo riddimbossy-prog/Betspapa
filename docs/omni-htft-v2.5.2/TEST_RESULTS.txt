@@ -1,0 +1,21 @@
+
+> omni-htft-gatekeeper-v2-5-2-no-match-o05@2.5.2 test
+> node test_engine_v2_5_2.js
+
+PASS engine identifies itself as v2.5.2
+PASS date parser orders ISO and DD/MM/YYYY consistently
+PASS empty histories return controlled NO_BET rather than throwing
+PASS complete example runs all 44 active markets
+PASS match total Over 0.5 is removed while other 0.5 markets remain
+PASS only the six core markets are eligible for final selection
+PASS NO_BET explains when only a non-core market qualifies
+PASS same input gives the same football decision and scores
+PASS non-strict mode blocks only markets requiring missing specialist data
+PASS partial xG coverage is not treated as complete
+PASS strict mode globally rejects missing xG and event-order fields
+PASS major context risk forces NO_BET
+PASS CSV parser supports quoted commas
+PASS lead-at-any-time settlement is unknown without event data
+PASS demo walk-forward backtest completes and writes reports
+
+15 tests passed.

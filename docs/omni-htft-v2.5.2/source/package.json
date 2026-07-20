@@ -1,0 +1,16 @@
+{
+  "name": "omni-htft-gatekeeper-v2-5-2-no-match-o05",
+  "version": "2.5.2",
+  "private": true,
+  "description": "Deterministic HT/FT-first football market gatekeeper with a transparent core-only selection policy and honest walk-forward backtesting.",
+  "main": "omni_htft_engine_v2_5_2.js",
+  "scripts": {
+    "test": "node test_engine_v2_5_2.js",
+    "example": "node omni_htft_engine_v2_5_2.js example_input.json",
+    "backtest:demo": "node loss_forensics_v2_5_2.js --data-dir data --leagues demo-league --season synthetic-demo"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED"
+}

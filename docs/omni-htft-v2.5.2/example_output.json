@@ -1,0 +1,2693 @@
+{
+  "engine": "OMNI HT/FT GATEKEEPER ENGINE v2.5.2",
+  "generatedAt": "2026-07-20T06:20:34.621Z",
+  "selectionPolicy": {
+    "id": "CORE_ONLY_V2_5_2",
+    "description": "All active markets are evaluated, but only the six configured core markets may become the final selection.",
+    "selectableMarkets": [
+      "FIRST_HALF_OVER_0_5",
+      "SECOND_HALF_OVER_0_5",
+      "HOME_LEAD_ANYTIME",
+      "AWAY_LEAD_ANYTIME",
+      "HOME_WIN_EITHER_HALF",
+      "AWAY_WIN_EITHER_HALF"
+    ]
+  },
+  "decision": "BET",
+  "selected": {
+    "marketId": "HOME_LEAD_ANYTIME",
+    "marketName": "Home Team to Lead at Any Time",
+    "accepted": true,
+    "grade": "QUALIFIED",
+    "score": 84,
+    "minimumScore": 80,
+    "scoreBreakdown": {
+      "htft": 30,
+      "components": 31.5,
+      "streaks": 13.5,
+      "context": 9,
+      "contradictionPenalty": 0
+    },
+    "htftGatePassed": true,
+    "hardFailures": [],
+    "contradictions": [],
+    "streakAudit": {
+      "raw": 12,
+      "points": 13.5,
+      "signals": [
+        {
+          "raw": 12,
+          "positiveVenue": 8,
+          "negativeVenue": 0,
+          "positiveOverall": 16,
+          "negativeOverall": 0,
+          "seasonRate": 1
+        },
+        {
+          "raw": 12,
+          "positiveVenue": 8,
+          "negativeVenue": 0,
+          "positiveOverall": 16,
+          "negativeOverall": 0,
+          "seasonRate": 1
+        }
+      ]
+    },
+    "metrics": {
+      "expectedGoalEnvironment": 2.1404,
+      "goalDependencyRatio": 0.9104,
+      "combinedFailedToScore": 0.3908,
+      "combinedCleanSheet": 0.3908,
+      "dynamicHTFT": 0.0406,
+      "reversalEqualizerHTFT": 0.0406,
+      "xXHTFT": 0
+    },
+    "selectionEligible": true
+  },
+  "selectionRule": "2 markets were within 3 points; the wider/safer qualified market was selected.",
+  "alternatives": [
+    {
+      "marketId": "HOME_WIN_EITHER_HALF",
+      "marketName": "Home Team to Win Either Half",
+      "accepted": true,
+      "grade": "QUALIFIED",
+      "score": 82.25,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 30,
+        "components": 29.75,
+        "streaks": 13.5,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 12,
+        "points": 13.5,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          },
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": true
+    }
+  ],
+  "context": {
+    "match": {
+      "homeTeam": "Strong FC",
+      "awayTeam": "Weak United",
+      "date": "2026-02-01"
+    },
+    "dataSamples": {
+      "homeOverall": 16,
+      "homeVenue": 8,
+      "awayOverall": 16,
+      "awayVenue": 8,
+      "league": 40
+    },
+    "league": {
+      "sampleSize": 40,
+      "avgTotalGoals": 2.4,
+      "avgHomeGoals": 1.8,
+      "avgAwayGoals": 0.6,
+      "over05": 1,
+      "over15": 0.8,
+      "over25": 0.4,
+      "over35": 0.2,
+      "under15": 0.2,
+      "under25": 0.6,
+      "under35": 0.8,
+      "under45": 1,
+      "btts": 0.6,
+      "bttsNo": 0.4,
+      "zeroZero": 0,
+      "firstHalfGoal": 0.6,
+      "firstHalfOver15": 0,
+      "firstHalfUnder15": 1,
+      "secondHalfGoal": 1,
+      "secondHalfOver15": 0.6,
+      "homeWin": 0.8,
+      "draw": 0.2,
+      "awayWin": 0
+    },
+    "derived": {
+      "expectedGoalEnvironment": 2.1404,
+      "goalDependencyRatio": 0.9104,
+      "homePpgEdge": 2.9075,
+      "homeGoalDifferenceEdge": 3.4075,
+      "homeXgEdge": 2.5315,
+      "homeFirstScoreEdge": 1
+    },
+    "htft": {
+      "1/1": 0.9594,
+      "X/1": 0,
+      "2/1": 0,
+      "1/X": 0.0406,
+      "X/X": 0,
+      "2/X": 0,
+      "1/2": 0,
+      "X/2": 0,
+      "2/2": 0,
+      "dynamic": 0.0406,
+      "reversal": 0,
+      "equalizer": 0.0406,
+      "reversalEqualizer": 0.0406,
+      "static": 0.9594,
+      "halfTimeDraw": 0,
+      "firstHalfNonDraw": 1,
+      "fullTimeHomeWin": 0.9594,
+      "fullTimeDraw": 0.0406,
+      "fullTimeAwayWin": 0,
+      "homeLedAtHalf": 1,
+      "awayLedAtHalf": 0,
+      "homeGuaranteedScored": 1,
+      "awayGuaranteedScored": 0,
+      "homeGuaranteedLedAnyTime": 1,
+      "awayGuaranteedLedAnyTime": 0,
+      "bttsGuaranteed": 0.0406,
+      "secondHalfGoalGuaranteed": 0.0406
+    },
+    "combined": {
+      "over05": 1,
+      "over15": 0.8592,
+      "over25": 0.25,
+      "over35": 0.0313,
+      "under15": 0.1408,
+      "under25": 0.75,
+      "under35": 0.9688,
+      "under45": 1,
+      "btts": 0.2183,
+      "bttsNo": 0.7817,
+      "zeroZero": 0,
+      "failedToScore": 0.3908,
+      "cleanSheet": 0.3908,
+      "firstHalfGoal": 1,
+      "firstHalfOver15": 0,
+      "firstHalfUnder15": 1,
+      "halfTimeZeroZero": 0,
+      "secondHalfGoal": 0.8592,
+      "secondHalfOver15": 0.25,
+      "draw": 0.0463,
+      "oneGoalMargin": 0.2817
+    },
+    "risks": {
+      "weather": 0.1,
+      "lineup": 0.1,
+      "motivation": 0.1,
+      "pitch": 0.1,
+      "rotation": 0.1
+    },
+    "availability": {
+      "xg": true,
+      "scoreOrder": true,
+      "leadOrder": true
+    }
+  },
+  "allMarkets": [
+    {
+      "marketId": "HOME_WIN",
+      "marketName": "Home Win",
+      "accepted": true,
+      "grade": "QUALIFIED",
+      "score": 86.75,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 30,
+        "components": 35,
+        "streaks": 12.75,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 10.5,
+        "points": 12.75,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          },
+          {
+            "raw": 9,
+            "positiveVenue": 7,
+            "negativeVenue": 0,
+            "positiveOverall": 3,
+            "negativeOverall": 0,
+            "seasonRate": 0.875
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "HOME_LEAD_ANYTIME",
+      "marketName": "Home Team to Lead at Any Time",
+      "accepted": true,
+      "grade": "QUALIFIED",
+      "score": 84,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 30,
+        "components": 31.5,
+        "streaks": 13.5,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 12,
+        "points": 13.5,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          },
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": true
+    },
+    {
+      "marketId": "HOME_WIN_EITHER_HALF",
+      "marketName": "Home Team to Win Either Half",
+      "accepted": true,
+      "grade": "QUALIFIED",
+      "score": 82.25,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 30,
+        "components": 29.75,
+        "streaks": 13.5,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 12,
+        "points": 13.5,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          },
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": true
+    },
+    {
+      "marketId": "FIRST_HALF_OVER_0_5",
+      "marketName": "First Half Over 0.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 77.25,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 32,
+        "components": 22.75,
+        "streaks": 13.5,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [
+        "League first-half goal rate is below 68%."
+      ],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 12,
+        "points": 13.5,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          },
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": true
+    },
+    {
+      "marketId": "HOME_DNB",
+      "marketName": "Home Draw No Bet",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 75.25,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 30,
+        "components": 22.75,
+        "streaks": 13.5,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 12,
+        "points": 13.5,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          },
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "HOME_OVER_0_5",
+      "marketName": "Home Team Over 0.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 75,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 28,
+        "components": 24.5,
+        "streaks": 13.5,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 12,
+        "points": 13.5,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          },
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "HOME_UNDER_2_5",
+      "marketName": "Home Team Under 2.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 73.88,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 26,
+        "components": 28,
+        "streaks": 10.88,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Selected team scores three or more above 18%.",
+        "Selected team scoring average is above 1.65.",
+        "Selected team xG is above 1.65."
+      ],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 6.75,
+        "points": 10.875,
+        "signals": [
+          {
+            "raw": 1.5,
+            "positiveVenue": 3,
+            "negativeVenue": 0,
+            "positiveOverall": 3,
+            "negativeOverall": 0,
+            "seasonRate": 0.75
+          },
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "HOME_OVER_1_5",
+      "marketName": "Home Team Over 1.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 73.75,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 28,
+        "components": 26.25,
+        "streaks": 10.5,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 6,
+        "points": 10.5,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          },
+          {
+            "raw": 0,
+            "positiveVenue": 1,
+            "negativeVenue": 0,
+            "positiveOverall": 0,
+            "negativeOverall": 1,
+            "seasonRate": 0.625
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "DOUBLE_CHANCE_1X",
+      "marketName": "Double Chance 1X",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 73.5,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 30,
+        "components": 21,
+        "streaks": 13.5,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 12,
+        "points": 13.5,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          },
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "HOME_SCORE_BOTH_HALVES",
+      "marketName": "Home Team to Score in Both Halves",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 71.55,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 18,
+        "components": 34.05,
+        "streaks": 10.5,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed."
+      ],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 6,
+        "points": 10.5,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          },
+          {
+            "raw": 0,
+            "positiveVenue": 1,
+            "negativeVenue": 0,
+            "positiveOverall": 0,
+            "negativeOverall": 1,
+            "seasonRate": 0.625
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "HOME_WIN_TO_NIL",
+      "marketName": "Home Win to Nil",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 69.61,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 22.61,
+        "components": 29.75,
+        "streaks": 8.25,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 1.5,
+        "points": 8.25,
+        "signals": [
+          {
+            "raw": 0,
+            "positiveVenue": 2,
+            "negativeVenue": 0,
+            "positiveOverall": 0,
+            "negativeOverall": 1,
+            "seasonRate": 0.75
+          },
+          {
+            "raw": 3,
+            "positiveVenue": 3,
+            "negativeVenue": 0,
+            "positiveOverall": 3,
+            "negativeOverall": 0,
+            "seasonRate": 0.75
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "HOME_UNDER_1_5",
+      "marketName": "Home Team Under 1.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 69,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 26,
+        "components": 28,
+        "streaks": 6,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Selected team scores two or more above 28%.",
+        "Selected team scoring average is above 1.20.",
+        "Selected team xG is above 1.25.",
+        "Opponent concedes two or more above 28%.",
+        "Opponent defensive average is above 1.20.",
+        "Opponent clean-sheet rate is below 30%.",
+        "Selected team scores two or more in at least 40%.",
+        "Opponent concedes two or more in at least 38%."
+      ],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": -3,
+        "points": 6,
+        "signals": [
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          },
+          {
+            "raw": 0,
+            "positiveVenue": 0,
+            "negativeVenue": 1,
+            "positiveOverall": 1,
+            "negativeOverall": 0,
+            "seasonRate": 0.375
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "HOME_CLEAN_SHEET",
+      "marketName": "Home Team Clean Sheet",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 59.98,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 22.61,
+        "components": 20.13,
+        "streaks": 8.25,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 1.5,
+        "points": 8.25,
+        "signals": [
+          {
+            "raw": 0,
+            "positiveVenue": 2,
+            "negativeVenue": 0,
+            "positiveOverall": 0,
+            "negativeOverall": 1,
+            "seasonRate": 0.75
+          },
+          {
+            "raw": 3,
+            "positiveVenue": 3,
+            "negativeVenue": 0,
+            "positiveOverall": 3,
+            "negativeOverall": 0,
+            "seasonRate": 0.75
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "HOME_UNDER_0_5",
+      "marketName": "Home Team Under 0.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 58.75,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 26,
+        "components": 19.25,
+        "streaks": 4.5,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Selected team failed-to-score is below 36%.",
+        "Selected team scoring average is above 0.85.",
+        "Selected team xG is above 0.90.",
+        "Selected team scores above 62%.",
+        "Opponent clean-sheet rate is below 38%.",
+        "Opponent concedes above 65%.",
+        "Selected team scores in at least 72%.",
+        "Opponent concedes in at least 75%.",
+        "Selected team has a strong late-scoring profile."
+      ],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": -6,
+        "points": 4.5,
+        "signals": [
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          },
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "BTTS_NO",
+      "marketName": "Both Teams to Score — No",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 57.38,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 13.01,
+        "components": 27.12,
+        "streaks": 8.25,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 1.5,
+        "points": 8.25,
+        "signals": [
+          {
+            "raw": 0,
+            "positiveVenue": 2,
+            "negativeVenue": 0,
+            "positiveOverall": 0,
+            "negativeOverall": 1,
+            "seasonRate": 0.75
+          },
+          {
+            "raw": 3,
+            "positiveVenue": 3,
+            "negativeVenue": 0,
+            "positiveOverall": 3,
+            "negativeOverall": 0,
+            "seasonRate": 0.75
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "HOME_OVER_2_5",
+      "marketName": "Home Team Over 2.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 54.75,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 28,
+        "components": 12.5,
+        "streaks": 5.25,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [
+        "Selected team scores three or more below 25%.",
+        "Opponent concedes three or more below 22%.",
+        "Opponent concedes three or more below 15%."
+      ],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": -4.5,
+        "points": 5.25,
+        "signals": [
+          {
+            "raw": -3,
+            "positiveVenue": 0,
+            "negativeVenue": 3,
+            "positiveOverall": 0,
+            "negativeOverall": 3,
+            "seasonRate": 0.25
+          },
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "FIRST_HALF_UNDER_1_5",
+      "marketName": "First Half Under 1.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 53.5,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 10,
+        "components": 21,
+        "streaks": 13.5,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "First-half average goals exceed 0.95.",
+        "Combined halftime 0-0 is below 30%."
+      ],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 12,
+        "points": 13.5,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          },
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "AWAY_UNDER_0_5",
+      "marketName": "Away Team Under 0.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 52.75,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 18,
+        "components": 17.5,
+        "streaks": 8.25,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 1.5,
+        "points": 8.25,
+        "signals": [
+          {
+            "raw": 3,
+            "positiveVenue": 3,
+            "negativeVenue": 0,
+            "positiveOverall": 3,
+            "negativeOverall": 0,
+            "seasonRate": 0.75
+          },
+          {
+            "raw": 0,
+            "positiveVenue": 2,
+            "negativeVenue": 0,
+            "positiveOverall": 0,
+            "negativeOverall": 1,
+            "seasonRate": 0.75
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "MATCH_UNDER_3_5",
+      "marketName": "Match Under 3.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 52.52,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 14,
+        "components": 16.02,
+        "streaks": 13.5,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 12,
+        "points": 13.5,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 7,
+            "negativeVenue": 0,
+            "positiveOverall": 15,
+            "negativeOverall": 0,
+            "seasonRate": 0.875
+          },
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "MATCH_UNDER_2_5",
+      "marketName": "Match Under 2.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 50.37,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 14.04,
+        "components": 24.33,
+        "streaks": 9,
+        "context": 9,
+        "contradictionPenalty": 6
+      },
+      "htftGatePassed": true,
+      "hardFailures": [],
+      "contradictions": [
+        "At least one defence concedes two or more above 45%."
+      ],
+      "streakAudit": {
+        "raw": 3,
+        "points": 9,
+        "signals": [
+          {
+            "raw": 0,
+            "positiveVenue": 2,
+            "negativeVenue": 0,
+            "positiveOverall": 0,
+            "negativeOverall": 1,
+            "seasonRate": 0.625
+          },
+          {
+            "raw": 6,
+            "positiveVenue": 3,
+            "negativeVenue": 0,
+            "positiveOverall": 7,
+            "negativeOverall": 0,
+            "seasonRate": 0.875
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "AWAY_CLEAN_SHEET",
+      "marketName": "Away Team Clean Sheet",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 49.36,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 22.61,
+        "components": 19.25,
+        "streaks": 4.5,
+        "context": 9,
+        "contradictionPenalty": 6
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Selected team clean-sheet rate is below 36%.",
+        "Opponent failed-to-score rate is below 38%.",
+        "Opponent scoring average is above 0.85.",
+        "Opponent xG is above 0.95.",
+        "Selected team concedes above 1.00 per match.",
+        "Opponent scores in at least 72%.",
+        "Selected defence concedes in at least 75%."
+      ],
+      "contradictions": [
+        "Opponent has a strong late-scoring record."
+      ],
+      "streakAudit": {
+        "raw": -6,
+        "points": 4.5,
+        "signals": [
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          },
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "MATCH_UNDER_4_5",
+      "marketName": "Match Under 4.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 48.75,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 14,
+        "components": 12.25,
+        "streaks": 13.5,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 12,
+        "points": 13.5,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          },
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "MATCH_OVER_1_5",
+      "marketName": "Match Over 1.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 47.5,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 0,
+        "components": 28,
+        "streaks": 10.5,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Expected goal environment is below 2.30.",
+        "Combined failed-to-score is above 27%.",
+        "Combined clean-sheet rate is above 34%."
+      ],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 6,
+        "points": 10.5,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          },
+          {
+            "raw": 0,
+            "positiveVenue": 1,
+            "negativeVenue": 0,
+            "positiveOverall": 0,
+            "negativeOverall": 1,
+            "seasonRate": 0.75
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "AWAY_UNDER_1_5",
+      "marketName": "Away Team Under 1.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 47.5,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 18,
+        "components": 7,
+        "streaks": 13.5,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 12,
+        "points": 13.5,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          },
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "SECOND_HALF_OVER_0_5",
+      "marketName": "Second Half Over 0.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 41.29,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 4,
+        "components": 17.79,
+        "streaks": 10.5,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Dynamic HT/FT is below 32%.",
+        "Static HT/FT patterns exceed 72%."
+      ],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 6,
+        "points": 10.5,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          },
+          {
+            "raw": 0,
+            "positiveVenue": 1,
+            "negativeVenue": 0,
+            "positiveOverall": 0,
+            "negativeOverall": 1,
+            "seasonRate": 0.75
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": true
+    },
+    {
+      "marketId": "MATCH_UNDER_1_5",
+      "marketName": "Match Under 1.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 41.2,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 14.91,
+        "components": 11.29,
+        "streaks": 6,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "League Under 1.5 is below 28%.",
+        "Combined Under 1.5 is below 40%.",
+        "Expected goal environment is above 1.95.",
+        "Combined 0-0 rate is below 12%.",
+        "Combined Over 1.5 is 70% or higher.",
+        "At least one team scores two or more too frequently."
+      ],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": -3,
+        "points": 6,
+        "signals": [
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          },
+          {
+            "raw": 0,
+            "positiveVenue": 0,
+            "negativeVenue": 1,
+            "positiveOverall": 1,
+            "negativeOverall": 0,
+            "seasonRate": 0.25
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "AWAY_UNDER_2_5",
+      "marketName": "Away Team Under 2.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 40.5,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 18,
+        "components": 0,
+        "streaks": 13.5,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 12,
+        "points": 13.5,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          },
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "NO_GOAL",
+      "marketName": "No Goal",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 40.24,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 16.06,
+        "components": 17.67,
+        "streaks": 4.5,
+        "context": 9,
+        "contradictionPenalty": 7
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "League 0-0 rate is below 11%.",
+        "Combined 0-0 rate is below 14%.",
+        "Both failed-to-score rates must be at least 35%.",
+        "Both scoring averages must be at most 0.95.",
+        "Both xG averages must be at most 1.00.",
+        "HT/FT X/X is below 34%.",
+        "At least one team scores in 75% or more.",
+        "At least one defence concedes in 75% or more.",
+        "Expected goal environment exceeds 1.95."
+      ],
+      "contradictions": [
+        "League goal average exceeds 2.20."
+      ],
+      "streakAudit": {
+        "raw": -6,
+        "points": 4.5,
+        "signals": [
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          },
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "FIRST_HALF_OVER_1_5",
+      "marketName": "First Half Over 1.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 39.5,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 32,
+        "components": 0,
+        "streaks": 4.5,
+        "context": 9,
+        "contradictionPenalty": 6
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Combined first-half Over 1.5 is below 31%.",
+        "First-half average goals are below 1.15.",
+        "Combined match Over 2.5 is below 62%.",
+        "Dynamic HT/FT is below 38%."
+      ],
+      "contradictions": [
+        "Neither team produces two first-half goals often enough."
+      ],
+      "streakAudit": {
+        "raw": -6,
+        "points": 4.5,
+        "signals": [
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          },
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "AWAY_WIN_TO_NIL",
+      "marketName": "Away Win to Nil",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 35.36,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 22.61,
+        "components": 5.25,
+        "streaks": 4.5,
+        "context": 9,
+        "contradictionPenalty": 6
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Selected team win rate is below 52%.",
+        "Selected team clean-sheet rate is below 36%.",
+        "Opponent loss rate is below 48%.",
+        "Opponent failed-to-score rate is below 40%.",
+        "Selected team xG edge is below 0.55.",
+        "Opponent scoring average is above 0.85.",
+        "Opponent scores in at least 70%.",
+        "Selected team concedes in at least 70%."
+      ],
+      "contradictions": [
+        "Opponent regularly scores after halftime."
+      ],
+      "streakAudit": {
+        "raw": -6,
+        "points": 4.5,
+        "signals": [
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          },
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "DOUBLE_CHANCE_X2",
+      "marketName": "Double Chance X2",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 31.88,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 10,
+        "components": 14,
+        "streaks": 4.88,
+        "context": 9,
+        "contradictionPenalty": 6
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Away unbeaten rate is below 72%.",
+        "Home win rate exceeds 30%.",
+        "Away PPG is below home PPG.",
+        "Away loss rate exceeds 27%.",
+        "Away scored-first rate is below home rate.",
+        "Home win rate is too strong."
+      ],
+      "contradictions": [
+        "Away recent venue loss rate exceeds 34%."
+      ],
+      "streakAudit": {
+        "raw": -5.25,
+        "points": 4.875,
+        "signals": [
+          {
+            "raw": -4.5,
+            "positiveVenue": 0,
+            "negativeVenue": 7,
+            "positiveOverall": 0,
+            "negativeOverall": 3,
+            "seasonRate": 0.125
+          },
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "AWAY_DNB",
+      "marketName": "Away Draw No Bet",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 30.13,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 10,
+        "components": 12.25,
+        "streaks": 4.88,
+        "context": 9,
+        "contradictionPenalty": 6
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Away unbeaten rate is below 70%.",
+        "Home win rate exceeds 30%.",
+        "Away PPG edge is below 0.35.",
+        "Away xG edge is below 0.25.",
+        "Away loss rate exceeds 26%.",
+        "Home win profile is too strong."
+      ],
+      "contradictions": [
+        "HT/FT home-win rate exceeds 32%."
+      ],
+      "streakAudit": {
+        "raw": -5.25,
+        "points": 4.875,
+        "signals": [
+          {
+            "raw": -4.5,
+            "positiveVenue": 0,
+            "negativeVenue": 7,
+            "positiveOverall": 0,
+            "negativeOverall": 3,
+            "seasonRate": 0.125
+          },
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "MATCH_OVER_2_5",
+      "marketName": "Match Over 2.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 29.75,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 0,
+        "components": 14,
+        "streaks": 6.75,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "League Over 2.5 is below 52%.",
+        "Combined Over 2.5 is below 59%.",
+        "Expected goal environment is below 2.75.",
+        "Neither balanced scoring nor dominant-team route qualifies.",
+        "Combined failed-to-score is above 25%.",
+        "Combined Under 2.5 is above 58%.",
+        "Expected goal environment is below 2.45.",
+        "Goal projection depends too heavily on one team."
+      ],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": -1.5,
+        "points": 6.75,
+        "signals": [
+          {
+            "raw": 0,
+            "positiveVenue": 0,
+            "negativeVenue": 2,
+            "positiveOverall": 1,
+            "negativeOverall": 0,
+            "seasonRate": 0.375
+          },
+          {
+            "raw": -3,
+            "positiveVenue": 0,
+            "negativeVenue": 3,
+            "positiveOverall": 0,
+            "negativeOverall": 7,
+            "seasonRate": 0.125
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "DOUBLE_CHANCE_12",
+      "marketName": "Double Chance 12",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 27.25,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 0,
+        "components": 5.5,
+        "streaks": 12.75,
+        "context": 9,
+        "contradictionPenalty": 0
+      },
+      "htftGatePassed": true,
+      "hardFailures": [
+        "X/1 plus X/2 HT/FT is below 28%."
+      ],
+      "contradictions": [],
+      "streakAudit": {
+        "raw": 10.5,
+        "points": 12.75,
+        "signals": [
+          {
+            "raw": 12,
+            "positiveVenue": 8,
+            "negativeVenue": 0,
+            "positiveOverall": 16,
+            "negativeOverall": 0,
+            "seasonRate": 1
+          },
+          {
+            "raw": 9,
+            "positiveVenue": 7,
+            "negativeVenue": 0,
+            "positiveOverall": 3,
+            "negativeOverall": 0,
+            "seasonRate": 0.875
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "AWAY_OVER_0_5",
+      "marketName": "Away Team Over 0.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 25.63,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 4,
+        "components": 10.5,
+        "streaks": 7.13,
+        "context": 9,
+        "contradictionPenalty": 5
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Selected team scoring rate is below 76%.",
+        "Opponent clean-sheet rate is above 32%.",
+        "Opponent conceding rate is below 70%.",
+        "Selected team scoring average is below 1.",
+        "Selected team xG is below 1.",
+        "Selected team failed-to-score is above 27%.",
+        "Opponent clean-sheet rate exceeds 42%.",
+        "Selected team failed-to-score exceeds 32%.",
+        "Selected team scoring average is below 0.90."
+      ],
+      "contradictions": [
+        "Opponent xGA is low for this team-total line."
+      ],
+      "streakAudit": {
+        "raw": -0.75,
+        "points": 7.125,
+        "signals": [
+          {
+            "raw": -1.5,
+            "positiveVenue": 0,
+            "negativeVenue": 3,
+            "positiveOverall": 0,
+            "negativeOverall": 3,
+            "seasonRate": 0.25
+          },
+          {
+            "raw": 0,
+            "positiveVenue": 0,
+            "negativeVenue": 2,
+            "positiveOverall": 1,
+            "negativeOverall": 0,
+            "seasonRate": 0.25
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "DRAW",
+      "marketName": "Draw",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 25.63,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 0,
+        "components": 15.75,
+        "streaks": 4.88,
+        "context": 9,
+        "contradictionPenalty": 4
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Combined draw rate is below 30%.",
+        "League draw rate is below 27%.",
+        "PPG difference exceeds 0.25.",
+        "xG difference exceeds 0.25.",
+        "Goal-difference gap exceeds 0.40.",
+        "HT/FT X/X is below 27%.",
+        "At least one team wins above 48%.",
+        "At least one team wins above 55%.",
+        "First-score edge is too large for a draw."
+      ],
+      "contradictions": [
+        "One-goal-margin rate is low."
+      ],
+      "streakAudit": {
+        "raw": -5.25,
+        "points": 4.875,
+        "signals": [
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          },
+          {
+            "raw": -4.5,
+            "positiveVenue": 0,
+            "negativeVenue": 7,
+            "positiveOverall": 0,
+            "negativeOverall": 3,
+            "seasonRate": 0.125
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "AWAY_OVER_1_5",
+      "marketName": "Away Team Over 1.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 21.25,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 4,
+        "components": 8.75,
+        "streaks": 4.5,
+        "context": 9,
+        "contradictionPenalty": 5
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Selected team scores two or more below 42%.",
+        "Selected team scoring average is below 1.55.",
+        "Selected team xG is below 1.50.",
+        "Selected team failed-to-score is above 20%.",
+        "Opponent concedes two or more below 35%.",
+        "Opponent clean-sheet rate is above 25%.",
+        "Selected team two-goal rate is below 35%.",
+        "Opponent clean-sheet rate exceeds 40%.",
+        "Opponent concedes two or more below 25%."
+      ],
+      "contradictions": [
+        "Opponent xGA is low for this team-total line."
+      ],
+      "streakAudit": {
+        "raw": -6,
+        "points": 4.5,
+        "signals": [
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          },
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "BTTS_YES",
+      "marketName": "Both Teams to Score — Yes",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 19.88,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 0,
+        "components": 8.75,
+        "streaks": 7.13,
+        "context": 9,
+        "contradictionPenalty": 5
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Combined BTTS is below 58%.",
+        "Away scoring rate is below 70%.",
+        "Home conceding rate is below 68%.",
+        "At least one failed-to-score rate is above 30%.",
+        "At least one clean-sheet rate is above 32%.",
+        "Expected goal environment is below 2.55.",
+        "At least one team fails to score above 38%.",
+        "At least one team keeps clean sheets above 45%.",
+        "Dangerous scoring imbalance."
+      ],
+      "contradictions": [
+        "Combined failed-to-score exceeds 25%."
+      ],
+      "streakAudit": {
+        "raw": -0.75,
+        "points": 7.125,
+        "signals": [
+          {
+            "raw": 0,
+            "positiveVenue": 0,
+            "negativeVenue": 2,
+            "positiveOverall": 1,
+            "negativeOverall": 0,
+            "seasonRate": 0.25
+          },
+          {
+            "raw": -1.5,
+            "positiveVenue": 0,
+            "negativeVenue": 3,
+            "positiveOverall": 0,
+            "negativeOverall": 3,
+            "seasonRate": 0.25
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "AWAY_LEAD_ANYTIME",
+      "marketName": "Away Team to Lead at Any Time",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 17,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 6,
+        "components": 3.5,
+        "streaks": 4.5,
+        "context": 9,
+        "contradictionPenalty": 6
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Selected team scoring rate is below 78%.",
+        "Selected team scoring average is below 1.15.",
+        "Neither first-score route nor comeback route qualifies.",
+        "Opponent trails at some point below 58%.",
+        "Selected team failed-to-score exceeds 20%.",
+        "Projected lead probability is below 67%.",
+        "Selected team scoring rate is below 72%.",
+        "Opponent clean-sheet rate exceeds 40%.",
+        "Selected team rarely scores first and rarely completes comebacks."
+      ],
+      "contradictions": [
+        "Opponent frequently controls the lead."
+      ],
+      "streakAudit": {
+        "raw": -6,
+        "points": 4.5,
+        "signals": [
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          },
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": true
+    },
+    {
+      "marketId": "AWAY_OVER_2_5",
+      "marketName": "Away Team Over 2.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 16,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 4,
+        "components": 3.5,
+        "streaks": 4.5,
+        "context": 9,
+        "contradictionPenalty": 5
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Selected team scores three or more below 25%.",
+        "Selected team scoring average is below 2.00.",
+        "Selected team xG is below 1.90.",
+        "Selected team scores two or more below 55%.",
+        "Opponent concedes three or more below 22%.",
+        "Opponent concedes two or more below 45%.",
+        "Opponent clean-sheet rate is above 15%.",
+        "Selected team three-goal rate is below 18%.",
+        "Opponent concedes three or more below 15%.",
+        "Three-goal rate is driven by at most one relevant match."
+      ],
+      "contradictions": [
+        "Opponent xGA is low for this team-total line."
+      ],
+      "streakAudit": {
+        "raw": -6,
+        "points": 4.5,
+        "signals": [
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          },
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "AWAY_WIN_EITHER_HALF",
+      "marketName": "Away Team to Win Either Half",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 13.13,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 0,
+        "components": 5.25,
+        "streaks": 4.88,
+        "context": 9,
+        "contradictionPenalty": 6
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Selected team wins either half below 60%.",
+        "Opponent loses either half below 55%.",
+        "Selected team scores below 78%.",
+        "Selected team failed-to-score exceeds 22%.",
+        "Opponent is strong across halves."
+      ],
+      "contradictions": [
+        "Selected team recent either-half win rate is below 50%."
+      ],
+      "streakAudit": {
+        "raw": -5.25,
+        "points": 4.875,
+        "signals": [
+          {
+            "raw": -4.5,
+            "positiveVenue": 0,
+            "negativeVenue": 7,
+            "positiveOverall": 0,
+            "negativeOverall": 3,
+            "seasonRate": 0.125
+          },
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": true
+    },
+    {
+      "marketId": "AWAY_WIN",
+      "marketName": "Away Win",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 7.5,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 0,
+        "components": 0,
+        "streaks": 4.5,
+        "context": 9,
+        "contradictionPenalty": 6
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Away win rate is below 50%.",
+        "Home loss rate is below 45%.",
+        "Away PPG edge is below 0.55.",
+        "Away goal-difference edge is below 0.60.",
+        "Away xG edge is below 0.40.",
+        "Away scored-first rate is below 57%.",
+        "2/2 plus X/2 HT/FT rate is below 42%.",
+        "Home win rate exceeds 30%.",
+        "Home unbeaten rate exceeds 65%.",
+        "Away concedes first too frequently."
+      ],
+      "contradictions": [
+        "Away lacks both two-goal power and clean-sheet protection."
+      ],
+      "streakAudit": {
+        "raw": -6,
+        "points": 4.5,
+        "signals": [
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          },
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "AWAY_SCORE_BOTH_HALVES",
+      "marketName": "Away Team to Score in Both Halves",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 7.5,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 0,
+        "components": 0,
+        "streaks": 4.5,
+        "context": 9,
+        "contradictionPenalty": 6
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "Selected team scores in both halves below 30%.",
+        "Selected team scores two or more below 50%.",
+        "Selected team scoring average is below 1.85.",
+        "Opponent concedes in both halves below 27%.",
+        "Opponent concedes two or more below 42%.",
+        "Selected team failed-to-score exceeds 15%.",
+        "Selected team scoring is too concentrated in one half."
+      ],
+      "contradictions": [
+        "Opponent rarely concedes before halftime."
+      ],
+      "streakAudit": {
+        "raw": -6,
+        "points": 4.5,
+        "signals": [
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          },
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    },
+    {
+      "marketId": "MATCH_OVER_3_5",
+      "marketName": "Match Over 3.5 Goals",
+      "accepted": false,
+      "grade": "REJECTED",
+      "score": 0.5,
+      "minimumScore": 80,
+      "scoreBreakdown": {
+        "htft": 0,
+        "components": 0,
+        "streaks": 4.5,
+        "context": 9,
+        "contradictionPenalty": 13
+      },
+      "htftGatePassed": false,
+      "hardFailures": [
+        "HT/FT foundation gate failed.",
+        "League Over 3.5 is below 32%.",
+        "Combined Over 3.5 is below 42%.",
+        "Expected goal environment is below 3.20.",
+        "Combined Over 2.5 is below 67%.",
+        "Neither team scores three or more in at least 25%.",
+        "Neither defence concedes three or more in at least 22%.",
+        "Combined BTTS is below 60%.",
+        "At least one team has Under 3.5 above 80%.",
+        "Weak secondary attack and insufficient three-goal strength."
+      ],
+      "contradictions": [
+        "Dangerous one-team goal dependency.",
+        "Combined failed-to-score exceeds 25%."
+      ],
+      "streakAudit": {
+        "raw": -6,
+        "points": 4.5,
+        "signals": [
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 7,
+            "positiveOverall": 0,
+            "negativeOverall": 15,
+            "seasonRate": 0.125
+          },
+          {
+            "raw": -6,
+            "positiveVenue": 0,
+            "negativeVenue": 8,
+            "positiveOverall": 0,
+            "negativeOverall": 16,
+            "seasonRate": 0
+          }
+        ]
+      },
+      "metrics": {
+        "expectedGoalEnvironment": 2.1404,
+        "goalDependencyRatio": 0.9104,
+        "combinedFailedToScore": 0.3908,
+        "combinedCleanSheet": 0.3908,
+        "dynamicHTFT": 0.0406,
+        "reversalEqualizerHTFT": 0.0406,
+        "xXHTFT": 0
+      },
+      "selectionEligible": false
+    }
+  ]
+}

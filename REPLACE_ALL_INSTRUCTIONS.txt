@@ -1,0 +1,23 @@
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.12.2
+
+UPDATE
+- Boss engine upgraded to audited OMNI HT/FT Gatekeeper v2.5.2.
+- 44 active markets evaluated.
+- Six selectable core markets.
+- Full-match Over 0.5 removed.
+- Unlimited qualifying Boss Picks retained.
+- Scores now display as /100, not percentages.
+- No accounts or subscription features.
+
+DEPLOY
+1. Extract this ZIP.
+2. Replace every file in the Betspapa repository.
+3. Open GitHub Desktop.
+4. Commit: BetsPapa v1.12.2 OMNI v2.5.2 Boss Picks
+5. Push origin.
+6. Wait for GitHub Pages and Render.
+7. Check https://api.betspapa.com/api/health
+8. Confirm version 1.12.2 and bossEngineVersion omni-htft-v2.5.2.
+9. Open https://betspapa.com/reset.html
+
+No Supabase migration or new environment variable is required.

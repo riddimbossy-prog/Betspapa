@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12002b">
+  <meta name="description" content="BetsPapa football prediction intelligence. Papa knows the game.">
+  <meta property="og:title" content="BetsPapa — Papa Knows the Game">
+  <meta property="og:description" content="Common-sense football predictions powered by HT/FT transition logic and goal thresholds.">
+  <meta property="og:image" content="https://betspapa.com/assets/images/betspapa-social-card.jpg">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://betspapa.com">
+  <meta name="twitter:card" content="summary_large_image">
+  <title>BetsPapa — Papa Knows the Game</title>
+  <link rel="icon" href="assets/images/favicon-64.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.v1101.css">
+  <style id="betspapa-critical-search-guard">
+    #searchDrawer { display: none !important; }
+    #searchDrawer.is-open:not([hidden]) { display: grid !important; }
+  </style>
+  <script>
+    (function () {
+      window.__BETSPAPA_BUILD__ = "1.12.1";
+      function forceSearchClosed() {
+        var drawer = document.getElementById("searchDrawer");
+        if (drawer) {
+          drawer.classList.remove("is-open");
+          drawer.hidden = true;
+          drawer.setAttribute("aria-hidden", "true");
+        }
+        if (document.body) document.body.classList.remove("search-open");
+      }
+
+      forceSearchClosed();
+      document.addEventListener("DOMContentLoaded", forceSearchClosed, { once: true });
+      window.addEventListener("pageshow", forceSearchClosed);
+    })();
+  </script>
+
+  <link rel="stylesheet" href="assets/css/mobile-nav.v111.css">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BetsPapa">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon-180.png">
+  <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-1290x2796.jpg" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2796x1290.jpg" media="(device-width: 932px) and (device-height: 430px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-1170x2532.jpg" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2532x1170.jpg" media="(device-width: 844px) and (device-height: 390px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-750x1334.jpg" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-1334x750.jpg" media="(device-width: 667px) and (device-height: 375px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2048x2732.jpg" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2732x2048.jpg" media="(device-width: 1366px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
+  <link rel="stylesheet" href="/assets/css/pwa.v1103.css">
+  <script>
+    (function () {
+      var standalone = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
+      var iosStandalone = window.navigator.standalone === true;
+      if (standalone || iosStandalone || new URLSearchParams(location.search).get("source") === "pwa") {
+        document.documentElement.classList.add("pwa-launching");
+      }
+      window.addEventListener("beforeinstallprompt", function (event) {
+        event.preventDefault();
+        window.__BETSPAPA_INSTALL_PROMPT__ = event;
+      });
+    })();
+  </script>
+</head>
+<body>
+  <div class="pwa-launch-splash" id="pwaSplash" role="status" aria-live="polite">
+    <span class="pwa-splash-accessible">Launching BetsPapa — Papa Knows the Game</span>
+  </div>
+
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#dashboard" aria-label="BetsPapa home">
+      <img class="brand-logo" src="assets/images/betspapa-papa-mark.png" alt="" width="58" height="58">
+      <span class="brand-copy">
+        <strong>BETS<span>PAPA</span></strong>
+        <small>PAPA KNOWS THE GAME</small>
+      </span>
+    </a>
+
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a class="active" href="#dashboard">Home</a>
+      <a href="papas-pick.html">Predictions</a>
+      <a href="venue-pattern.html">HT/FT Engine</a>
+      <a href="boss-picks.html">Boss Picks</a>
+      <a href="results-intelligence.html">Results</a>
+      <a href="responsible.html">Responsible</a>
+    </nav>
+
+    <div class="top-actions">
+      <button class="icon-button" id="searchButton" aria-label="Search" aria-controls="searchDrawer" aria-expanded="false">⌕</button>
+      <button class="mobile-menu" id="mobileMenu" aria-label="Open navigation menu" aria-controls="sidebar" aria-expanded="false">
+        <span class="hamburger-lines" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+    </div>
+  </header>
+
+  <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+
+  <aside class="sidebar" id="sidebar" aria-label="Main menu">
+    <nav aria-label="Dashboard navigation">
+      <a class="side-link active" href="#dashboard"><span>⌂</span>Dashboard</a>
+      <a class="side-link" href="papas-pick.html"><span>◈</span>Predictions</a>
+      <a class="side-link" href="venue-pattern.html"><span>◎</span>HT/FT Engine</a>
+      <a class="side-link" href="boss-picks.html"><span>♛</span>Boss Picks</a>
+      <a class="side-link" href="results-intelligence.html"><span>✓</span>Results</a>
+      <a class="side-link" href="#fixtures"><span>▦</span>Fixtures</a>
+    </nav>
+
+    <div class="premium-card" id="papa-edge">
+      <img class="sidebar-papa" src="assets/images/betspapa-papa-mark.png" alt="">
+      <h3>Papa’s Edge</h3>
+      <p>See the strongest transition, the supporting goal route and the exact reasons other markets were rejected.</p>
+      <a class="gold-button" href="#prediction-board">See Today’s Picks <span>→</span></a>
+    </div>
+
+    <div class="responsible-card">
+      <div class="age-badge">18+</div>
+      <div>
+        <strong>Use responsibly</strong>
+        <p>Predictions are statistical forecasts, not guarantees.</p>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main" id="dashboard">
+    <section class="hero-section">
+      <div class="hero-card papa-hero">
+        <div class="hero-copy">
+          <span class="kicker">PAPA'S FOOTBALL INTELLIGENCE</span>
+          <h1>Every Match Gets a Direction. <span>Papa Explains Why.</span></h1>
+          <p>Every imported fixture is read through all nine HT/FT transitions, venue form, recent form, goal support and common-sense risk checks before one direction is selected.</p>
+          <div class="papa-promise"><span>✓</span> Strong calls are Qualified. Weaker calls are clearly marked Directional.</div>
+          <div class="hero-actions">
+            <a class="gold-button" href="#prediction-board">View Papa's Picks <span>→</span></a>
+            <button class="gold-button pwa-install-primary" id="pwaInstallPrimary" data-pwa-install type="button" hidden>Install BetsPapa App</button>
+            <button class="glass-button" id="howItWorks">How Papa Thinks</button>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="papa-aura" aria-hidden="true"></div>
+          <img class="hero-logo" src="assets/images/betspapa-logo.webp" alt="BetsPapa — Papa Knows the Game">
+          <div class="papa-verdict">
+            <span>PAPA'S RULE</span>
+            <strong>Logic before hype.</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="live-data-strip" id="liveDataStrip" data-state="loading">
+        <div class="live-data-copy">
+          <span class="live-data-dot" aria-hidden="true"></span>
+          <strong id="liveStatus">Connecting to live data…</strong>
+          <span id="liveUpdated">Checking api.betspapa.com</span>
+        </div>
+        <button class="live-refresh" id="refreshLiveData" type="button">Refresh live data</button>
+      </div>
+
+
+      <div class="engine-switcher" id="engineSwitcher" aria-label="Prediction engine filter">
+        <button class="engine-tab active" type="button" data-engine="primary">
+          <span>01</span><strong>Papa's Pick</strong><small>Default all-evidence pick</small>
+        </button>
+        <button class="engine-tab" type="button" data-engine="aggressive">
+          <span>02</span><strong>Aggressive</strong><small>Sharper, higher-variance route</small>
+        </button>
+        <button class="engine-tab" type="button" data-engine="safer">
+          <span>03</span><strong>Safer</strong><small>Protected version of the story</small>
+        </button>
+        <button class="engine-tab" type="button" data-engine="venue">
+          <span>04</span><strong>Venue Pattern</strong><small>Home venue vs away opposite</small>
+        </button>
+      </div>
+      <div class="engine-page-actions">
+        <a id="enginePageLink" href="papas-pick.html">Open Papa’s Pick page <span>→</span></a>
+        <a href="boss-picks.html">Open Papa’s Boss Picks <span>→</span></a>
+      </div>
+
+      <div class="metric-grid" id="stats">
+        <article class="metric-card">
+          <div class="metric-icon gold">♛</div>
+          <div><span>WIN RATE</span><strong id="winRate">—</strong><small id="winRateNote">Connecting to live results</small></div>
+          <svg viewBox="0 0 220 46" aria-hidden="true"><path d="M2 35 C24 14,38 35,58 24 S88 38,108 19 S142 37,162 22 S190 28,218 8"/></svg>
+        </article>
+        <article class="metric-card">
+          <div class="metric-icon">◇</div>
+          <div><span>MATCH DIRECTIONS</span><strong id="qualifiedPicks">0</strong><small id="qualifiedPicksNote">Every imported fixture receives one direction</small></div>
+          <svg viewBox="0 0 220 46" aria-hidden="true"><path d="M2 33 C26 13,39 35,59 21 S88 36,112 25 S147 8,166 25 S195 28,218 10"/></svg>
+        </article>
+        <article class="metric-card">
+          <div class="metric-icon">⚽</div>
+          <div><span>GG SIGNALS</span><strong id="ggSignals">0</strong><small id="ggSignalsNote">Live published GG selections</small></div>
+          <svg viewBox="0 0 220 46" aria-hidden="true"><path d="M2 37 C27 24,38 10,61 28 S91 12,111 25 S147 35,166 17 S195 30,218 6"/></svg>
+        </article>
+        <article class="metric-card">
+          <div class="metric-icon gold">U3.5</div>
+          <div><span>UNDER 3.5 SIGNALS</span><strong id="under35Signals">0</strong><small id="under35SignalsNote">Live published U3.5 selections</small></div>
+          <svg viewBox="0 0 220 46" aria-hidden="true"><path d="M2 31 C27 8,41 35,60 25 S87 33,112 15 S145 34,168 22 S198 30,218 4"/></svg>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-grid" id="prediction-board">
+      <article class="panel matrix-panel" id="engine">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">MATCH STATE MODEL</span>
+            <h2>HT/FT Transition Matrix</h2>
+          </div>
+          <button class="info-button" title="Matrix probabilities">i</button>
+        </div>
+        <div class="matrix-grid" id="transitionMatrix"></div>
+        <div class="matrix-footer">
+          <span>Venue + recent + overall profiles</span>
+          <button class="text-button" id="matrixHelp">How it works?</button>
+        </div>
+      </article>
+
+      <article class="panel primary-panel" id="bankers">
+        <div class="primary-label" id="activeEngineLabel">★ PAPA'S PICK</div>
+        <div class="match-meta"><span id="leagueLabel">LIVE DATABASE</span><span id="kickoffLabel">CONNECTING</span></div>
+        <div class="matchup">
+          <div class="club">
+            <div class="club-badge home" id="homeBadge">DM</div>
+            <strong id="homeTeam">Awaiting</strong>
+          </div>
+          <div class="versus"><span>VS</span></div>
+          <div class="club">
+            <div class="club-badge away" id="awayBadge">RP</div>
+            <strong id="awayTeam">Live Data</strong>
+          </div>
+        </div>
+        <div class="pick-box">
+          <span id="activeMarketLabel">PAPA'S PICK MARKET</span>
+          <strong id="primaryPick">Awaiting 1X</strong>
+          <small id="primaryReason">Connecting to the BetsPapa prediction database.</small>
+        </div>
+        <div class="confidence-row">
+          <div>
+            <span>CONFIDENCE LEVEL</span>
+            <div class="confidence-track"><div id="confidenceBar" style="width:0%"></div></div>
+          </div>
+          <div class="confidence-score"><strong id="confidenceScore">—</strong><small id="confidenceTier">Pending</small></div>
+        </div>
+        <div class="primary-stats">
+          <div><span>HT STORY</span><strong id="htStory">—</strong></div>
+          <div><span>GOAL ROUTE</span><strong id="goalRoute">—</strong></div>
+          <div><span>VALUE</span><strong class="positive">Good</strong></div>
+          <div><span>RISK</span><strong id="riskLabel">Pending</strong></div>
+        </div>
+      </article>
+
+      <article class="panel insights-panel">
+        <div class="panel-heading compact">
+          <div><span class="eyebrow">COMMON-SENSE FILTERS</span><h2>Market Insights</h2></div>
+          <a class="text-button" href="papas-pick.html">Open all picks</a>
+        </div>
+        <div class="insight-list" id="marketInsights"></div>
+        <div class="insight-note">Each goal market must be supported by both teams’ scoring and conceding pathways.</div>
+      </article>
+
+      <article class="panel fixture-panel" id="fixtures">
+        <div class="panel-heading compact">
+          <div><span class="eyebrow">MATCH CATALOGUE</span><h2>Every Fixture, Four Engine Picks</h2></div>
+          <span class="panel-note" id="fixtureSummary">Loading live fixtures</span>
+        </div>
+
+        <div class="fixture-filters" aria-label="Fixture filters">
+          <label>
+            <span>Date</span>
+            <input type="date" id="dateFilter">
+          </label>
+          <label>
+            <span>League</span>
+            <select id="leagueFilter"><option value="">All leagues</option></select>
+          </label>
+          <label>
+            <span>Market</span>
+            <select id="marketFilter"><option value="">All markets</option></select>
+          </label>
+          <label>
+            <span>Engine pick</span>
+            <select id="engineFilter">
+              <option value="primary">Papa's Pick — Default</option>
+              <option value="aggressive">Aggressive</option>
+              <option value="safer">Safer</option>
+              <option value="venue">Venue Pattern</option>
+            </select>
+          </label>
+          <label>
+            <span>Strength</span>
+            <select id="strengthFilter">
+              <option value="">All strengths</option>
+              <option value="qualified">Qualified only</option>
+              <option value="directional">Directional only</option>
+              <option value="elite">Elite / Strong</option>
+              <option value="lean">Lean / Cautious / Low</option>
+            </select>
+          </label>
+          <label class="fixture-search-field">
+            <span>Team or competition</span>
+            <input type="search" id="fixtureSearch" placeholder="Search fixtures" autocomplete="off">
+          </label>
+          <button class="clear-filter-button" id="clearFixtureFilters" type="button">Clear filters</button>
+        </div>
+
+        <div class="fixture-list" id="fixtureList"></div>
+        <div class="fixture-pagination">
+          <button id="fixturePrev" type="button">← Previous</button>
+          <span id="fixturePageInfo">Page 1</span>
+          <button id="fixtureNext" type="button">Next →</button>
+        </div>
+      </article>
+
+      <article class="panel explanation-panel" id="why-this-pick">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">CLICKED FIXTURE EXPLANATION</span>
+            <h2 id="explanationTitle">Why Papa Chose This Pick</h2>
+          </div>
+          <span class="decision-mode" id="decisionMode">Loading</span>
+        </div>
+
+        <div class="explanation-summary">
+          <strong id="decisionHeadline">Select a fixture to see the full reasoning.</strong>
+          <p id="decisionSummary">The engine explanation will appear here.</p>
+        </div>
+
+        <div class="explanation-columns">
+          <section>
+            <h3>Why it points this way</h3>
+            <ul class="reason-list" id="decisionReasons"></ul>
+          </section>
+          <section>
+            <h3>Cautions</h3>
+            <ul class="caution-list" id="decisionCautions"></ul>
+          </section>
+          <section>
+            <h3>Next-best alternatives</h3>
+            <div class="alternative-list" id="decisionAlternatives"></div>
+          </section>
+        </div>
+
+        <div class="indicator-heading">
+          <div>
+            <span class="eyebrow">ALL NINE INDICATORS</span>
+            <h3>HT/FT Compatibility Review</h3>
+          </div>
+          <span id="indicatorQuality">Data quality: —</span>
+        </div>
+
+        <div class="indicator-table-wrap">
+          <table class="indicator-table">
+            <thead>
+              <tr>
+                <th>HT/FT</th>
+                <th>Home profile</th>
+                <th>Away opposite</th>
+                <th>Combined</th>
+                <th>Engine reading</th>
+              </tr>
+            </thead>
+            <tbody id="indicatorTable"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="panel results-panel" id="results">
+        <div class="panel-heading compact">
+          <div><span class="eyebrow">VERIFIED</span><h2>Recent Results</h2></div>
+          <span class="live-pill">LIVE DATABASE</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Match</th><th>Competition</th><th>Prediction</th><th>Result</th><th>Outcome</th><th>Odd</th></tr></thead>
+            <tbody id="resultsTable"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section class="principles-section">
+      <article><span>01</span><h3>Two-team agreement</h3><p>Every prediction must be supported by the selected team and the opponent’s matching weakness.</p></article>
+      <article><span>02</span><h3>Latest GG thresholds</h3><p>GG only qualifies when both teams independently have credible scoring routes.</p></article>
+      <article><span>03</span><h3>Dominant-team route</h3><p>Over 2.5 can qualify through one team alone when scoring and conceding 2+ thresholds agree.</p></article>
+      <article><span>04</span><h3>Direction with honesty</h3><p>Every fixture receives one market direction, but weaker calls are never presented as Boss Picks.</p></article>
+    </section>
+
+    <footer>
+      <div class="footer-brand"><img src="assets/images/betspapa-papa-mark.png" alt="" width="34" height="34"><strong>BetsPapa</strong><small>Papa Knows the Game</small></div>
+      <p>Sports analytics only. No prediction is a guarantee. 18+.</p>
+      <div><a href="responsible.html">Responsible Use</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>
+    </footer>
+  </main>
+
+  <dialog class="modal" id="methodModal">
+    <button class="modal-close" id="modalClose" aria-label="Close">×</button>
+    <span class="kicker">PAPASENSE ENGINE</span>
+    <h2>How the prediction engine thinks</h2>
+    <ol>
+      <li>Resolve the true home and away teams before translating W/W into 1/1 or 2/2.</li>
+      <li>Compare opposite HT/FT transitions from both teams and smooth small samples.</li>
+      <li>Build full-time, half-time, GG, Over 1.5, Over 2.5 and Under 3.5 signals.</li>
+      <li>Apply latest scoring, conceding, comeback, volatility and one-sided dominance thresholds.</li>
+      <li>Rank every market, publish one direction for every fixture, and clearly separate Qualified from Directional calls.</li>
+    </ol>
+  </dialog>
+
+  <div class="search-drawer" id="searchDrawer" hidden aria-hidden="true">
+    <div class="search-card">
+      <button class="search-close" id="searchClose" type="button" aria-label="Close search">×</button>
+      <span class="kicker">SEARCH BETSPAPA</span>
+      <input id="globalSearch" type="search" placeholder="Search team, league or market" autocomplete="off">
+      <div id="searchResults"></div>
+    </div>
+  </div>
+
+  
+
+  <dialog class="pick-reason-dialog" id="pickReasonDialog" aria-labelledby="pickReasonTitle">
+    <div class="pick-reason-shell">
+      <button class="pick-reason-close" id="pickReasonClose" data-close-pick-reason type="button" aria-label="Close prediction reasons">×</button>
+      <div id="pickReasonContent"></div>
+    </div>
+  </dialog>
+
+  <script src="assets/js/app.v1101.js"></script>
+  <script src="assets/js/mobile-nav.v120.js"></script>
+  <script src="/assets/js/pwa.v1103.js"></script>
+</body>
+</html>

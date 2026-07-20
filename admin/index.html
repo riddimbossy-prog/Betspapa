@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12002b">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>BetsPapa Admin — Prediction Diagnostics</title>
+  <link rel="icon" href="../assets/images/favicon-64.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/portal.v112.css">
+  <script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
+</head>
+<body class="admin-page" data-page="diagnostics">
+  <header class="portal-header">
+    <a class="portal-brand" href="../index.html">
+      <img src="../assets/images/betspapa-papa-mark.png" alt="">
+      <span><strong>BETS<span>PAPA</span></strong><small>PRIVATE ADMIN</small></span>
+    </a>
+    <a class="admin-back" href="../index.html">← Back to public site</a>
+  </header>
+
+  <main class="portal-main">
+    <section class="portal-hero">
+      <span class="eyebrow">Private administration</span>
+      <h1 id="portalTitle">Prediction Diagnostics</h1>
+      <p id="portalDescription">Review fixture imports, profile readiness, prediction generation, withheld rows, market distribution and similarity warnings.</p>
+      <p class="admin-path-note">Private URL: <code>https://betspapa.com/admin/</code></p>
+    </section>
+
+    <div class="status-strip" id="portalStatus"><span>Enter your admin secret to continue.</span><small></small></div>
+
+    <div class="portal-toolbar">
+      <label><span>Date</span><input type="date" id="dateFilter"></label>
+      <button type="button" id="refreshButton">Refresh diagnostics</button>
+    </div>
+
+    <section class="admin-login" id="adminLogin">
+      <span class="eyebrow">Admin only</span>
+      <h2>Unlock the private dashboard</h2>
+      <p>Use the same <strong>ADMIN_SYNC_SECRET</strong> stored in Render. The value is kept only in this browser tab and is never placed in the website files.</p>
+      <label><span>Admin secret</span><input type="password" id="adminSecret" autocomplete="current-password"></label>
+      <button class="gold-action" id="adminLoginButton" type="button">Open diagnostics</button>
+    </section>
+
+    <section id="diagnosticsDashboard" hidden>
+      <div class="section-title"><h2>Pipeline health</h2><p>Fixtures, team profiles, predictions and anti-zombie review.</p></div>
+      <section class="metric-row" id="portalMetrics"></section>
+      <div id="portalContent"></div>
+    </section>
+
+    <footer class="portal-footer">
+      <span>Protected by the Render ADMIN_SYNC_SECRET.</span>
+      <div><a href="../index.html">Public site</a></div>
+    </footer>
+  </main>
+
+  <dialog class="portal-dialog" id="portalDialog">
+    <div class="dialog-shell">
+      <button class="dialog-close" id="portalDialogClose" type="button" aria-label="Close">×</button>
+      <div id="portalDialogContent"></div>
+    </div>
+  </dialog>
+
+  <script src="../assets/js/portal.v111.js"></script>
+</body>
+</html>
