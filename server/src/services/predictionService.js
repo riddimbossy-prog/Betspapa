@@ -494,6 +494,7 @@ async function predictFixture(supabase, fixture, cached) {
     away,
     profileAudit,
     analysisFingerprint: profileAudit.analysisFingerprint,
+    odds: fixture.market_odds || fixture.odds || fixture.bookmaker_odds || null,
     league: {
       transitionBaseline: deriveLeagueBaseline(context.htftRows),
       goals: {

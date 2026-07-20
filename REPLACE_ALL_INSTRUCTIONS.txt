@@ -1,23 +1,20 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.12.2
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.13.0
 
-UPDATE
-- Boss engine upgraded to audited OMNI HT/FT Gatekeeper v2.5.2.
-- 44 active markets evaluated.
-- Six selectable core markets.
-- Full-match Over 0.5 removed.
-- Unlimited qualifying Boss Picks retained.
-- Scores now display as /100, not percentages.
-- No accounts or subscription features.
+Papa main-pick changes:
+- 1/1 and 2/2 become team to win either half.
+- 1/2 and 2/1 become GG or Over 1.5 after defensive-leak checks.
+- Draw-family HT/FT routes become Draw in Either Half.
+- Straight wins require comeback and opponent lead-surrender evidence.
+- Early-leading teams can trigger First Half Over 1.5.
+- Real Team O0.5 odds below 1.20 trigger a value upgrade to Team O1.5 only when qualified.
 
-DEPLOY
-1. Extract this ZIP.
-2. Replace every file in the Betspapa repository.
-3. Open GitHub Desktop.
-4. Commit: BetsPapa v1.12.2 OMNI v2.5.2 Boss Picks
-5. Push origin.
-6. Wait for GitHub Pages and Render.
-7. Check https://api.betspapa.com/api/health
-8. Confirm version 1.12.2 and bossEngineVersion omni-htft-v2.5.2.
-9. Open https://betspapa.com/reset.html
+Deploy:
+1. Replace repository files.
+2. Commit: BetsPapa v1.13 Papa common sense market intelligence
+3. Push origin.
+4. Wait for GitHub Pages and Render.
+5. Confirm /api/health version 1.13.0.
+6. Run GitHub Actions → BetsPapa Automatic Picks.
+7. Open https://betspapa.com/reset.html
 
-No Supabase migration or new environment variable is required.
+No Supabase migration or new Render variable is required.

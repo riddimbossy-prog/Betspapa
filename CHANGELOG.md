@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.13.0 — Papa Common-Sense Market Intelligence
+
+- Added practical HT/FT translations.
+- Added win either half, draw either half and half-goal markets.
+- Added actual-odds Team O0.5 value upgrade.
+- Added comeback and lead-surrender checks for straight wins.
+- Added first-half lead-pressure logic.
+- Preserved OMNI v2.5.2 Boss Picks.
+
 ## v1.12.2 — OMNI v2.5.2 Boss Picks
 
 - Upgraded Boss Picks to uploaded audited OMNI v2.5.2.

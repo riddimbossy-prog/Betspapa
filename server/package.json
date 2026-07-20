@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.12.2",
+  "version": "1.13.0",
   "private": true,
-  "description": "BetsPapa Render API with PapaSense and audited OMNI HT/FT Gatekeeper v2.5.2 Boss Picks.",
+  "description": "BetsPapa API with PapaSense v1.13 common-sense market intelligence and OMNI v2.5.2 Boss Picks.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

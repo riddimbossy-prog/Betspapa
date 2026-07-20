@@ -1,327 +1,108 @@
-/* Predict2U service worker v270 — fast core install, bounded caches,
-   native-install support, exact push deep links and recoverable offline navigation. */
-const VERSION='v270';
-const CACHE_VERSION='predict2u-v270';
-const APP_CACHE=CACHE_VERSION;
-const RUNTIME_CACHE='predict2u-runtime-v270';
-const IMAGE_CACHE='predict2u-images-v270';
-const IMAGE_LIMIT=90;
-const RUNTIME_LIMIT=90;
-const NETWORK_TIMEOUT=2800;
-const NETWORK_TIMEOUT_MS=NETWORK_TIMEOUT;
-const OFFLINE_URL='./offline.html';
+const CACHE_NAME = "betspapa-pwa-v1130";
+const OFFLINE_URL = "/offline.html";
 
-// Keep install light. Other pages are cached only after they are opened or quietly prefetched.
-const CORE_SHELL=[
-  './','./index.html','./board.html','./bankers.html','./engines.html','./all-engines.html','./engine.html','./news.html','./community.html','./offline.html','./manifest.webmanifest',
-  './pwa-launch.js','./pwa-launch.css','./auto-picks-learning-v270.js','./auto-picks-learning-v270.css','./auto-picks-learning-guard-v270.js','./auto-picks-learning-public-v270.json','./controls-v267.css','./team-date-filter-v268.css','./team-auto-picks-v269.css','./mobile-responsive-v265.css','./app-launch-v264.js','./app-launch-v264.css','./first-run-v264.js','./first-run-v264.css','./data-freshness-v264.js','./data-freshness-v264.css','./engine-governance-v264.js','./stability-v264.css','./tailwind-lite-v264.css','./current-data.js','./data-meta.json','./pwa-splash-v264.jpg','./mobile-zfold-v257.css','./ui-polish-v259.css','./smart-alerts.js','./smart-alerts.css','./unified-shell-v227.css','./unified-shell-v227.js','./unified-shell-v245.css','./unified-shell-v245.js','./overview-engines-v245.css','./responsive-qa-v227.css','./mobile-board-v229.css','./mobile-card-compact-v230.css','./mobile-card-compact-v230.js','./fullboard-compact-v231.css','./fullboard-compact-v231.js','./simple-ui-v232.css','./simple-fullboard-v233.css','./mobile-picks-week-v235.css','./mobile-app-nav.js','./mobile-app-nav.css','./device-responsive-v207.css','./acca-mobile-v209.css','./mobile-polish-v211.css','./p2u-utilities-v218.css','./engines-rescue-v218.css','./slip.js',
-  './specialist-engines-v262.js','./team-rankings.html','./team-rankings.js','./team-rankings.css','./fixture-overlay.js','./odds-engine-guard.js','./fixture-feed-v247.css','./engine-experience-v249.js','./engine-page-v249.js','./engine-page-v249.css','./engine-bankers-v249.js','./engine-bankers-v249.css','./predict2u-logo.png','./predict2u-mark.png','./favicon.ico',
-  './icon-192.png','./icon-512.png','./maskable-icon.png'
+const CORE_ASSETS = [
+  "/",
+  "/index.html",
+  "/offline.html",
+  "/manifest.webmanifest",
+  "/papas-pick.html",
+  "/aggressive.html",
+  "/safer.html",
+  "/venue-pattern.html",
+  "/boss-picks.html",
+  "/bankers.html",
+  "/results-intelligence.html",
+  "/privacy.html",
+  "/terms.html",
+  "/responsible.html",
+  "/assets/css/styles.v1101.css",
+  "/assets/css/portal.v120.css",
+  "/assets/css/mobile-nav.v111.css",
+  "/assets/css/content.v111.css",
+  "/assets/css/pwa.v1103.css",
+  "/assets/js/app.v1101.js",
+  "/assets/js/portal.v130.js",
+  "/assets/js/mobile-nav.v120.js",
+  "/assets/js/pwa.v1103.js",
+  "/assets/images/icon-192.png",
+  "/assets/images/icon-512.png",
+  "/assets/images/icon-maskable-192.png",
+  "/assets/images/icon-maskable-512.png",
+  "/assets/images/apple-touch-icon-180.png",
+  "/assets/images/betspapa-papa-mark.png",
+  "/assets/images/betspapa-logo.webp",
+  "/assets/images/pwa-splash-portrait.jpg",
+  "/assets/images/pwa-splash-landscape.jpg"
 ];
 
-// Listed for release validation and optional idle prefetch. These do not block install.
-const OPTIONAL_SHELL=[
-  './board-redesign-v220.css',
-  './theme-refresh-v224.css',
-  './phase3-polish-v226.css',
-  './news.js',
-  './news.css',
-  './football-assets.js',
-  './community-consistency.js',
-  './brand-performance.css',
-  './intelligence.css',
-  './site-health-widget.js',
-  './site-health.css',
-  './performance-freshness.js','./performance-freshness.css',
-  './personalization.js','./personalization.css',
-  './smart-alerts.js','./smart-alerts.css',
-  './admin.html','./backend-admin.js','./backend-admin.css','./admin-config.js',
-  './site-controls.js','./site-controls.css','./account.html','./profile.html',
-  './cloud-config.js','./account-cloud.js','./account-cloud.css',
-  './engines.html','./proof.html','./scorecards.html','./league-dna.html','./community.html','./news.html','./trust.html','./account.html','./profile.html',
-  './push-notifications.js','./push-notifications.css',
-  './analytics.js','./analytics.css','./product-analytics.js','./product-analytics.css'
-];
-
-const ok=response=>response&&(response.ok||response.type==='opaque');
-const sameOrigin=url=>url.origin===self.location.origin;
-const refreshedStatic=new Set();
-let imageWrites=0;
-let runtimeWrites=0;
-
-function canonical(request){
-  const url=new URL(request.url);
-  url.search='';
-  return new Request(url.href,{
-    method:'GET',
-    headers:request.headers,
-    credentials:request.credentials,
-    mode:request.mode==='navigate'?'same-origin':request.mode,
-    redirect:request.redirect
-  });
-}
-const canonicalRequest=canonical;
-
-async function timeoutFetch(request,ms=NETWORK_TIMEOUT){
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),ms);
-  try{return await fetch(request,{signal:controller.signal});}
-  finally{clearTimeout(timer);}
-}
-
-async function trim(cache,limit){
-  const keys=await cache.keys();
-  if(keys.length>limit){
-    await Promise.all(keys.slice(0,keys.length-limit).map(key=>cache.delete(key)));
-  }
-}
-
-async function cacheCore(){
-  const cache=await caches.open(APP_CACHE);
-  for(const url of CORE_SHELL){
-    try{
-      const response=await fetch(url,{cache:'reload'});
-      if(ok(response))await cache.put(url,response);
-    }catch(_){/* A partial shell is still usable. */}
-  }
-}
-
-self.addEventListener('install',event=>{
-  event.waitUntil(cacheCore());
-  self.skipWaiting();
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(CORE_ASSETS))
+      .then(() => self.skipWaiting())
+  );
 });
 
-self.addEventListener('activate',event=>event.waitUntil((async()=>{
-  const keys=await caches.keys();
-  await Promise.all(keys
-    .filter(key=>key.startsWith('predict2u-')&&![APP_CACHE,RUNTIME_CACHE,IMAGE_CACHE].includes(key))
-    .map(key=>caches.delete(key)));
-  if(self.registration.navigationPreload)await self.registration.navigationPreload.enable();
-  await self.clients.claim();
-  const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-  clients.forEach(client=>client.postMessage({type:'P2U_SW_ACTIVE',version:VERSION}));
-})()));
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
 
-async function navigation(request,preload){
-  const cache=await caches.open(APP_CACHE);
-  const key=canonical(request);
-  try{
-    const response=preload||await timeoutFetch(request);
-    if(ok(response))await cache.put(key,response.clone());
-    return response;
-  }catch(_){
-    return await cache.match(key,{ignoreSearch:true})
-      ||await cache.match(OFFLINE_URL)
-      ||new Response('Offline',{status:503,headers:{'Content-Type':'text/plain'}});
-  }
-}
-
-async function networkFirst(request){
-  const cache=await caches.open(RUNTIME_CACHE);
-  const key=canonical(request);
-  try{
-    const response=await timeoutFetch(request);
-    if(ok(response)){
-      await cache.put(key,response.clone());
-      runtimeWrites+=1;
-      if(runtimeWrites%20===0)await trim(cache,RUNTIME_LIMIT);
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request);
+    if (response && response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone()).catch(() => {});
     }
     return response;
-  }catch(_){
-    return await cache.match(key,{ignoreSearch:true})
-      ||new Response('Temporarily unavailable',{status:503,headers:{'Content-Type':'text/plain'}});
+  } catch (error) {
+    const cached = await caches.match(request, { ignoreSearch: true });
+    return cached || caches.match(OFFLINE_URL);
   }
 }
 
-async function updateStatic(request,cache,key){
-  try{
-    const response=await fetch(request);
-    if(ok(response)){
-      await cache.put(key,response.clone());
-      runtimeWrites+=1;
-      if(runtimeWrites%20===0)await trim(cache,RUNTIME_LIMIT);
-    }
-  }catch(_){/* cached response remains */}
+async function staleWhileRevalidate(request) {
+  const cached = await caches.match(request, { ignoreSearch: true });
+  const fetchPromise = fetch(request)
+    .then(async (response) => {
+      if (response && response.ok) {
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(request, response.clone()).catch(() => {});
+      }
+      return response;
+    })
+    .catch(() => null);
+
+  return cached || fetchPromise || Response.error();
 }
 
-async function staticAsset(request,event){
-  const cache=await caches.open(RUNTIME_CACHE);
-  const key=canonical(request);
-  const cached=await cache.match(key,{ignoreSearch:true});
-  const refreshKey=key.url;
-  if(cached){
-    if(!refreshedStatic.has(refreshKey)){
-      refreshedStatic.add(refreshKey);
-      event.waitUntil(updateStatic(request,cache,key));
-    }
-    return cached;
-  }
-  try{
-    const response=await fetch(request);
-    if(ok(response))await cache.put(key,response.clone());
-    return response;
-  }catch(_){
-    return new Response('',{status:504});
-  }
-}
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
+  if (request.method !== "GET") return;
 
-async function imageResponse(request){
-  const cache=await caches.open(IMAGE_CACHE);
-  const cached=await cache.match(request,{ignoreSearch:true});
-  if(cached)return cached;
-  try{
-    const url=new URL(request.url);
-    const response=await fetch(request,{
-      mode:sameOrigin(url)?request.mode:'no-cors',
-      credentials:sameOrigin(url)?request.credentials:'omit'
-    });
-    if(ok(response)){
-      await cache.put(request,response.clone());
-      imageWrites+=1;
-      if(imageWrites%12===0)await trim(cache,IMAGE_LIMIT);
-    }
-    return response;
-  }catch(_){
-    return new Response('',{status:504});
-  }
-}
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/admin/")) return;
 
-self.addEventListener('fetch',event=>{
-  const request=event.request;
-  const url=new URL(request.url);
-  if(request.method!=='GET')return;
-
-  if(request.mode==='navigate'){
-    event.respondWith((async()=>navigation(request,await event.preloadResponse))());
-    return;
-  }
-
-  if(request.destination==='image'){
-    event.respondWith(imageResponse(request));
-    return;
-  }
-
-  if(!sameOrigin(url))return;
-
-  if(/(?:data\.js|current-data\.js|data-meta\.json|fixtures\.js|fixture-snapshot-report\.json|site-health\.json|push-event-snapshot\.json|engine-learning-report\.json|model-governance-report\.json|engine-consensus-report\.json|match-context-report\.json|odds-api-coverage\.json)$/.test(url.pathname)){
+  if (request.mode === "navigate") {
     event.respondWith(networkFirst(request));
     return;
   }
 
-  if(['script','style','font','worker'].includes(request.destination)||/\.(?:js|css|woff2?|json|webmanifest)$/.test(url.pathname)){
-    event.respondWith(staticAsset(request,event));
-    return;
-  }
-
-  event.respondWith(staticAsset(request,event));
-});
-
-async function clearRuntime(){
-  await Promise.all([caches.delete(RUNTIME_CACHE),caches.delete(IMAGE_CACHE)]);
-  refreshedStatic.clear();
-}
-
-async function prefetch(urls){
-  const cache=await caches.open(APP_CACHE);
-  for(const raw of urls.slice(0,3)){
-    try{
-      const url=new URL(raw,self.location.origin);
-      if(!sameOrigin(url))continue;
-      const request=new Request(url.href,{credentials:'same-origin'});
-      const response=await fetch(request);
-      if(ok(response))await cache.put(canonical(request),response);
-    }catch(_){/* best effort only */}
-  }
-}
-
-self.addEventListener('message',event=>{
-  const data=event.data;
-  if(data==='SKIP_WAITING'){self.skipWaiting();return;}
-  if(data&&data.type==='GET_VERSION'){
-    if(event.ports&&event.ports[0])event.ports[0].postMessage({version:VERSION,cache:APP_CACHE});
-    return;
-  }
-  if(data&&data.type==='PREFETCH_URLS'&&Array.isArray(data.urls)){
-    event.waitUntil(prefetch(data.urls));
-    return;
-  }
-  if(data&&data.type==='CLEAR_RUNTIME_CACHES'){
-    event.waitUntil(clearRuntime());
+  if (/\.(?:css|js|png|jpg|jpeg|webp|svg|woff2?|webmanifest)$/i.test(url.pathname)) {
+    event.respondWith(staleWhileRevalidate(request));
   }
 });
 
-async function notifyClients(type,detail={}){
-  const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-  clients.forEach(client=>client.postMessage(Object.assign({type},detail)));
-  return clients;
-}
-
-self.addEventListener('sync',event=>{
-  if(event.tag!=='p2u-sync-outbox')return;
-  event.waitUntil((async()=>{
-    const clients=await notifyClients('P2U_FLUSH_OUTBOX',{version:VERSION});
-    if(!clients.length){
-      await self.registration.showNotification('Predict2U is ready to sync',{
-        body:'Open the app to finish your saved offline changes.',
-        icon:'./icon-192.png',
-        badge:'./favicon-48x48.png',
-        tag:'p2u-sync-ready',
-        data:{url:'./account.html'}
-      });
-    }
-  })());
-});
-
-self.addEventListener('periodicsync',event=>{
-  if(event.tag==='p2u-refresh-shell')event.waitUntil(cacheCore());
-});
-
-self.addEventListener('push',event=>event.waitUntil((async()=>{
-  let payload={};
-  try{payload=event.data?event.data.json():{};}
-  catch(_){try{payload={body:event.data?event.data.text():''};}catch(__){}}
-  const reason=payload.data&&payload.data.reason?String(payload.data.reason):'';
-  const data=Object.assign({},payload.data||{}, {
-    url:payload.url||(payload.data&&payload.data.url)||'./index.html',
-    category:payload.category||'system',
-    pushId:payload.id||''
-  });
-  await self.registration.showNotification(String(payload.title||'Predict2U update').slice(0,100),{
-    body:(String(payload.body||'')+(reason?' • '+reason:'')).slice(0,240),
-    icon:payload.icon||'./icon-192.png',
-    badge:payload.badge||'./favicon-48x48.png',
-    tag:payload.id||'p2u-'+(payload.category||'system'),
-    renotify:false,
-    requireInteraction:payload.category==='match',
-    data,
-    actions:[{action:'open',title:'Open Predict2U'}]
-  });
-  await notifyClients('P2U_PUSH_RECEIVED',{payload:Object.assign({},payload,{data})});
-})()));
-
-function targetURL(raw){
-  try{
-    const url=new URL(raw||'./index.html',self.location.origin);
-    return sameOrigin(url)?url.href:new URL('./index.html',self.location.origin).href;
-  }catch(_){
-    return new URL('./index.html',self.location.origin).href;
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
   }
-}
-
-self.addEventListener('notificationclick',event=>{
-  event.notification.close();
-  const url=targetURL(event.notification.data&&event.notification.data.url);
-  event.waitUntil((async()=>{
-    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-    for(const client of windows){
-      if('navigate'in client)await client.navigate(url);
-      if('focus'in client)return client.focus();
-    }
-    return self.clients.openWindow?self.clients.openWindow(url):null;
-  })());
-});
-
-self.addEventListener('notificationclose',event=>{
-  const data=event.notification&&event.notification.data||{};
-  event.waitUntil(notifyClients('P2U_PUSH_CLOSED',{id:data.pushId||'',category:data.category||'system'}));
 });

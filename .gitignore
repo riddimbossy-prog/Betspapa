@@ -1,21 +1,6 @@
-node_modules/
-playwright-report/
-test-results/
-config.txt
 .env
-.env.*
-.vapid-keys.json
-supabase/.env
-push-secrets.txt
-# Predict2U generated runtime cache — keep outside Git/GitHub Pages
-api-cache.json
-api-cache-*.json
-shards/
-discovery/
-# Predict2U v251 paid Odds API runtime cache — never publish or merge
-odds-api-cache.json
-odds-api-cache-*.json
-
-# Private learning reports are workflow artifacts only
-.private/
-private-auto-learning-report*.json
+server/.env
+server/node_modules/
+node_modules/
+.DS_Store
+npm-debug.log*
