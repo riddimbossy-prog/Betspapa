@@ -1,3 +1,12 @@
+## v1.13.1 — Faster Picks + Results Repair
+
+- Shows the last saved dashboard immediately while refreshing live picks in the background.
+- Cuts dead API failover waits from 35–45 seconds to 8 seconds per endpoint.
+- Remembers the last working API host.
+- Adds browser and API stale-while-revalidate caching.
+- Repairs Results Intelligence by batching large fixture queries, accepting all finished statuses, and grading historical engine versions.
+- Adds saved-results fallback when Render is waking or temporarily unavailable.
+
 # Changelog
 
 ## v1.13.0 — Amended Papa's Pick + Team-Goal Value Protection

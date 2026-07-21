@@ -325,7 +325,7 @@ export async function getResultsIntelligence(supabase, days = 30) {
     supabase
       .from("fixtures")
       .select("*")
-      .eq("status", "FT")
+      .in("status", ["FT", "AET", "PEN", "AWD", "WO"])
       .gte("fixture_date", start.toISOString())
       .lte("fixture_date", end.toISOString())
       .order("fixture_date", { ascending: false })
@@ -352,13 +352,18 @@ export async function getResultsIntelligence(supabase, days = 30) {
   }
 
   const fixtureIds = fixtures.map((fixture) => fixture.id);
-  const predictions = await fetchAllRows(() =>
-    supabase
-      .from("predictions")
-      .select("*")
-      .in("fixture_id", fixtureIds)
-      .eq("engine_version", ENGINE_VERSION)
-  );
+  const predictions = [];
+  const batchSize = 150;
+  for (let index = 0; index < fixtureIds.length; index += batchSize) {
+    const batch = fixtureIds.slice(index, index + batchSize);
+    const rows = await fetchAllRows(() =>
+      supabase
+        .from("predictions")
+        .select("*")
+        .in("fixture_id", batch)
+    );
+    predictions.push(...rows);
+  }
 
   const { teamMap, leagueMap } = await loadEntities(supabase, fixtures);
   const fixtureMap = new Map(fixtures.map((fixture) => [fixture.id, fixture]));

@@ -54,6 +54,7 @@ publicRouter.get("/dashboard/today", async (req, res, next) => {
   try {
     const date = assertIsoDate(req.query.date || todayUtc());
     const dashboard = await getDashboardData(getSupabaseAdmin(), date);
+    res.set("Cache-Control", "public, max-age=20, stale-while-revalidate=120");
     res.json(dashboard);
   } catch (error) {
     next(error);
@@ -129,6 +130,7 @@ publicRouter.get("/results/intelligence", async (req, res, next) => {
     const days = Math.max(1, Math.min(Number(req.query.days) || 30, 90));
     const supabase = getSupabaseAdmin();
     const result = await getResultsIntelligence(supabase, days);
+    res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=300");
     res.json(result);
   } catch (error) {
     next(error);

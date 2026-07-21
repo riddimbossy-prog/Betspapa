@@ -1,6 +1,6 @@
 {
   "name": "betspapa-api",
-  "version": "1.13.0",
+  "version": "1.13.1",
   "private": true,
   "description": "BetsPapa Render API with prediction engines, Supabase accounts, watchlists, push alerts, pipeline recovery and grading.",
   "type": "module",
