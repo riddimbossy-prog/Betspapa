@@ -1,26 +1,6 @@
-# BetsPapa
+# BetsPapa v1.6
 
-Royal-purple responsive football prediction platform with a private Render backend, Supabase database, API-Football importer, HT/FT profile builder, common-sense prediction engine, and automatic result grading.
-
-
-## v1.17.0 consensus Bankers
-
-- `/bankers.html` now compares all four PapaSense engines for each fixture.
-- Two or more qualified engines must choose the same selection for a normal Banker.
-- Unanimous, Prime Consensus and Consensus levels show 4/4, 3/4 and 2/4 agreement.
-- A single-engine pick appears only at 86%+ after every strict evidence gate passes.
-- One strongest Banker is published per fixture; split decisions are withheld.
-- Saved Bankers display immediately and refresh quietly in the background.
-- PapaSense remains `papasense-v1.13.0`; Boss Picks remain powered separately by OMNI v2.5.2.
-
-## v1.16.1 performance and Results repair
-
-- Saved picks render immediately while the live API refreshes in the background.
-- Public API requests use shorter failover timeouts and remember the last working endpoint.
-- Dashboard and Results responses use short stale-while-revalidate caches.
-- Results loads historical published prediction versions in safe Supabase batches.
-- Temporary API problems keep the last saved picks and Results visible.
-- PapaSense remains `papasense-v1.13.0`; no prediction-rule amendment was removed.
+Royal-purple responsive football prediction platform with a private Render backend, Supabase database, API-Football importer, HT/FT profile builder, PapaSense v1.6 multi-market engine, complete explanations and automatic result grading.
 
 ## Architecture
 
@@ -28,25 +8,49 @@ Royal-purple responsive football prediction platform with a private Render backe
 betspapa.com             GitHub Pages frontend
 api.betspapa.com         Render Node.js backend
 Supabase                 Database and authentication
-API-Football             Fixtures, teams, halftime and fulltime scores
+API-Football             Fixtures, teams, half-time and full-time scores
 The Odds API             Reserved for bookmaker-odds validation
 ```
 
+## PapaSense v1.6
+
+Every imported fixture receives one honest market direction after the engine:
+
+1. blends Overall, Venue and Recent-6 profiles;
+2. matches all nine home HT/FT transitions to the away team’s opposite transitions;
+3. builds result, draw, goal, clean-sheet and half-specific intelligence;
+4. scores each market independently;
+5. applies market-specific blockers and sample-quality penalties;
+6. compares the best option from every market family;
+7. labels the final output **Qualified** or **Directional**.
+
+### Supported market families
+
+- 1X, X2 and Either Team to Win (12)
+- Home/Away DNB
+- Home/Away win and Full-Time Draw
+- Half-Time Double Chance and Half-Time Result
+- Exact HT/FT
+- Home/Away to Win Either Half
+- GG / NG
+- Over/Under 1.5, 2.5 and 3.5
+- 2–3 Total Goals
+- Team Over 0.5, Over 1.5 and Under 1.5
+- Home/Away Clean Sheet
+- First Half Over 0.5
+- Second Half Over 0.5
+
 ## Main features
 
-- Responsive royal-purple UI for desktop, tablet, phone and Z Fold.
-- Consensus Banker page comparing all four PapaSense engines with one pick per fixture.
-- Hamburger drawer and mobile bottom navigation.
-- HT/FT transition matrix covering 1/1 through 2/2.
-- Correct home/away orientation.
-- Overall, Home, Away and Recent-6 profiles.
-- Latest GG confirmation from both teams' scoring and conceding thresholds.
-- One-sided dominant-team Over 2.5 route.
-- Under 3.5 ceiling safeguards.
-- Protected API-Football fixture importer.
-- Automatic prediction storage in Supabase.
-- Automatic grading after fixtures finish.
-- Live frontend feed with demo fallback.
+- Responsive Papa-branded UI for desktop, tablet, phone and Z Fold.
+- Date, league, market, strength and team filters.
+- Click any fixture for the complete explanation.
+- All nine HT/FT indicators displayed.
+- Market-family comparison showing why the chosen pick beat other markets.
+- Live fixture, prediction, result and performance feeds.
+- Automatic missing-prediction generation on the dashboard.
+- Automatic grading for every supported market.
+- No fake fixture, result or performance data.
 
 ## Deploy frontend
 
@@ -63,7 +67,7 @@ Start Command: npm start
 Health Check Path: /api/health
 ```
 
-See `RENDER_SETUP.md` and `ADMIN_PIPELINE_GUIDE.md`.
+See `RENDER_SETUP.md`, `ADMIN_PIPELINE_GUIDE.md`, and `PAPASENSE_V1_6_GUIDE.md`.
 
 ## Test
 
@@ -72,35 +76,3 @@ cd server
 npm install
 npm test
 ```
-
-
-## v1.10 portal pages
-
-- `/papas-pick.html`
-- `/aggressive.html`
-- `/safer.html`
-- `/venue-pattern.html`
-- `/boss-picks.html` — Papa’s Boss Picks, powered by OMNI HT/FT Gatekeeper v2.5.2
-- `/bankers.html` — consensus picks across Papa’s Pick, Aggressive, Safer and Venue Pattern
-- `/results-intelligence.html`
-- `/admin/` — private diagnostics (not linked publicly)
-
-See `BETSPAPA_V1_17_CONSENSUS_BANKERS.md` for current Banker criteria and `BETSPAPA_V1_10_GUIDE.md` for diagnostics and the anti-zombie similarity policy.
-
-
-## Papa’s Boss Picks v1.12
-
-Boss Picks are free and public. No account, login, watchlist, subscription, Supabase Auth migration or VAPID setup is required. The OMNI engine evaluates up to 48 markets and returns every selection scoring 80 or higher that passes all mandatory gates.
-
-
-## Live status and settlement
-
-- Public match state: `/api/matches/status`
-- Manual protected settlement: `/api/admin/settle-date`
-- Hourly workflow: `BetsPapa Live Scores and Settlement`
-- Full guide: `LIVE_MATCHES_AND_SETTLEMENT_GUIDE.md`
-
-
-## Live & Fixtures
-
-The dedicated `/live-fixtures.html` page provides responsive pending, live, settling, settled and delayed match views, including mobile and Samsung Z Fold 6 layouts.

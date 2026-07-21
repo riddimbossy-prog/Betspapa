@@ -1,5 +1,6 @@
 import {
   DEFAULT_LEAGUE_BASELINE,
+  FALLBACK_FAMILIES,
   HTFT_CODE,
   MARKET_THRESHOLDS,
   OPPOSITE,
@@ -15,6 +16,11 @@ import {
   sum
 } from "./utils.js";
 
+const HOME_WIN_ROUTES = ["WW", "DW", "LW"];
+const DRAW_ROUTES = ["WD", "DD", "LD"];
+const AWAY_WIN_ROUTES = ["WL", "DL", "LL"];
+const DECISIVE_ROUTES = [...HOME_WIN_ROUTES, ...AWAY_WIN_ROUTES];
+
 function profileMatches(profile = {}) {
   if (Number.isFinite(profile.matches)) return Number(profile.matches);
   return sum(TRANSITIONS.map((key) => Number(profile[key]) || 0));
@@ -22,14 +28,16 @@ function profileMatches(profile = {}) {
 
 function smoothedProfile(profile = {}, baseline = DEFAULT_LEAGUE_BASELINE, strength = 6) {
   const matches = profileMatches(profile);
-  const output = {};
+  const probabilities = {};
 
   for (const transition of TRANSITIONS) {
     const count = Number(profile[transition]) || 0;
-    output[transition] = (count + safeRate(baseline[transition], 1 / 9) * strength) / (matches + strength);
+    probabilities[transition] =
+      (count + safeRate(baseline[transition], 1 / 9) * strength) /
+      (matches + strength);
   }
 
-  return { probabilities: output, matches };
+  return { probabilities, matches };
 }
 
 function blendTeamProfile(team, leagueBaseline) {
@@ -37,7 +45,7 @@ function blendTeamProfile(team, leagueBaseline) {
   const overall = smoothedProfile(team.htft?.overall, leagueBaseline, 7);
   const recent = smoothedProfile(team.htft?.recent, leagueBaseline, 4);
 
-  const weightRows = normalizedWeights([
+  const rows = normalizedWeights([
     { key: "venue", value: venue, weight: PROFILE_WEIGHTS.venue, enabled: venue.matches > 0 },
     { key: "overall", value: overall, weight: PROFILE_WEIGHTS.overall, enabled: overall.matches > 0 },
     { key: "recent", value: recent, weight: PROFILE_WEIGHTS.recent, enabled: recent.matches > 0 },
@@ -49,21 +57,24 @@ function blendTeamProfile(team, leagueBaseline) {
     }
   ]);
 
-  const blended = Object.fromEntries(TRANSITIONS.map((key) => [key, 0]));
-  for (const row of weightRows) {
+  const probabilities = Object.fromEntries(TRANSITIONS.map((key) => [key, 0]));
+  for (const row of rows) {
     for (const transition of TRANSITIONS) {
-      blended[transition] += row.value.probabilities[transition] * row.normalizedWeight;
+      probabilities[transition] +=
+        row.value.probabilities[transition] * row.normalizedWeight;
     }
   }
 
   return {
-    probabilities: blended,
+    probabilities,
     samples: {
       venue: venue.matches,
       overall: overall.matches,
       recent: recent.matches
     },
-    appliedWeights: Object.fromEntries(weightRows.map((row) => [row.key, round(row.normalizedWeight)]))
+    appliedWeights: Object.fromEntries(
+      rows.map((row) => [row.key, round(row.normalizedWeight)])
+    )
   };
 }
 
@@ -77,10 +88,9 @@ function buildTransitionMatrix(homeProfile, awayProfile) {
   }
 
   const total = sum(Object.values(raw)) || 1;
-  const normalized = {};
-  for (const transition of TRANSITIONS) {
-    normalized[transition] = raw[transition] / total;
-  }
+  const normalized = Object.fromEntries(
+    TRANSITIONS.map((transition) => [transition, raw[transition] / total])
+  );
 
   return { raw, normalized };
 }
@@ -124,23 +134,34 @@ function goalProfile(team) {
     conceded2PlusRate: blendGoalMetric(team, "conceded2PlusRate", 0.38),
     failedToScoreRate: blendGoalMetric(team, "failedToScoreRate", 0.32),
     cleanSheetRate: blendGoalMetric(team, "cleanSheetRate", 0.28),
-    firstHalfScoringRate: blendGoalMetric(team, "firstHalfScoringRate", 0.46),
+    firstHalfScoringRate: blendGoalMetric(team, "firstHalfScoringRate", 0.42),
     secondHalfScoringRate: blendGoalMetric(team, "secondHalfScoringRate", 0.55)
   };
+}
+
+function routeMass(p, routes) {
+  return sum(routes.map((route) => p[route]));
+}
+
+function routeBreadth(p, routes, meaningful = 0.055) {
+  return clamp(routes.filter((route) => p[route] >= meaningful).length / routes.length);
 }
 
 function directProbabilities(matrix) {
   const p = matrix.normalized;
   const ft = {
-    home: p.WW + p.DW + p.LW,
-    draw: p.WD + p.DD + p.LD,
-    away: p.WL + p.DL + p.LL
+    home: routeMass(p, HOME_WIN_ROUTES),
+    draw: routeMass(p, DRAW_ROUTES),
+    away: routeMass(p, AWAY_WIN_ROUTES)
   };
   const ht = {
     home: p.WW + p.WD + p.WL,
     draw: p.DW + p.DD + p.DL,
     away: p.LW + p.LD + p.LL
   };
+
+  const homeEitherHalf = clamp(p.WW + p.WD + p.WL + p.DW + p.LW + p.LD);
+  const awayEitherHalf = clamp(p.LW + p.LD + p.LL + p.WD + p.WL + p.DL);
 
   return {
     ft,
@@ -158,6 +179,10 @@ function directProbabilities(matrix) {
       homeOrDraw: ht.home + ht.draw,
       awayOrDraw: ht.away + ht.draw,
       noDraw: ht.home + ht.away
+    },
+    winEitherHalf: {
+      home: homeEitherHalf,
+      away: awayEitherHalf
     }
   };
 }
@@ -179,19 +204,62 @@ function dataQuality(home, away, homeProfile, awayProfile) {
     Number(away.goals?.overall?.matches) || 0
   );
 
-  const transitionScore = geometricMean(sampleScore(homeProfile.samples), sampleScore(awayProfile.samples));
-  const goalScore = geometricMean(clamp(homeGoalMatches / 10), clamp(awayGoalMatches / 10));
+  const transitionScore = geometricMean(
+    sampleScore(homeProfile.samples),
+    sampleScore(awayProfile.samples)
+  );
+  const goalScore = geometricMean(
+    clamp(homeGoalMatches / 10),
+    clamp(awayGoalMatches / 10)
+  );
   const score = clamp(transitionScore * 0.7 + goalScore * 0.3);
 
   return {
     score,
-    label: score >= 0.82 ? "Excellent" : score >= 0.68 ? "Good" : score >= 0.52 ? "Limited" : "Small sample",
+    label:
+      score >= 0.82
+        ? "Excellent"
+        : score >= 0.68
+          ? "Good"
+          : score >= 0.52
+            ? "Limited"
+            : "Small sample",
     homeSamples: homeProfile.samples,
     awaySamples: awayProfile.samples
   };
 }
 
-function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality) {
+function resultStructure(matrix, direct) {
+  const p = matrix.normalized;
+  const homeBreadth = routeBreadth(p, HOME_WIN_ROUTES);
+  const awayBreadth = routeBreadth(p, AWAY_WIN_ROUTES);
+  const decisiveBreadth = routeBreadth(p, DECISIVE_ROUTES, 0.045);
+  const twoSideWinSupport = clamp(Math.min(direct.ft.home, direct.ft.away) / 0.28);
+  const favouriteSide = direct.ft.home >= direct.ft.away ? "home" : "away";
+  const favouriteMass = Math.max(direct.ft.home, direct.ft.away);
+  const underdogMass = Math.min(direct.ft.home, direct.ft.away);
+
+  return {
+    homeBreadth,
+    awayBreadth,
+    decisiveBreadth,
+    twoSideWinSupport,
+    permanentDrawMass: p.DD,
+    leadToDrawMass: p.WD + p.LD,
+    drawToWinnerMass: p.DW + p.DL,
+    fullReversalMass: p.WL + p.LW,
+    stableMass: p.WW + p.DD + p.LL,
+    favouriteSide,
+    favouriteMass,
+    underdogMass,
+    favouriteGap: favouriteMass - Math.max(direct.ft.draw, underdogMass),
+    homeWinRoutes: Object.fromEntries(HOME_WIN_ROUTES.map((route) => [route, p[route]])),
+    drawRoutes: Object.fromEntries(DRAW_ROUTES.map((route) => [route, p[route]])),
+    awayWinRoutes: Object.fromEntries(AWAY_WIN_ROUTES.map((route) => [route, p[route]]))
+  };
+}
+
+function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality, direct, structure) {
   const p = matrix.normalized;
   const homeGoals = goalProfile(input.home);
   const awayGoals = goalProfile(input.away);
@@ -200,6 +268,8 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality) {
   const homeGoalSupport = geometricMean(homeGoals.scoreRate, awayGoals.concedeRate);
   const awayGoalSupport = geometricMean(awayGoals.scoreRate, homeGoals.concedeRate);
   const twoSidedGoalFloor = Math.min(homeGoalSupport, awayGoalSupport);
+  const strongestGoalRoute = Math.max(homeGoalSupport, awayGoalSupport);
+  const goalBalance = 1 - Math.abs(homeGoalSupport - awayGoalSupport);
 
   const latestGgAgreement = geometricMean(
     safeRate(input.home.goals?.recent?.bttsRate, homeGoals.bttsRate),
@@ -211,10 +281,6 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality) {
   );
 
   const forcedGgMass = p.WD + p.WL + p.LW + p.LD;
-  const stableMass = p.WW + p.DD + p.LL;
-  const extremeReversalMass = p.WL + p.LW;
-  const moderateChangeMass = p.WD + p.DW + p.DL + p.LD;
-
   const homeVolatility =
     homeTeamProfile.probabilities.WD +
     homeTeamProfile.probabilities.WL +
@@ -226,30 +292,38 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality) {
     awayTeamProfile.probabilities.LW +
     awayTeamProfile.probabilities.LD;
   const volatilitySpillover = geometricMean(homeVolatility, awayVolatility);
-
-  const transitionGgScore = clamp(
-    forcedGgMass + (1 - forcedGgMass) * twoSidedGoalFloor * 0.35 + volatilitySpillover * 0.12
+  const transitionGg = clamp(
+    forcedGgMass * 0.62 +
+      structure.drawToWinnerMass * 0.12 +
+      structure.fullReversalMass * 0.18 +
+      twoSidedGoalFloor * 0.08
   );
 
   const ggYes = clamp(
-    twoSidedGoalFloor * 0.35 +
-      transitionGgScore * 0.25 +
+    twoSidedGoalFloor * 0.34 +
+      transitionGg * 0.25 +
       latestGgAgreement * 0.2 +
-      venueGgAgreement * 0.1 +
+      venueGgAgreement * 0.11 +
       safeRate(leagueGoals.bttsRate, 0.5) * 0.1
   );
 
-  const homeBlankSupport = geometricMean(homeGoals.failedToScoreRate, awayGoals.cleanSheetRate);
-  const awayBlankSupport = geometricMean(awayGoals.failedToScoreRate, homeGoals.cleanSheetRate);
-  const shutoutSupport = Math.max(homeBlankSupport, awayBlankSupport);
-  const ggNo = clamp(shutoutSupport * 0.6 + (1 - twoSidedGoalFloor) * 0.25 + (1 - volatilitySpillover) * 0.15);
-
-  const transitionO15 = clamp(
-    forcedGgMass +
-      0.4 * (p.DW + p.DL) +
-      0.25 * (p.WW + p.LL) +
-      0.2 * p.DD
+  const homeShutoutSupport = geometricMean(
+    homeGoals.cleanSheetRate,
+    awayGoals.failedToScoreRate
   );
+  const awayShutoutSupport = geometricMean(
+    awayGoals.cleanSheetRate,
+    homeGoals.failedToScoreRate
+  );
+  const strongestShutout = Math.max(homeShutoutSupport, awayShutoutSupport);
+  const lowTwoSidedPressure = 1 - twoSidedGoalFloor;
+  const ggNo = clamp(
+    strongestShutout * 0.5 +
+      lowTwoSidedPressure * 0.25 +
+      (1 - forcedGgMass) * 0.15 +
+      structure.stableMass * 0.1
+  );
+
   const venueO15 = geometricMean(
     safeRate(input.home.goals?.venue?.over15Rate, homeGoals.over15Rate),
     safeRate(input.away.goals?.venue?.over15Rate, awayGoals.over15Rate)
@@ -258,35 +332,98 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality) {
     safeRate(input.home.goals?.recent?.over15Rate, homeGoals.over15Rate),
     safeRate(input.away.goals?.recent?.over15Rate, awayGoals.over15Rate)
   );
+  const transitionO15 = clamp(
+    forcedGgMass * 0.55 +
+      structure.drawToWinnerMass * 0.2 +
+      structure.fullReversalMass * 0.2 +
+      (p.WW + p.LL) * 0.18 +
+      p.DD * 0.08
+  );
   const over15 = clamp(
-    transitionO15 * 0.32 +
-      venueO15 * 0.28 +
-      recentO15 * 0.22 +
-      Math.max(homeGoalSupport, awayGoalSupport) * 0.18
+    venueO15 * 0.29 +
+      recentO15 * 0.24 +
+      transitionO15 * 0.25 +
+      strongestGoalRoute * 0.22
   );
 
-  const direct = directProbabilities(matrix);
-  const favouriteSide = direct.ft.home >= direct.ft.away ? "home" : "away";
+  const venueU15 = geometricMean(
+    1 - safeRate(input.home.goals?.venue?.over15Rate, homeGoals.over15Rate),
+    1 - safeRate(input.away.goals?.venue?.over15Rate, awayGoals.over15Rate)
+  );
+  const recentU15 = geometricMean(
+    1 - safeRate(input.home.goals?.recent?.over15Rate, homeGoals.over15Rate),
+    1 - safeRate(input.away.goals?.recent?.over15Rate, awayGoals.over15Rate)
+  );
+  const lowScorePressure = clamp(
+    geometricMean(homeGoals.failedToScoreRate, awayGoals.cleanSheetRate) * 0.25 +
+      geometricMean(awayGoals.failedToScoreRate, homeGoals.cleanSheetRate) * 0.25 +
+      (1 - strongestGoalRoute) * 0.25 +
+      (1 - forcedGgMass) * 0.15 +
+      p.DD * 0.1
+  );
+  const under15 = clamp(
+    venueU15 * 0.3 +
+      recentU15 * 0.25 +
+      lowScorePressure * 0.28 +
+      p.DD * 0.1 +
+      (1 - structure.fullReversalMass) * 0.07
+  );
+
+  const favouriteSide = structure.favouriteSide;
   const favourite = favouriteSide === "home" ? homeGoals : awayGoals;
   const underdog = favouriteSide === "home" ? awayGoals : homeGoals;
   const favouriteGoalSupport = favouriteSide === "home" ? homeGoalSupport : awayGoalSupport;
-  const dominantRoute = favouriteSide === "home"
+  const favouriteRoute = favouriteSide === "home"
     ? p.WW + p.DW + p.LW * 0.5
     : p.LL + p.DL + p.WL * 0.5;
   const opponentRecovery = favouriteSide === "home"
     ? awayTeamProfile.probabilities.LW + awayTeamProfile.probabilities.LD
     : homeTeamProfile.probabilities.LW + homeTeamProfile.probabilities.LD;
   const noRecovery = 1 - opponentRecovery;
-  const dominant2PlusSupport = geometricMean(favourite.scored2PlusRate, underdog.conceded2PlusRate);
-  const teamOver15 = clamp(
-    dominant2PlusSupport * 0.45 + favouriteGoalSupport * 0.3 + dominantRoute * 0.18 + noRecovery * 0.07
+  const dominant2PlusSupport = geometricMean(
+    favourite.scored2PlusRate,
+    underdog.conceded2PlusRate
+  );
+
+  const home2PlusSupport = geometricMean(
+    homeGoals.scored2PlusRate,
+    awayGoals.conceded2PlusRate
+  );
+  const away2PlusSupport = geometricMean(
+    awayGoals.scored2PlusRate,
+    homeGoals.conceded2PlusRate
+  );
+
+  const homeOver15 = clamp(
+    home2PlusSupport * 0.48 +
+      homeGoalSupport * 0.28 +
+      direct.ft.home * 0.14 +
+      (1 - awayGoals.cleanSheetRate) * 0.1
+  );
+  const awayOver15 = clamp(
+    away2PlusSupport * 0.48 +
+      awayGoalSupport * 0.28 +
+      direct.ft.away * 0.14 +
+      (1 - homeGoals.cleanSheetRate) * 0.1
+  );
+  const homeUnder15 = clamp(
+    (1 - home2PlusSupport) * 0.52 +
+      (1 - homeGoalSupport) * 0.2 +
+      awayGoals.cleanSheetRate * 0.14 +
+      (1 - direct.ft.home) * 0.14
+  );
+  const awayUnder15 = clamp(
+    (1 - away2PlusSupport) * 0.52 +
+      (1 - awayGoalSupport) * 0.2 +
+      homeGoals.cleanSheetRate * 0.14 +
+      (1 - direct.ft.away) * 0.14
   );
 
   const transitionO25 = clamp(
-    extremeReversalMass +
-      0.45 * (p.WD + p.LD) +
-      0.3 * (p.DW + p.DL) +
-      0.2 * (p.WW + p.LL)
+    structure.fullReversalMass * 0.72 +
+      structure.leadToDrawMass * 0.34 +
+      structure.drawToWinnerMass * 0.28 +
+      (p.WW + p.LL) * 0.18
   );
   const venueO25 = geometricMean(
     safeRate(input.home.goals?.venue?.over25Rate, homeGoals.over25Rate),
@@ -297,12 +434,28 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality) {
     safeRate(input.away.goals?.recent?.over25Rate, awayGoals.over25Rate)
   );
   const twoSidedO25Path = ggYes * Math.max(homeGoals.scored2PlusRate, awayGoals.scored2PlusRate);
-  const oneSidedO25Path = dominant2PlusSupport * dominantRoute;
+  const oneSidedO25Path = dominant2PlusSupport * favouriteRoute;
   const over25 = clamp(
     transitionO25 * 0.28 +
-      recentO25 * 0.23 +
+      recentO25 * 0.22 +
       venueO25 * 0.2 +
-      Math.max(twoSidedO25Path, oneSidedO25Path) * 0.29
+      Math.max(twoSidedO25Path, oneSidedO25Path) * 0.3
+  );
+
+  const venueU25 = geometricMean(
+    1 - safeRate(input.home.goals?.venue?.over25Rate, homeGoals.over25Rate),
+    1 - safeRate(input.away.goals?.venue?.over25Rate, awayGoals.over25Rate)
+  );
+  const recentU25 = geometricMean(
+    1 - safeRate(input.home.goals?.recent?.over25Rate, homeGoals.over25Rate),
+    1 - safeRate(input.away.goals?.recent?.over25Rate, awayGoals.over25Rate)
+  );
+  const under25 = clamp(
+    venueU25 * 0.34 +
+      recentU25 * 0.28 +
+      lowScorePressure * 0.14 +
+      structure.stableMass * 0.12 +
+      (1 - structure.fullReversalMass) * 0.12
   );
 
   const venueU35 = geometricMean(
@@ -313,17 +466,63 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality) {
     safeRate(input.home.goals?.recent?.under35Rate, homeGoals.under35Rate),
     safeRate(input.away.goals?.recent?.under35Rate, awayGoals.under35Rate)
   );
-  const transitionCeiling = clamp(0.65 * stableMass + 0.35 * moderateChangeMass - 0.85 * extremeReversalMass);
-  const dominantHighScorePenalty = dominant2PlusSupport >= 0.58 && dominantRoute >= 0.45 ? 0.12 : 0;
+  const transitionCeiling = clamp(
+    structure.stableMass * 0.62 +
+      (structure.leadToDrawMass + structure.drawToWinnerMass) * 0.24 -
+      structure.fullReversalMass * 0.72
+  );
   const under35 = clamp(
-    venueU35 * 0.4 +
-      recentU35 * 0.3 +
-      safeRate(leagueGoals.under35Rate, 0.72) * 0.15 +
-      transitionCeiling * 0.15 -
-      dominantHighScorePenalty
+    venueU35 * 0.38 +
+      recentU35 * 0.29 +
+      safeRate(leagueGoals.under35Rate, 0.72) * 0.14 +
+      transitionCeiling * 0.19 -
+      (dominant2PlusSupport >= 0.62 && favouriteRoute >= 0.48 ? 0.1 : 0)
+  );
+  const over35 = clamp(
+    (1 - venueU35) * 0.34 +
+      (1 - recentU35) * 0.29 +
+      structure.fullReversalMass * 0.18 +
+      geometricMean(home2PlusSupport, away2PlusSupport) * 0.19
   );
 
-  const corridor = ggYes >= 0.66 && over15 >= 0.69 && under35 >= 0.7 && over25 < 0.69;
+  const twoToThreeGoals = clamp(
+    geometricMean(over15, under35) * 0.74 +
+      geometricMean(under25, over25) * 0.08 +
+      (1 - over35) * 0.1 +
+      goalBalance * 0.08
+  );
+
+  const firstHalfOver05 = clamp(
+    (1 - (1 - homeGoals.firstHalfScoringRate) * (1 - awayGoals.firstHalfScoringRate)) * 0.58 +
+      (1 - direct.ht.draw) * 0.18 +
+      strongestGoalRoute * 0.14 +
+      (1 - p.DD) * 0.1
+  );
+  const secondHalfOver05 = clamp(
+    (1 - (1 - homeGoals.secondHalfScoringRate) * (1 - awayGoals.secondHalfScoringRate)) * 0.6 +
+      (structure.leadToDrawMass + structure.drawToWinnerMass + structure.fullReversalMass) * 0.22 +
+      strongestGoalRoute * 0.18
+  );
+
+  const homeCleanSheet = clamp(
+    homeShutoutSupport * 0.58 +
+      (1 - awayGoalSupport) * 0.24 +
+      (direct.ft.home + direct.ft.draw) * 0.1 +
+      (1 - forcedGgMass) * 0.08
+  );
+  const awayCleanSheet = clamp(
+    awayShutoutSupport * 0.58 +
+      (1 - homeGoalSupport) * 0.24 +
+      (direct.ft.away + direct.ft.draw) * 0.1 +
+      (1 - forcedGgMass) * 0.08
+  );
+
+  const goalBreakingSupport = clamp(
+    over15 * 0.38 +
+      strongestGoalRoute * 0.28 +
+      secondHalfOver05 * 0.18 +
+      (1 - lowScorePressure) * 0.16
+  );
 
   return {
     homeGoals,
@@ -332,30 +531,53 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality) {
     metrics: {
       homeGoalSupport,
       awayGoalSupport,
+      strongestGoalRoute,
       twoSidedGoalFloor,
+      goalBalance,
       latestGgAgreement,
       venueGgAgreement,
       forcedGgMass,
-      stableMass,
-      extremeReversalMass,
-      moderateChangeMass,
       volatilitySpillover,
-      dominantRoute,
+      homeShutoutSupport,
+      awayShutoutSupport,
+      lowScorePressure,
+      venueO15,
+      recentO15,
+      venueO25,
+      recentO25,
+      venueU25,
+      recentU25,
+      venueU35,
+      recentU35,
+      favouriteRoute,
       noRecovery,
       dominant2PlusSupport,
+      home2PlusSupport,
+      away2PlusSupport,
+      goalBreakingSupport,
       dataQuality: quality.score
     },
     scores: {
       ggYes,
       ggNo,
       over15,
+      under15,
       over25,
+      under25,
+      over35,
       under35,
+      twoToThreeGoals,
       homeOver05: homeGoalSupport,
       awayOver05: awayGoalSupport,
-      favouriteOver15: teamOver15
-    },
-    corridor
+      homeOver15,
+      awayOver15,
+      homeUnder15,
+      awayUnder15,
+      firstHalfOver05,
+      secondHalfOver05,
+      homeCleanSheet,
+      awayCleanSheet
+    }
   };
 }
 
@@ -368,12 +590,34 @@ function confidenceBand(score) {
   return "Low";
 }
 
-function makeMarket({ key, market, selection, score, threshold, risk = 0, reasons = [], blockers = [] }) {
-  const adjusted = clamp(score - risk);
+function qualityPenalty(quality, sensitivity = 1) {
+  if (quality.score < 0.42) return 0.1 * sensitivity;
+  if (quality.score < 0.52) return 0.075 * sensitivity;
+  if (quality.score < 0.68) return 0.04 * sensitivity;
+  return 0;
+}
+
+function makeMarket({
+  key,
+  family,
+  market,
+  selection,
+  score,
+  threshold,
+  risk = 0,
+  reasons = [],
+  blockers = [],
+  fallbackEligible = true,
+  complexity = 0,
+  evidence = {}
+}) {
+  const adjusted = clamp(score - risk - complexity);
   const qualified = adjusted >= threshold && blockers.length === 0;
-  const blockerPenalty = Math.min(0.14, blockers.length * 0.035);
+  const blockerPenalty = Math.min(0.18, blockers.length * 0.04);
+
   return {
     key,
+    family,
     market,
     selection,
     modelScore: round(score),
@@ -383,1304 +627,759 @@ function makeMarket({ key, market, selection, score, threshold, risk = 0, reason
     blockerPenalty: round(blockerPenalty),
     qualified,
     directional: !qualified,
+    fallbackEligible,
     tier: qualified ? confidenceBand(adjusted) : `Directional · ${confidenceBand(adjusted)}`,
     reasons,
-    blockers
+    blockers,
+    evidence
   };
 }
 
-
-function commonSenseMarketLayer({ input, matrix, direct, goals, quality, homeProfile, awayProfile }) {
-  const p = matrix.normalized;
-  const dataPenalty = quality.score < 0.52 ? 0.08 : quality.score < 0.68 ? 0.04 : 0;
-  const homeGoals = goals.homeGoals;
-  const awayGoals = goals.awayGoals;
-
-  const homeFirstHalf = safeRate(homeGoals.firstHalfScoringRate, 0.46);
-  const awayFirstHalf = safeRate(awayGoals.firstHalfScoringRate, 0.46);
-  const homeSecondHalf = safeRate(homeGoals.secondHalfScoringRate, 0.56);
-  const awaySecondHalf = safeRate(awayGoals.secondHalfScoringRate, 0.56);
-
-  const rawTransitionRate = (team, transitions) => {
-    const rateFor = (profile = {}) => {
-      const matches = profileMatches(profile);
-      if (!matches) return 0;
-      return clamp(sum(transitions.map((key) => Number(profile[key]) || 0)) / matches);
-    };
-    const venue = team.htft?.venue || {};
-    const overall = team.htft?.overall || {};
-    const venueMatches = profileMatches(venue);
-    const overallMatches = profileMatches(overall);
-    if (venueMatches && overallMatches) {
-      return clamp(rateFor(venue) * 0.65 + rateFor(overall) * 0.35);
-    }
-    return venueMatches ? rateFor(venue) : rateFor(overall);
-  };
-
-  const homeOwnLead = rawTransitionRate(input.home, ["WW", "WD", "WL"]);
-  const awayOwnLead = rawTransitionRate(input.away, ["WW", "WD", "WL"]);
-
-  const bothLeadPressure = geometricMean(homeOwnLead, awayOwnLead);
-  const defensiveLeakAverage = (homeGoals.concedeRate + awayGoals.concedeRate) / 2;
-  const defensiveLeakFloor = Math.min(homeGoals.concedeRate, awayGoals.concedeRate);
-  const twoPlusLeak = geometricMean(
-    homeGoals.conceded2PlusRate,
-    awayGoals.conceded2PlusRate
-  );
-
-  const homeComeback = rawTransitionRate(input.home, ["LW", "DW"]);
-  const awayComeback = rawTransitionRate(input.away, ["LW", "DW"]);
-  const homeLoseLead = rawTransitionRate(input.home, ["WL", "WD"]);
-  const awayLoseLead = rawTransitionRate(input.away, ["WL", "WD"]);
-
-  const homeWinResilience = geometricMean(homeComeback, awayLoseLead);
-  const awayWinResilience = geometricMean(awayComeback, homeLoseLead);
-
-  const homeWinEitherHalf = p.WW + p.WD + p.WL + p.DW + p.LW;
-  const awayWinEitherHalf = p.LL + p.LD + p.LW + p.DL + p.WL;
-  const drawEitherHalf = p.DD + p.DW + p.DL + p.WD + p.LD;
-
-  const firstHalfOver05 = clamp(
-    (1 - (1 - homeFirstHalf) * (1 - awayFirstHalf)) * 0.72 +
-      (1 - direct.ht.draw) * 0.14 +
-      bothLeadPressure * 0.14
-  );
-
-  const firstHalfOver15 = clamp(
-    geometricMean(homeFirstHalf, awayFirstHalf) * 0.34 +
-      bothLeadPressure * 0.28 +
-      defensiveLeakAverage * 0.22 +
-      twoPlusLeak * 0.16
-  );
-
-  const secondHalfOver05 = clamp(
-    (1 - (1 - homeSecondHalf) * (1 - awaySecondHalf)) * 0.68 +
-      goals.metrics.moderateChangeMass * 0.18 +
-      goals.metrics.extremeReversalMass * 0.14
-  );
-
-  const homeTwoPlus = geometricMean(
-    homeGoals.scored2PlusRate,
-    awayGoals.conceded2PlusRate
-  );
-  const awayTwoPlus = geometricMean(
-    awayGoals.scored2PlusRate,
-    homeGoals.conceded2PlusRate
-  );
-
-  const homeDominantRoute = p.WW + p.DW + p.LW * 0.5;
-  const awayDominantRoute = p.LL + p.DL + p.WL * 0.5;
-
-  const homeOver15 = clamp(
-    homeTwoPlus * 0.48 +
-      goals.metrics.homeGoalSupport * 0.3 +
-      homeDominantRoute * 0.22
-  );
-  const awayOver15 = clamp(
-    awayTwoPlus * 0.48 +
-      goals.metrics.awayGoalSupport * 0.3 +
-      awayDominantRoute * 0.22
-  );
-
-  const bothLoveToLeadAtHalf =
-    homeOwnLead >= 0.25 &&
-    awayOwnLead >= 0.25 &&
-    homeFirstHalf >= 0.48 &&
-    awayFirstHalf >= 0.48;
-
-  const twoSidedLeaky =
-    defensiveLeakFloor >= 0.55 &&
-    goals.metrics.homeGoalSupport >= 0.58 &&
-    goals.metrics.awayGoalSupport >= 0.58;
-
-  const markets = [
-    makeMarket({
-      key: 'home-win-either-half',
-      market: 'Win Either Half',
-      selection: `${input.home.name} to Win Either Half`,
-      score: homeWinEitherHalf,
-      threshold: 0.66,
-      risk: dataPenalty,
-      reasons: ['1/1 and related home-winning half routes support at least one home half win']
-    }),
-    makeMarket({
-      key: 'away-win-either-half',
-      market: 'Win Either Half',
-      selection: `${input.away.name} to Win Either Half`,
-      score: awayWinEitherHalf,
-      threshold: 0.66,
-      risk: dataPenalty,
-      reasons: ['2/2 and related away-winning half routes support at least one away half win']
-    }),
-    makeMarket({
-      key: 'draw-either-half',
-      market: 'Draw Either Half',
-      selection: 'Draw in Either Half — Yes',
-      score: drawEitherHalf,
-      threshold: 0.66,
-      risk: dataPenalty,
-      reasons: ['X/X, X/1, X/2, 1/X and 2/X all contain a drawn half']
-    }),
-    makeMarket({
-      key: 'first-half-over-05',
-      market: 'First-Half Goals',
-      selection: 'First Half Over 0.5',
-      score: firstHalfOver05,
-      threshold: 0.69,
-      risk: dataPenalty,
-      reasons: ['At least one side has a credible early scoring route']
-    }),
-    makeMarket({
-      key: 'first-half-over-15',
-      market: 'First-Half Goals',
-      selection: 'First Half Over 1.5',
-      score: firstHalfOver15,
-      threshold: 0.58,
-      risk: dataPenalty + 0.01,
-      blockers: [
-        ...(!bothLoveToLeadAtHalf ? ['Both teams do not create enough half-time lead pressure'] : []),
-        ...(defensiveLeakAverage < 0.54 ? ['Combined defensive leakiness is too low'] : [])
-      ],
-      reasons: ['Both teams attack for half-time leads and allow enough early pressure']
-    }),
-    makeMarket({
-      key: 'second-half-over-05',
-      market: 'Second-Half Goals',
-      selection: 'Second Half Over 0.5',
-      score: secondHalfOver05,
-      threshold: 0.70,
-      risk: dataPenalty,
-      reasons: ['Second-half scoring and changing HT/FT routes support a post-break goal']
-    }),
-    makeMarket({
-      key: 'home-over-15',
-      market: 'Team Goals',
-      selection: `${input.home.name} Over 1.5`,
-      score: homeOver15,
-      threshold: 0.61,
-      risk: dataPenalty,
-      blockers: homeTwoPlus < 0.5 && homeDominantRoute < 0.38 ? ['Home 2+ route is too weak'] : [],
-      reasons: ['Home 2+ scoring, away 2+ conceding and home control routes agree']
-    }),
-    makeMarket({
-      key: 'away-over-15',
-      market: 'Team Goals',
-      selection: `${input.away.name} Over 1.5`,
-      score: awayOver15,
-      threshold: 0.61,
-      risk: dataPenalty,
-      blockers: awayTwoPlus < 0.5 && awayDominantRoute < 0.38 ? ['Away 2+ route is too weak'] : [],
-      reasons: ['Away 2+ scoring, home 2+ conceding and away control routes agree']
-    })
-  ];
-
-  return {
-    markets,
-    context: {
-      homeWinResilience,
-      awayWinResilience,
-      homeComeback,
-      awayComeback,
-      homeLoseLead,
-      awayLoseLead,
-      homeWinEitherHalf,
-      awayWinEitherHalf,
-      drawEitherHalf,
-      bothLoveToLeadAtHalf,
-      twoSidedLeaky,
-      firstHalfOver15,
-      defensiveLeakAverage
-    }
-  };
+function percentText(value) {
+  return `${round(value * 100, 1)}%`;
 }
 
-function blockWeakStraightWins(markets, commonSense) {
-  return markets.map((market) => {
-    const weakHome = market.key === 'home-win' && commonSense.homeWinResilience < 0.05;
-    const weakAway = market.key === 'away-win' && commonSense.awayWinResilience < 0.05;
-    if (!weakHome && !weakAway) return market;
-    const reason = weakHome
-      ? 'Straight home win rejected: home comeback ability and away lead-surrender history do not confirm it'
-      : 'Straight away win rejected: away comeback ability and home lead-surrender history do not confirm it';
-    return {
-      ...market,
-      blockers: [...(market.blockers || []), reason],
-      qualified: false,
-      directional: true,
-      tier: `Directional · ${confidenceBand(market.safetyAdjustedScore)}`
-    };
-  });
-}
-
-function marketCandidates(input, matrix, direct, goals, quality) {
+function marketCandidates(input, matrix, direct, structure, goals, quality) {
   const p = matrix.normalized;
   const candidates = [];
-  const dataPenalty = quality.score < 0.52 ? 0.08 : quality.score < 0.68 ? 0.04 : 0;
-  const ftSorted = Object.entries(direct.ft).sort((a, b) => b[1] - a[1]);
-  const ftGap = ftSorted[0][1] - ftSorted[1][1];
-  const htSorted = Object.entries(direct.ht).sort((a, b) => b[1] - a[1]);
-  const htGap = htSorted[0][1] - htSorted[1][1];
+  const generalPenalty = qualityPenalty(quality, 1);
+  const precisionPenalty = qualityPenalty(quality, 1.25);
+  const homeGoalEdge = clamp((goals.metrics.homeGoalSupport - goals.metrics.awayGoalSupport + 1) / 2);
+  const awayGoalEdge = clamp((goals.metrics.awayGoalSupport - goals.metrics.homeGoalSupport + 1) / 2);
+
+  const home1xScore = clamp(
+    direct.doubleChance.homeOrDraw * 0.68 +
+      structure.homeBreadth * 0.1 +
+      goals.metrics.homeGoalSupport * 0.1 +
+      (1 - direct.ft.away) * 0.12
+  );
+  const awayX2Score = clamp(
+    direct.doubleChance.awayOrDraw * 0.68 +
+      structure.awayBreadth * 0.1 +
+      goals.metrics.awayGoalSupport * 0.1 +
+      (1 - direct.ft.home) * 0.12
+  );
 
   candidates.push(
     makeMarket({
       key: "home-1x",
+      family: "Result Safety",
       market: "Double Chance",
       selection: `${input.home.name} or Draw (1X)`,
-      score: direct.doubleChance.homeOrDraw,
+      score: home1xScore,
       threshold: MARKET_THRESHOLDS.doubleChance,
-      risk: dataPenalty,
-      blockers: direct.ft.home < direct.ft.away + 0.05
-        ? ["Home result mass does not lead the away result mass by enough"]
-        : [],
+      risk: generalPenalty,
+      blockers: [
+        ...(direct.ft.away >= 0.38 ? [`Away-win mass is still ${percentText(direct.ft.away)}`] : []),
+        ...(structure.awayBreadth >= 0.67 && goals.metrics.awayGoalSupport >= 0.68
+          ? ["Away side owns several credible win routes"]
+          : [])
+      ],
       reasons: [
-        "Home-win and draw transition mass combined",
-        "Protection is justified only when the home-result route leads the away-result route"
-      ]
+        `Home-or-draw transition mass is ${percentText(direct.doubleChance.homeOrDraw)}`,
+        `Away-win mass is limited to ${percentText(direct.ft.away)}`,
+        "Multiple home-protection routes agree"
+      ],
+      evidence: { homeOrDraw: direct.doubleChance.homeOrDraw, awayWin: direct.ft.away }
     }),
     makeMarket({
       key: "away-x2",
+      family: "Result Safety",
       market: "Double Chance",
       selection: `${input.away.name} or Draw (X2)`,
-      score: direct.doubleChance.awayOrDraw,
+      score: awayX2Score,
       threshold: MARKET_THRESHOLDS.doubleChance,
-      risk: dataPenalty,
-      blockers: direct.ft.away < direct.ft.home + 0.05
-        ? ["Away result mass does not lead the home result mass by enough"]
-        : [],
+      risk: generalPenalty,
+      blockers: [
+        ...(direct.ft.home >= 0.38 ? [`Home-win mass is still ${percentText(direct.ft.home)}`] : []),
+        ...(structure.homeBreadth >= 0.67 && goals.metrics.homeGoalSupport >= 0.68
+          ? ["Home side owns several credible win routes"]
+          : [])
+      ],
       reasons: [
-        "Away-win and draw transition mass combined",
-        "Protection is justified only when the away-result route leads the home-result route"
-      ]
-    }),
-    makeMarket({
-      key: "no-draw",
-      market: "Double Chance",
-      selection: "Either Team to Win (12)",
-      score: direct.doubleChance.noDraw,
-      threshold: MARKET_THRESHOLDS.noDraw,
-      risk: dataPenalty,
-      blockers: direct.ft.draw > 0.28
-        ? ["Draw transition mass is too high for the 12 route"]
-        : [],
-      reasons: ["Low normalized draw-transition mass supports either team winning"]
-    }),
-    makeMarket({
-      key: "home-dnb",
-      market: "Draw No Bet",
-      selection: `${input.home.name} DNB`,
-      score: direct.dnb.home,
-      threshold: MARKET_THRESHOLDS.dnb,
-      risk: dataPenalty + (direct.ft.home < direct.ft.draw ? 0.04 : 0),
-      reasons: ["Home win routes remain stronger after removing the draw"]
-    }),
-    makeMarket({
-      key: "away-dnb",
-      market: "Draw No Bet",
-      selection: `${input.away.name} DNB`,
-      score: direct.dnb.away,
-      threshold: MARKET_THRESHOLDS.dnb,
-      risk: dataPenalty + (direct.ft.away < direct.ft.draw ? 0.04 : 0),
-      reasons: ["Away win routes remain stronger after removing the draw"]
+        `Away-or-draw transition mass is ${percentText(direct.doubleChance.awayOrDraw)}`,
+        `Home-win mass is limited to ${percentText(direct.ft.home)}`,
+        "Multiple away-protection routes agree"
+      ],
+      evidence: { awayOrDraw: direct.doubleChance.awayOrDraw, homeWin: direct.ft.home }
     })
   );
+
+  const noDrawScore = clamp(
+    direct.doubleChance.noDraw * 0.56 +
+      structure.decisiveBreadth * 0.12 +
+      structure.twoSideWinSupport * 0.1 +
+      goals.metrics.goalBreakingSupport * 0.08 +
+      (1 - structure.permanentDrawMass) * 0.07 +
+      (1 - structure.leadToDrawMass) * 0.07
+  );
+  const meaningfulDecisiveRoutes = DECISIVE_ROUTES.filter((route) => p[route] >= 0.055).length;
+  const oneSidedNoDraw = structure.underdogMass < 0.12 && direct.ft.draw >= structure.underdogMass + 0.06;
 
   candidates.push(
     makeMarket({
-      key: "home-win",
-      market: "Full-Time Result",
-      selection: `${input.home.name} Win`,
-      score: direct.ft.home,
-      threshold: MARKET_THRESHOLDS.fullTimeWin,
-      risk: dataPenalty,
-      blockers: ftGap < 0.07 || direct.ft.home !== ftSorted[0][1] ? ["Full-time result is not separated enough"] : [],
-      reasons: ["Multiple home-winning HT/FT routes contribute"]
-    }),
-    makeMarket({
-      key: "away-win",
-      market: "Full-Time Result",
-      selection: `${input.away.name} Win`,
-      score: direct.ft.away,
-      threshold: MARKET_THRESHOLDS.fullTimeWin,
-      risk: dataPenalty,
-      blockers: ftGap < 0.07 || direct.ft.away !== ftSorted[0][1] ? ["Full-time result is not separated enough"] : [],
-      reasons: ["Multiple away-winning HT/FT routes contribute"]
+      key: "no-draw",
+      family: "Result Safety",
+      market: "Double Chance",
+      selection: "Either Team to Win (12)",
+      score: noDrawScore,
+      threshold: MARKET_THRESHOLDS.noDraw,
+      risk: generalPenalty,
+      blockers: [
+        ...(direct.ft.draw > 0.29 ? [`Draw-ending mass is too high at ${percentText(direct.ft.draw)}`] : []),
+        ...(structure.permanentDrawMass > 0.2 ? [`X/X remains strong at ${percentText(structure.permanentDrawMass)}`] : []),
+        ...(structure.leadToDrawMass > 0.19 ? ["Lead-to-draw routes are too active"] : []),
+        ...(meaningfulDecisiveRoutes < 2 ? ["Too few independent win-ending routes"] : []),
+        ...(oneSidedNoDraw ? ["The weaker side has too little outright-win support; favourite protection is safer"] : []),
+        ...(goals.metrics.goalBreakingSupport < 0.55 && direct.ft.draw > 0.22
+          ? ["Goal pressure may not be strong enough to break a draw"]
+          : [])
+      ],
+      reasons: [
+        `Six win-ending routes carry ${percentText(direct.doubleChance.noDraw)}`,
+        `Three draw-ending routes carry ${percentText(direct.ft.draw)}`,
+        `${meaningfulDecisiveRoutes} independent decisive routes remain meaningful`,
+        `X/X is controlled at ${percentText(structure.permanentDrawMass)}`
+      ],
+      evidence: {
+        homeWinMass: direct.ft.home,
+        awayWinMass: direct.ft.away,
+        drawMass: direct.ft.draw,
+        permanentDrawMass: structure.permanentDrawMass,
+        leadToDrawMass: structure.leadToDrawMass,
+        decisiveBreadth: structure.decisiveBreadth,
+        meaningfulDecisiveRoutes
+      }
     })
   );
 
+  for (const side of ["home", "away"]) {
+    const opponent = side === "home" ? "away" : "home";
+    const name = input[side].name;
+    const winMass = direct.ft[side];
+    const opponentWin = direct.ft[opponent];
+    const dnb = direct.dnb[side];
+    const breadth = side === "home" ? structure.homeBreadth : structure.awayBreadth;
+    const goalEdge = side === "home" ? homeGoalEdge : awayGoalEdge;
+    const dnbScore = clamp(
+      dnb * 0.5 +
+        winMass * 0.18 +
+        breadth * 0.12 +
+        goalEdge * 0.1 +
+        (1 - direct.ft.draw) * 0.1
+    );
+
+    candidates.push(
+      makeMarket({
+        key: `${side}-dnb`,
+        family: "Result Safety",
+        market: "Draw No Bet",
+        selection: `${name} DNB`,
+        score: dnbScore,
+        threshold: MARKET_THRESHOLDS.dnb,
+        risk: generalPenalty,
+        blockers: [
+          ...(winMass <= opponentWin ? ["Selected side does not lead the opponent in outright-win mass"] : []),
+          ...(winMass - opponentWin < 0.07 ? ["The decisive side gap is too narrow"] : []),
+          ...(breadth < 0.34 ? ["Win support depends on one narrow route"] : [])
+        ],
+        reasons: [
+          `${name} owns ${percentText(winMass)} full-time win mass`,
+          `Draw-removed strength is ${percentText(dnb)}`,
+          "The draw is refunded while the stronger side is retained"
+        ],
+        evidence: { winMass, opponentWin, drawMass: direct.ft.draw, breadth }
+      })
+    );
+  }
+
+  const ftRows = Object.entries(direct.ft).sort((a, b) => b[1] - a[1]);
+  const ftGap = ftRows[0][1] - ftRows[1][1];
+  for (const side of ["home", "away"]) {
+    const opponent = side === "home" ? "away" : "home";
+    const name = input[side].name;
+    const winMass = direct.ft[side];
+    const breadth = side === "home" ? structure.homeBreadth : structure.awayBreadth;
+    const goalEdge = side === "home" ? homeGoalEdge : awayGoalEdge;
+    const resultScore = clamp(
+      winMass * 0.55 +
+        clamp(ftGap / 0.25) * 0.15 +
+        breadth * 0.12 +
+        goalEdge * 0.1 +
+        (1 - direct.ft.draw) * 0.08
+    );
+
+    candidates.push(
+      makeMarket({
+        key: `${side}-win`,
+        family: "Match Result",
+        market: "Full-Time Result",
+        selection: `${name} Win`,
+        score: resultScore,
+        threshold: MARKET_THRESHOLDS.fullTimeWin,
+        risk: precisionPenalty,
+        fallbackEligible: false,
+        complexity: 0.01,
+        blockers: [
+          ...(ftRows[0][0] !== side ? ["Selected team is not the leading full-time state"] : []),
+          ...(winMass < 0.4 ? [`Outright-win mass is only ${percentText(winMass)}`] : []),
+          ...(ftGap < 0.08 ? ["The leading result is not separated enough"] : []),
+          ...(breadth < 0.34 ? ["Outright win relies on one route"] : [])
+        ],
+        reasons: [
+          `${name} has the highest full-time mass at ${percentText(winMass)}`,
+          `The result gap is ${percentText(ftGap)}`,
+          "Several compatible HT/FT routes point to the same winner"
+        ],
+        evidence: { winMass, opponentWin: direct.ft[opponent], drawMass: direct.ft.draw, ftGap, breadth }
+      })
+    );
+  }
+
+  const drawScore = clamp(
+    direct.ft.draw * 0.55 +
+      structure.permanentDrawMass * 0.18 +
+      structure.leadToDrawMass * 0.12 +
+      goals.metrics.lowScorePressure * 0.1 +
+      (1 - structure.decisiveBreadth) * 0.05
+  );
+  candidates.push(
+    makeMarket({
+      key: "ft-draw",
+      family: "Match Result",
+      market: "Full-Time Result",
+      selection: "Draw",
+      score: drawScore,
+      threshold: MARKET_THRESHOLDS.fullTimeDraw,
+      risk: precisionPenalty,
+      fallbackEligible: false,
+      complexity: 0.015,
+      blockers: [
+        ...(direct.ft.draw < 0.3 ? [`Draw mass is only ${percentText(direct.ft.draw)}`] : []),
+        ...(structure.permanentDrawMass < 0.13 ? ["X/X is not strong enough"] : []),
+        ...(goals.scores.over15 > 0.76 && structure.leadToDrawMass < 0.12
+          ? ["Goal pressure is high without enough equalising routes"]
+          : [])
+      ],
+      reasons: [
+        `Draw-ending routes carry ${percentText(direct.ft.draw)}`,
+        `X/X contributes ${percentText(structure.permanentDrawMass)}`,
+        "Lead-to-draw behaviour supports a level finish"
+      ],
+      evidence: { drawMass: direct.ft.draw, permanentDrawMass: structure.permanentDrawMass }
+    })
+  );
+
+  for (const side of ["home", "away"]) {
+    const name = input[side].name;
+    const opponent = side === "home" ? "away" : "home";
+    const eitherHalf = direct.winEitherHalf[side];
+    const goalSupport = side === "home" ? goals.metrics.homeGoalSupport : goals.metrics.awayGoalSupport;
+    const opponentSupport = side === "home" ? goals.metrics.awayGoalSupport : goals.metrics.homeGoalSupport;
+    const score = clamp(
+      eitherHalf * 0.64 +
+        goalSupport * 0.17 +
+        (side === "home" ? structure.homeBreadth : structure.awayBreadth) * 0.11 +
+        (1 - opponentSupport) * 0.08
+    );
+
+    candidates.push(
+      makeMarket({
+        key: `${side}-win-either-half`,
+        family: "Special Result",
+        market: "Win Either Half",
+        selection: `${name} to Win Either Half`,
+        score,
+        threshold: MARKET_THRESHOLDS.winEitherHalf,
+        risk: generalPenalty,
+        blockers: [
+          ...(eitherHalf < 0.58 ? ["Either-half transition support is too low"] : []),
+          ...(goalSupport < 0.55 ? ["Selected team has weak scoring support"] : [])
+        ],
+        reasons: [
+          `${name} wins at least one half in ${percentText(eitherHalf)} of compatible transition mass`,
+          `Team scoring support is ${percentText(goalSupport)}`,
+          "The selection can land through first-half control or a second-half response"
+        ],
+        evidence: { eitherHalf, goalSupport, opponentSupport }
+      })
+    );
+  }
+
+  const htRows = Object.entries(direct.ht).sort((a, b) => b[1] - a[1]);
+  const htGap = htRows[0][1] - htRows[1][1];
   candidates.push(
     makeMarket({
       key: "ht-home-or-draw",
+      family: "Half-Time",
       market: "Half-Time Double Chance",
       selection: `${input.home.name} or Draw at HT`,
-      score: direct.halfTimeDoubleChance.homeOrDraw,
+      score: clamp(direct.halfTimeDoubleChance.homeOrDraw * 0.82 + (1 - direct.ht.away) * 0.18),
       threshold: MARKET_THRESHOLDS.halfTimeDoubleChance,
-      risk: dataPenalty,
-      reasons: ["Home side is rarely behind across compatible first-half states"]
+      risk: generalPenalty,
+      blockers: direct.ht.away > 0.36 ? ["Away-leading first-half mass remains high"] : [],
+      reasons: [
+        `Home-or-draw at half-time carries ${percentText(direct.halfTimeDoubleChance.homeOrDraw)}`,
+        "The home side is rarely behind across compatible first-half states"
+      ],
+      evidence: { homeOrDraw: direct.halfTimeDoubleChance.homeOrDraw, awayHt: direct.ht.away }
     }),
     makeMarket({
       key: "ht-away-or-draw",
+      family: "Half-Time",
       market: "Half-Time Double Chance",
       selection: `${input.away.name} or Draw at HT`,
-      score: direct.halfTimeDoubleChance.awayOrDraw,
+      score: clamp(direct.halfTimeDoubleChance.awayOrDraw * 0.82 + (1 - direct.ht.home) * 0.18),
       threshold: MARKET_THRESHOLDS.halfTimeDoubleChance,
-      risk: dataPenalty,
-      reasons: ["Away side is rarely behind across compatible first-half states"]
-    }),
-    makeMarket({
-      key: "ht-home",
-      market: "Half-Time Result",
-      selection: `${input.home.name} at HT`,
-      score: direct.ht.home,
-      threshold: MARKET_THRESHOLDS.halfTimeResult,
-      risk: dataPenalty,
-      blockers: htGap < 0.07 || direct.ht.home !== htSorted[0][1] ? ["Half-time states are too close"] : [],
-      reasons: ["Home-leading transition row is strongest"]
-    }),
-    makeMarket({
-      key: "ht-draw",
-      market: "Half-Time Result",
-      selection: "Draw at HT",
-      score: direct.ht.draw,
-      threshold: MARKET_THRESHOLDS.halfTimeResult,
-      risk: dataPenalty,
-      blockers: htGap < 0.07 || direct.ht.draw !== htSorted[0][1] ? ["Half-time states are too close"] : [],
-      reasons: ["Draw-at-half-time transition row is strongest"]
-    }),
-    makeMarket({
-      key: "ht-away",
-      market: "Half-Time Result",
-      selection: `${input.away.name} at HT`,
-      score: direct.ht.away,
-      threshold: MARKET_THRESHOLDS.halfTimeResult,
-      risk: dataPenalty,
-      blockers: htGap < 0.07 || direct.ht.away !== htSorted[0][1] ? ["Half-time states are too close"] : [],
-      reasons: ["Away-leading transition row is strongest"]
+      risk: generalPenalty,
+      blockers: direct.ht.home > 0.36 ? ["Home-leading first-half mass remains high"] : [],
+      reasons: [
+        `Away-or-draw at half-time carries ${percentText(direct.halfTimeDoubleChance.awayOrDraw)}`,
+        "The away side is rarely behind across compatible first-half states"
+      ],
+      evidence: { awayOrDraw: direct.halfTimeDoubleChance.awayOrDraw, homeHt: direct.ht.home }
     })
   );
 
-  const topExact = Object.entries(p)
+  for (const state of ["home", "draw", "away"]) {
+    const label = state === "home" ? `${input.home.name} at HT` : state === "away" ? `${input.away.name} at HT` : "Draw at HT";
+    const goalModifier = state === "draw"
+      ? 1 - goals.scores.firstHalfOver05 * 0.35
+      : state === "home"
+        ? goals.metrics.homeGoalSupport
+        : goals.metrics.awayGoalSupport;
+    const score = clamp(
+      direct.ht[state] * 0.66 +
+        clamp(htGap / 0.22) * 0.16 +
+        goalModifier * 0.12 +
+        quality.score * 0.06
+    );
+
+    candidates.push(
+      makeMarket({
+        key: `ht-${state}`,
+        family: "Half-Time",
+        market: "Half-Time Result",
+        selection: label,
+        score,
+        threshold: MARKET_THRESHOLDS.halfTimeResult,
+        risk: precisionPenalty,
+        fallbackEligible: false,
+        complexity: 0.015,
+        blockers: [
+          ...(htRows[0][0] !== state ? ["Selected state is not the leading half-time state"] : []),
+          ...(htGap < 0.08 ? ["Half-time states are too close"] : [])
+        ],
+        reasons: [
+          `${label} is the strongest half-time state at ${percentText(direct.ht[state])}`,
+          `The first-half gap is ${percentText(htGap)}`
+        ],
+        evidence: { stateMass: direct.ht[state], htGap }
+      })
+    );
+  }
+
+  const exactRows = Object.entries(p)
     .map(([transition, probability]) => ({ transition, probability }))
     .sort((a, b) => b.probability - a.probability);
-  const exactGap = topExact[0].probability - topExact[1].probability;
-  const exactTransition = topExact[0].transition;
+  const exactGap = exactRows[0].probability - exactRows[1].probability;
   candidates.push(
     makeMarket({
       key: "exact-htft",
+      family: "Exact Story",
       market: "HT/FT",
-      selection: HTFT_CODE[exactTransition],
-      score: topExact[0].probability,
+      selection: HTFT_CODE[exactRows[0].transition],
+      score: exactRows[0].probability,
       threshold: MARKET_THRESHOLDS.exactHtFt,
-      risk: dataPenalty + 0.05,
+      risk: precisionPenalty,
+      fallbackEligible: false,
+      complexity: 0.045,
       blockers: [
-        ...(exactGap < 0.055 ? ["Top two HT/FT stories are too close"] : []),
-        ...(quality.score < 0.58 ? ["Sample is too small for an exact HT/FT call"] : [])
+        ...(exactGap < 0.065 ? ["Top two HT/FT stories are too close"] : []),
+        ...(quality.score < 0.62 ? ["Sample is too small for an exact HT/FT call"] : [])
       ],
-      reasons: [`Strongest compatible transition: ${exactTransition}`]
+      reasons: [
+        `${HTFT_CODE[exactRows[0].transition]} is the strongest compatible story`,
+        `Its normalized mass is ${percentText(exactRows[0].probability)}`
+      ],
+      evidence: { transition: exactRows[0].transition, probability: exactRows[0].probability, exactGap }
     })
   );
 
-  const ggBlockers = [];
-  if (goals.metrics.homeGoalSupport < 0.58) ggBlockers.push(`${input.home.name} scoring route is weak`);
-  if (goals.metrics.awayGoalSupport < 0.58) ggBlockers.push(`${input.away.name} scoring route is weak`);
-  if (goals.metrics.latestGgAgreement < 0.5) ggBlockers.push("Latest GG agreement is weak");
-
+  const ggYesBlockers = [
+    ...(goals.metrics.homeGoalSupport < 0.58 ? [`${input.home.name} scoring support is weak`] : []),
+    ...(goals.metrics.awayGoalSupport < 0.58 ? [`${input.away.name} scoring support is weak`] : []),
+    ...(goals.metrics.latestGgAgreement < 0.5 ? ["Recent GG agreement is weak"] : []),
+    ...(goals.homeGoals.failedToScoreRate > 0.43 ? [`${input.home.name} fails to score too often`] : []),
+    ...(goals.awayGoals.failedToScoreRate > 0.43 ? [`${input.away.name} fails to score too often`] : [])
+  ];
   candidates.push(
     makeMarket({
       key: "gg-yes",
+      family: "Goal Participation",
       market: "Both Teams to Score",
       selection: "GG — Yes",
       score: goals.scores.ggYes,
       threshold: MARKET_THRESHOLDS.ggYes,
-      risk: dataPenalty,
-      blockers: ggBlockers,
+      risk: generalPenalty,
+      blockers: ggYesBlockers,
       reasons: [
-        "Both teams have an independent scoring route",
-        "Comeback and lead-surrender transitions add goal pressure"
-      ]
+        `Home scoring support is ${percentText(goals.metrics.homeGoalSupport)}`,
+        `Away scoring support is ${percentText(goals.metrics.awayGoalSupport)}`,
+        `Both-scoring HT/FT routes carry ${percentText(goals.metrics.forcedGgMass)}`,
+        "GG requires two independent scoring routes; one dominant team is not enough"
+      ],
+      evidence: {
+        homeGoalSupport: goals.metrics.homeGoalSupport,
+        awayGoalSupport: goals.metrics.awayGoalSupport,
+        forcedGgMass: goals.metrics.forcedGgMass,
+        latestGgAgreement: goals.metrics.latestGgAgreement
+      }
     }),
     makeMarket({
       key: "gg-no",
+      family: "Goal Participation",
       market: "Both Teams to Score",
       selection: "GG — No",
       score: goals.scores.ggNo,
       threshold: MARKET_THRESHOLDS.ggNo,
-      risk: dataPenalty,
-      blockers: goals.metrics.twoSidedGoalFloor > 0.66 ? ["Both teams retain credible scoring routes"] : [],
-      reasons: ["At least one failed-to-score/clean-sheet pathway is strong"]
-    }),
+      risk: generalPenalty,
+      blockers: [
+        ...(goals.metrics.twoSidedGoalFloor > 0.66 ? ["Both teams retain credible scoring routes"] : []),
+        ...(goals.metrics.forcedGgMass > 0.22 ? ["Equalisation and comeback routes force too much two-sided scoring"] : [])
+      ],
+      reasons: [
+        `Strongest clean-sheet/blank route is ${percentText(Math.max(goals.metrics.homeShutoutSupport, goals.metrics.awayShutoutSupport))}`,
+        `Two-sided scoring floor is ${percentText(goals.metrics.twoSidedGoalFloor)}`,
+        "At least one team has a credible failed-to-score pathway"
+      ],
+      evidence: {
+        homeShutoutSupport: goals.metrics.homeShutoutSupport,
+        awayShutoutSupport: goals.metrics.awayShutoutSupport,
+        twoSidedGoalFloor: goals.metrics.twoSidedGoalFloor
+      }
+    })
+  );
+
+  candidates.push(
     makeMarket({
       key: "over-15",
+      family: "Total Goals",
       market: "Total Goals",
       selection: "Over 1.5",
       score: goals.scores.over15,
       threshold: MARKET_THRESHOLDS.over15,
-      risk: dataPenalty,
-      reasons: ["Transition changes and current scoring thresholds support two goals"]
+      risk: generalPenalty,
+      blockers: [
+        ...(goals.metrics.venueO15 < 0.57 && goals.metrics.recentO15 < 0.57
+          ? ["Venue and recent two-goal rates are both weak"]
+          : []),
+        ...(goals.metrics.lowScorePressure > 0.52 ? ["Low-score pressure is too high"] : [])
+      ],
+      reasons: [
+        `Venue Over 1.5 agreement is ${percentText(goals.metrics.venueO15)}`,
+        `Recent Over 1.5 agreement is ${percentText(goals.metrics.recentO15)}`,
+        `Strongest one-team scoring route is ${percentText(goals.metrics.strongestGoalRoute)}`,
+        "Over 1.5 can qualify through one team scoring twice; GG cannot"
+      ],
+      evidence: { venueO15: goals.metrics.venueO15, recentO15: goals.metrics.recentO15 }
+    }),
+    makeMarket({
+      key: "under-15",
+      family: "Total Goals",
+      market: "Total Goals",
+      selection: "Under 1.5",
+      score: goals.scores.under15,
+      threshold: MARKET_THRESHOLDS.under15,
+      risk: precisionPenalty,
+      blockers: [
+        ...(goals.scores.over15 > 0.72 ? ["Two-goal evidence is already strong"] : []),
+        ...(goals.metrics.strongestGoalRoute > 0.74 ? ["At least one team has high scoring support"] : []),
+        ...(structure.fullReversalMass > 0.12 ? ["Complete reversal routes are too active"] : [])
+      ],
+      reasons: [
+        `Low-score pressure is ${percentText(goals.metrics.lowScorePressure)}`,
+        "Failed-to-score and clean-sheet routes support a 0–0, 1–0 or 0–1 corridor"
+      ],
+      evidence: { lowScorePressure: goals.metrics.lowScorePressure }
     }),
     makeMarket({
       key: "over-25",
+      family: "Total Goals",
       market: "Total Goals",
       selection: "Over 2.5",
       score: goals.scores.over25,
       threshold: MARKET_THRESHOLDS.over25,
-      risk: dataPenalty + 0.015,
-      blockers: goals.metrics.dominant2PlusSupport < 0.48 && goals.scores.ggYes < 0.65
-        ? ["Neither two-sided nor one-sided 3-goal route is strong enough"]
-        : [],
-      reasons: ["Can qualify through GG plus 2+ potential or one-team dominance"]
+      risk: precisionPenalty,
+      blockers: [
+        ...(goals.metrics.dominant2PlusSupport < 0.48 && goals.scores.ggYes < 0.65
+          ? ["Neither a two-sided nor one-sided three-goal route is strong enough"]
+          : []),
+        ...(goals.scores.under25 > goals.scores.over25 + 0.08 ? ["Under 2.5 evidence is materially stronger"] : [])
+      ],
+      reasons: [
+        `Venue Over 2.5 agreement is ${percentText(goals.metrics.venueO25)}`,
+        `Recent Over 2.5 agreement is ${percentText(goals.metrics.recentO25)}`,
+        "Can qualify through GG plus 2+ potential or one-team dominance"
+      ],
+      evidence: { venueO25: goals.metrics.venueO25, recentO25: goals.metrics.recentO25 }
+    }),
+    makeMarket({
+      key: "under-25",
+      family: "Total Goals",
+      market: "Total Goals",
+      selection: "Under 2.5",
+      score: goals.scores.under25,
+      threshold: MARKET_THRESHOLDS.under25,
+      risk: generalPenalty,
+      blockers: [
+        ...(goals.scores.over25 > goals.scores.under25 + 0.08 ? ["Over 2.5 evidence is materially stronger"] : []),
+        ...(structure.fullReversalMass > 0.15 ? ["Comeback reversals create too much three-goal risk"] : [])
+      ],
+      reasons: [
+        `Venue Under 2.5 agreement is ${percentText(goals.metrics.venueU25)}`,
+        `Recent Under 2.5 agreement is ${percentText(goals.metrics.recentU25)}`,
+        "Stable transitions and limited reversal routes support a low ceiling"
+      ],
+      evidence: { venueU25: goals.metrics.venueU25, recentU25: goals.metrics.recentU25 }
+    }),
+    makeMarket({
+      key: "over-35",
+      family: "Total Goals",
+      market: "Total Goals",
+      selection: "Over 3.5",
+      score: goals.scores.over35,
+      threshold: MARKET_THRESHOLDS.over35,
+      risk: precisionPenalty,
+      fallbackEligible: false,
+      complexity: 0.02,
+      blockers: [
+        ...(goals.metrics.home2PlusSupport < 0.48 || goals.metrics.away2PlusSupport < 0.48
+          ? ["Both teams do not have enough 2+ goal support"]
+          : []),
+        ...(goals.metrics.recentU35 > 0.62 ? ["Recent four-goal ceiling remains too strong"] : [])
+      ],
+      reasons: [
+        "Requires weak Under 3.5 records plus genuine two-team 2+ goal potential",
+        `Full-reversal mass is ${percentText(structure.fullReversalMass)}`
+      ],
+      evidence: { home2Plus: goals.metrics.home2PlusSupport, away2Plus: goals.metrics.away2PlusSupport }
     }),
     makeMarket({
       key: "under-35",
+      family: "Total Goals",
       market: "Total Goals",
       selection: "Under 3.5",
       score: goals.scores.under35,
       threshold: MARKET_THRESHOLDS.under35,
-      risk: dataPenalty,
+      risk: generalPenalty,
       blockers: [
-        ...(goals.metrics.dominant2PlusSupport >= 0.58 && goals.metrics.dominantRoute >= 0.45
-          ? ["Dominant favourite has a credible one-sided 3+ goal route"]
+        ...(goals.metrics.dominant2PlusSupport >= 0.62 && goals.metrics.favouriteRoute >= 0.48
+          ? ["Dominant favourite has a credible one-sided four-goal route"]
           : []),
-        ...(goals.metrics.extremeReversalMass > 0.14 ? ["Complete reversal risk is too high"] : [])
+        ...(structure.fullReversalMass > 0.15 ? ["Complete reversal risk is too high"] : [])
       ],
-      reasons: ["Venue and recent 4-goal ceilings agree"]
+      reasons: [
+        `Venue Under 3.5 agreement is ${percentText(goals.metrics.venueU35)}`,
+        `Recent Under 3.5 agreement is ${percentText(goals.metrics.recentU35)}`,
+        "Transition ceiling and goal records agree on a maximum of three goals"
+      ],
+      evidence: { venueU35: goals.metrics.venueU35, recentU35: goals.metrics.recentU35 }
     }),
     makeMarket({
-      key: "home-over-05",
-      market: "Team Goals",
-      selection: `${input.home.name} Over 0.5`,
-      score: goals.scores.homeOver05,
-      threshold: MARKET_THRESHOLDS.teamOver05,
-      risk: dataPenalty,
-      reasons: ["Home scoring rate matches away conceding rate"]
+      key: "total-2-3",
+      family: "Total Goals",
+      market: "Total Goals Range",
+      selection: "2–3 Total Goals",
+      score: goals.scores.twoToThreeGoals,
+      threshold: MARKET_THRESHOLDS.twoToThreeGoals,
+      risk: generalPenalty,
+      blockers: [
+        ...(goals.scores.over15 < 0.66 ? ["Two-goal floor is not secure enough"] : []),
+        ...(goals.scores.under35 < 0.68 ? ["Four-goal ceiling is not secure enough"] : [])
+      ],
+      reasons: [
+        "Over 1.5 and Under 3.5 agree on the same goal corridor",
+        `Two-goal floor ${percentText(goals.scores.over15)}; four-goal ceiling ${percentText(goals.scores.under35)}`
+      ],
+      evidence: { over15: goals.scores.over15, under35: goals.scores.under35 }
+    })
+  );
+
+  for (const side of ["home", "away"]) {
+    const opponent = side === "home" ? "away" : "home";
+    const name = input[side].name;
+    const support = side === "home" ? goals.metrics.homeGoalSupport : goals.metrics.awayGoalSupport;
+    const over15 = side === "home" ? goals.scores.homeOver15 : goals.scores.awayOver15;
+    const under15 = side === "home" ? goals.scores.homeUnder15 : goals.scores.awayUnder15;
+    const cleanSheetAgainst = side === "home" ? goals.awayGoals.cleanSheetRate : goals.homeGoals.cleanSheetRate;
+    const failed = side === "home" ? goals.homeGoals.failedToScoreRate : goals.awayGoals.failedToScoreRate;
+    const opponentGoalSupport = side === "home" ? goals.metrics.awayGoalSupport : goals.metrics.homeGoalSupport;
+    const cleanSheet = side === "home" ? goals.scores.homeCleanSheet : goals.scores.awayCleanSheet;
+
+    candidates.push(
+      makeMarket({
+        key: `${side}-over-05`,
+        family: "Team Goals",
+        market: "Team Goals",
+        selection: `${name} Over 0.5`,
+        score: support,
+        threshold: MARKET_THRESHOLDS.teamOver05,
+        risk: generalPenalty,
+        blockers: [
+          ...(failed > 0.44 ? [`${name} fails to score too often`] : []),
+          ...(cleanSheetAgainst > 0.42 ? ["Opponent clean-sheet rate is too high"] : [])
+        ],
+        reasons: [
+          `${name} scoring rate is matched against the opponent conceding rate`,
+          `Resulting goal support is ${percentText(support)}`
+        ],
+        evidence: { support, failedToScoreRate: failed, opponentCleanSheetRate: cleanSheetAgainst }
+      }),
+      makeMarket({
+        key: `${side}-over-15`,
+        family: "Team Goals",
+        market: "Team Goals",
+        selection: `${name} Over 1.5`,
+        score: over15,
+        threshold: MARKET_THRESHOLDS.teamOver15,
+        risk: precisionPenalty,
+        blockers: [
+          ...(support < 0.63 ? ["Basic scoring route is not secure enough"] : []),
+          ...(over15 < goals.scores[`${side}Under15`] + 0.02 ? ["Team Under 1.5 is equally or more plausible"] : [])
+        ],
+        reasons: [
+          "Team 2+ scoring and opponent 2+ conceding rates agree",
+          `Two-goal team score is ${percentText(over15)}`
+        ],
+        evidence: { support, over15 }
+      }),
+      makeMarket({
+        key: `${side}-under-15`,
+        family: "Team Goals",
+        market: "Team Goals",
+        selection: `${name} Under 1.5`,
+        score: under15,
+        threshold: MARKET_THRESHOLDS.teamUnder15,
+        risk: generalPenalty,
+        blockers: [
+          ...(over15 > under15 + 0.08 ? ["Team Over 1.5 evidence is materially stronger"] : [])
+        ],
+        reasons: [
+          "Team 2+ scoring support is weak relative to the opponent defence",
+          `Under 1.5 team score is ${percentText(under15)}`
+        ],
+        evidence: { under15, over15 }
+      }),
+      makeMarket({
+        key: `${side}-clean-sheet`,
+        family: "Clean Sheet",
+        market: "Clean Sheet",
+        selection: `${name} Clean Sheet — Yes`,
+        score: cleanSheet,
+        threshold: MARKET_THRESHOLDS.cleanSheet,
+        risk: precisionPenalty,
+        blockers: [
+          ...(opponentGoalSupport > 0.62 ? ["Opponent retains credible scoring support"] : []),
+          ...(goals.metrics.forcedGgMass > 0.2 ? ["Comeback/equalising transitions create BTTS risk"] : [])
+        ],
+        reasons: [
+          "Selected team clean-sheet rate matches opponent failed-to-score rate",
+          `Clean-sheet score is ${percentText(cleanSheet)}`
+        ],
+        evidence: { cleanSheet, opponentGoalSupport }
+      })
+    );
+  }
+
+  candidates.push(
+    makeMarket({
+      key: "first-half-over-05",
+      family: "Half Goals",
+      market: "First-Half Goals",
+      selection: "First Half Over 0.5",
+      score: goals.scores.firstHalfOver05,
+      threshold: MARKET_THRESHOLDS.firstHalfOver05,
+      risk: precisionPenalty,
+      blockers: [
+        ...(goals.homeGoals.firstHalfScoringRate < 0.35 && goals.awayGoals.firstHalfScoringRate < 0.35
+          ? ["Both first-half scoring rates are weak"]
+          : [])
+      ],
+      reasons: [
+        "At least one team has a repeatable first-half scoring route",
+        `First-half goal score is ${percentText(goals.scores.firstHalfOver05)}`
+      ],
+      evidence: {
+        homeFirstHalfScoring: goals.homeGoals.firstHalfScoringRate,
+        awayFirstHalfScoring: goals.awayGoals.firstHalfScoringRate
+      }
     }),
     makeMarket({
-      key: "away-over-05",
-      market: "Team Goals",
-      selection: `${input.away.name} Over 0.5`,
-      score: goals.scores.awayOver05,
-      threshold: MARKET_THRESHOLDS.teamOver05,
-      risk: dataPenalty,
-      reasons: ["Away scoring rate matches home conceding rate"]
-    }),
-    makeMarket({
-      key: "favourite-over-15",
-      market: "Team Goals",
-      selection: `${goals.favouriteSide === "home" ? input.home.name : input.away.name} Over 1.5`,
-      score: goals.scores.favouriteOver15,
-      threshold: MARKET_THRESHOLDS.teamOver15,
-      risk: dataPenalty,
-      blockers: goals.metrics.dominantRoute < 0.42 ? ["Favourite does not control enough winning transition mass"] : [],
-      reasons: ["Favourite 2+ scoring and opponent 2+ conceding thresholds agree"]
+      key: "second-half-over-05",
+      family: "Half Goals",
+      market: "Second-Half Goals",
+      selection: "Second Half Over 0.5",
+      score: goals.scores.secondHalfOver05,
+      threshold: MARKET_THRESHOLDS.secondHalfOver05,
+      risk: generalPenalty,
+      blockers: [
+        ...(goals.homeGoals.secondHalfScoringRate < 0.42 && goals.awayGoals.secondHalfScoringRate < 0.42
+          ? ["Both second-half scoring rates are weak"]
+          : [])
+      ],
+      reasons: [
+        "Second-half scoring rates agree with comeback and lead-change routes",
+        `Second-half goal score is ${percentText(goals.scores.secondHalfOver05)}`
+      ],
+      evidence: {
+        homeSecondHalfScoring: goals.homeGoals.secondHalfScoringRate,
+        awaySecondHalfScoring: goals.awayGoals.secondHalfScoringRate
+      }
     })
   );
 
   return candidates;
 }
 
-
-function rawProfileRate(profile = {}, transition) {
-  const matches = profileMatches(profile);
-  return matches ? clamp((Number(profile[transition]) || 0) / matches) : 0;
-}
-
-function venuePatternContext(input, leagueBaseline) {
-  const homeRaw = input.home.htft?.venue || {};
-  const awayRaw = input.away.htft?.venue || {};
-  const home = smoothedProfile(homeRaw, leagueBaseline, 3);
-  const away = smoothedProfile(awayRaw, leagueBaseline, 3);
-  const matrix = buildTransitionMatrix(home, away);
-  const direct = directProbabilities(matrix);
-
-  const indicators = TRANSITIONS.map((transition) => ({
-    transition,
-    code: HTFT_CODE[transition],
-    opposite: OPPOSITE[transition],
-    homeCount: Number(homeRaw[transition]) || 0,
-    homeMatches: home.matches,
-    homeRate: round(rawProfileRate(homeRaw, transition)),
-    awayOppositeCount: Number(awayRaw[OPPOSITE[transition]]) || 0,
-    awayMatches: away.matches,
-    awayOppositeRate: round(rawProfileRate(awayRaw, OPPOSITE[transition])),
-    compatibility: round(matrix.normalized[transition])
-  })).sort((a, b) => b.compatibility - a.compatibility);
-
-  const ftRows = Object.entries(direct.ft).sort((a, b) => b[1] - a[1]);
-  const htRows = Object.entries(direct.ht).sort((a, b) => b[1] - a[1]);
-  const top = indicators[0];
-  const second = indicators[1];
-
-  const stateName = {
-    home: input.home.name,
-    draw: "Draw",
-    away: input.away.name
-  };
-
-  const reasons = [];
-  if (top) {
-    reasons.push(
-      `${top.code} is the strongest venue-compatible route: ` +
-      `${input.home.name} ${top.transition} ${round(top.homeRate * 100, 1)}% ` +
-      `against ${input.away.name} ${top.opposite} ${round(top.awayOppositeRate * 100, 1)}%.`
-    );
-  }
-  if (second) {
-    reasons.push(
-      `${second.code} is the next venue route at ${round(second.compatibility * 100, 1)}% compatibility.`
-    );
-  }
-  reasons.push(
-    `${stateName[htRows[0][0]]} leads the venue half-time direction; ` +
-    `${stateName[ftRows[0][0]]} leads the venue full-time direction.`
-  );
-
-  return {
-    home,
-    away,
-    matrix,
-    direct,
-    indicators,
-    topTransitions: indicators.slice(0, 3),
-    ftRows,
-    htRows,
-    ftGap: ftRows[0][1] - ftRows[1][1],
-    htGap: htRows[0][1] - htRows[1][1],
-    reasons,
-    samples: {
-      homeVenue: home.matches,
-      awayVenue: away.matches
-    }
-  };
-}
-
-function marketVenueAlignment(market, venue, input) {
-  const topExact = venue.topTransitions[0]?.code;
-  const homeName = input.home.name;
-  const awayName = input.away.name;
-  let evidence = 0.5;
-
-  if (market.key === "home-win") evidence = venue.direct.ft.home;
-  else if (market.key === "away-win") evidence = venue.direct.ft.away;
-  else if (market.key === "home-dnb") evidence = venue.direct.dnb.home;
-  else if (market.key === "away-dnb") evidence = venue.direct.dnb.away;
-  else if (market.key === "home-1x") evidence = venue.direct.doubleChance.homeOrDraw;
-  else if (market.key === "away-x2") evidence = venue.direct.doubleChance.awayOrDraw;
-  else if (market.key === "no-draw") evidence = venue.direct.doubleChance.noDraw;
-  else if (market.key === "ht-home") evidence = venue.direct.ht.home;
-  else if (market.key === "ht-draw") evidence = venue.direct.ht.draw;
-  else if (market.key === "ht-away") evidence = venue.direct.ht.away;
-  else if (market.key === "ht-home-or-draw") evidence = venue.direct.halfTimeDoubleChance.homeOrDraw;
-  else if (market.key === "ht-away-or-draw") evidence = venue.direct.halfTimeDoubleChance.awayOrDraw;
-  else if (market.key === "exact-htft") {
-    evidence = venue.topTransitions.find((row) => row.code === market.selection)?.compatibility || 0;
-  } else if (market.key === "home-over-05" || market.selection?.startsWith(homeName)) {
-    evidence = Math.max(venue.direct.ft.home, 0.5);
-  } else if (market.key === "away-over-05" || market.selection?.startsWith(awayName)) {
-    evidence = Math.max(venue.direct.ft.away, 0.5);
-  }
-
-  const centered = (evidence - 0.5) * 0.14;
-  return clamp(centered, -0.055, 0.075);
-}
-
-function marketFamily(market) {
-  if (market.market === "Total Goals") return "Goals";
-  if (market.market === "Team Goals") return "Team Goals";
-  if (market.market === "Both Teams to Score") return "BTTS";
-  if (market.market === "Full-Time Result") return "Match Result";
-  if (market.market === "Draw No Bet") return "Result Protection";
-  if (market.market === "Double Chance") return "Result Protection";
-  if (market.market === "Half-Time Double Chance") return "Half-Time Protection";
-  if (market.market === "Half-Time Result") return "Half-Time";
-  if (market.market === "HT/FT") return "Exact HT/FT";
-  if (["Win Either Half", "Draw Either Half"].includes(market.market)) return "Half Result";
-  if (["First-Half Goals", "Second-Half Goals"].includes(market.market)) return "Half Goals";
-  return market.market;
-}
-
-function isProtectionMarket(market) {
-  return ["Double Chance", "Half-Time Double Chance"].includes(market.market);
-}
-
-function isExactMarket(market) {
-  return ["HT/FT", "Half-Time Result"].includes(market.market);
-}
-
-function rankMarkets(candidates, venue, input) {
-  // Raw probabilities cannot be compared directly across unlike markets:
-  // a union such as 1X naturally starts higher than Over 2.5 or a straight win.
-  // Every market is therefore measured against its own qualification threshold.
-  const familyBias = {
-    "Total Goals": 0.065,
-    "Team Goals": 0.055,
-    "Both Teams to Score": 0.05,
-    "Full-Time Result": 0.04,
-    "Draw No Bet": 0.02,
-    "Double Chance": -0.075,
-    "Half-Time Double Chance": -0.09,
-    "Half-Time Result": -0.025,
-    "Win Either Half": 0.085,
-    "Draw Either Half": 0.075,
-    "First-Half Goals": 0.07,
-    "Second-Half Goals": 0.06,
-    "HT/FT": -0.11
+function rankMarkets(candidates) {
+  const familyPriority = {
+    "Double Chance": 0.04,
+    "Team Goals": 0.03,
+    "Total Goals": 0.028,
+    "Draw No Bet": 0.025,
+    "Win Either Half": 0.022,
+    "Total Goals Range": 0.018,
+    "Both Teams to Score": 0.014,
+    "Clean Sheet": 0.01,
+    "Half Goals": 0.008,
+    "Half-Time Double Chance": 0.006,
+    "Full-Time Result": 0,
+    "Half-Time Result": -0.02,
+    "HT/FT": -0.075
   };
 
   return candidates
     .map((market) => {
-      const supportRatio = market.safetyAdjustedScore / Math.max(0.01, market.threshold);
-      const thresholdEdge = market.safetyAdjustedScore - market.threshold;
-      const blockerPenalty = Math.min(0.24, market.blockers.length * 0.075);
-      const qualifiedBonus = market.qualified ? 0.085 : 0;
-      const venueBonus = marketVenueAlignment(market, venue, input);
-      const comparisonScore =
-        supportRatio +
-        (familyBias[market.market] || 0) +
-        qualifiedBonus +
-        venueBonus -
-        blockerPenalty;
+      const priority = familyPriority[market.market] || 0;
+      const fallbackBonus = market.fallbackEligible && FALLBACK_FAMILIES.has(market.market) ? 0.012 : 0;
+      const directionalRankScore = clamp(
+        market.safetyAdjustedScore + priority + fallbackBonus - market.blockerPenalty
+      );
 
       return {
         ...market,
-        family: marketFamily(market),
-        supportRatio: round(supportRatio),
-        thresholdEdge: round(thresholdEdge),
-        venueBonus: round(venueBonus),
-        comparisonScore: round(comparisonScore),
-        rankScore: round(comparisonScore),
-        directionalRankScore: round(comparisonScore)
+        rankScore: round(market.safetyAdjustedScore + priority),
+        directionalRankScore: round(directionalRankScore)
       };
     })
     .sort((a, b) => {
       if (a.qualified !== b.qualified) return a.qualified ? -1 : 1;
-      return b.comparisonScore - a.comparisonScore;
+      return b.directionalRankScore - a.directionalRankScore;
     });
 }
 
-
-function readDecimalOdds(input, side, line) {
-  const sources = [input?.odds, input?.marketOdds, input?.bookmakerOdds].filter(Boolean);
-  const directKeys = side === 'home'
-    ? (line === '05' ? ['homeOver05','home_team_over_05'] : ['homeOver15','home_team_over_15'])
-    : (line === '05' ? ['awayOver05','away_team_over_05'] : ['awayOver15','away_team_over_15']);
-  for (const source of sources) {
-    for (const key of directKeys) {
-      const value = Number(source?.[key]);
-      if (Number.isFinite(value) && value > 1) return value;
-    }
-    const nested = Number(source?.teamGoals?.[side]?.[line === '05' ? 'over05' : 'over15']);
-    if (Number.isFinite(nested) && nested > 1) return nested;
-  }
-  return null;
-}
-
-function applyPapaCommonSensePolicy({ selected, rankedMarkets, input, matrix, goals, commonSense }) {
-  const byKey = new Map(rankedMarkets.map((market) => [market.key, market]));
-  const p = matrix.normalized;
-  const topTransition = Object.entries(p).sort((a,b)=>b[1]-a[1])[0]?.[0] || null;
-  const reasons = [];
-  const excluded = new Set();
-  const qualified = (key) => byKey.get(key)?.qualified ? byKey.get(key) : null;
-  const switchTo = (key, reason) => {
-    const next = qualified(key);
-    if (!next) return false;
-    selected = next;
-    reasons.push(reason);
-    return true;
-  };
-
-  const side = selected?.key === 'home-over-05' ? 'home' : selected?.key === 'away-over-05' ? 'away' : null;
-  if (side) {
-    const price = readDecimalOdds(input, side, '05');
-    if (price !== null && price < 1.20) {
-      excluded.add(selected.key);
-      const upgrade = side === 'home' ? 'home-over-15' : 'away-over-15';
-      if (switchTo(upgrade, `Actual team Over 0.5 odds were ${price.toFixed(2)}, below 1.20, so Papa upgraded to team Over 1.5 after the 2+ route passed.`)) {
-        // upgraded
-      } else {
-        reasons.push(`Actual team Over 0.5 odds were ${price.toFixed(2)}, below 1.20. Team Over 1.5 failed, so the low-value line was removed.`);
-      }
-    }
-  }
-
-  if (topTransition === 'WW') {
-    switchTo('home-win-either-half','The strongest exact route was 1/1, so Papa translated it to home team to win either half.');
-  } else if (topTransition === 'LL') {
-    switchTo('away-win-either-half','The strongest exact route was 2/2, so Papa translated it to away team to win either half.');
-  } else if (topTransition === 'WL' || topTransition === 'LW') {
-    if (commonSense.twoSidedLeaky && qualified('gg-yes')) {
-      switchTo('gg-yes','The strongest route was 1/2 or 2/1 and both defences passed the leaky two-sided test, so Papa chose GG.');
-    } else {
-      switchTo('over-15','The strongest route was 1/2 or 2/1, but the two-sided GG leak test failed; Over 1.5 is the safer expression.');
-    }
-  } else if (['DD','DW','DL','WD','LD'].includes(topTransition)) {
-    switchTo('draw-either-half','The strongest HT/FT family contains a drawn half, so Papa converted it to Draw in Either Half.');
-  }
-
-  const fh15=qualified('first-half-over-15');
-  if (fh15 && commonSense.bothLoveToLeadAtHalf && fh15.comparisonScore >= selected.comparisonScore - 0.05) {
-    selected=fh15;
-    reasons.push('Both teams regularly attack for a half-time lead and allow enough early pressure, so First Half Over 1.5 becomes the main candidate.');
-  }
-
-  if (selected.key === 'home-win' && commonSense.homeWinResilience < 0.05) {
-    excluded.add('home-win');
-    switchTo('home-win-either-half','The straight home win lacked comeback-versus-lead-surrender confirmation, so Papa reduced it to home team to win either half.') ||
-      switchTo('home-dnb','The straight home win lacked resilience confirmation, so Papa protected it with Draw No Bet.');
-  }
-  if (selected.key === 'away-win' && commonSense.awayWinResilience < 0.05) {
-    excluded.add('away-win');
-    switchTo('away-win-either-half','The straight away win lacked comeback-versus-lead-surrender confirmation, so Papa reduced it to away team to win either half.') ||
-      switchTo('away-dnb','The straight away win lacked resilience confirmation, so Papa protected it with Draw No Bet.');
-  }
-
-  if (selected.key === 'exact-htft') {
-    excluded.add('exact-htft');
-    const fallback=rankedMarkets.find(m=>m.qualified && !excluded.has(m.key) && !isExactMarket(m));
-    if (fallback) {
-      selected=fallback;
-      reasons.push("Papa's main pick does not publish raw exact HT/FT when a clearer practical market passes.");
-    }
-  }
-
-  if (excluded.has(selected.key)) {
-    const fallback=rankedMarkets.find(m=>m.qualified && !excluded.has(m.key) && !isExactMarket(m));
-    if (fallback) selected=fallback;
-  }
-
-  return {
-    ...selected,
-    reasons:[...(selected.reasons||[]),...reasons],
-    marketPolicy:{
-      version:'papa-common-sense-v1.0',
-      topTransition,
-      actualOddsUsed: readDecimalOdds(input,'home','05') !== null || readDecimalOdds(input,'away','05') !== null,
-      reasons,
-      rulesApplied:{
-        lowPriceTeamGoalUpgrade:true,
-        controlRouteToWinEitherHalf:true,
-        reversalRouteToGgOrOver15:true,
-        drawFamilyToDrawEitherHalf:true,
-        straightWinResilienceGate:true,
-        earlyLeadPressureToFirstHalfOver15:true
-      }
-    }
-  };
-}
-
-function choosePrimaryMarket(rankedMarkets, context) {
-  const qualifiedMarkets = rankedMarkets.filter((market) => market.qualified);
-  const fallback = rankedMarkets.filter((market) => !isExactMarket(market));
-  const pool = qualifiedMarkets.length ? qualifiedMarkets : fallback;
-  let selected = pool[0] || rankedMarkets[0];
-  if (selected && isProtectionMarket(selected)) {
-    const informative = pool.find((market) =>
-      !isProtectionMarket(market) &&
-      !isExactMarket(market) &&
-      market.comparisonScore >= selected.comparisonScore - 0.055 &&
-      market.safetyAdjustedScore >= 0.48
-    );
-    if (informative) selected = informative;
-  }
-  return applyPapaCommonSensePolicy({selected,rankedMarkets,...context});
-}
-
-
-function copyEnginePick(market, engineKey, engineName, {
-  reasons = [],
-  cautions = [],
-  description = "",
-  explanationParagraph = "",
-  explanationEvidence = null,
-  venueRoute = null
-} = {}) {
-  return {
-    engineKey,
-    engineName,
-    key: market.key,
-    family: market.family,
-    market: market.market,
-    selection: market.selection,
-    score: market.safetyAdjustedScore,
-    confidence: round(market.safetyAdjustedScore * 100, 2),
-    modelScore: market.modelScore,
-    threshold: market.threshold,
-    comparisonScore: market.comparisonScore,
-    qualified: market.qualified,
-    mode: market.qualified ? "qualified" : "directional",
-    tier: market.tier,
-    reasons: [...reasons, ...(market.reasons || [])],
-    cautions: [...cautions, ...(market.blockers || [])],
-    description,
-    explanationParagraph,
-    explanationEvidence,
-    venueRoute,
-    marketPolicy: market.marketPolicy || null
-  };
-}
-
-function chooseAggressiveMarket(rankedMarkets, primary) {
-  const aggressiveBias = {
-    "HT/FT": 0.22,
-    "Full-Time Result": 0.16,
-    "Team Goals": 0.13,
-    "Total Goals": 0.11,
-    "Both Teams to Score": 0.1,
-    "Half-Time Result": 0.08,
-    "Draw No Bet": 0.01,
-    "Double Chance": -0.16,
-    "Half-Time Double Chance": -0.18
-  };
-
-  const ranked = rankedMarkets
-    .filter((market) => !isProtectionMarket(market))
-    .map((market) => ({
-      market,
-      score:
-        market.comparisonScore +
-        (aggressiveBias[market.market] || 0) -
-        Math.min(0.12, market.blockers.length * 0.035)
-    }))
-    .sort((a, b) => b.score - a.score);
-
-  return (
-    ranked.find(({ market }) => market.key !== primary.key)?.market ||
-    ranked[0]?.market ||
-    primary
-  );
-}
-
-function selectionSide(market, input) {
-  const value = `${market.key} ${market.selection}`.toLowerCase();
-  if (
-    value.includes("home-win") ||
-    value.includes("home-dnb") ||
-    value.includes("home-1x") ||
-    value.includes(input.home.name.toLowerCase())
-  ) return "home";
-  if (
-    value.includes("away-win") ||
-    value.includes("away-dnb") ||
-    value.includes("away-x2") ||
-    value.includes(input.away.name.toLowerCase())
-  ) return "away";
-  return null;
-}
-
-function chooseSaferMarket(rankedMarkets, primary, input, venue, quality) {
-  const byKey = new Map(rankedMarkets.map((market) => [market.key, market]));
-  const side = selectionSide(primary, input);
-  const priorities = [];
-
-  if (side === "home") {
-    priorities.push("home-dnb", "home-over-05", "over-15", "under-35", "home-1x");
-  } else if (side === "away") {
-    priorities.push("away-dnb", "away-over-05", "over-15", "under-35", "away-x2");
-  } else if (primary.key === "over-25" || primary.key === "gg-yes") {
-    priorities.push("over-15", "home-over-05", "away-over-05", "under-35");
-  } else if (primary.key === "favourite-over-15") {
-    priorities.push(
-      primary.selection.startsWith(input.home.name) ? "home-over-05" : "away-over-05",
-      "over-15",
-      "under-35"
-    );
-  } else if (primary.key === "under-35") {
-    priorities.push("under-35", "ht-draw", "home-1x", "away-x2");
-  } else if (primary.key === "gg-no") {
-    priorities.push("under-35", "home-over-05", "away-over-05");
-  } else {
-    priorities.push("over-15", "under-35", "home-1x", "away-x2", "no-draw");
-  }
-
-  const protectionAllowed = (market) => {
-    if (!market || market.market !== "Double Chance") return true;
-    const sideEdge = side === "home"
-      ? venue.direct.ft.home - venue.direct.ft.away
-      : side === "away"
-        ? venue.direct.ft.away - venue.direct.ft.home
-        : 0;
-    return (
-      market.qualified &&
-      quality.score >= 0.52 &&
-      sideEdge >= 0.07
-    );
-  };
-
-  const directChoice = priorities
-    .map((key) => byKey.get(key))
-    .find(
-      (market) =>
-        market &&
-        market.key !== primary.key &&
-        market.safetyAdjustedScore >= 0.45 &&
-        protectionAllowed(market)
-    );
-
-  if (directChoice) return directChoice;
-
-  return (
-    rankedMarkets
-      .filter((market) => market.key !== primary.key && !isExactMarket(market))
-      .map((market) => ({
-        market,
-        safety:
-          market.comparisonScore +
-          ({
-            "Draw No Bet": 0.12,
-            "Double Chance": market.qualified && quality.score >= 0.52 ? -0.02 : -0.22,
-            "Total Goals": market.key === "over-15" || market.key === "under-35" ? 0.12 : 0,
-            "Team Goals": market.key.endsWith("over-05") ? 0.1 : 0
-          }[market.market] || 0)
-      }))
-      .sort((a, b) => b.safety - a.safety)[0]?.market ||
-    primary
-  );
-}
-
-function chooseVenuePatternMarket(rankedMarkets, venue, input, goals) {
-  const byKey = new Map(rankedMarkets.map((market) => [market.key, market]));
-  const [ftState, ftProbability] = venue.ftRows[0];
-  const [htState, htProbability] = venue.htRows[0];
-  const topExact = venue.topTransitions[0];
-  const secondExact = venue.topTransitions[1];
-
-  let key;
-  if (ftState === "home" && venue.ftGap >= 0.065) {
-    key = ftProbability >= 0.5 ? "home-win" : "home-dnb";
-  } else if (ftState === "away" && venue.ftGap >= 0.065) {
-    key = ftProbability >= 0.5 ? "away-win" : "away-dnb";
-  } else if (htState === "draw" && htProbability >= 0.42) {
-    key = "ht-draw";
-  } else if (venue.direct.doubleChance.noDraw >= 0.7) {
-    key = "no-draw";
-  } else if (goals.scores.under35 >= goals.scores.over15) {
-    key = "under-35";
-  } else {
-    key = "over-15";
-  }
-
-  const market = byKey.get(key) || byKey.get("exact-htft") || rankedMarkets[0];
-  const sameFtStory =
-    topExact &&
-    secondExact &&
-    topExact.code.split("/")[1] === secondExact.code.split("/")[1];
-
-  const routeExplanation = sameFtStory
-    ? `${topExact.code} and ${secondExact.code} finish in the same full-time state, so ${market.selection} covers both leading venue routes.`
-    : `${topExact?.code || "The leading route"} is the strongest direct venue story.`;
-
-  return {
-    market,
-    reasons: [
-      ...venue.reasons,
-      routeExplanation
-    ],
-    route: {
-      top: topExact || null,
-      second: secondExact || null,
-      likelyHalfTime: htState,
-      likelyFullTime: ftState,
-      homeVenueMatches: venue.samples.homeVenue,
-      awayVenueMatches: venue.samples.awayVenue
-    }
-  };
-}
-
-
-function wholeNumber(value) {
-  return Math.max(0, Math.round(Number(value) || 0));
-}
-
-function simpleSample(count, matches, label) {
-  const rawCount = Math.max(0, Number(count) || 0);
-  const rawMatches = Math.max(0, Number(matches) || 0);
-
-  if (!rawMatches) {
-    return {
-      count: 0,
-      total: 0,
-      percent: 0,
-      approximate: false,
-      text: `no confirmed ${label} sample`
-    };
-  }
-
-  const total = Math.max(1, wholeNumber(rawMatches));
-  const roundedCount = Math.min(total, wholeNumber(rawCount));
-  const percent = Math.round(clamp(rawCount / rawMatches) * 100);
-  const approximate =
-    Math.abs(rawCount - roundedCount) > 0.05 ||
-    Math.abs(rawMatches - total) > 0.05;
-
-  return {
-    count: roundedCount,
-    total,
-    percent,
-    approximate,
-    text:
-      `${approximate ? "about " : ""}${roundedCount} of ${total} ${label} ` +
-      `(${percent}%)`
-  };
-}
-
-function transitionMeaning(code, input) {
-  const [half, full] = String(code || "").split("/");
-  const halfText = {
-    "1": `${input.home.name} lead at half-time`,
-    "X": "the teams are level at half-time",
-    "2": `${input.away.name} lead at half-time`
-  }[half] || "the half-time direction is unclear";
-
-  const fullText = {
-    "1": `${input.home.name} win at full-time`,
-    "X": "the match ends level",
-    "2": `${input.away.name} win at full-time`
-  }[full] || "the full-time direction is unclear";
-
-  return `${halfText}, then ${fullText}`;
-}
-
-function practicalMarketReason(market, input, venue, goals) {
-  const top = venue.topTransitions[0];
-  const second = venue.topTransitions[1];
-  const topFt = top?.code?.split("/")[1];
-  const secondFt = second?.code?.split("/")[1];
-  const resultRoutesConflict = Boolean(topFt && secondFt) && topFt !== secondFt;
-
-  if (market.key === "home-win") {
-    return `${input.home.name} have the clearest full-time edge. Papa keeps the straight home win instead of weakening it to Double Chance.`;
-  }
-  if (market.key === "away-win") {
-    return `${input.away.name} have the clearest full-time edge. Papa keeps the straight away win instead of weakening it to Double Chance.`;
-  }
-  if (market.key === "home-dnb") {
-    return `${input.home.name} have the stronger result direction, but the draw is still possible. Draw No Bet protects the stake if the match finishes level.`;
-  }
-  if (market.key === "away-dnb") {
-    return `${input.away.name} have the stronger result direction, but the draw is still possible. Draw No Bet protects the stake if the match finishes level.`;
-  }
-  if (market.key === "home-1x") {
-    return `${input.home.name} have the stronger side of the match, but the straight win is not strong enough. The 1X market keeps the draw covered.`;
-  }
-  if (market.key === "away-x2") {
-    return `${input.away.name} have the stronger side of the match, but the straight win is not strong enough. The X2 market keeps the draw covered.`;
-  }
-  if (market.key === "no-draw") {
-    return `The win routes are stronger than the draw routes, so Papa chooses Either Team to Win (12).`;
-  }
-  if (market.key === "exact-htft") {
-    return `${top?.code || market.selection} is the strongest exact half-time/full-time pattern. This is the sharper, higher-risk route.`;
-  }
-  if (market.key === "ht-draw") {
-    return `A draw is the strongest first-half direction, so Papa stops at Draw at Half-Time instead of forcing the final result.`;
-  }
-  if (market.key === "ht-home") {
-    return `${input.home.name} have the stronger first-half route, so Papa backs them to lead at half-time.`;
-  }
-  if (market.key === "ht-away") {
-    return `${input.away.name} have the stronger first-half route, so Papa backs them to lead at half-time.`;
-  }
-  if (market.key === "under-35") {
-    return `The match does not show enough support for four or more goals. Under 3.5 is the clearer goal ceiling.`;
-  }
-  if (market.key === "over-15") {
-    return `The scoring evidence supports at least two match goals, but not enough to force Over 2.5. Papa uses the lower Over 1.5 line.`;
-  }
-  if (market.key === "over-25") {
-    return `The scoring and transition evidence are strong enough to support three or more match goals, so Papa chooses Over 2.5.`;
-  }
-  if (market.key === "gg-yes") {
-    return `Both teams have a credible scoring route, so Papa expects each side to score at least once.`;
-  }
-  if (market.key === "gg-no") {
-    return `One team does not have a dependable scoring route, so Papa does not expect both teams to score.`;
-  }
-  if (market.key === "home-over-05") {
-    return resultRoutesConflict
-      ? `The result patterns point in different directions, but ${input.home.name} have the clearer scoring route. Papa avoids forcing a winner and backs them to score at least once.`
-      : `${input.home.name} have the more dependable scoring route, so Papa backs them to score at least once.`;
-  }
-  if (market.key === "away-over-05") {
-    return resultRoutesConflict
-      ? `The result patterns point in different directions, but ${input.away.name} have the clearer scoring route. Papa avoids forcing a winner and backs them to score at least once.`
-      : `${input.away.name} have the more dependable scoring route, so Papa backs them to score at least once.`;
-  }
-  if (market.key === "favourite-over-15") {
-    return `${market.selection} is supported by the stronger attacking route and the opponent's conceding record, so Papa expects two team goals.`;
-  }
-
-  return `${market.selection} is the clearest practical market after the HT/FT, venue, scoring and risk checks.`;
-}
-
-function buildExplanationEvidence({ market, input, venue, goals }) {
-  const top = venue.topTransitions[0] || null;
-  const second = venue.topTransitions[1] || null;
-  const homeSample = top
-    ? simpleSample(top.homeCount, top.homeMatches, "home matches")
-    : simpleSample(0, 0, "home matches");
-  const awaySample = top
-    ? simpleSample(top.awayOppositeCount, top.awayMatches, "away matches")
-    : simpleSample(0, 0, "away matches");
-
-  return {
-    strongestRoute: top?.code || null,
-    strongestRouteMeaning: top ? transitionMeaning(top.code, input) : null,
-    homeSupport: homeSample,
-    awaySupport: awaySample,
-    secondRoute: second?.code || null,
-    secondRouteMeaning: second ? transitionMeaning(second.code, input) : null,
-    decision: practicalMarketReason(market, input, venue, goals)
-  };
-}
-
-function buildPotosiStyleExplanation({ market, input, venue, goals, engineName }) {
-  const evidence = buildExplanationEvidence({ market, input, venue, goals });
-
-  if (!evidence.strongestRoute) {
-    return `${engineName}'s pick is ${market.selection}. The market ranked first after the individual HT/FT, venue, recent-form, scoring and risk checks.`;
-  }
-
-  const secondSentence = evidence.secondRoute
-    ? ` The next supporting route is ${evidence.secondRoute}: ${evidence.secondRouteMeaning}.`
-    : "";
-
-  return (
-    `${engineName}'s pick is ${market.selection}. ` +
-    `The strongest exact transition is ${evidence.strongestRoute}: ${evidence.strongestRouteMeaning}. ` +
-    `${input.home.name}'s home record supports it in ${evidence.homeSupport.text}. ` +
-    `${input.away.name}'s away record supports the matching opposite pattern in ${evidence.awaySupport.text}.` +
-    `${secondSentence} ` +
-    evidence.decision
-  );
-}
-
-
-function buildEngineSuite({
-  rankedMarkets,
-  primary,
-  venue,
-  input,
-  goals,
-  quality
-}) {
-  const aggressive = chooseAggressiveMarket(rankedMarkets, primary);
-  const safer = chooseSaferMarket(
-    rankedMarkets,
-    primary,
-    input,
-    venue,
-    quality
-  );
-  const venueSelection = chooseVenuePatternMarket(rankedMarkets, venue, input, goals);
-
-  const primaryExplanation = buildPotosiStyleExplanation({
-    market: primary,
-    input,
-    venue,
-    goals,
-    engineName: "Papa"
-  });
-  const aggressiveExplanation = buildPotosiStyleExplanation({
-    market: aggressive,
-    input,
-    venue,
-    goals,
-    engineName: "Aggressive"
-  });
-  const saferExplanation = buildPotosiStyleExplanation({
-    market: safer,
-    input,
-    venue,
-    goals,
-    engineName: "Safer"
-  });
-  const venueExplanation = buildPotosiStyleExplanation({
-    market: venueSelection.market,
-    input,
-    venue,
-    goals,
-    engineName: "Venue Pattern"
-  });
-
-  const primaryEvidence = buildExplanationEvidence({ market: primary, input, venue, goals });
-  const aggressiveEvidence = buildExplanationEvidence({ market: aggressive, input, venue, goals });
-  const saferEvidence = buildExplanationEvidence({ market: safer, input, venue, goals });
-  const venueEvidence = buildExplanationEvidence({
-    market: venueSelection.market,
-    input,
-    venue,
-    goals
-  });
-
-  const primaryVenueAligned = marketVenueAlignment(primary, venue, input) > 0.01;
-  const audit = input.profileAudit || {};
-  const sampleReason = audit.home && audit.away
-    ? `Individual history used: ${audit.home.teamName} overall ${audit.home.evidence.overall}, venue ${audit.home.evidence.venue}; ` +
-      `${audit.away.teamName} overall ${audit.away.evidence.overall}, venue ${audit.away.evidence.venue}.`
-    : "Individual team history was used before market ranking.";
-
-  const primaryReasons = primaryVenueAligned
-    ? [
-        sampleReason,
-        "Venue HT/FT direction agrees with the overall PapaSense market direction.",
-        ...venue.reasons.slice(0, 2)
-      ]
-    : [
-        sampleReason,
-        "Overall, recent, venue and goal evidence were compared before the final market was chosen."
-      ];
-
-  return {
-    primary: copyEnginePick(primary, "primary", "Papa's Pick", {
-      reasons: primaryReasons,
-      cautions: !primary.qualified
-        ? ["This is the default direction, but it remains below the strong-pick threshold."]
-        : [],
-      description:
-        "Papa translates HT/FT behaviour into the strongest practical market using value, comeback, lead-surrender, defensive leakiness and early-goal logic.",
-      explanationParagraph: primaryExplanation,
-      explanationEvidence: primaryEvidence
-    }),
-    aggressive: copyEnginePick(aggressive, "aggressive", "Aggressive", {
-      reasons: [
-        "Selects the most specific credible route after removing broad protection markets.",
-        "Designed for users who accept higher variance for a sharper outcome."
-      ],
-      cautions: [
-        "Aggressive picks carry more variance and should not be treated as safer than Papa's Pick."
-      ],
-      description:
-        "Higher-specificity route such as exact HT/FT, straight result, O2.5, GG or team O1.5.",
-      explanationParagraph: aggressiveExplanation,
-      explanationEvidence: aggressiveEvidence
-    }),
-    safer: copyEnginePick(safer, "safer", "Safer", {
-      reasons: [
-        "Protects the main match story with a lower line or result cushion.",
-        "Chosen only when it remains aligned with the primary direction."
-      ],
-      cautions: [
-        "Safer means broader coverage, not certainty."
-      ],
-      description:
-        "Lower-risk expression of the same match direction: DNB, Double Chance, O1.5, U3.5 or team O0.5.",
-      explanationParagraph: saferExplanation,
-      explanationEvidence: saferEvidence
-    }),
-    venue: copyEnginePick(venueSelection.market, "venue", "Venue Pattern", {
-      reasons: venueSelection.reasons,
-      cautions: quality.score < 0.52
-        ? ["Venue samples are small, so the venue engine is partly smoothed toward league norms."]
-        : [],
-      description:
-        "Uses the home venue HT/FT profile against the away venue's opposite transitions, Potosi-style.",
-      explanationParagraph: venueExplanation,
-      explanationEvidence: venueEvidence,
-      venueRoute: venueSelection.route
-    })
-  };
-}
-
-function matchStory(input, matrix, direct, goals) {
+function matchStory(input, matrix, direct, structure, goals) {
   const topTransitions = Object.entries(matrix.normalized)
     .map(([transition, probability]) => ({
       transition,
@@ -1688,28 +1387,48 @@ function matchStory(input, matrix, direct, goals) {
       probability: round(probability)
     }))
     .sort((a, b) => b.probability - a.probability)
-    .slice(0, 3);
+    .slice(0, 4);
 
   const htState = Object.entries(direct.ht).sort((a, b) => b[1] - a[1])[0][0];
   const ftState = Object.entries(direct.ft).sort((a, b) => b[1] - a[1])[0][0];
-  const sideName = {
-    home: input.home.name,
-    draw: "Draw",
-    away: input.away.name
-  };
+  const sideName = { home: input.home.name, draw: "Draw", away: input.away.name };
 
   let narrative = `${sideName[htState]} is the leading half-time state, while ${sideName[ftState]} is the strongest full-time direction.`;
-  if (goals.metrics.volatilitySpillover >= 0.3) {
-    narrative += " Comeback and lead-surrender behaviour raises the chance of goals after the first major swing.";
-  } else if (goals.metrics.dominantRoute >= 0.48) {
-    narrative += " One side has a credible control route, so team-goal markets can be stronger than GG.";
+  if (structure.fullReversalMass >= 0.12) {
+    narrative += " Complete comeback routes raise goal and volatility risk.";
+  } else if (structure.leadToDrawMass >= 0.16) {
+    narrative += " Lead-surrender routes keep the draw relevant.";
+  } else if (goals.metrics.favouriteRoute >= 0.48) {
+    narrative += " One side owns a credible control route, so team-goal markets can outrank GG.";
   } else {
-    narrative += " No single transition dominates enough to justify forcing an exact match story.";
+    narrative += " No exact transition is strong enough to replace the safer market families.";
   }
 
-  return { topTransitions, likelyHalfTime: sideName[htState], likelyFullTime: sideName[ftState], narrative };
+  return {
+    topTransitions,
+    likelyHalfTime: sideName[htState],
+    likelyFullTime: sideName[ftState],
+    narrative
+  };
 }
 
+function marketFamilyComparison(rankedMarkets) {
+  const map = new Map();
+  for (const market of rankedMarkets) {
+    if (!map.has(market.family)) map.set(market.family, market);
+  }
+  return [...map.entries()].map(([family, market]) => ({
+    family,
+    market: market.market,
+    selection: market.selection,
+    score: market.safetyAdjustedScore,
+    threshold: market.threshold,
+    qualified: market.qualified,
+    tier: market.tier,
+    reasons: market.reasons,
+    blockers: market.blockers
+  }));
+}
 
 function buildDecisionTrace({
   input,
@@ -1718,20 +1437,19 @@ function buildDecisionTrace({
   rankedMarkets,
   matrix,
   direct,
+  structure,
   goals,
   quality,
   homeProfile,
   awayProfile,
-  story,
-  enginePicks,
-  venue
+  story
 }) {
-  const mode = primary.qualified ? "qualified" : "directional";
   const topAlternatives = rankedMarkets
     .filter((market) => market.key !== primary.key)
-    .slice(0, 5)
+    .slice(0, 6)
     .map((market) => ({
       key: market.key,
+      family: market.family,
       market: market.market,
       selection: market.selection,
       score: market.safetyAdjustedScore,
@@ -1739,30 +1457,22 @@ function buildDecisionTrace({
       qualified: market.qualified,
       tier: market.tier,
       reasons: market.reasons,
-      blockers: market.blockers,
-      comparisonScore: market.comparisonScore,
-      supportRatio: market.supportRatio,
-      thresholdEdge: market.thresholdEdge
+      blockers: market.blockers
     }));
 
+  const topProbability = Math.max(...Object.values(matrix.normalized));
   const allHtftIndicators = TRANSITIONS.map((transition) => {
     const homeRate = homeProfile.probabilities[transition];
     const awayOppositeRate = awayProfile.probabilities[OPPOSITE[transition]];
     const combined = matrix.normalized[transition];
-    const code = HTFT_CODE[transition];
-
     let interpretation = "Secondary transition";
-    if (combined === Math.max(...Object.values(matrix.normalized))) {
-      interpretation = "Strongest compatible HT/FT route";
-    } else if (combined >= 0.14) {
-      interpretation = "Important supporting route";
-    } else if (combined <= 0.04) {
-      interpretation = "Weak route";
-    }
+    if (Math.abs(combined - topProbability) < 0.000001) interpretation = "Strongest compatible HT/FT route";
+    else if (combined >= 0.14) interpretation = "Important supporting route";
+    else if (combined <= 0.04) interpretation = "Weak route";
 
     return {
       transition,
-      code,
+      code: HTFT_CODE[transition],
       homeRate: round(homeRate),
       awayOppositeRate: round(awayOppositeRate),
       combinedProbability: round(combined),
@@ -1770,17 +1480,13 @@ function buildDecisionTrace({
     };
   });
 
-  const confidence = primary.safetyAdjustedScore;
   const thresholdStatus = primary.qualified
-    ? `Passed the ${round(primary.threshold * 100, 1)}% publication threshold.`
+    ? `Passed the ${round(primary.threshold * 100, 1)}% market threshold.`
     : `Best available direction, but below the ${round(primary.threshold * 100, 1)}% strong-pick threshold.`;
 
   const whyChosen = [
     ...primary.reasons,
-    primary.market === "Double Chance"
-      ? "Double Chance remained on top even after its protection-market penalty, so the safer two-outcome route was genuinely strongest."
-      : `The ${primary.market} route beat the protected Double Chance routes after threshold-relative comparison.` ,
-    `Model score: ${round(primary.modelScore * 100, 1)}%; safety-adjusted score: ${round(confidence * 100, 1)}%.`,
+    `Model score: ${round(primary.modelScore * 100, 1)}%; safety-adjusted score: ${round(primary.safetyAdjustedScore * 100, 1)}%.`,
     thresholdStatus,
     `Leading half-time direction: ${story.likelyHalfTime}; leading full-time direction: ${story.likelyFullTime}.`,
     `Home goal support ${round(goals.metrics.homeGoalSupport * 100, 1)}% vs away goal support ${round(goals.metrics.awayGoalSupport * 100, 1)}%.`
@@ -1789,11 +1495,11 @@ function buildDecisionTrace({
   const cautions = [
     ...(primary.blockers || []),
     ...(quality.score < 0.52 ? ["Historical sample is small, so league smoothing has more influence."] : []),
-    ...(!primary.qualified ? ["Treat this as a direction, not a banker or high-confidence pick."] : [])
+    ...(!primary.qualified ? ["Directional only: this is not a banker or high-confidence call."] : [])
   ];
 
   return {
-    mode,
+    mode: primary.qualified ? "qualified" : "directional",
     qualified: primary.qualified,
     headline: primary.qualified
       ? "Papa’s strongest qualified market"
@@ -1803,6 +1509,7 @@ function buildDecisionTrace({
     cautions,
     supportingPick: supporting
       ? {
+          family: supporting.family,
           market: supporting.market,
           selection: supporting.selection,
           score: supporting.safetyAdjustedScore,
@@ -1810,129 +1517,65 @@ function buildDecisionTrace({
           tier: supporting.tier
         }
       : null,
-    enginePicks,
-    venuePatternReview: {
-      reasons: venue.reasons,
-      indicators: venue.indicators,
-      topTransitions: venue.topTransitions,
-      samples: venue.samples,
-      fullTime: Object.fromEntries(
-        Object.entries(venue.direct.ft).map(([key, value]) => [key, round(value)])
-      ),
-      halfTime: Object.fromEntries(
-        Object.entries(venue.direct.ht).map(([key, value]) => [key, round(value)])
-      )
-    },
     alternatives: topAlternatives,
-    marketComparison: rankedMarkets.slice(0, 10).map((market) => ({
-      key: market.key,
-      family: market.family,
-      market: market.market,
-      selection: market.selection,
-      score: market.safetyAdjustedScore,
-      threshold: market.threshold,
-      supportRatio: market.supportRatio,
-      thresholdEdge: market.thresholdEdge,
-      comparisonScore: market.comparisonScore,
-      qualified: market.qualified,
-      selected: market.key === primary.key,
-      reasons: market.reasons,
-      blockers: market.blockers
-    })),
-    selectionMethod:
-      "Markets are compared relative to their own thresholds, then Papa translates the HT/FT story into the most practical market using value, comeback, lead-surrender, defensive-leak and early-goal rules.",
-    marketPolicy: primary.marketPolicy || null,
+    marketComparison: marketFamilyComparison(rankedMarkets),
     allHtftIndicators,
     directReadout: {
       fullTime: Object.fromEntries(Object.entries(direct.ft).map(([key, value]) => [key, round(value)])),
       halfTime: Object.fromEntries(Object.entries(direct.ht).map(([key, value]) => [key, round(value)])),
-      doubleChance: Object.fromEntries(
-        Object.entries(direct.doubleChance).map(([key, value]) => [key, round(value)])
-      ),
-      drawNoBet: Object.fromEntries(Object.entries(direct.dnb).map(([key, value]) => [key, round(value)]))
+      doubleChance: Object.fromEntries(Object.entries(direct.doubleChance).map(([key, value]) => [key, round(value)])),
+      drawNoBet: Object.fromEntries(Object.entries(direct.dnb).map(([key, value]) => [key, round(value)])),
+      winEitherHalf: Object.fromEntries(Object.entries(direct.winEitherHalf).map(([key, value]) => [key, round(value)]))
     },
+    resultStructure: Object.fromEntries(
+      Object.entries(structure)
+        .filter(([, value]) => typeof value === "number" || typeof value === "string")
+        .map(([key, value]) => [key, typeof value === "number" ? round(value) : value])
+    ),
     dataQuality: {
       score: round(quality.score),
       label: quality.label,
       homeSamples: quality.homeSamples,
       awaySamples: quality.awaySamples
     },
-    goalReadout: {
-      homeGoalSupport: round(goals.metrics.homeGoalSupport),
-      awayGoalSupport: round(goals.metrics.awayGoalSupport),
-      ggYes: round(goals.scores.ggYes),
-      ggNo: round(goals.scores.ggNo),
-      over15: round(goals.scores.over15),
-      over25: round(goals.scores.over25),
-      under35: round(goals.scores.under35),
-      favouriteOver15: round(goals.scores.favouriteOver15)
-    }
+    goalReadout: Object.fromEntries(
+      Object.entries(goals.scores).map(([key, value]) => [key, round(value)])
+    )
   };
-}
-
-
-function inputSampleCount(team) {
-  return (
-    Number(team.htft?.overall?.matches || 0) +
-    Number(team.htft?.venue?.matches || 0) +
-    Number(team.htft?.recent?.matches || 0)
-  );
-}
-
-function requireTeamEvidence(input) {
-  const homeSamples = inputSampleCount(input.home);
-  const awaySamples = inputSampleCount(input.away);
-
-  if (homeSamples <= 0 || awaySamples <= 0) {
-    const error = new Error(
-      "PapaSense refuses to publish a prior-only prediction. Both teams need real HT/FT history."
-    );
-    error.code = "PRIOR_ONLY_PREDICTION_BLOCKED";
-    throw error;
-  }
 }
 
 export function predictMatch(input) {
   if (!input?.home?.name || !input?.away?.name) {
     throw new Error("Both home.name and away.name are required.");
   }
-  requireTeamEvidence(input);
 
-  const leagueBaseline = { ...DEFAULT_LEAGUE_BASELINE, ...(input.league?.transitionBaseline || {}) };
+  const leagueBaseline = {
+    ...DEFAULT_LEAGUE_BASELINE,
+    ...(input.league?.transitionBaseline || {})
+  };
   const homeProfile = blendTeamProfile(input.home, leagueBaseline);
   const awayProfile = blendTeamProfile(input.away, leagueBaseline);
   const matrix = buildTransitionMatrix(homeProfile, awayProfile);
   const direct = directProbabilities(matrix);
+  const structure = resultStructure(matrix, direct);
   const quality = dataQuality(input.home, input.away, homeProfile, awayProfile);
-  const goals = goalLogic(input, matrix, homeProfile, awayProfile, quality);
-  const venue = venuePatternContext(input, leagueBaseline);
-  const baseCandidates = marketCandidates(input, matrix, direct, goals, quality);
-  const commonSenseLayer = commonSenseMarketLayer({
-    input, matrix, direct, goals, quality, homeProfile, awayProfile
-  });
-  const candidates = blockWeakStraightWins(
-    [...baseCandidates, ...commonSenseLayer.markets],
-    commonSenseLayer.context
+  const goals = goalLogic(input, matrix, homeProfile, awayProfile, quality, direct, structure);
+  const candidates = marketCandidates(input, matrix, direct, structure, goals, quality);
+  const rankedMarkets = rankMarkets(candidates);
+
+  const qualifiedPrimary = rankedMarkets.find((market) => market.qualified) || null;
+  const directionalPool = rankedMarkets.filter(
+    (market) => market.fallbackEligible && FALLBACK_FAMILIES.has(market.market)
   );
-  const rankedMarkets = rankMarkets(candidates, venue, input);
-  const primary = choosePrimaryMarket(rankedMarkets, {
-    input, matrix, goals, commonSense: commonSenseLayer.context
-  });
-  const enginePicks = buildEngineSuite({
-    rankedMarkets,
-    primary,
-    venue,
-    input,
-    goals,
-    quality
-  });
+  const primary = qualifiedPrimary || directionalPool[0] || rankedMarkets[0];
   const supporting = rankedMarkets.find(
     (market) =>
       market.key !== primary.key &&
-      market.market !== primary.market &&
+      market.family !== primary.family &&
       (market.qualified || market.directionalRankScore >= 0.58)
   ) || null;
-  const story = matchStory(input, matrix, direct, goals);
+
+  const story = matchStory(input, matrix, direct, structure, goals);
   const decisionTrace = buildDecisionTrace({
     input,
     primary,
@@ -1940,13 +1583,12 @@ export function predictMatch(input) {
     rankedMarkets,
     matrix,
     direct,
+    structure,
     goals,
     quality,
     homeProfile,
     awayProfile,
-    story,
-    enginePicks,
-    venue
+    story
   });
 
   return {
@@ -1956,8 +1598,6 @@ export function predictMatch(input) {
     home: input.home.name,
     away: input.away.name,
     generatedAt: new Date().toISOString(),
-    profileAudit: input.profileAudit || null,
-    analysisFingerprint: input.analysisFingerprint || null,
     dataQuality: {
       score: round(quality.score),
       label: quality.label,
@@ -1965,8 +1605,6 @@ export function predictMatch(input) {
       awaySamples: quality.awaySamples
     },
     primaryPrediction: primary,
-    enginePicks,
-    defaultEngine: "primary",
     supportingPrediction: supporting,
     noBet: false,
     qualified: primary.qualified,
@@ -1976,46 +1614,35 @@ export function predictMatch(input) {
     directProbabilities: {
       fullTime: Object.fromEntries(Object.entries(direct.ft).map(([key, value]) => [key, round(value)])),
       halfTime: Object.fromEntries(Object.entries(direct.ht).map(([key, value]) => [key, round(value)])),
-      doubleChance: Object.fromEntries(
-        Object.entries(direct.doubleChance).map(([key, value]) => [key, round(value)])
-      ),
-      drawNoBet: Object.fromEntries(Object.entries(direct.dnb).map(([key, value]) => [key, round(value)]))
+      doubleChance: Object.fromEntries(Object.entries(direct.doubleChance).map(([key, value]) => [key, round(value)])),
+      drawNoBet: Object.fromEntries(Object.entries(direct.dnb).map(([key, value]) => [key, round(value)])),
+      winEitherHalf: Object.fromEntries(Object.entries(direct.winEitherHalf).map(([key, value]) => [key, round(value)]))
     },
-    venuePattern: {
-      topTransitions: venue.topTransitions,
-      indicators: venue.indicators,
-      samples: venue.samples,
-      fullTime: Object.fromEntries(
-        Object.entries(venue.direct.ft).map(([key, value]) => [key, round(value)])
-      ),
-      halfTime: Object.fromEntries(
-        Object.entries(venue.direct.ht).map(([key, value]) => [key, round(value)])
-      )
-    },
+    resultStructure: Object.fromEntries(
+      Object.entries(structure)
+        .filter(([, value]) => typeof value === "number" || typeof value === "string")
+        .map(([key, value]) => [key, typeof value === "number" ? round(value) : value])
+    ),
     transitionMatrix: Object.fromEntries(
       TRANSITIONS.map((transition) => [
         HTFT_CODE[transition],
-        {
-          transition,
-          probability: round(matrix.normalized[transition])
-        }
+        { transition, probability: round(matrix.normalized[transition]) }
       ])
     ),
     goalIntelligence: {
       metrics: Object.fromEntries(Object.entries(goals.metrics).map(([key, value]) => [key, round(value)])),
       scores: Object.fromEntries(Object.entries(goals.scores).map(([key, value]) => [key, round(value)])),
-      expectedCorridor: goals.corridor ? "2–3 goals" : null,
       favouriteSide: goals.favouriteSide
     },
     markets: rankedMarkets,
     safeguards: [
-      "Prior-only predictions are blocked; both teams must contribute real HT/FT history.",
-      "Home and away orientation is resolved before translating W/W into 1/1 or 2/2.",
-      "GG requires two independent scoring routes; one strong team cannot create GG alone.",
-      "Under 3.5 cannot qualify from stable transitions alone.",
-      "Small samples are smoothed toward the league baseline and receive a confidence penalty.",
-      "Every fixture receives one direction; only threshold-passing selections are labelled Qualified.",
-      "Directional picks are clearly marked when the best available market remains below the strong-pick threshold."
+      "All nine HT/FT routes are matched to the opponent’s opposite perspective before any market is scored.",
+      "Either Team to Win requires low draw mass, controlled X/X, several decisive routes and enough goal pressure to break a draw.",
+      "GG requires two independent scoring routes; one dominant team cannot create GG alone.",
+      "Over 1.5 may qualify through one team scoring twice and is therefore scored separately from GG.",
+      "Under markets require venue, recent and transition-ceiling agreement rather than one raw percentage.",
+      "Exact HT/FT, half-time result and Over 3.5 are never used as weak fallback directions.",
+      "Every fixture receives one direction; only threshold-passing selections are labelled Qualified."
     ]
   };
 }

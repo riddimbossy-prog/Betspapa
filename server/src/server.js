@@ -2,8 +2,8 @@ import express from "express";
 import cors from "cors";
 
 import {
-  BOSS_ENGINE_VERSION,
   DEFAULT_ALLOWED_ORIGINS,
+  ENGINE_VERSION,
   SERVICE_NAME,
   SERVICE_VERSION
 } from "./config.js";
@@ -71,16 +71,10 @@ app.use(
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: false, limit: "2mb" }));
 
-app.use("/api", (req, res, next) => {
-  const privateRequest = req.method !== "GET" || req.path.startsWith("/admin");
-  if (privateRequest) {
-    res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-    res.set("Pragma", "no-cache");
-    res.set("Expires", "0");
-  } else {
-    // Public GET routes may replace this with a short stale-while-revalidate policy.
-    res.set("Cache-Control", "no-cache");
-  }
+app.use("/api", (_req, res, next) => {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
   next();
 });
 
@@ -89,24 +83,14 @@ app.get("/", (_req, res) => {
     status: "ok",
     service: SERVICE_NAME,
     version: SERVICE_VERSION,
+    engineVersion: ENGINE_VERSION,
     health: "/api/health",
     demo: "/api/demo",
     predictionsToday: "/api/predictions/today",
     fixturesToday: "/api/fixtures/today",
-    matchStates: "/api/matches/status",
     dashboardToday: "/api/dashboard/today",
     recentResults: "/api/results/recent",
-    engineStats: "/api/stats/engine",
-    processingStatus: "/api/processing/status",
-    papasPick: "/api/engines/primary",
-    aggressive: "/api/engines/aggressive",
-    safer: "/api/engines/safer",
-    venuePattern: "/api/engines/venue",
-    bossPicks: "/api/boss-picks/today",
-    consensusBankers: "/api/bankers/today",
-    legacyBankersByEngine: "/api/bankers/by-engine",
-    resultsIntelligence: "/api/results/intelligence",
-    adminDiagnostics: "/api/admin/diagnostics"
+    engineStats: "/api/stats/engine"
   });
 });
 
@@ -117,7 +101,7 @@ app.get("/api/health", async (_req, res) => {
       status: "ok",
       service: SERVICE_NAME,
       version: SERVICE_VERSION,
-      bossEngineVersion: BOSS_ENGINE_VERSION,
+      engineVersion: ENGINE_VERSION,
       database: "connected",
       leaguesCount: database.leaguesCount,
       providerKeyConfigured: Boolean(
@@ -136,7 +120,7 @@ app.get("/api/health", async (_req, res) => {
       status: "error",
       service: SERVICE_NAME,
       version: SERVICE_VERSION,
-      bossEngineVersion: BOSS_ENGINE_VERSION,
+      engineVersion: ENGINE_VERSION,
       database: "disconnected",
       message: details.message,
       code: details.code,

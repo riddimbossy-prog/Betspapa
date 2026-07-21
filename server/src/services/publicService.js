@@ -1,130 +1,81 @@
-import {
-  ENGINE_VERSION,
-  FINISHED_PROFILE_STATUSES,
-  PREDICTABLE_STATUSES
-} from "../config.js";
+import { ENGINE_VERSION, PREDICTABLE_STATUSES } from "../config.js";
 import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 import { generatePredictionsForDate } from "./predictionService.js";
-import { gradeEnginePick } from "./gradingService.js";
-import { fixtureMatchState, summarizeMatchStates } from "./matchStateService.js";
 
 
-const backgroundJobs = new Map();
-const RESTART_COOLDOWN_MS = 2 * 60 * 1000;
+const generationLocks = new Map();
+const generationAttempts = new Map();
+const GENERATION_COOLDOWN_MS = 5 * 60 * 1000;
 
-function publicJobState(job, { totalFixtures = 0, readyPredictions = 0 } = {}) {
-  const pending = Math.max(0, totalFixtures - readyPredictions);
-  if (!job) {
-    return {
-      state: pending ? "idle" : "complete",
-      totalFixtures,
-      readyPredictions,
-      pending,
-      withheld: 0,
-      startedAt: null,
-      completedAt: null,
-      message: pending
-        ? "Papa is preparing the remaining picks in the background."
-        : "All available picks are ready."
-    };
-  }
-  return {
-    state: job.state,
-    totalFixtures,
-    readyPredictions,
-    pending,
-    withheld: Number(job.withheld || 0),
-    startedAt: job.startedAt || null,
-    completedAt: job.completedAt || null,
-    generated: Number(job.generated || 0),
-    published: Number(job.published || readyPredictions),
-    error: job.error || null,
-    message:
-      job.state === "running"
-        ? "Papa is preparing the remaining picks in the background."
-        : job.state === "failed"
-          ? "Background preparation stopped. Existing completed picks remain available."
-          : pending
-            ? "Some fixtures are waiting for enough individual history."
-            : "All available picks are ready."
-  };
-}
+async function ensurePredictionsForDate(supabase, date, fixtures, predictions) {
+  const existingFixtureIds = new Set(
+    predictions.map((prediction) => Number(prediction.internalFixtureId))
+  );
 
-function startBackgroundGeneration(supabase, date, fixtures, predictions) {
   const predictableFixtures = fixtures.filter((fixture) =>
     PREDICTABLE_STATUSES.has(fixture.status)
   );
-  const readyFixtureIds = new Set(
-    predictions.map((prediction) => Number(prediction.internalFixtureId))
-  );
-  const missing = predictableFixtures.filter(
-    (fixture) => !readyFixtureIds.has(Number(fixture.id))
-  );
-  if (!missing.length) {
-    const complete = {
-      state: "complete", startedAt: null,
-      completedAt: new Date().toISOString(), generated: 0,
-      published: predictions.length, withheld: 0, error: null
-    };
-    backgroundJobs.set(date, complete);
-    return publicJobState(complete, {
-      totalFixtures: predictableFixtures.length,
-      readyPredictions: predictions.length
-    });
-  }
-  const existing = backgroundJobs.get(date);
-  if (existing?.state === "running") {
-    return publicJobState(existing, {
-      totalFixtures: predictableFixtures.length,
-      readyPredictions: predictions.length
-    });
-  }
-  const lastFinishedAt = existing?.completedAt ? new Date(existing.completedAt).getTime() : 0;
-  const coolingDown = existing && existing.state !== "running" &&
-    Date.now() - lastFinishedAt < RESTART_COOLDOWN_MS;
-  if (coolingDown) {
-    return publicJobState(existing, {
-      totalFixtures: predictableFixtures.length,
-      readyPredictions: predictions.length
-    });
-  }
-  const job = {
-    state: "running", startedAt: new Date().toISOString(), completedAt: null,
-    generated: 0, published: predictions.length, withheld: 0, error: null
-  };
-  backgroundJobs.set(date, job);
-  Promise.resolve()
-    .then(() => generatePredictionsForDate(supabase, date))
-    .then((result) => {
-      job.state = "complete";
-      job.completedAt = new Date().toISOString();
-      job.generated = Number(result.generated || 0);
-      job.published = Number(result.published || 0);
-      job.withheld = Array.isArray(result.skipped) ? result.skipped.length : 0;
-      job.error = null;
-      job.skipped = (result.skipped || []).map((item) => ({
-        fixtureId: item.fixtureId,
-        externalFixtureId: item.externalFixtureId,
-        code: item.code,
-        message: item.message
-      }));
-      job.hydration = result.hydration || null;
-    })
-    .catch((error) => {
-      job.state = "failed";
-      job.completedAt = new Date().toISOString();
-      job.error = error?.message || String(error);
-      console.error(`Background prediction preparation failed for ${date}:`, error);
-    });
-  return publicJobState(job, {
-    totalFixtures: predictableFixtures.length,
-    readyPredictions: predictions.length
-  });
-}
 
-export function getBackgroundProcessingStatus(date) {
-  return publicJobState(backgroundJobs.get(date));
+  const missingFixtures = predictableFixtures.filter(
+    (fixture) => !existingFixtureIds.has(Number(fixture.id))
+  );
+
+  if (!missingFixtures.length) {
+    return {
+      attempted: false,
+      complete: true,
+      predictableFixtures: predictableFixtures.length,
+      missingBefore: 0,
+      generated: 0,
+      published: predictions.length,
+      skipped: []
+    };
+  }
+
+  const previousAttempt = generationAttempts.get(date) || 0;
+  const coolingDown = Date.now() - previousAttempt < GENERATION_COOLDOWN_MS;
+
+  if (coolingDown && !generationLocks.has(date)) {
+    return {
+      attempted: false,
+      complete: false,
+      cooldown: true,
+      predictableFixtures: predictableFixtures.length,
+      missingBefore: missingFixtures.length,
+      generated: 0,
+      published: predictions.length,
+      skipped: []
+    };
+  }
+
+  let lock = generationLocks.get(date);
+  let waited = false;
+
+  if (!lock) {
+    generationAttempts.set(date, Date.now());
+    lock = generatePredictionsForDate(supabase, date)
+      .finally(() => generationLocks.delete(date));
+    generationLocks.set(date, lock);
+  } else {
+    waited = true;
+  }
+
+  const result = await lock;
+
+  return {
+    attempted: !waited,
+    waited,
+    complete: Number(result.generated || 0) >= missingFixtures.length,
+    predictableFixtures: predictableFixtures.length,
+    missingBefore: missingFixtures.length,
+    generated: Number(result.generated || 0),
+    published: Number(result.published || 0),
+    skipped: (result.skipped || []).map((item) => ({
+      fixtureId: item.fixtureId,
+      message: item.message
+    }))
+  };
 }
 
 function maxIso(values) {
@@ -180,22 +131,12 @@ async function loadEntityMaps(supabase, fixtures) {
   };
 }
 
-function publicFixture(fixture, teamMap, leagueMap, settlement = null) {
+function publicFixture(fixture, teamMap, leagueMap) {
   return {
     id: fixture.id,
     fixtureId: fixture.external_fixture_id,
     kickoff: fixture.fixture_date,
     status: fixture.status,
-    matchState: fixtureMatchState(fixture, settlement),
-    settlement: settlement
-      ? {
-          outcome: settlement.outcome,
-          halftimeScore: settlement.halftime_score,
-          fulltimeScore: settlement.fulltime_score,
-          gradedAt: settlement.graded_at,
-          updatedAt: settlement.updated_at
-        }
-      : null,
     venue: fixture.venue,
     season: fixture.season,
     halftime: {
@@ -253,18 +194,6 @@ export async function listPublicPredictions(supabase, date) {
 
   throwIfSupabaseError(error, "Unable to load public predictions");
 
-  const predictionIds = (predictions || []).map((prediction) => prediction.id);
-  const { data: resultRows, error: resultError } = predictionIds.length
-    ? await supabase
-        .from("prediction_results")
-        .select("*")
-        .in("prediction_id", predictionIds)
-    : { data: [], error: null };
-  throwIfSupabaseError(resultError, "Unable to load prediction settlements");
-
-  const resultMap = new Map(
-    (resultRows || []).map((row) => [row.prediction_id, row])
-  );
   const { teamMap, leagueMap } = await loadEntityMaps(supabase, fixtures);
   const fixtureMap = new Map(fixtures.map((fixture) => [fixture.id, fixture]));
 
@@ -276,48 +205,6 @@ export async function listPublicPredictions(supabase, date) {
       const league = leagueMap.get(fixture.league_id);
       const home = teamMap.get(fixture.home_team_id);
       const away = teamMap.get(fixture.away_team_id);
-      const engines = prediction.market_scores?.enginePicks || null;
-      const storedSettlement = resultMap.get(prediction.id) || null;
-      const finished = FINISHED_PROFILE_STATUSES.has(fixture.status);
-
-      const engineOutcomes = {};
-      if (finished && engines) {
-        for (const [key, pick] of Object.entries(engines)) {
-          const outcome = gradeEnginePick(pick, fixture, home?.name, away?.name);
-          if (outcome !== "UNABLE_TO_GRADE") engineOutcomes[key] = outcome;
-        }
-      }
-
-      const computedPrimaryOutcome = finished
-        ? gradeEnginePick(
-            {
-              key: prediction.market_scores?.primaryKey,
-              selection: prediction.primary_selection
-            },
-            fixture,
-            home?.name,
-            away?.name
-          )
-        : null;
-      const primaryOutcome =
-        storedSettlement?.outcome ||
-        (computedPrimaryOutcome !== "UNABLE_TO_GRADE"
-          ? computedPrimaryOutcome
-          : null);
-      const settlement = primaryOutcome
-        ? {
-            outcome: primaryOutcome,
-            halftimeScore:
-              storedSettlement?.halftime_score ||
-              `${fixture.halftime_home}-${fixture.halftime_away}`,
-            fulltimeScore:
-              storedSettlement?.fulltime_score ||
-              `${fixture.fulltime_home}-${fixture.fulltime_away}`,
-            gradedAt: storedSettlement?.graded_at || null,
-            updatedAt: storedSettlement?.updated_at || fixture.updated_at,
-            persisted: Boolean(storedSettlement)
-          }
-        : null;
 
       return {
         id: prediction.id,
@@ -325,25 +212,10 @@ export async function listPublicPredictions(supabase, date) {
         internalFixtureId: fixture.id,
         kickoff: fixture.fixture_date,
         status: fixture.status,
-        matchState: fixtureMatchState(fixture, settlement),
-        settlement,
-        engineOutcomes,
-        score: {
-          halftime: {
-            home: fixture.halftime_home,
-            away: fixture.halftime_away
-          },
-          current: {
-            home: fixture.fulltime_home,
-            away: fixture.fulltime_away
-          }
-        },
         venue: fixture.venue,
         league,
         home,
         away,
-        defaultEngine: prediction.market_scores?.defaultEngine || "primary",
-        engines,
         primary: {
           market: prediction.primary_market,
           selection: prediction.primary_selection,
@@ -351,8 +223,7 @@ export async function listPublicPredictions(supabase, date) {
           confidence: prediction.confidence,
           tier: prediction.confidence_tier,
           qualified: Boolean(prediction.market_scores?.qualified),
-          mode: prediction.market_scores?.directionMode || "directional",
-          outcome: primaryOutcome
+          mode: prediction.market_scores?.directionMode || "directional"
         },
         strongestTransition: {
           code: prediction.strongest_transition,
@@ -375,22 +246,6 @@ export async function listPublicPredictions(supabase, date) {
           prediction.market_scores?.allHtftIndicators ||
           prediction.market_scores?.decisionTrace?.allHtftIndicators ||
           [],
-        marketComparison:
-          prediction.market_scores?.decisionTrace?.marketComparison ||
-          [],
-        selectionMethod:
-          prediction.market_scores?.decisionTrace?.selectionMethod ||
-          null,
-        venuePattern:
-          prediction.market_scores?.venuePattern ||
-          prediction.market_scores?.decisionTrace?.venuePatternReview ||
-          null,
-        profileAudit:
-          prediction.market_scores?.profileAudit ||
-          null,
-        analysisFingerprint:
-          prediction.market_scores?.analysisFingerprint ||
-          null,
         createdAt: prediction.created_at,
         updatedAt: prediction.updated_at
       };
@@ -533,25 +388,36 @@ export async function getDashboardStats(supabase, {
       predictions: predictionsToday.length,
       topConfidence: predictionsToday.length
         ? Number(Math.max(...predictionsToday.map((prediction) => Number(prediction.primary?.confidence || 0))).toFixed(1))
-        : null,
-      matchStates: summarizeMatchStates(predictionsToday.length ? predictionsToday : fixturesToday)
+        : null
     },
     lastUpdated: maxIso(timestamps)
   };
 }
 
 export async function getDashboardData(supabase, date) {
-  const [fixtures, recentResults, predictions] = await Promise.all([
+  const [fixtures, recentResults] = await Promise.all([
     listFixtures(supabase, date),
-    listRecentResults(supabase, 12),
-    listPublicPredictions(supabase, date)
+    listRecentResults(supabase, 12)
   ]);
-  const processing = startBackgroundGeneration(supabase, date, fixtures, predictions);
+
+  let predictions = await listPublicPredictions(supabase, date);
+  const generation = await ensurePredictionsForDate(
+    supabase,
+    date,
+    fixtures,
+    predictions
+  );
+
+  if (generation.attempted || generation.waited) {
+    predictions = await listPublicPredictions(supabase, date);
+  }
+
   const stats = await getDashboardStats(supabase, {
     predictionsToday: predictions,
     fixturesToday: fixtures,
     recentResults
   });
+
   return {
     date,
     generatedAt: new Date().toISOString(),
@@ -559,6 +425,6 @@ export async function getDashboardData(supabase, date) {
     fixtures,
     recentResults,
     stats,
-    processing
+    generation
   };
 }

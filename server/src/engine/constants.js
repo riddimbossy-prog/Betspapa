@@ -24,7 +24,7 @@ export const HTFT_CODE = {
   LL: "2/2"
 };
 
-// Stable fallback used only for smoothing when a league-specific baseline is unavailable.
+// Used only for Bayesian smoothing when a league baseline is not yet available.
 export const DEFAULT_LEAGUE_BASELINE = {
   WW: 0.18,
   WD: 0.07,
@@ -45,18 +45,39 @@ export const PROFILE_WEIGHTS = {
 };
 
 export const MARKET_THRESHOLDS = {
-  doubleChance: 0.72,
+  doubleChance: 0.73,
   noDraw: 0.74,
-  dnb: 0.64,
-  fullTimeWin: 0.54,
-  halfTimeDoubleChance: 0.74,
-  halfTimeResult: 0.49,
-  exactHtFt: 0.26,
-  ggYes: 0.66,
-  ggNo: 0.67,
-  over15: 0.67,
-  over25: 0.61,
-  under35: 0.71,
-  teamOver05: 0.7,
-  teamOver15: 0.61
+  dnb: 0.66,
+  fullTimeWin: 0.56,
+  fullTimeDraw: 0.5,
+  halfTimeDoubleChance: 0.75,
+  halfTimeResult: 0.5,
+  exactHtFt: 0.28,
+  winEitherHalf: 0.65,
+  ggYes: 0.67,
+  ggNo: 0.68,
+  over15: 0.68,
+  under15: 0.63,
+  over25: 0.62,
+  under25: 0.66,
+  over35: 0.59,
+  under35: 0.72,
+  twoToThreeGoals: 0.67,
+  teamOver05: 0.71,
+  teamOver15: 0.63,
+  teamUnder15: 0.68,
+  cleanSheet: 0.64,
+  firstHalfOver05: 0.67,
+  secondHalfOver05: 0.69
 };
+
+export const FALLBACK_FAMILIES = new Set([
+  "Double Chance",
+  "Draw No Bet",
+  "Win Either Half",
+  "Both Teams to Score",
+  "Total Goals",
+  "Team Goals",
+  "Clean Sheet",
+  "Half Goals"
+]);

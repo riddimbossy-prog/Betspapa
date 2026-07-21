@@ -1691,235 +1691,56 @@ body {
   }
 }
 
-
 /* ================================================================
-   BETSPAPA v1.6.0 — REASONS POPUP + BALANCED MARKET PRESENTATION
+   BETSPAPA v1.6.0 — MARKET FAMILY COMPARISON
    ================================================================ */
+.market-comparison-heading {
+  margin-top: 22px;
+}
 
-.pick-reason-dialog {
-  width: min(1080px, calc(100vw - 28px));
-  max-height: min(900px, calc(100dvh - 28px));
-  padding: 0;
-  border: 1px solid rgba(242,196,79,.30);
-  border-radius: 22px;
+.market-comparison-table td:nth-child(2) {
+  min-width: 210px;
   color: #fff;
-  background: #0b001e;
-  box-shadow: 0 30px 100px rgba(0,0,0,.72);
+  font-weight: 700;
 }
 
-.pick-reason-dialog::backdrop {
-  background: rgba(4,0,13,.82);
-  backdrop-filter: blur(10px);
+.market-comparison-table td:last-child {
+  min-width: 230px;
 }
 
-.pick-reason-shell {
-  position: relative;
-  max-height: min(900px, calc(100dvh - 28px));
-  padding: 24px;
-  overflow: auto;
-  background:
-    radial-gradient(circle at 88% 3%, rgba(111,33,217,.24), transparent 34%),
-    linear-gradient(145deg, rgba(28,4,60,.98), rgba(8,0,24,.99));
-}
-
-.pick-reason-close {
-  position: sticky;
-  z-index: 20;
-  top: 0;
-  float: right;
-  width: 42px;
-  height: 42px;
-  border: 1px solid rgba(255,255,255,.15);
-  border-radius: 12px;
-  color: #fff;
-  background: rgba(12,1,31,.92);
-  font-size: 24px;
-  cursor: pointer;
-}
-
-.reason-popup-heading {
-  padding-right: 56px;
-}
-
-.reason-popup-league {
+.market-comparison-table td:last-child > small {
   display: block;
-  margin-top: 10px;
-  color: #bba4d8;
-  font-size: 12px;
+  margin-top: 5px;
+  color: var(--muted);
+  line-height: 1.45;
 }
 
-.reason-popup-heading h2 {
-  margin: 8px 0 10px;
-  font-size: clamp(25px, 4vw, 42px);
-  line-height: 1.08;
-}
-
-.reason-popup-heading > p {
-  max-width: 800px;
-  color: #d7c9e8;
-  font-size: 14px;
-  line-height: 1.65;
-}
-
-.reason-popup-pick {
-  margin: 15px 0;
-  padding: 16px;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 5px 18px;
-  border: 1px solid rgba(242,196,79,.30);
-  border-radius: 15px;
-  background: rgba(242,196,79,.055);
-}
-
-.reason-popup-pick small {
-  grid-column: 1 / -1;
-  color: var(--gold);
-  font-size: 10px;
+.comparison-status {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 9px;
   font-weight: 900;
+  letter-spacing: .04em;
   text-transform: uppercase;
 }
 
-.reason-popup-pick strong {
-  font-family: var(--font-display, inherit);
-  font-size: 21px;
+.comparison-status.comparison-qualified {
+  color: #8dffbe;
+  border: 1px solid rgba(55,233,137,.24);
+  background: rgba(55,233,137,.11);
 }
 
-.reason-popup-pick b {
-  align-self: center;
-  color: #73f5a8;
-  font-size: 20px;
-}
-
-.reason-popup-grid {
-  margin-top: 16px;
-  display: grid;
-  grid-template-columns: 1.3fr 1fr;
-  gap: 12px;
-}
-
-.reason-popup-grid section,
-.reason-popup-section {
-  padding: 16px;
-  border: 1px solid rgba(155,76,255,.18);
-  border-radius: 15px;
-  background: rgba(255,255,255,.018);
-}
-
-.reason-popup-grid h3,
-.reason-popup-section h3 {
-  margin: 0 0 10px;
-  font-family: var(--font-display, inherit);
-  font-size: 17px;
-}
-
-.reason-popup-section {
-  margin-top: 12px;
-}
-
-.reason-popup-section-head {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-}
-
-.selection-method {
-  margin: 0 0 12px;
-  color: #d4c4e7;
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.comparison-table-wrap {
-  overflow-x: auto;
-  border: 1px solid rgba(155,76,255,.15);
-  border-radius: 12px;
-}
-
-.comparison-table {
-  width: 100%;
-  min-width: 760px;
-  border-collapse: collapse;
-}
-
-.comparison-table th,
-.comparison-table td {
-  padding: 11px 12px;
-  border-bottom: 1px solid rgba(255,255,255,.055);
-  text-align: left;
-  font-size: 11px;
-}
-
-.comparison-table th {
-  color: #aa90c9;
-  font-size: 9px;
-  text-transform: uppercase;
-}
-
-.comparison-table td strong {
-  color: #fff;
-}
-
-.comparison-table td b {
-  color: var(--gold);
-}
-
-.comparison-table td small {
-  display: block;
-  color: #a88ec8;
-  font-size: 9px;
-}
-
-.selected-market-row {
-  background: rgba(55,233,137,.07);
-  box-shadow: inset 3px 0 #37e989;
-}
-
-.fixture-item {
-  cursor: pointer;
-}
-
-.fixture-why {
-  color: #d8b8ff;
-  font-weight: 800;
+.comparison-status.comparison-directional {
+  color: #ffdd7c;
+  border: 1px solid rgba(242,196,79,.24);
+  background: rgba(242,196,79,.10);
 }
 
 @media (max-width: 720px) {
-  .pick-reason-dialog {
-    width: 100vw;
-    max-width: 100vw;
-    height: 100dvh;
-    max-height: 100dvh;
-    margin: 0;
-    border: 0;
-    border-radius: 0;
-  }
-
-  .pick-reason-shell {
-    min-height: 100dvh;
-    max-height: 100dvh;
-    padding: 18px;
-    padding-bottom: calc(90px + env(safe-area-inset-bottom));
-  }
-
-  .reason-popup-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .reason-popup-heading h2 {
-    font-size: 27px;
-  }
-
-  .reason-popup-pick {
-    grid-template-columns: 1fr;
-  }
-
-  .reason-popup-pick b {
-    font-size: 18px;
-  }
-
-  .pick-reason-close {
-    width: 46px;
-    height: 46px;
+  .market-comparison-table {
+    min-width: 820px;
   }
 }
