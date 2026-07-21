@@ -1,38 +1,32 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.17.1
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.17.2
 ================================================
 
-PURPOSE
--------
-Engine-only correction for the uploaded v1.17.0 Consensus Banker build.
-The frontend, Consensus Banker page, Boss Picks, PWA and settlement workflows
-are preserved.
-
-WHAT CHANGED
-------------
-- Papa's Pick now uses the audited full-market overhaul as its authoritative core.
-- Every market is scored independently with its own threshold and blockers.
-- The v1.17 common-sense, venue and four-engine consensus layers remain active.
-- Duplicate markets inherit later common-sense blockers.
-- Explicit odds-aware upgrades remain active.
-- Engine version changed to papasense-v1.17.1-overhaul.
-
-DEPLOYMENT
-----------
 1. Extract this ZIP.
-2. Copy every file and folder into your local Betspapa repository.
-3. Choose Replace/Overwrite All.
-4. Commit:
-   BetsPapa v1.17.1 full market engine overhaul
-5. Push origin.
-6. Wait for Render and GitHub Actions to finish.
-7. Open:
+2. Replace every file and folder in the local BetsPapa repository.
+3. Commit:
+   BetsPapa v1.17.2 zero picks automatic preparation fix
+4. Push origin.
+5. Wait for both GitHub Pages and Render deployments to finish.
+6. Confirm:
    https://api.betspapa.com/api/health
-8. Confirm:
-   version: 1.17.1
-   engineVersion: papasense-v1.17.1-overhaul
-   database: connected
-9. Run the BetsPapa Automatic Picks workflow once so current dates are regenerated
-   under the new engine version.
 
-No Supabase migration or new environment variable is required.
-Never commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET.
+Expected:
+- version: 1.17.2
+- engineVersion: papasense-v1.17.1-overhaul
+- database: connected
+
+7. Open once:
+   https://betspapa.com/reset.html
+
+8. Open Papa's Pick for the required date.
+
+Imported fixtures will display immediately. Missing current-engine selections
+show Processing while the server generates them automatically. The page checks
+again every eight seconds and replaces those cards with real picks.
+
+The first generation pass can take longer when many teams need individual
+history. Those fixtures remain visible as Waiting for history and will be
+retried by BetsPapa Automatic Picks.
+
+No database migration is required.
+Do not commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET.

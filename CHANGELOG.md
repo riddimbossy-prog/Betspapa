@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.17.2 — Zero Picks Automatic Preparation Fix
+
+- Fixed Papa’s Pick and the other engine pages showing zero games after an engine-version upgrade.
+- Engine pages now trigger current-version prediction generation automatically.
+- Imported fixtures remain visible while current picks are processing.
+- Added eight-second polling only while the preparation job is running.
+- Added Waiting for history cards for teams still below the evidence minimum.
+- Disabled public caching while picks remain incomplete.
+- Bumped portal and PWA assets to v1.17.2.
+- Kept the audited engine version `papasense-v1.17.1-overhaul` unchanged.
+
 ## v1.17.1 — Full-Market Engine Overhaul
 
 - Replaced the Papa's Pick core with the audited full-market overhaul.

@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.17.1",
+  "version": "1.17.2",
   "private": true,
-  "description": "BetsPapa v1.17.1 with audited full-market overhaul, consensus Bankers, branded PWA and OMNI Boss Picks.",
+  "description": "BetsPapa v1.17.2 with automatic current-engine preparation, full-market overhaul, consensus Bankers and OMNI Boss Picks.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

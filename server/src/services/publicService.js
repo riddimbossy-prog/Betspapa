@@ -51,7 +51,7 @@ function publicJobState(job, { totalFixtures = 0, readyPredictions = 0 } = {}) {
   };
 }
 
-function startBackgroundGeneration(supabase, date, fixtures, predictions) {
+export function startBackgroundGeneration(supabase, date, fixtures, predictions) {
   const predictableFixtures = fixtures.filter((fixture) =>
     PREDICTABLE_STATUSES.has(fixture.status)
   );
@@ -125,6 +125,72 @@ function startBackgroundGeneration(supabase, date, fixtures, predictions) {
 
 export function getBackgroundProcessingStatus(date) {
   return publicJobState(backgroundJobs.get(date));
+}
+
+
+export function buildEngineBoardItems({
+  fixtures = [],
+  predictions = [],
+  engineKey = "primary",
+  processing = null
+} = {}) {
+  const predictionByFixture = new Map(
+    predictions.map((prediction) => [
+      Number(prediction.internalFixtureId),
+      prediction
+    ])
+  );
+
+  const items = fixtures
+    .filter((fixture) =>
+      PREDICTABLE_STATUSES.has(fixture.status) ||
+      predictionByFixture.has(Number(fixture.id))
+    )
+    .map((fixture) => {
+      const prediction = predictionByFixture.get(Number(fixture.id)) || null;
+      const pick = prediction?.engines?.[engineKey] || null;
+
+      if (prediction && pick) {
+        return {
+          ...prediction,
+          activeEngine: engineKey,
+          processing: false,
+          pick
+        };
+      }
+
+      return {
+        ...fixture,
+        activeEngine: engineKey,
+        processing: true,
+        processingState: processing?.state || "idle",
+        processingMessage:
+          processing?.message ||
+          "Papa is preparing this fixture with the current engine.",
+        pick: null
+      };
+    })
+    .sort((left, right) => {
+      if (Boolean(left.pick) !== Boolean(right.pick)) {
+        return left.pick ? -1 : 1;
+      }
+
+      if (left.pick && right.pick) {
+        const leftConfidence = Number(
+          left.pick?.confidence ?? left.pick?.score ?? 0
+        );
+        const rightConfidence = Number(
+          right.pick?.confidence ?? right.pick?.score ?? 0
+        );
+        if (leftConfidence !== rightConfidence) {
+          return rightConfidence - leftConfidence;
+        }
+      }
+
+      return new Date(left.kickoff || 0) - new Date(right.kickoff || 0);
+    });
+
+  return items;
 }
 
 function maxIso(values) {

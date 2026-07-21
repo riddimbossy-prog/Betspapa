@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { PREDICTABLE_STATUSES } from "../config.js";
 import { demoFixtures } from "../data/demoFixtures.js";
 import { predictMatch } from "../engine/transitionEngine.js";
 import { getSupabaseAdmin } from "../supabase.js";
@@ -11,12 +12,14 @@ import {
   selectConsensusBankers
 } from "../services/intelligenceService.js";
 import {
+  buildEngineBoardItems,
   getBackgroundProcessingStatus,
   getDashboardData,
   getDashboardStats,
   listFixtures,
   listPublicPredictions,
-  listRecentResults
+  listRecentResults,
+  startBackgroundGeneration
 } from "../services/publicService.js";
 import {
   refreshCurrentMatchData,
@@ -220,32 +223,46 @@ publicRouter.get("/engines/:engineKey", async (req, res, next) => {
     const date = assertIsoDate(req.query.date || todayUtc());
     const supabase = getSupabaseAdmin();
     const refresh = await maybeRefreshMatches(req, date);
-    const predictions = await listPublicPredictions(supabase, date);
 
-    const items = predictions
-      .map((prediction) => {
-        const pick = prediction.engines?.[engineKey];
-        return pick
-          ? {
-              ...prediction,
-              activeEngine: engineKey,
-              pick
-            }
-          : null;
-      })
-      .filter(Boolean)
-      .sort((a, b) => {
-        const confidenceA = Number(a.pick?.confidence ?? a.pick?.score ?? 0);
-        const confidenceB = Number(b.pick?.confidence ?? b.pick?.score ?? 0);
-        return confidenceB - confidenceA;
-      });
+    const [fixtures, predictions] = await Promise.all([
+      listFixtures(supabase, date),
+      listPublicPredictions(supabase, date)
+    ]);
 
-    setPublicCache(res, 15, 120);
+    const processing = startBackgroundGeneration(
+      supabase,
+      date,
+      fixtures,
+      predictions
+    );
+
+    const items = buildEngineBoardItems({
+      fixtures,
+      predictions,
+      engineKey,
+      processing
+    });
+
+    const ready = items.filter((item) => Boolean(item.pick)).length;
+    const pending = Math.max(0, items.length - ready);
+
+    if (pending) {
+      res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+      res.set("Pragma", "no-cache");
+      res.set("Expires", "0");
+    } else {
+      setPublicCache(res, 15, 120);
+    }
+
     res.json({
       date,
       engineKey,
       generatedAt: new Date().toISOString(),
-      count: items.length,
+      count: ready,
+      fixturesFound: items.length,
+      ready,
+      pending,
+      processing,
       matchStates: summarizeMatchStates(items),
       liveRefresh: refresh,
       items
