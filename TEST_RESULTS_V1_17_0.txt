@@ -1,0 +1,38 @@
+BetsPapa v1.17.0 verification
+================================
+
+Automated test command:
+  cd server
+  node --test
+
+Result:
+  50 tests passed
+  0 tests failed
+
+New consensus Banker coverage:
+- 4/4 unanimous agreement publishes one Banker.
+- Equivalent team Over 1.5 internal keys are normalized.
+- A qualified single-engine pick requires at least 86% confidence.
+- Thin team samples are rejected.
+- Almost-even split consensus is withheld.
+- Only one strongest Banker is published per fixture.
+
+Preserved regression coverage:
+- PapaSense v1.13 low-odds Team Over 0.5 rejection and same-team Over 1.5 evaluation.
+- HT/FT common-sense translations.
+- Straight-win comeback and lead-surrender gates.
+- Four PapaSense engine outputs.
+- OMNI v2.5.2 Boss Picks and 44-market audit.
+- Live match states and automatic settlement.
+- Results batching for large historical fixture sets.
+- Anti-zombie duplicate-evidence detection.
+
+Static verification:
+- All JavaScript files passed node syntax checking.
+- All local HTML asset references resolve.
+- Manifest JSON is valid and includes the Bankers PWA shortcut.
+- Service-worker cache is betspapa-pwa-v1170.
+- API service version is 1.17.0.
+- PapaSense engine version remains papasense-v1.13.0.
+
+No Supabase migration or new Render environment variable is required.

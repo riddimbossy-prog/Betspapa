@@ -1,44 +1,47 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.16.1
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.17.0
 ================================================
 
 THIS BUILD PRESERVES
 --------------------
 - Every v1.16 branded PWA and first-user walkthrough feature.
+- The v1.16.1 faster picks and Results repair.
 - PapaSense v1.13.0 and all Papa’s Pick amendments.
 - Live match states and automatic settlement.
-- The v1.15 responsive Today, engine, Boss Picks and mobile layouts.
+- The responsive Today, engine, Boss Picks, Results and mobile layouts.
 
-FIXED IN v1.16.1
------------------
-- Saved picks display immediately while live data refreshes quietly.
-- API timeout reduced from 35–45 seconds to 9 seconds.
-- The app remembers the last working API endpoint.
-- Temporary API failures no longer erase picks already on screen.
-- Dashboard and Results endpoints no longer wait for live-score refresh work.
-- Results requests are split into safe Supabase batches.
-- Historical published prediction versions are included in Results.
-- FT, AET, PEN, AWD and WO finished states are supported.
-- Results has saved-data fallback, clear errors and a working retry button.
-- New service-worker cache forces the repaired JavaScript to load.
+NEW IN v1.17.0
+---------------
+- A real public Consensus Banker page at /bankers.html.
+- One strongest Banker per fixture.
+- Exact-selection consensus across Papa’s Pick, Aggressive, Safer and Venue Pattern.
+- Unanimous 4/4, Prime Consensus 3/4 and Consensus 2/4 levels.
+- Exceptional single-engine picks only at 86%+ after all evidence gates pass.
+- Minimum six overall and three relevant venue matches for both teams.
+- Split decisions are withheld instead of forced.
+- Filters, search, engine-vote chips, explanations and rejection summaries.
+- Saved Bankers display immediately and refresh quietly.
+- Bankers added to desktop, mobile and PWA navigation.
+- Boss Picks remain separate and unchanged.
 
 DEPLOY
 ------
 1. Replace every repository file with this package.
 2. Commit:
-   BetsPapa v1.16.1 faster picks and results repair
+   BetsPapa v1.17.0 consensus Banker page
 3. Push origin using GitHub Desktop.
 4. Wait for GitHub Pages and Render to finish deploying.
 5. Confirm:
    https://api.betspapa.com/api/health
 
 Expected version:
-   1.16.1
+   1.17.0
 
 6. Open once:
    https://betspapa.com/reset.html
 
 7. Test:
-   https://betspapa.com
+   https://betspapa.com/bankers.html
+   https://betspapa.com/boss-picks.html
    https://betspapa.com/results-intelligence.html
 
 No Supabase migration and no new Render environment variable are required.

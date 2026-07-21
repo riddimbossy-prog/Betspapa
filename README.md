@@ -3,6 +3,16 @@
 Royal-purple responsive football prediction platform with a private Render backend, Supabase database, API-Football importer, HT/FT profile builder, common-sense prediction engine, and automatic result grading.
 
 
+## v1.17.0 consensus Bankers
+
+- `/bankers.html` now compares all four PapaSense engines for each fixture.
+- Two or more qualified engines must choose the same selection for a normal Banker.
+- Unanimous, Prime Consensus and Consensus levels show 4/4, 3/4 and 2/4 agreement.
+- A single-engine pick appears only at 86%+ after every strict evidence gate passes.
+- One strongest Banker is published per fixture; split decisions are withheld.
+- Saved Bankers display immediately and refresh quietly in the background.
+- PapaSense remains `papasense-v1.13.0`; Boss Picks remain powered separately by OMNI v2.5.2.
+
 ## v1.16.1 performance and Results repair
 
 - Saved picks render immediately while the live API refreshes in the background.
@@ -25,6 +35,7 @@ The Odds API             Reserved for bookmaker-odds validation
 ## Main features
 
 - Responsive royal-purple UI for desktop, tablet, phone and Z Fold.
+- Consensus Banker page comparing all four PapaSense engines with one pick per fixture.
 - Hamburger drawer and mobile bottom navigation.
 - HT/FT transition matrix covering 1/1 through 2/2.
 - Correct home/away orientation.
@@ -70,12 +81,11 @@ npm test
 - `/safer.html`
 - `/venue-pattern.html`
 - `/boss-picks.html` — Papa’s Boss Picks, powered by OMNI HT/FT Gatekeeper v2.5.2
-- `/bankers.html` — redirects to Boss Picks
+- `/bankers.html` — consensus picks across Papa’s Pick, Aggressive, Safer and Venue Pattern
 - `/results-intelligence.html`
 - `/admin/` — private diagnostics (not linked publicly)
 
-See `BETSPAPA_V1_10_GUIDE.md` for banker criteria, diagnostics access and the
-anti-zombie similarity policy.
+See `BETSPAPA_V1_17_CONSENSUS_BANKERS.md` for current Banker criteria and `BETSPAPA_V1_10_GUIDE.md` for diagnostics and the anti-zombie similarity policy.
 
 
 ## Papa’s Boss Picks v1.12

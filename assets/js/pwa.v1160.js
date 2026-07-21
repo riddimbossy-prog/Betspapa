@@ -52,11 +52,11 @@
       kicker: "PICK LEVELS",
       title: "Know what each label means.",
       description:
-        "Papa’s Pick gives the practical match direction. Boss Picks use the strict OMNI gate and publish nothing when the evidence fails.",
+        "Papa’s Pick gives the practical match direction. Bankers compare all four PapaSense engines, while Boss Picks remain the separate strict OMNI board.",
       points: [
         "Papa’s Pick: practical common-sense market.",
-        "Boss Pick: strict 80/100 or higher rule score.",
-        "No forced Boss Pick when the mandatory gates fail."
+        "Banker: exact engine consensus or an exceptional 86%+ qualified pick.",
+        "Boss Pick: separate strict OMNI rule score with no forced selections."
       ],
       visual: `
         <div class="bp-tour-boss" aria-hidden="true">
@@ -96,7 +96,7 @@
         "The Results page keeps the original analysis, rule score, final score and outcome together so performance remains transparent.",
       points: [
         "See the graded sample behind every percentage.",
-        "Compare Papa, Boss, Aggressive, Safer and Venue.",
+        "Compare Papa, Bankers, Boss, Aggressive, Safer and Venue.",
         "Reopen this tour anytime from the Today page footer."
       ],
       visual: `

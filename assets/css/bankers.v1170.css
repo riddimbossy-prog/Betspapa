@@ -1,0 +1,191 @@
+/* BetsPapa v1.17.0 — Consensus Banker page */
+body[data-page="bankers"] .portal-hero {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(245,201,94,.34);
+  background:
+    radial-gradient(circle at 88% 0,rgba(245,201,94,.16),transparent 34%),
+    radial-gradient(circle at 8% 110%,rgba(125,44,255,.24),transparent 36%),
+    linear-gradient(140deg,rgba(49,8,94,.96),rgba(12,1,31,.98));
+}
+body[data-page="bankers"] .portal-hero::after {
+  content:"♛";
+  position:absolute;
+  right:4%;
+  top:50%;
+  translate:0 -50%;
+  color:rgba(245,201,94,.08);
+  font:900 clamp(90px,15vw,220px)/1 "Space Grotesk",sans-serif;
+  pointer-events:none;
+}
+body[data-page="bankers"] .portal-hero > * { position:relative; z-index:1; }
+
+.consensus-banker-grid { align-items:stretch; }
+.consensus-banker-card {
+  position:relative;
+  min-height:340px;
+  overflow:hidden;
+  border-color:rgba(245,201,94,.26);
+  background:
+    radial-gradient(circle at 100% 0,rgba(245,201,94,.09),transparent 34%),
+    linear-gradient(145deg,rgba(36,7,75,.96),rgba(12,1,31,.99));
+}
+.consensus-banker-card::before {
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:4px;
+  background:#f5c95e;
+}
+.consensus-banker-card.unanimous {
+  border-color:rgba(255,226,140,.58);
+  box-shadow:0 18px 44px rgba(245,201,94,.10);
+}
+.consensus-banker-card.unanimous::before { width:6px; background:linear-gradient(#fff4b8,#e4a926); }
+.consensus-banker-card.prime-consensus::before { background:#f5c95e; }
+.consensus-banker-card.consensus::before { background:#8d5cff; }
+.consensus-banker-card.high-confidence::before { background:#49e38f; }
+.consensus-banker-card:hover,
+.consensus-banker-card:focus-visible {
+  transform:translateY(-4px);
+  border-color:rgba(245,201,94,.62);
+  box-shadow:0 20px 48px rgba(0,0,0,.36);
+}
+
+.consensus-grade-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.consensus-grade-row strong {
+  color:#eadff6;
+  font-size:12px;
+}
+.consensus-grade {
+  color:#241300;
+  background:linear-gradient(135deg,#fff1ac,#dca326);
+  border-color:rgba(255,235,165,.72);
+}
+.high-confidence .consensus-grade {
+  color:#002511;
+  background:linear-gradient(135deg,#b8ffd7,#49e38f);
+  border-color:rgba(73,227,143,.62);
+}
+.consensus .consensus-grade {
+  color:#fff;
+  background:linear-gradient(135deg,#9d70ff,#6730d4);
+  border-color:rgba(157,112,255,.68);
+}
+
+.banker-votes,
+.dialog-engine-votes {
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+.engine-vote {
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 9px;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:999px;
+  background:rgba(255,255,255,.035);
+}
+.engine-vote b { color:#fff; font-size:10px; }
+.engine-vote small { color:#f5c95e; font-size:10px; font-weight:800; }
+
+.consensus-meter {
+  height:7px;
+  overflow:hidden;
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+}
+.consensus-meter span {
+  display:block;
+  height:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,#7d2cff,#f5c95e);
+}
+.high-confidence .consensus-meter span { background:linear-gradient(90deg,#178d53,#49e38f); }
+
+.banker-method-panel {
+  margin-top:18px;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.banker-method-panel > div {
+  padding:18px;
+  border:1px solid rgba(245,201,94,.18);
+  border-radius:16px;
+  background:rgba(24,5,55,.78);
+}
+.banker-method-panel strong { color:#f5c95e; font-size:16px; }
+.banker-method-panel p { margin:7px 0 0; color:#cdbde0; line-height:1.65; }
+
+.banker-empty {
+  display:grid;
+  gap:8px;
+}
+.banker-empty strong {
+  color:#f5c95e;
+  font:700 clamp(27px,5vw,40px)/1.1 "Space Grotesk",sans-serif;
+}
+.banker-empty span { color:#fff; font-size:17px; }
+.banker-empty small { color:#cdbde0; }
+
+.consensus-verdict h3 {
+  margin:7px 0;
+  color:#fff;
+  font-size:clamp(23px,4vw,32px);
+}
+.consensus-dialog-section { margin-top:16px; }
+.consensus-dialog-section h3 { margin:0 0 10px; color:#fff; }
+.consensus-sample-grid {
+  margin-top:14px;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+.consensus-sample-grid > div,
+.other-engine-views > div {
+  padding:14px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:13px;
+  background:rgba(255,255,255,.025);
+}
+.consensus-sample-grid span,
+.consensus-sample-grid small,
+.other-engine-views span,
+.other-engine-views small {
+  display:block;
+  color:#bfaed3;
+  font-size:11px;
+}
+.consensus-sample-grid strong,
+.other-engine-views strong {
+  display:block;
+  margin:4px 0;
+  color:#fff;
+  font-size:15px;
+}
+.other-engine-views { display:grid; gap:8px; }
+
+@media (max-width:1050px) {
+  .consensus-banker-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width:800px) {
+  .consensus-banker-grid,
+  .banker-method-panel,
+  .consensus-sample-grid { grid-template-columns:1fr; }
+  .consensus-banker-card { min-height:0; }
+  .consensus-grade-row { align-items:flex-start; }
+  body[data-page="bankers"] .portal-hero::after { right:-5%; opacity:.7; }
+}
+@media (max-width:380px) {
+  .engine-vote { width:100%; justify-content:space-between; }
+  .consensus-grade-row strong { width:100%; }
+}

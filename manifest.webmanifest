@@ -2,8 +2,8 @@
   "id": "/",
   "name": "BetsPapa — Football Intelligence",
   "short_name": "BetsPapa",
-  "description": "BetsPapa football intelligence with Papa's Pick, strict Boss Picks, live match states, clear explanations and verified results.",
-  "start_url": "/?source=pwa&v=1160",
+  "description": "BetsPapa football intelligence with consensus Bankers, Papa's Pick, strict Boss Picks, live match states and verified results.",
+  "start_url": "/?source=pwa&v=1170",
   "scope": "/",
   "display": "standalone",
   "display_override": [
@@ -53,6 +53,19 @@
       "short_name": "Papa's Pick",
       "description": "Open Papa's default picks",
       "url": "/papas-pick.html?source=shortcut",
+      "icons": [
+        {
+          "src": "/assets/images/pwa-brand-icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Consensus Bankers",
+      "short_name": "Bankers",
+      "description": "Open the strongest consensus picks across all four engines",
+      "url": "/bankers.html?source=shortcut",
       "icons": [
         {
           "src": "/assets/images/pwa-brand-icon-192.png",
@@ -117,5 +130,5 @@
       "label": "BetsPapa football intelligence dashboard"
     }
   ],
-  "version": "1.16.1"
+  "version": "1.17.0"
 }

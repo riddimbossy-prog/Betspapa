@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.17.0 — Consensus Banker Page
+
+- Added a real public `/bankers.html` page instead of redirecting to Boss Picks.
+- Compares Papa’s Pick, Aggressive, Safer and Venue Pattern for every fixture.
+- Publishes one strongest Banker when at least two qualified engines choose the exact same selection.
+- Adds Unanimous 4/4, Prime Consensus 3/4 and Consensus 2/4 levels.
+- Allows an exceptional single-engine pick only at 86%+ after every strict evidence gate passes.
+- Requires six overall and three relevant venue matches for both teams.
+- Withholds almost-even split decisions instead of forcing a selection.
+- Normalizes equivalent team-goal market keys before measuring agreement.
+- Adds engine-vote chips, banker score, filters, explanations and rejection summaries.
+- Adds instant saved Banker display with quiet live refresh.
+- Promotes Bankers into desktop, mobile and PWA navigation while preserving Boss Picks.
+- Retains the legacy per-engine Banker API at `/api/bankers/by-engine`.
+- Adds six consensus-specific tests; the complete suite now has 50 passing tests.
+- No Supabase migration or new Render environment variable is required.
+
 ## v1.16.1 — Faster Picks and Results Repair
 
 - Preserved the complete v1.16 branded PWA, walkthrough, live match and PapaSense v1.13 features.

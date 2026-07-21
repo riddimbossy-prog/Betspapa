@@ -210,6 +210,264 @@ export function selectBankerSlate(predictions, { limit = 3 } = {}) {
   };
 }
 
+
+const CONSENSUS_MIN_CONFIDENCE = 68;
+const SOLO_HIGH_CONFIDENCE = 86;
+const CONSENSUS_DEFAULT_LIMIT = 12;
+
+function normalizedToken(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[’']/g, "")
+    .replace(/\bgoals?\b/g, "")
+    .replace(/\bmatch\b/g, "")
+    .replace(/\bteam\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function canonicalPickKey(pick) {
+  const rawKey = String(pick?.key || "").toLowerCase().trim();
+  const aliases = {
+    "over-15": "match-over-1.5",
+    "over-25": "match-over-2.5",
+    "under-35": "match-under-3.5",
+    "gg-yes": "btts-yes",
+    "gg-no": "btts-no",
+    "home-1x": "double-chance",
+    "away-x2": "double-chance",
+    "no-draw": "double-chance",
+    "home-over-05": "team-over-0.5",
+    "away-over-05": "team-over-0.5",
+    "home-over-15": "team-over-1.5",
+    "away-over-15": "team-over-1.5",
+    "favourite-over-15": "team-over-1.5",
+    "home-win": "full-time-win",
+    "away-win": "full-time-win",
+    "home-dnb": "draw-no-bet",
+    "away-dnb": "draw-no-bet",
+    "home-win-either-half": "win-either-half",
+    "away-win-either-half": "win-either-half",
+    "first-half-over-05": "first-half-over-0.5",
+    "first-half-over-15": "first-half-over-1.5",
+    "second-half-over-05": "second-half-over-0.5"
+  };
+  return aliases[rawKey] || rawKey || normalizedToken(pick?.market);
+}
+
+function pickSignature(pick) {
+  return `${canonicalPickKey(pick)}|${normalizedToken(pick?.selection)}`;
+}
+
+function consensusTier(votes, source) {
+  if (source === "high-confidence") return "HIGH CONFIDENCE";
+  if (votes >= 4) return "UNANIMOUS";
+  if (votes === 3) return "PRIME CONSENSUS";
+  return "CONSENSUS";
+}
+
+function consensusScore({ averageConfidence, minimumConfidence, votes, evidence, source }) {
+  const voteBonus = source === "high-confidence" ? 0 : ({ 2: 3, 3: 6, 4: 9 }[votes] || 0);
+  const sampleBonus = Math.min(
+    3,
+    ((evidence.homeOverall + evidence.awayOverall) / 20) +
+      ((evidence.homeVenue + evidence.awayVenue) / 10)
+  );
+  const consistencyBonus = Math.max(0, 2 - Math.max(0, averageConfidence - minimumConfidence) / 8);
+  return Math.min(99, averageConfidence + voteBonus + sampleBonus + consistencyBonus);
+}
+
+function publicBankerRecord(prediction, group, source) {
+  const votes = group.items.length;
+  const confidences = group.items.map((item) => item.confidence);
+  const averageConfidence = confidences.reduce((sum, value) => sum + value, 0) / confidences.length;
+  const minimumConfidence = Math.min(...confidences);
+  const evidence = group.items[0].eligibility.evidence;
+  const score = consensusScore({
+    averageConfidence,
+    minimumConfidence,
+    votes,
+    evidence,
+    source
+  });
+  const agreeingEngines = group.items.map((item) => ({
+    engineKey: item.engineKey,
+    engineName: ENGINE_LABELS[item.engineKey],
+    confidence: Number(item.confidence.toFixed(1))
+  }));
+  const agreeingKeys = new Set(group.items.map((item) => item.engineKey));
+  const otherEnginePicks = ENGINE_KEYS
+    .filter((engineKey) => prediction.engines?.[engineKey] && !agreeingKeys.has(engineKey))
+    .map((engineKey) => {
+      const pick = prediction.engines[engineKey];
+      return {
+        engineKey,
+        engineName: ENGINE_LABELS[engineKey],
+        selection: pick.selection,
+        market: pick.market,
+        confidence: Number(confidencePercent(pick.confidence ?? pick.score).toFixed(1)),
+        qualified: Boolean(pick.qualified)
+      };
+    });
+
+  return {
+    fixtureId: prediction.fixtureId,
+    internalFixtureId: prediction.internalFixtureId,
+    kickoff: prediction.kickoff,
+    league: prediction.league,
+    home: prediction.home,
+    away: prediction.away,
+    status: prediction.status,
+    matchState: prediction.matchState || null,
+    settlement: prediction.settlement || null,
+    engineOutcomes: prediction.engineOutcomes || {},
+    consensusOutcome: agreeingEngines
+      .map((engine) => prediction.engineOutcomes?.[engine.engineKey])
+      .find(Boolean) || null,
+    source,
+    tier: consensusTier(votes, source),
+    consensusCount: votes,
+    enginesAvailable: Object.keys(prediction.engines || {}).length,
+    selection: group.pick.selection,
+    market: group.pick.market,
+    key: group.pick.key,
+    confidence: Number(averageConfidence.toFixed(1)),
+    minimumConfidence: Number(minimumConfidence.toFixed(1)),
+    bankerScore: Number(score.toFixed(1)),
+    agreeingEngines,
+    otherEnginePicks,
+    evidence,
+    reasons: [
+      source === "high-confidence"
+        ? `${agreeingEngines[0]?.engineName || "One engine"} produced an exceptional qualified score of ${averageConfidence.toFixed(1)}%.`
+        : `${votes} of ${Object.keys(prediction.engines || {}).length || 4} engines independently selected the same market.`,
+      `The agreeing engines average ${averageConfidence.toFixed(1)}% confidence; the lowest agreeing score is ${minimumConfidence.toFixed(1)}%.`,
+      `Both teams passed the strict history audit (${evidence.homeOverall}/${evidence.awayOverall} overall and ${evidence.homeVenue}/${evidence.awayVenue} venue matches).`
+    ],
+    cautions: group.items.flatMap((item) => item.pick.cautions || []).filter(Boolean)
+  };
+}
+
+/**
+ * Builds one consensus banker per fixture.
+ * - Exact same market + exact same selection from at least two qualified engines.
+ * - Or one exceptional qualified engine at 86%+ when no consensus exists.
+ * - Every candidate must pass the existing banker sample and caution gates.
+ * - Split ties are withheld instead of forcing a pick.
+ */
+export function selectConsensusBankers(predictions, { limit = CONSENSUS_DEFAULT_LIMIT } = {}) {
+  const safeLimit = Math.max(1, Math.min(Number(limit) || CONSENSUS_DEFAULT_LIMIT, 20));
+  const selected = [];
+  const rejections = [];
+
+  for (const prediction of predictions || []) {
+    const groups = new Map();
+    const eligibleSingles = [];
+
+    for (const engineKey of ENGINE_KEYS) {
+      const pick = prediction?.engines?.[engineKey];
+      if (!pick) continue;
+      const eligibility = bankerEligibility(prediction, engineKey);
+      const confidence = eligibility.confidence;
+      if (!eligibility.eligible || confidence < CONSENSUS_MIN_CONFIDENCE) continue;
+
+      const item = { engineKey, pick, confidence, eligibility };
+      eligibleSingles.push(item);
+      const signature = pickSignature(pick);
+      if (!groups.has(signature)) groups.set(signature, { signature, pick, items: [] });
+      groups.get(signature).items.push(item);
+    }
+
+    const consensusGroups = [...groups.values()]
+      .filter((group) => group.items.length >= 2)
+      .map((group) => ({
+        ...group,
+        averageConfidence: group.items.reduce((sum, item) => sum + item.confidence, 0) / group.items.length,
+        minimumConfidence: Math.min(...group.items.map((item) => item.confidence))
+      }))
+      .sort((a, b) =>
+        b.items.length - a.items.length ||
+        b.averageConfidence - a.averageConfidence ||
+        b.minimumConfidence - a.minimumConfidence
+      );
+
+    if (consensusGroups.length) {
+      const top = consensusGroups[0];
+      const runnerUp = consensusGroups[1];
+      const splitTie = runnerUp &&
+        runnerUp.items.length === top.items.length &&
+        Math.abs(runnerUp.averageConfidence - top.averageConfidence) < 3;
+
+      if (splitTie) {
+        rejections.push({
+          fixtureId: prediction.fixtureId,
+          reason: "Two different selections had an almost equal engine consensus"
+        });
+        continue;
+      }
+
+      selected.push(publicBankerRecord(prediction, top, "consensus"));
+      continue;
+    }
+
+    const exceptional = eligibleSingles
+      .filter((item) => item.confidence >= SOLO_HIGH_CONFIDENCE)
+      .sort((a, b) => b.confidence - a.confidence)[0];
+
+    if (exceptional) {
+      selected.push(publicBankerRecord(prediction, {
+        signature: pickSignature(exceptional.pick),
+        pick: exceptional.pick,
+        items: [exceptional]
+      }, "high-confidence"));
+    } else {
+      rejections.push({
+        fixtureId: prediction.fixtureId,
+        reason: eligibleSingles.length
+          ? "No two engines agreed and no single pick reached 86%"
+          : "No engine passed the strict banker evidence gate"
+      });
+    }
+  }
+
+  selected.sort((a, b) =>
+    b.consensusCount - a.consensusCount ||
+    b.bankerScore - a.bankerScore ||
+    new Date(a.kickoff || 0) - new Date(b.kickoff || 0)
+  );
+
+  const picks = selected.slice(0, safeLimit);
+  const rejectionCounts = rejections.reduce((counts, row) => {
+    counts[row.reason] = (counts[row.reason] || 0) + 1;
+    return counts;
+  }, {});
+
+  return {
+    criteria: {
+      onePickPerFixture: true,
+      exactSelectionAgreementRequired: true,
+      minimumConsensusEngines: 2,
+      minimumEligibleConfidence: CONSENSUS_MIN_CONFIDENCE,
+      soloHighConfidenceThreshold: SOLO_HIGH_CONFIDENCE,
+      minimumOverallMatches: 6,
+      minimumVenueMatches: 3,
+      qualifiedRequired: true,
+      criticalCautionsAllowed: false,
+      maximumPublished: safeLimit
+    },
+    picks,
+    totalSelections: picks.length,
+    unanimousCount: picks.filter((pick) => pick.consensusCount >= 4).length,
+    primeCount: picks.filter((pick) => pick.consensusCount === 3).length,
+    consensusCount: picks.filter((pick) => pick.consensusCount === 2).length,
+    highConfidenceCount: picks.filter((pick) => pick.source === "high-confidence").length,
+    rejectedCount: rejections.length,
+    rejectionSummary: Object.entries(rejectionCounts)
+      .map(([reason, count]) => ({ reason, count }))
+      .sort((a, b) => b.count - a.count)
+  };
+}
+
 function maxIso(values) {
   return values
     .filter(Boolean)

@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.16.1",
+  "version": "1.17.0",
   "private": true,
-  "description": "BetsPapa Render API with branded PWA launch assets, first-user walkthrough, PapaSense football intelligence and OMNI Boss Picks.",
+  "description": "BetsPapa Render API with consensus Bankers, branded PWA, PapaSense football intelligence and OMNI Boss Picks.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

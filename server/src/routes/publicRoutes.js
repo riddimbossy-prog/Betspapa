@@ -7,7 +7,8 @@ import { assertIsoDate, todayUtc } from "../utils/date.js";
 import {
   ENGINE_KEYS,
   getResultsIntelligence,
-  selectBankerSlate
+  selectBankerSlate,
+  selectConsensusBankers
 } from "../services/intelligenceService.js";
 import {
   getBackgroundProcessingStatus,
@@ -27,6 +28,7 @@ export const publicRouter = Router();
 const refreshJobs = new Map();
 const dashboardCache = new Map();
 const resultsCache = new Map();
+const bankersCache = new Map();
 
 function setPublicCache(res, maxAge, staleWhileRevalidate) {
   res.set("Cache-Control", `public, max-age=${maxAge}, stale-while-revalidate=${staleWhileRevalidate}`);
@@ -86,6 +88,9 @@ async function cachedValue(cache, key, loader, {
 function invalidateDateCaches(date) {
   dashboardCache.delete(date);
   resultsCache.clear();
+  for (const key of bankersCache.keys()) {
+    if (key.startsWith(`${date}:`)) bankersCache.delete(key);
+  }
   invalidateBossPickCache(date);
 }
 
@@ -140,6 +145,23 @@ function intelligenceForDays(days) {
     key,
     () => getResultsIntelligence(getSupabaseAdmin(), days),
     { ttlMs: 60_000, staleMs: 10 * 60_000 }
+  );
+}
+
+function consensusBankersForDate(date, limit) {
+  const key = `${date}:${limit}`;
+  return cachedValue(
+    bankersCache,
+    key,
+    async () => {
+      const predictions = await listPublicPredictions(getSupabaseAdmin(), date);
+      return {
+        predictionsReviewed: predictions.length,
+        matchStates: summarizeMatchStates(predictions),
+        ...selectConsensusBankers(predictions, { limit })
+      };
+    },
+    { ttlMs: 20_000, staleMs: 5 * 60_000 }
   );
 }
 
@@ -252,9 +274,29 @@ publicRouter.get("/boss-picks/today", async (req, res, next) => {
 publicRouter.get("/bankers/today", async (req, res, next) => {
   try {
     const date = assertIsoDate(req.query.date || todayUtc());
+    const limit = Math.max(1, Math.min(Number(req.query.limit) || 12, 20));
+    const refresh = await maybeRefreshMatches(req, date);
+    const slate = await consensusBankersForDate(date, limit);
+
+    setPublicCache(res, 15, 120);
+    res.json({
+      date,
+      generatedAt: new Date().toISOString(),
+      liveRefresh: refresh,
+      methodology: "Exact-selection consensus plus exceptional qualified single-engine picks",
+      ...slate
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Legacy per-engine banker slate retained for diagnostics and older clients.
+publicRouter.get("/bankers/by-engine", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.query.date || todayUtc());
     const limit = Math.max(1, Math.min(Number(req.query.limit) || 3, 5));
     const supabase = getSupabaseAdmin();
-    const refresh = await maybeRefreshMatches(req, date);
     const predictions = await listPublicPredictions(supabase, date);
     const slate = selectBankerSlate(predictions, { limit });
 
@@ -264,7 +306,6 @@ publicRouter.get("/bankers/today", async (req, res, next) => {
       generatedAt: new Date().toISOString(),
       predictionsReviewed: predictions.length,
       matchStates: summarizeMatchStates(predictions),
-      liveRefresh: refresh,
       ...slate
     });
   } catch (error) {

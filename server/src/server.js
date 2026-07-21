@@ -103,7 +103,8 @@ app.get("/", (_req, res) => {
     safer: "/api/engines/safer",
     venuePattern: "/api/engines/venue",
     bossPicks: "/api/boss-picks/today",
-    legacyBankers: "/api/bankers/today",
+    consensusBankers: "/api/bankers/today",
+    legacyBankersByEngine: "/api/bankers/by-engine",
     resultsIntelligence: "/api/results/intelligence",
     adminDiagnostics: "/api/admin/diagnostics"
   });
