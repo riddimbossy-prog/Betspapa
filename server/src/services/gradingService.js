@@ -1,4 +1,7 @@
-import { ENGINE_VERSION } from "../config.js";
+import {
+  ENGINE_VERSION,
+  FINISHED_PROFILE_STATUSES
+} from "../config.js";
 import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 
@@ -26,21 +29,46 @@ function confirmedHtft(fixture) {
 }
 
 function teamNameStarts(selection, name) {
-  return String(selection || "").toLowerCase().startsWith(String(name || "").toLowerCase());
+  return String(selection || "")
+    .toLowerCase()
+    .startsWith(String(name || "").toLowerCase());
+}
+
+function scoreParts(fixture) {
+  const home = Number(fixture.fulltime_home);
+  const away = Number(fixture.fulltime_away);
+  const halfHome = Number(fixture.halftime_home);
+  const halfAway = Number(fixture.halftime_away);
+
+  if (![home, away, halfHome, halfAway].every(Number.isFinite)) return null;
+
+  return {
+    home,
+    away,
+    halfHome,
+    halfAway,
+    secondHome: home - halfHome,
+    secondAway: away - halfAway,
+    total: home + away
+  };
 }
 
 export function gradeEnginePick(pick, fixture, homeName, awayName) {
-  const h = Number(fixture.fulltime_home);
-  const a = Number(fixture.fulltime_away);
-  const hh = Number(fixture.halftime_home);
-  const ha = Number(fixture.halftime_away);
-  const total = h + a;
-  const secondHalfHome = h - hh;
-  const secondHalfAway = a - ha;
+  const score = scoreParts(fixture);
+  if (!score) return "UNABLE_TO_GRADE";
+
+  const {
+    home: h,
+    away: a,
+    halfHome: hh,
+    halfAway: ha,
+    secondHome: sh,
+    secondAway: sa,
+    total
+  } = score;
+
   const key = pick?.key;
   const selection = pick?.selection || "";
-
-  if (![h, a, hh, ha].every(Number.isFinite)) return "UNABLE_TO_GRADE";
 
   switch (key) {
     case "home-1x": return h >= a ? "WIN" : "LOSS";
@@ -50,12 +78,18 @@ export function gradeEnginePick(pick, fixture, homeName, awayName) {
     case "away-dnb": return h === a ? "VOID" : a > h ? "WIN" : "LOSS";
     case "home-win": return h > a ? "WIN" : "LOSS";
     case "away-win": return a > h ? "WIN" : "LOSS";
+    case "home-win-either-half": return hh > ha || sh > sa ? "WIN" : "LOSS";
+    case "away-win-either-half": return ha > hh || sa > sh ? "WIN" : "LOSS";
+    case "draw-either-half": return hh === ha || sh === sa ? "WIN" : "LOSS";
     case "ht-home-or-draw": return hh >= ha ? "WIN" : "LOSS";
     case "ht-away-or-draw": return ha >= hh ? "WIN" : "LOSS";
     case "ht-home": return hh > ha ? "WIN" : "LOSS";
     case "ht-draw": return hh === ha ? "WIN" : "LOSS";
     case "ht-away": return ha > hh ? "WIN" : "LOSS";
     case "exact-htft": return selection === confirmedHtft(fixture) ? "WIN" : "LOSS";
+    case "first-half-over-05": return hh + ha >= 1 ? "WIN" : "LOSS";
+    case "first-half-over-15": return hh + ha >= 2 ? "WIN" : "LOSS";
+    case "second-half-over-05": return sh + sa >= 1 ? "WIN" : "LOSS";
     case "gg-yes": return h > 0 && a > 0 ? "WIN" : "LOSS";
     case "gg-no": return h === 0 || a === 0 ? "WIN" : "LOSS";
     case "over-15": return total >= 2 ? "WIN" : "LOSS";
@@ -65,19 +99,17 @@ export function gradeEnginePick(pick, fixture, homeName, awayName) {
     case "away-over-05": return a >= 1 ? "WIN" : "LOSS";
     case "home-over-15": return h >= 2 ? "WIN" : "LOSS";
     case "away-over-15": return a >= 2 ? "WIN" : "LOSS";
-    case "home-win-either-half": return hh > ha || secondHalfHome > secondHalfAway ? "WIN" : "LOSS";
-    case "away-win-either-half": return ha > hh || secondHalfAway > secondHalfHome ? "WIN" : "LOSS";
-    case "draw-either-half": return hh === ha || secondHalfHome === secondHalfAway ? "WIN" : "LOSS";
-    case "first-half-over-05": return hh + ha >= 1 ? "WIN" : "LOSS";
-    case "first-half-over-15": return hh + ha >= 2 ? "WIN" : "LOSS";
-    case "second-half-over-05": return secondHalfHome + secondHalfAway >= 1 ? "WIN" : "LOSS";
     case "favourite-over-15": {
       const goals = teamNameStarts(selection, homeName)
         ? h
         : teamNameStarts(selection, awayName)
           ? a
           : null;
-      return goals === null ? "UNABLE_TO_GRADE" : goals >= 2 ? "WIN" : "LOSS";
+      return goals === null
+        ? "UNABLE_TO_GRADE"
+        : goals >= 2
+          ? "WIN"
+          : "LOSS";
     }
     default:
       return "UNABLE_TO_GRADE";
@@ -101,10 +133,21 @@ export async function gradePredictionsForDate(supabase, date) {
       .select("*")
       .gte("fixture_date", start)
       .lt("fixture_date", end)
-      .eq("status", "FT")
+      .in("status", [...FINISHED_PROFILE_STATUSES])
   );
 
-  if (!fixtures.length) return { date, finishedFixtures: 0, graded: 0, results: [] };
+  if (!fixtures.length) {
+    return {
+      date,
+      finishedFixtures: 0,
+      graded: 0,
+      wins: 0,
+      losses: 0,
+      voids: 0,
+      skipped: [],
+      results: []
+    };
+  }
 
   const fixtureIds = fixtures.map((fixture) => fixture.id);
   const { data: predictions, error: predictionError } = await supabase
@@ -114,19 +157,24 @@ export async function gradePredictionsForDate(supabase, date) {
     .eq("engine_version", ENGINE_VERSION);
   throwIfSupabaseError(predictionError, "Unable to load predictions for grading");
 
-  const teamIds = [...new Set(fixtures.flatMap((f) => [f.home_team_id, f.away_team_id]))];
+  const teamIds = [...new Set(
+    fixtures.flatMap((fixture) => [fixture.home_team_id, fixture.away_team_id])
+  )];
   const { data: teams, error: teamError } = await supabase
     .from("teams")
     .select("id,name")
     .in("id", teamIds);
   throwIfSupabaseError(teamError, "Unable to load teams for grading");
+
   const teamMap = new Map((teams || []).map((team) => [team.id, team.name]));
   const fixtureMap = new Map(fixtures.map((fixture) => [fixture.id, fixture]));
-
   const rows = [];
+  const skipped = [];
+
   for (const prediction of predictions || []) {
     const fixture = fixtureMap.get(prediction.fixture_id);
     if (!fixture) continue;
+
     const key = prediction.market_scores?.primaryKey;
     const outcome = gradeMarket(
       key,
@@ -135,6 +183,17 @@ export async function gradePredictionsForDate(supabase, date) {
       teamMap.get(fixture.home_team_id),
       teamMap.get(fixture.away_team_id)
     );
+
+    if (outcome === "UNABLE_TO_GRADE") {
+      skipped.push({
+        predictionId: prediction.id,
+        fixtureId: fixture.id,
+        key: key || null,
+        reason: "This market does not yet have a settlement rule"
+      });
+      continue;
+    }
+
     rows.push({
       prediction_id: prediction.id,
       fixture_id: fixture.id,
@@ -162,6 +221,7 @@ export async function gradePredictionsForDate(supabase, date) {
     wins: rows.filter((row) => row.outcome === "WIN").length,
     losses: rows.filter((row) => row.outcome === "LOSS").length,
     voids: rows.filter((row) => row.outcome === "VOID").length,
+    skipped,
     results: rows
   };
 }

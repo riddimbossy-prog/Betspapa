@@ -1,0 +1,13 @@
+BetsPapa v1.16.1 verification
+============================
+
+Date: 2026-07-21
+
+- Node test runner: 44 passed, 0 failed.
+- All JavaScript files passed node --check syntax validation.
+- Active HTML references were checked; 0 missing local assets.
+- PapaSense engine remains papasense-v1.13.0.
+- Low-odds Team Over 0.5 amendment test passed.
+- Large historical Results batching test passed with 101 fixtures and safe <=100-item Supabase IN batches.
+- Service version: 1.16.1.
+- PWA cache: betspapa-pwa-v1161.

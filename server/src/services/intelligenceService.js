@@ -1,4 +1,4 @@
-import { ENGINE_VERSION, PREDICTABLE_STATUSES } from "../config.js";
+import { ENGINE_VERSION, FINISHED_PROFILE_STATUSES, PREDICTABLE_STATUSES } from "../config.js";
 import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 import { gradeEnginePick } from "./gradingService.js";
@@ -23,6 +23,33 @@ function confidencePercent(value) {
   const number = Number(value || 0);
   if (!Number.isFinite(number)) return 0;
   return number <= 1 ? number * 100 : number;
+}
+
+function chunkValues(values, size = 100) {
+  const chunks = [];
+  for (let index = 0; index < values.length; index += size) {
+    chunks.push(values.slice(index, index + size));
+  }
+  return chunks;
+}
+
+async function fetchRowsInChunks(values, queryFactory, {
+  chunkSize = 100,
+  concurrency = 4
+} = {}) {
+  if (!values.length) return [];
+  const chunks = chunkValues(values, chunkSize);
+  const rows = [];
+
+  for (let index = 0; index < chunks.length; index += concurrency) {
+    const group = chunks.slice(index, index + concurrency);
+    const results = await Promise.all(
+      group.map((chunk) => fetchAllRows(() => queryFactory(chunk)))
+    );
+    results.forEach((batch) => rows.push(...batch));
+  }
+
+  return rows;
 }
 
 function auditEvidence(prediction) {
@@ -105,6 +132,10 @@ export function selectBankerSlate(predictions, { limit = 3 } = {}) {
         league: prediction.league,
         home: prediction.home,
         away: prediction.away,
+        status: prediction.status,
+        matchState: prediction.matchState || null,
+        settlement: prediction.settlement || null,
+        engineOutcome: prediction.engineOutcomes?.[engineKey] || null,
         engineKey,
         engineName: ENGINE_LABELS[engineKey],
         pick,
@@ -289,24 +320,20 @@ async function loadEntities(supabase, fixtures) {
   ]).filter(Boolean))];
   const leagueIds = [...new Set(fixtures.map((fixture) => fixture.league_id).filter(Boolean))];
 
-  const [
-    { data: teams, error: teamError },
-    { data: leagues, error: leagueError }
-  ] = await Promise.all([
-    teamIds.length
-      ? supabase.from("teams")
-          .select("id,external_team_id,name,country,logo_url")
-          .in("id", teamIds)
-      : Promise.resolve({ data: [], error: null }),
-    leagueIds.length
-      ? supabase.from("leagues")
-          .select("id,external_league_id,name,country,season,logo_url")
-          .in("id", leagueIds)
-      : Promise.resolve({ data: [], error: null })
+  const [teams, leagues] = await Promise.all([
+    fetchRowsInChunks(
+      teamIds,
+      (ids) => supabase.from("teams")
+        .select("id,external_team_id,name,country,logo_url")
+        .in("id", ids)
+    ),
+    fetchRowsInChunks(
+      leagueIds,
+      (ids) => supabase.from("leagues")
+        .select("id,external_league_id,name,country,season,logo_url")
+        .in("id", ids)
+    )
   ]);
-
-  throwIfSupabaseError(teamError, "Unable to load intelligence teams");
-  throwIfSupabaseError(leagueError, "Unable to load intelligence leagues");
 
   return {
     teamMap: new Map((teams || []).map((team) => [team.id, team])),
@@ -325,7 +352,7 @@ export async function getResultsIntelligence(supabase, days = 30) {
     supabase
       .from("fixtures")
       .select("*")
-      .in("status", ["FT", "AET", "PEN", "AWD", "WO"])
+      .in("status", [...FINISHED_PROFILE_STATUSES])
       .gte("fixture_date", start.toISOString())
       .lte("fixture_date", end.toISOString())
       .order("fixture_date", { ascending: false })
@@ -352,18 +379,27 @@ export async function getResultsIntelligence(supabase, days = 30) {
   }
 
   const fixtureIds = fixtures.map((fixture) => fixture.id);
-  const predictions = [];
-  const batchSize = 150;
-  for (let index = 0; index < fixtureIds.length; index += batchSize) {
-    const batch = fixtureIds.slice(index, index + batchSize);
-    const rows = await fetchAllRows(() =>
-      supabase
-        .from("predictions")
-        .select("*")
-        .in("fixture_id", batch)
-    );
-    predictions.push(...rows);
+  const predictionRows = await fetchRowsInChunks(
+    fixtureIds,
+    (ids) => supabase
+      .from("predictions")
+      .select("*")
+      .in("fixture_id", ids)
+      .eq("published", true)
+      .order("created_at", { ascending: false })
+  );
+
+  // Results must survive engine upgrades. Keep the newest usable published
+  // prediction for each fixture instead of filtering history to one version.
+  const rowsByFixture = new Map();
+  for (const prediction of predictionRows) {
+    if (!rowsByFixture.has(prediction.fixture_id)) rowsByFixture.set(prediction.fixture_id, []);
+    rowsByFixture.get(prediction.fixture_id).push(prediction);
   }
+  const predictions = [...rowsByFixture.values()].map((rows) => {
+    rows.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    return rows.find((row) => Object.keys(row.market_scores?.enginePicks || {}).length) || rows[0];
+  });
 
   const { teamMap, leagueMap } = await loadEntities(supabase, fixtures);
   const fixtureMap = new Map(fixtures.map((fixture) => [fixture.id, fixture]));

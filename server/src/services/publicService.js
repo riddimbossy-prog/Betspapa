@@ -1,7 +1,13 @@
-import { ENGINE_VERSION, PREDICTABLE_STATUSES } from "../config.js";
+import {
+  ENGINE_VERSION,
+  FINISHED_PROFILE_STATUSES,
+  PREDICTABLE_STATUSES
+} from "../config.js";
 import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 import { generatePredictionsForDate } from "./predictionService.js";
+import { gradeEnginePick } from "./gradingService.js";
+import { fixtureMatchState, summarizeMatchStates } from "./matchStateService.js";
 
 
 const backgroundJobs = new Map();
@@ -174,12 +180,22 @@ async function loadEntityMaps(supabase, fixtures) {
   };
 }
 
-function publicFixture(fixture, teamMap, leagueMap) {
+function publicFixture(fixture, teamMap, leagueMap, settlement = null) {
   return {
     id: fixture.id,
     fixtureId: fixture.external_fixture_id,
     kickoff: fixture.fixture_date,
     status: fixture.status,
+    matchState: fixtureMatchState(fixture, settlement),
+    settlement: settlement
+      ? {
+          outcome: settlement.outcome,
+          halftimeScore: settlement.halftime_score,
+          fulltimeScore: settlement.fulltime_score,
+          gradedAt: settlement.graded_at,
+          updatedAt: settlement.updated_at
+        }
+      : null,
     venue: fixture.venue,
     season: fixture.season,
     halftime: {
@@ -237,6 +253,18 @@ export async function listPublicPredictions(supabase, date) {
 
   throwIfSupabaseError(error, "Unable to load public predictions");
 
+  const predictionIds = (predictions || []).map((prediction) => prediction.id);
+  const { data: resultRows, error: resultError } = predictionIds.length
+    ? await supabase
+        .from("prediction_results")
+        .select("*")
+        .in("prediction_id", predictionIds)
+    : { data: [], error: null };
+  throwIfSupabaseError(resultError, "Unable to load prediction settlements");
+
+  const resultMap = new Map(
+    (resultRows || []).map((row) => [row.prediction_id, row])
+  );
   const { teamMap, leagueMap } = await loadEntityMaps(supabase, fixtures);
   const fixtureMap = new Map(fixtures.map((fixture) => [fixture.id, fixture]));
 
@@ -248,6 +276,48 @@ export async function listPublicPredictions(supabase, date) {
       const league = leagueMap.get(fixture.league_id);
       const home = teamMap.get(fixture.home_team_id);
       const away = teamMap.get(fixture.away_team_id);
+      const engines = prediction.market_scores?.enginePicks || null;
+      const storedSettlement = resultMap.get(prediction.id) || null;
+      const finished = FINISHED_PROFILE_STATUSES.has(fixture.status);
+
+      const engineOutcomes = {};
+      if (finished && engines) {
+        for (const [key, pick] of Object.entries(engines)) {
+          const outcome = gradeEnginePick(pick, fixture, home?.name, away?.name);
+          if (outcome !== "UNABLE_TO_GRADE") engineOutcomes[key] = outcome;
+        }
+      }
+
+      const computedPrimaryOutcome = finished
+        ? gradeEnginePick(
+            {
+              key: prediction.market_scores?.primaryKey,
+              selection: prediction.primary_selection
+            },
+            fixture,
+            home?.name,
+            away?.name
+          )
+        : null;
+      const primaryOutcome =
+        storedSettlement?.outcome ||
+        (computedPrimaryOutcome !== "UNABLE_TO_GRADE"
+          ? computedPrimaryOutcome
+          : null);
+      const settlement = primaryOutcome
+        ? {
+            outcome: primaryOutcome,
+            halftimeScore:
+              storedSettlement?.halftime_score ||
+              `${fixture.halftime_home}-${fixture.halftime_away}`,
+            fulltimeScore:
+              storedSettlement?.fulltime_score ||
+              `${fixture.fulltime_home}-${fixture.fulltime_away}`,
+            gradedAt: storedSettlement?.graded_at || null,
+            updatedAt: storedSettlement?.updated_at || fixture.updated_at,
+            persisted: Boolean(storedSettlement)
+          }
+        : null;
 
       return {
         id: prediction.id,
@@ -255,12 +325,25 @@ export async function listPublicPredictions(supabase, date) {
         internalFixtureId: fixture.id,
         kickoff: fixture.fixture_date,
         status: fixture.status,
+        matchState: fixtureMatchState(fixture, settlement),
+        settlement,
+        engineOutcomes,
+        score: {
+          halftime: {
+            home: fixture.halftime_home,
+            away: fixture.halftime_away
+          },
+          current: {
+            home: fixture.fulltime_home,
+            away: fixture.fulltime_away
+          }
+        },
         venue: fixture.venue,
         league,
         home,
         away,
         defaultEngine: prediction.market_scores?.defaultEngine || "primary",
-        engines: prediction.market_scores?.enginePicks || null,
+        engines,
         primary: {
           market: prediction.primary_market,
           selection: prediction.primary_selection,
@@ -268,7 +351,8 @@ export async function listPublicPredictions(supabase, date) {
           confidence: prediction.confidence,
           tier: prediction.confidence_tier,
           qualified: Boolean(prediction.market_scores?.qualified),
-          mode: prediction.market_scores?.directionMode || "directional"
+          mode: prediction.market_scores?.directionMode || "directional",
+          outcome: primaryOutcome
         },
         strongestTransition: {
           code: prediction.strongest_transition,
@@ -449,7 +533,8 @@ export async function getDashboardStats(supabase, {
       predictions: predictionsToday.length,
       topConfidence: predictionsToday.length
         ? Number(Math.max(...predictionsToday.map((prediction) => Number(prediction.primary?.confidence || 0))).toFixed(1))
-        : null
+        : null,
+      matchStates: summarizeMatchStates(predictionsToday.length ? predictionsToday : fixturesToday)
     },
     lastUpdated: maxIso(timestamps)
   };

@@ -58,10 +58,5 @@ export const MARKET_THRESHOLDS = {
   over25: 0.61,
   under35: 0.71,
   teamOver05: 0.7,
-  teamOver15: 0.62,
-  winEitherHalf: 0.63,
-  drawEitherHalf: 0.66,
-  firstHalfOver05: 0.67,
-  firstHalfOver15: 0.6,
-  secondHalfOver05: 0.66
+  teamOver15: 0.61
 };

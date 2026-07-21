@@ -10,6 +10,7 @@
     market: "",
     strength: "",
     engine: "primary",
+    state: "all",
     query: "",
     page: 1
   };
@@ -19,6 +20,10 @@
     "https://api.betspapa.com",
     "https://betspapa.onrender.com"
   ].filter((value, index, list) => value && list.indexOf(value) === index);
+  const API_TIMEOUT_MS = 9000;
+  const LAST_API_BASE_KEY = "betspapa:last-api-base:v1161";
+  const DASHBOARD_CACHE_PREFIX = "betspapa:dashboard:v1161:";
+  const DASHBOARD_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
   let fixtures = [];
   let recentResults = [];
@@ -27,6 +32,52 @@
   let lastLoadedAt = 0;
   let processingState = { state: "idle", totalFixtures: 0, readyPredictions: 0, pending: 0, withheld: 0 };
   let processingPollTimer = null;
+
+  function storageGet(key) {
+    try {
+      return window.localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }
+
+  function storageSet(key, value) {
+    try {
+      window.localStorage.setItem(key, value);
+    } catch {
+      // Browsers may block storage in private mode. Live loading still works.
+    }
+  }
+
+  function orderedApiBases() {
+    const remembered = storageGet(LAST_API_BASE_KEY);
+    return [remembered, ...API_BASES]
+      .filter((value, index, list) => value && list.indexOf(value) === index);
+  }
+
+  function dashboardCacheKey(date) {
+    return `${DASHBOARD_CACHE_PREFIX}${date}`;
+  }
+
+  function readCachedDashboard(date) {
+    try {
+      const raw = storageGet(dashboardCacheKey(date));
+      if (!raw) return null;
+      const record = JSON.parse(raw);
+      if (!record?.payload || !record.savedAt) return null;
+      if (Date.now() - Number(record.savedAt) > DASHBOARD_CACHE_MAX_AGE_MS) return null;
+      return record;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveCachedDashboard(date, payload) {
+    storageSet(dashboardCacheKey(date), JSON.stringify({
+      savedAt: Date.now(),
+      payload
+    }));
+  }
 
   function escapeHtml(value) {
     return String(value ?? "")
@@ -201,37 +252,51 @@
     return "Rejected";
   }
 
-  async function fetchFromApi(path) {
-    let lastError = null;
+  async function fetchFromApi(path, { timeoutMs = API_TIMEOUT_MS } = {}) {
+    const bases = orderedApiBases();
+    const controllers = bases.map(() => new AbortController());
+    let settled = false;
 
-    for (const base of API_BASES) {
-      const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 35000);
+    const attempts = bases.map(async (base, index) => {
+      if (index) await new Promise((resolve) => window.setTimeout(resolve, index * 350));
+      if (settled) throw new Error("API attempt cancelled");
 
+      const controller = controllers[index];
+      const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
       try {
-        const separator = path.includes("?") ? "&" : "?";
-        const response = await fetch(`${base}${path}${separator}_=${Date.now()}`, {
+        const response = await fetch(`${base}${path}`, {
           method: "GET",
           headers: { Accept: "application/json" },
-          cache: "no-store",
+          cache: "no-cache",
           signal: controller.signal
         });
-
-        if (!response.ok) {
-          throw new Error(`${response.status} ${response.statusText}`);
-        }
-
+        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
         const data = await response.json();
-        activeApiBase = base;
-        return data;
+        settled = true;
+        controllers.forEach((item, itemIndex) => {
+          if (itemIndex !== index) item.abort();
+        });
+        return { base, data };
       } catch (error) {
-        lastError = error;
+        if (error?.name === "AbortError") {
+          throw new Error(`BetsPapa API timed out after ${Math.round(timeoutMs / 1000)} seconds`);
+        }
+        throw error;
       } finally {
         window.clearTimeout(timeout);
       }
-    }
+    });
 
-    throw lastError || new Error("No BetsPapa API endpoint was reachable");
+    try {
+      const result = await Promise.any(attempts);
+      activeApiBase = result.base;
+      storageSet(LAST_API_BASE_KEY, result.base);
+      return result.data;
+    } catch (error) {
+      const errors = Array.isArray(error?.errors) ? error.errors : [];
+      const useful = errors.find((item) => !/cancelled/i.test(item?.message || ""));
+      throw useful || error || new Error("No BetsPapa API endpoint was reachable");
+    }
   }
 
   function setLiveState(state, title, detail = "") {
@@ -259,6 +324,48 @@
     }
     if (state.category === "finished") return "SETTLING";
     return String(state.label || fixture?.status || "PENDING").toUpperCase();
+  }
+
+  function todayStateKey(fixture) {
+    const state = fixture?.matchState || {};
+    const activeOutcome = fixture?.engineOutcomes?.[filterState.engine];
+    if (["WIN", "LOSS", "VOID"].includes(activeOutcome)) return "settled";
+    if (state.isSettled || state.category === "settled") return "settled";
+    if (state.isLive || state.category === "live") return "live";
+    if (["finished", "settling"].includes(state.category)) return "settling";
+    if (["postponed", "cancelled", "suspended", "delayed"].includes(state.category)) return "delayed";
+    return "pending";
+  }
+
+  function renderTodaySummary() {
+    const counts = { all: fixtures.length, live: 0, pending: 0, settling: 0, settled: 0, delayed: 0 };
+    fixtures.forEach((fixture) => {
+      const key = todayStateKey(fixture);
+      counts[key] = (counts[key] || 0) + 1;
+    });
+
+    const ids = {
+      all: "todayAllCount",
+      live: "todayLiveCount",
+      pending: "todayPendingCount",
+      settling: "todaySettlingCount",
+      settled: "todaySettledCount"
+    };
+    Object.entries(ids).forEach(([key, id]) => {
+      const node = document.getElementById(id);
+      if (node) node.textContent = String(counts[key] || 0);
+    });
+
+    document.querySelectorAll("[data-today-state]").forEach((button) => {
+      const active = button.dataset.todayState === filterState.state;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+
+    const stateSelect = document.getElementById("matchStateFilter");
+    if (stateSelect && stateSelect.value !== filterState.state) {
+      stateSelect.value = filterState.state;
+    }
   }
 
   function dashboardStateMarkup(fixture) {
@@ -519,6 +626,9 @@
       const tierValue = String(activePick?.tier || "");
       const qualified = Boolean(activePick?.qualified);
 
+      if (filterState.state && filterState.state !== "all") {
+        if (todayStateKey(fixture) !== filterState.state) return false;
+      }
       if (leagueNeedle && leagueValue !== leagueNeedle) return false;
       if (!marketFilterMatches(activePick, marketNeedle)) return false;
 
@@ -544,6 +654,7 @@
 
   function updateFilterOptions() {
     const leagueSelect = $("#leagueFilter");
+    const stateSelect = $("#matchStateFilter");
     const marketSelect = $("#marketFilter");
     if (!leagueSelect || !marketSelect) return;
 
@@ -595,6 +706,7 @@
     if (!container) return;
 
     const readyCount = fixtures.length;
+    renderTodaySummary();
     const importedCount = Number(processingState.totalFixtures || readyCount);
     const pendingCount = Number(processingState.pending || 0);
     const withheldCount = Number(processingState.withheld || 0);
@@ -650,7 +762,7 @@
       const confidence = percent(analysis.confidence, 1);
       const mode = `${engineMeta().name} · ${qualified ? "Qualified" : "Directional"}`;
       const modeClass = qualified ? "qualified" : "directional";
-      return `<button class="fixture-item ${fixture.id === selectedId ? "active" : ""}" data-id="${escapeHtml(fixture.id)}">
+      return `<button class="fixture-item ${fixture.id === selectedId ? "active" : ""}" data-id="${escapeHtml(fixture.id)}" data-match-state="${escapeHtml(todayStateKey(fixture))}">
         <div class="fixture-top"><span>${escapeHtml(fixture.league)}</span><span>${escapeHtml(fixture.kickoff)}</span></div>
         ${dashboardStateMarkup(fixture)}
         <div class="fixture-teams">
@@ -964,48 +1076,85 @@
     );
   }
 
+  function applyDashboardPayload(payload, { cached = false, cacheAgeMs = 0 } = {}) {
+    processingState = payload.processing || {
+      state: "idle",
+      totalFixtures: Array.isArray(payload.fixtures) ? payload.fixtures.length : 0,
+      readyPredictions: Array.isArray(payload.predictions) ? payload.predictions.length : 0,
+      pending: Math.max(0, (Array.isArray(payload.fixtures) ? payload.fixtures.length : 0) - (Array.isArray(payload.predictions) ? payload.predictions.length : 0)),
+      withheld: 0
+    };
+    fixtures = normalizeDashboard(payload);
+    recentResults = Array.isArray(payload.recentResults) ? payload.recentResults : [];
+    selectedId = fixtures.find((fixture) => fixture.id === selectedId)?.id || fixtures[0]?.id || null;
+
+    renderMetrics(payload.stats || {});
+    updateFilterOptions();
+    renderFixtures();
+    renderAnalysis();
+    renderExplanation();
+    renderResults();
+
+    const source = cached
+      ? "Saved picks"
+      : activeApiBase?.includes("onrender.com")
+        ? "Render fallback"
+        : "api.betspapa.com";
+    const updated = payload.stats?.lastUpdated || payload.generatedAt || new Date().toISOString();
+    const pending = Number(processingState.pending || 0);
+    const withheld = Number(processingState.withheld || 0);
+    const states = payload.stats?.today?.matchStates || {};
+    const preparationNote = `${fixtures.length} pick${fixtures.length === 1 ? "" : "s"} ready` +
+      (states.live ? ` · ${states.live} live` : "") +
+      (states.settled ? ` · ${states.settled} settled` : "") +
+      (pending ? ` · ${pending} preparing in background` : "") +
+      (withheld ? ` · ${withheld} withheld` : "");
+    const cacheNote = cached
+      ? ` · refreshing quietly${cacheAgeMs ? ` · saved ${Math.max(1, Math.round(cacheAgeMs / 60000))}m ago` : ""}`
+      : "";
+
+    setLiveState(
+      processingState.state === "failed" ? "error" : "live",
+      fixtures.length
+        ? cached ? "Papa’s saved picks are ready" : "Papa’s completed picks are live"
+        : pending
+          ? "Papa’s automatic pipeline is preparing today’s picks"
+          : cached ? "Showing saved dashboard" : "Live database connected",
+      `${source} · ${preparationNote}${cacheNote} · Updated ${formatKickoff(updated)}`
+    );
+    scheduleProcessingPoll();
+  }
+
   async function loadDashboard({ silent = false } = {}) {
     const date = filterState.date || localIsoDate();
-    if (!silent) setLiveState("loading", "Connecting to live data…", `Date: ${date}`);
+    const cachedRecord = readCachedDashboard(date);
+    const hadVisibleData = fixtures.length > 0;
+
+    if (cachedRecord?.payload) {
+      applyDashboardPayload(cachedRecord.payload, {
+        cached: true,
+        cacheAgeMs: Date.now() - Number(cachedRecord.savedAt || Date.now())
+      });
+    } else if (!silent) {
+      setLiveState("loading", "Connecting to live data…", `Date: ${date}`);
+    }
 
     try {
-      const payload = await fetchFromApi(`/api/dashboard/today?date=${encodeURIComponent(date)}`);
-      processingState = payload.processing || {
-        state: "idle",
-        totalFixtures: Array.isArray(payload.fixtures) ? payload.fixtures.length : 0,
-        readyPredictions: Array.isArray(payload.predictions) ? payload.predictions.length : 0,
-        pending: Math.max(0, (Array.isArray(payload.fixtures) ? payload.fixtures.length : 0) - (Array.isArray(payload.predictions) ? payload.predictions.length : 0)),
-        withheld: 0
-      };
-      fixtures = normalizeDashboard(payload);
-      recentResults = Array.isArray(payload.recentResults) ? payload.recentResults : [];
-      selectedId = fixtures.find((fixture) => fixture.id === selectedId)?.id || fixtures[0]?.id || null;
-
-      renderMetrics(payload.stats || {});
-      updateFilterOptions();
-      renderFixtures();
-      renderAnalysis();
-      renderExplanation();
-      renderResults();
-
-      const source = activeApiBase?.includes("onrender.com") ? "Render fallback" : "api.betspapa.com";
-      const updated = payload.stats?.lastUpdated || payload.generatedAt || new Date().toISOString();
-      const pending = Number(processingState.pending || 0);
-      const withheld = Number(processingState.withheld || 0);
-      const states = payload.stats?.today?.matchStates || {};
-      const preparationNote = `${fixtures.length} pick${fixtures.length === 1 ? "" : "s"} ready` +
-        (states.live ? ` · ${states.live} live` : "") +
-        (states.settled ? ` · ${states.settled} settled` : "") +
-        (pending ? ` · ${pending} preparing in background` : "") +
-        (withheld ? ` · ${withheld} withheld` : "");
-      setLiveState(
-        processingState.state === "failed" ? "error" : "live",
-        fixtures.length ? "Papa’s completed picks are live" : pending ? "Papa’s automatic pipeline is preparing today’s picks" : "Live database connected",
-        `${source} · ${preparationNote} · Updated ${formatKickoff(updated)}`
-      );
-      scheduleProcessingPoll();
+      const payload = await fetchFromApi(`/api/dashboard/today?date=${encodeURIComponent(date)}&refresh=0`);
+      applyDashboardPayload(payload);
+      saveCachedDashboard(date, payload);
       lastLoadedAt = Date.now();
     } catch (error) {
+      if (cachedRecord?.payload || hadVisibleData) {
+        setLiveState(
+          "live",
+          "Saved picks are still available",
+          `${error.message}. BetsPapa will try the live API again automatically.`
+        );
+        scheduleProcessingPoll();
+        return;
+      }
+
       fixtures = [];
       recentResults = [];
       renderMetrics({});
@@ -1506,6 +1655,21 @@
       loadDashboard();
     });
 
+    stateSelect?.addEventListener("change", () => {
+      filterState.state = stateSelect.value || "all";
+      filterState.page = 1;
+      renderFixtures();
+    });
+
+    document.querySelectorAll("[data-today-state]").forEach((button) => {
+      button.addEventListener("click", () => {
+        filterState.state = button.dataset.todayState || "all";
+        filterState.page = 1;
+        renderFixtures();
+        document.getElementById("fixtures")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+
     leagueSelect?.addEventListener("change", () => {
       filterState.league = leagueSelect.value;
       filterState.page = 1;
@@ -1533,12 +1697,14 @@
     clearButton?.addEventListener("click", () => {
       filterState.league = "";
       filterState.market = "";
+      filterState.state = "all";
       filterState.strength = "";
       filterState.engine = "primary";
       filterState.query = "";
       filterState.page = 1;
       if (leagueSelect) leagueSelect.value = "";
       if (marketSelect) marketSelect.value = "";
+      if (stateSelect) stateSelect.value = "all";
       if (strengthSelect) strengthSelect.value = "";
       if (searchInput) searchInput.value = "";
       syncEngineControls();
@@ -1559,6 +1725,45 @@
       renderFixtures();
       $("#fixtures")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+
+    const mobileDate = $("#todayMobileDateFilter");
+    if (mobileDate && dateInput) {
+      mobileDate.value = dateInput.value;
+      mobileDate.addEventListener("change", () => {
+        dateInput.value = mobileDate.value;
+        dateInput.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      dateInput.addEventListener("change", () => {
+        mobileDate.value = dateInput.value;
+      });
+    }
+
+    const sheet = $("#todayFilterSheet");
+    const toggle = $("#todayFilterToggle");
+    const close = $("#todayFilterClose");
+    const setSheet = (open) => {
+      document.body.classList.toggle("today-filters-open", open);
+      toggle?.setAttribute("aria-expanded", String(open));
+      sheet?.setAttribute("aria-hidden", String(!open));
+    };
+    toggle?.addEventListener("click", () => setSheet(true));
+    close?.addEventListener("click", () => setSheet(false));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") setSheet(false);
+    });
+
+    const trackedFilters = [leagueSelect, marketSelect, strengthSelect, searchInput]
+      .filter(Boolean);
+    const countNode = $("#todayFilterCount");
+    const updateFilterCount = () => {
+      const count = trackedFilters.filter((control) => String(control.value || "").trim()).length;
+      if (countNode) countNode.textContent = String(count);
+    };
+    trackedFilters.forEach((control) => {
+      control.addEventListener("change", updateFilterCount);
+      control.addEventListener("input", updateFilterCount);
+    });
+    updateFilterCount();
   }
 
   function setupLiveRefresh() {

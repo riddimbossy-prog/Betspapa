@@ -1,93 +1,45 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.13.0
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.16.1
 ================================================
 
-IMPORTANT
----------
-Do not deploy the older v1.11 ZIP. This package preserves its account features
-and adds the amended Papa's Pick engine.
+THIS BUILD PRESERVES
+--------------------
+- Every v1.16 branded PWA and first-user walkthrough feature.
+- PapaSense v1.13.0 and all Papa’s Pick amendments.
+- Live match states and automatic settlement.
+- The v1.15 responsive Today, engine, Boss Picks and mobile layouts.
 
-DEPLOY CODE
------------
-1. Extract this ZIP.
-2. Replace every file in your Betspapa repository.
-3. Commit:
-   BetsPapa v1.13 amended Papa's Pick
-4. Push origin from GitHub Desktop.
-5. Wait for GitHub Pages and Render.
-6. Confirm:
+FIXED IN v1.16.1
+-----------------
+- Saved picks display immediately while live data refreshes quietly.
+- API timeout reduced from 35–45 seconds to 9 seconds.
+- The app remembers the last working API endpoint.
+- Temporary API failures no longer erase picks already on screen.
+- Dashboard and Results endpoints no longer wait for live-score refresh work.
+- Results requests are split into safe Supabase batches.
+- Historical published prediction versions are included in Results.
+- FT, AET, PEN, AWD and WO finished states are supported.
+- Results has saved-data fallback, clear errors and a working retry button.
+- New service-worker cache forces the repaired JavaScript to load.
+
+DEPLOY
+------
+1. Replace every repository file with this package.
+2. Commit:
+   BetsPapa v1.16.1 faster picks and results repair
+3. Push origin using GitHub Desktop.
+4. Wait for GitHub Pages and Render to finish deploying.
+5. Confirm:
    https://api.betspapa.com/api/health
-   Service version must show 1.13.0.
-   Engine version must show papasense-v1.13.0.
 
-PAPA'S PICK v1.13
------------------
-- Team Over 0.5 odds below 1.20 are rejected.
-- Only the same team's Over 1.5 may replace it.
-- The replacement must pass every statistical and value gate.
-- When it fails, no forced upgrade is made.
-- 1/1 and 2/2 map to the relevant Team to Win Either Half.
-- X routes map to Draw in Either Half.
-- Reversal routes map to GG or Match Over 1.5 after their gates.
-- Straight wins require 6 overall wins, 6 relevant split wins and HT/FT
-  behaviour confirmation.
+Expected version:
+   1.16.1
 
-Full rule sheet:
-PAPASENSE_V1_13_AMENDMENTS.md
+6. Open once:
+   https://betspapa.com/reset.html
 
-ONE-TIME SUPABASE DATABASE STEP
--------------------------------
-Open Supabase → SQL Editor and run:
+7. Test:
+   https://betspapa.com
+   https://betspapa.com/results-intelligence.html
 
-server/supabase/migrations/20260717_v111_accounts_watchlist_push.sql
-
-This is still the correct migration because v1.13 preserves the v1.11 account,
-watchlist, notification and pipeline tables.
-
-AUTH SETUP
-----------
-Render environment variables:
-- SUPABASE_URL
-- SUPABASE_ANON_KEY
-- SUPABASE_SERVICE_ROLE_KEY
-- API_FOOTBALL_KEY
-
-Supabase → Authentication → URL Configuration:
-Site URL:
-https://betspapa.com
-
-Redirect URLs:
-https://betspapa.com/account.html
-https://www.betspapa.com/account.html
-
-For Google sign-in:
-Supabase → Authentication → Providers → Google → Enable
-Then add the Google client ID and client secret.
-
-PUSH SETUP
-----------
-From the server folder:
-
-npm.cmd run vapid
-
-Add the displayed values to Render:
-- VAPID_PUBLIC_KEY
-- VAPID_PRIVATE_KEY
-- PUSH_SUBJECT=mailto:admin@betspapa.com
-
-PIPELINE
---------
-The automatic workflow has separate jobs for previous results, today and
-tomorrow. Run the normal automatic workflow after deployment so predictions are
-regenerated with papasense-v1.13.0 and current team-goal odds.
-
-PWA UPDATE
-----------
-Installed users receive an Update Now card when the new service worker is ready.
-
-FINAL CACHE RESET
------------------
-Open once:
-https://betspapa.com/reset.html
-
-Then open:
-https://betspapa.com/account.html
+No Supabase migration and no new Render environment variable are required.
+The PapaSense engine version remains papasense-v1.13.0.
