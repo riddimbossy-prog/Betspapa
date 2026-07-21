@@ -1,5 +1,5 @@
 export const SERVICE_NAME = "BetsPapa Prediction API";
-export const SERVICE_VERSION = "1.15.2";
+export const SERVICE_VERSION = "1.16.0";
 export const ENGINE_VERSION = "papasense-v1.13.0";
 export const BOSS_ENGINE_VERSION = "omni-htft-v2.5.2";
 

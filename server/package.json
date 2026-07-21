@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.15.2",
+  "version": "1.16.0",
   "private": true,
-  "description": "BetsPapa Render API with responsive Today, Live & Fixtures, automatic settlement, PapaSense and OMNI Boss Picks.",
+  "description": "BetsPapa Render API with branded PWA launch assets, first-user walkthrough, PapaSense football intelligence and OMNI Boss Picks.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

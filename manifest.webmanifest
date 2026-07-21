@@ -1,9 +1,9 @@
 {
   "id": "/",
-  "name": "BetsPapa \u2014 Papa Knows the Game",
+  "name": "BetsPapa — Football Intelligence",
   "short_name": "BetsPapa",
-  "description": "Football intelligence with Papa's Pick, Papa's Boss Picks, HT/FT venue patterns and clear match explanations.",
-  "start_url": "/?source=pwa",
+  "description": "BetsPapa football intelligence with Papa's Pick, strict Boss Picks, live match states, clear explanations and verified results.",
+  "start_url": "/?source=pwa&v=1160",
   "scope": "/",
   "display": "standalone",
   "display_override": [
@@ -12,8 +12,8 @@
     "minimal-ui"
   ],
   "orientation": "any",
-  "background_color": "#070b16",
-  "theme_color": "#070b16",
+  "background_color": "#070014",
+  "theme_color": "#110224",
   "categories": [
     "sports",
     "news",
@@ -23,25 +23,25 @@
   "dir": "ltr",
   "icons": [
     {
-      "src": "/assets/images/icon-192.png",
+      "src": "/assets/images/pwa-brand-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/assets/images/icon-512.png",
+      "src": "/assets/images/pwa-brand-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/assets/images/icon-maskable-192.png",
+      "src": "/assets/images/pwa-brand-maskable-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/assets/images/icon-maskable-512.png",
+      "src": "/assets/images/pwa-brand-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -55,8 +55,9 @@
       "url": "/papas-pick.html?source=shortcut",
       "icons": [
         {
-          "src": "/assets/images/icon-192.png",
-          "sizes": "192x192"
+          "src": "/assets/images/pwa-brand-icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
@@ -67,8 +68,9 @@
       "url": "/boss-picks.html?source=shortcut",
       "icons": [
         {
-          "src": "/assets/images/icon-192.png",
-          "sizes": "192x192"
+          "src": "/assets/images/pwa-brand-icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
@@ -79,8 +81,9 @@
       "url": "/live-fixtures.html?source=shortcut",
       "icons": [
         {
-          "src": "/assets/images/icon-192.png",
-          "sizes": "192x192"
+          "src": "/assets/images/pwa-brand-icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
@@ -91,8 +94,9 @@
       "url": "/results-intelligence.html?source=shortcut",
       "icons": [
         {
-          "src": "/assets/images/icon-192.png",
-          "sizes": "192x192"
+          "src": "/assets/images/pwa-brand-icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     }
@@ -112,5 +116,6 @@
       "form_factor": "wide",
       "label": "BetsPapa football intelligence dashboard"
     }
-  ]
+  ],
+  "version": "1.16.0"
 }

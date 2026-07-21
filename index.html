@@ -23,7 +23,7 @@
   </style>
   <script>
     (function () {
-      window.__BETSPAPA_BUILD__ = "1.15.2";
+      window.__BETSPAPA_BUILD__ = "1.16.0";
       function forceSearchClosed() {
         var drawer = document.getElementById("searchDrawer");
         if (drawer) {
@@ -45,8 +45,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="BetsPapa">
-  <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon-180.png">
+  <link rel="manifest" href="/manifest.webmanifest?v=1160">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/pwa-brand-apple-180.png">
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-1290x2796.jpg" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2796x1290.jpg" media="(device-width: 932px) and (device-height: 430px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-1170x2532.jpg" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
@@ -55,9 +55,9 @@
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-1334x750.jpg" media="(device-width: 667px) and (device-height: 375px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2048x2732.jpg" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2732x2048.jpg" media="(device-width: 1366px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
-  <link rel="stylesheet" href="/assets/css/pwa.v1103.css">
+  <link rel="stylesheet" href="/assets/css/pwa.v1160.css">
   <link rel="stylesheet" href="/assets/css/ui.v151.css">
-  <link rel="stylesheet" href="/assets/css/today.v152.css">
+  <link rel="stylesheet" href="/assets/css/today.v153.css">
   <script>
     (function () {
       var standalone = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
@@ -456,7 +456,7 @@
     <footer>
       <div class="footer-brand"><img src="assets/images/betspapa-papa-mark.png" alt="" width="34" height="34"><strong>BetsPapa</strong><small>Papa Knows the Game</small></div>
       <p>Sports analytics only. No prediction is a guarantee. 18+.</p>
-      <div><a href="responsible.html">Responsible Use</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>
+      <div><button class="bp-footer-tour-button" data-start-walkthrough type="button">Take app tour</button><a href="responsible.html">Responsible Use</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>
     </footer>
   </main>
 
@@ -493,7 +493,7 @@
 
   <script src="assets/js/app.v152.js"></script>
   <script src="assets/js/mobile-nav.v120.js"></script>
-  <script src="/assets/js/pwa.v1103.js"></script>
+  <script src="/assets/js/pwa.v1160.js"></script>
   <script src="/assets/js/ui.v151.js"></script>
   <script src="/assets/js/today.v152.js"></script>
 </body>

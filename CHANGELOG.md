@@ -1,5 +1,26 @@
 # Changelog
 
+## v1.16.0 — Branded PWA and First-User Walkthrough
+
+- Added official BetsPapa standard and maskable PWA icons.
+- Added a fresh Apple touch icon.
+- Rebuilt portrait and landscape launch screens.
+- Added a five-step first-user walkthrough.
+- Added swipe, keyboard, focus-trap and reduced-motion support.
+- Added responsive layouts for mobile and Samsung Z Fold 6.
+- Added a replay button and `?tour=1` replay URL.
+- Delayed the installation prompt until onboarding closes.
+- Bumped the PWA cache and service version.
+
+## v1.15.3 — Today Desktop Width Hotfix
+
+- Fixed the left-aligned desktop canvas and large blank area on the right.
+- Widened and centred the Today page.
+- Reasserted the full-width fixture board after legacy CSS.
+- Contained filter controls inside the fixture panel.
+- Preserved mobile and Samsung Z Fold 6 layouts.
+- Bumped the PWA cache and Today stylesheet filename.
+
 ## v1.15.1 — Live & Fixtures Responsive UI
 
 - Added a dedicated `live-fixtures.html` match centre.

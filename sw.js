@@ -1,4 +1,4 @@
-const CACHE_NAME = "betspapa-pwa-v1152";
+const CACHE_NAME = "betspapa-pwa-v1160";
 const OFFLINE_URL = "/offline.html";
 
 const CORE_ASSETS = [
@@ -21,26 +21,26 @@ const CORE_ASSETS = [
   "/assets/css/portal.v140.css",
   "/assets/css/mobile-nav.v111.css",
   "/assets/css/content.v111.css",
-  "/assets/css/pwa.v1103.css",
+  "/assets/css/pwa.v1160.css",
   "/assets/css/ui.v151.css",
-  "/assets/css/today.v152.css",
+  "/assets/css/today.v153.css",
   "/assets/css/live-fixtures.v151.css",
   "/assets/js/app.v152.js",
   "/assets/js/today.v152.js",
   "/assets/js/portal.v140.js",
   "/assets/js/mobile-nav.v120.js",
-  "/assets/js/pwa.v1103.js",
+  "/assets/js/pwa.v1160.js",
   "/assets/js/ui.v151.js",
   "/assets/js/live-fixtures.v151.js",
-  "/assets/images/icon-192.png",
-  "/assets/images/icon-512.png",
-  "/assets/images/icon-maskable-192.png",
-  "/assets/images/icon-maskable-512.png",
-  "/assets/images/apple-touch-icon-180.png",
+  "/assets/images/pwa-brand-icon-192.png",
+  "/assets/images/pwa-brand-icon-512.png",
+  "/assets/images/pwa-brand-maskable-192.png",
+  "/assets/images/pwa-brand-maskable-512.png",
+  "/assets/images/pwa-brand-apple-180.png",
   "/assets/images/betspapa-papa-mark.png",
   "/assets/images/betspapa-logo.webp",
-  "/assets/images/pwa-splash-portrait.jpg",
-  "/assets/images/pwa-splash-landscape.jpg"
+  "/assets/images/pwa-brand-splash-portrait.jpg",
+  "/assets/images/pwa-brand-splash-landscape.jpg"
 ];
 
 self.addEventListener("install", (event) => {

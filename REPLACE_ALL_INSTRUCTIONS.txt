@@ -1,29 +1,41 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.15.2
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.16.0
 ================================================
 
-TODAY PAGE UPDATE
------------------
-- New Today at a Glance match-state summary.
-- Direct All, Live, Pending, Settling and Settled filters.
-- Cleaner Today page hierarchy and featured analysis.
-- Mobile filter bottom sheet.
-- Dedicated Samsung Z Fold 6 cover-screen layout.
-- Dedicated Z Fold 6 unfolded / compact tablet layout.
-- Full-width desktop fixture board.
-- Live status and automatic settlement remain active.
-- BetsPapa remains free and public.
+ADDED
+-----
+- Official BetsPapa branded PWA icon.
+- Standard, maskable and Apple home-screen icons.
+- New branded portrait and landscape launch screens.
+- Five-step first-user walkthrough.
+- One-time local completion memory.
+- Swipe, keyboard and accessibility support.
+- Mobile and Samsung Z Fold 6 responsive layouts.
+- Replay button in the Today page footer.
+- Direct replay URL: https://betspapa.com/?tour=1
+- Install prompt waits until the walkthrough closes.
 
 DEPLOY
 ------
-1. Extract this ZIP.
-2. Replace every file in the Betspapa repository.
-3. Open GitHub Desktop.
-4. Commit:
-   BetsPapa v1.15.2 Today page mobile and Z Fold 6
-5. Push origin.
-6. Wait for GitHub Pages and Render.
-7. Check https://api.betspapa.com/api/health
-8. Confirm version 1.15.2.
-9. Open https://betspapa.com/reset.html
+1. Replace every repository file with this package.
+2. Commit:
+   BetsPapa v1.16 branded PWA and first user walkthrough
+3. Push origin.
+4. Confirm:
+   https://api.betspapa.com/api/health
 
-No Supabase migration or new Render variable is required.
+Expected version:
+   1.16.0
+
+5. Open once:
+   https://betspapa.com/reset.html
+
+6. Test first-user mode in a private/incognito window:
+   https://betspapa.com/?tour=1
+
+PWA ICON NOTE
+-------------
+Android and Samsung Internet may keep an old installed icon until the existing
+app is uninstalled and installed again. The website itself uses fresh asset
+filenames, so a new installation receives the official branded icon.
+
+No Supabase migration and no new Render environment variable are required.
