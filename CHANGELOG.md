@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.17.1 — Full-Market Engine Overhaul
+
+- Replaced the Papa's Pick core with the audited full-market overhaul.
+- Preserved Consensus Bankers, OMNI Boss Picks, PWA and live settlement.
+- Kept the v1.17 anti-zombie evidence gate and later common-sense rules.
+- Merged later blockers into duplicate overhaul markets.
+- Added independent scoring for the complete goal, result, team and half-market catalogue.
+- Engine version is now `papasense-v1.17.1-overhaul`.
+- No database migration is required.
+
 ## v1.17.0 — Consensus Banker Page
 
 - Added a real public `/bankers.html` page instead of redirecting to Boss Picks.

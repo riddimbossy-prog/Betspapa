@@ -1,48 +1,38 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.17.0
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.17.1
 ================================================
 
-THIS BUILD PRESERVES
---------------------
-- Every v1.16 branded PWA and first-user walkthrough feature.
-- The v1.16.1 faster picks and Results repair.
-- PapaSense v1.13.0 and all Papa’s Pick amendments.
-- Live match states and automatic settlement.
-- The responsive Today, engine, Boss Picks, Results and mobile layouts.
+PURPOSE
+-------
+Engine-only correction for the uploaded v1.17.0 Consensus Banker build.
+The frontend, Consensus Banker page, Boss Picks, PWA and settlement workflows
+are preserved.
 
-NEW IN v1.17.0
----------------
-- A real public Consensus Banker page at /bankers.html.
-- One strongest Banker per fixture.
-- Exact-selection consensus across Papa’s Pick, Aggressive, Safer and Venue Pattern.
-- Unanimous 4/4, Prime Consensus 3/4 and Consensus 2/4 levels.
-- Exceptional single-engine picks only at 86%+ after all evidence gates pass.
-- Minimum six overall and three relevant venue matches for both teams.
-- Split decisions are withheld instead of forced.
-- Filters, search, engine-vote chips, explanations and rejection summaries.
-- Saved Bankers display immediately and refresh quietly.
-- Bankers added to desktop, mobile and PWA navigation.
-- Boss Picks remain separate and unchanged.
+WHAT CHANGED
+------------
+- Papa's Pick now uses the audited full-market overhaul as its authoritative core.
+- Every market is scored independently with its own threshold and blockers.
+- The v1.17 common-sense, venue and four-engine consensus layers remain active.
+- Duplicate markets inherit later common-sense blockers.
+- Explicit odds-aware upgrades remain active.
+- Engine version changed to papasense-v1.17.1-overhaul.
 
-DEPLOY
-------
-1. Replace every repository file with this package.
-2. Commit:
-   BetsPapa v1.17.0 consensus Banker page
-3. Push origin using GitHub Desktop.
-4. Wait for GitHub Pages and Render to finish deploying.
-5. Confirm:
+DEPLOYMENT
+----------
+1. Extract this ZIP.
+2. Copy every file and folder into your local Betspapa repository.
+3. Choose Replace/Overwrite All.
+4. Commit:
+   BetsPapa v1.17.1 full market engine overhaul
+5. Push origin.
+6. Wait for Render and GitHub Actions to finish.
+7. Open:
    https://api.betspapa.com/api/health
+8. Confirm:
+   version: 1.17.1
+   engineVersion: papasense-v1.17.1-overhaul
+   database: connected
+9. Run the BetsPapa Automatic Picks workflow once so current dates are regenerated
+   under the new engine version.
 
-Expected version:
-   1.17.0
-
-6. Open once:
-   https://betspapa.com/reset.html
-
-7. Test:
-   https://betspapa.com/bankers.html
-   https://betspapa.com/boss-picks.html
-   https://betspapa.com/results-intelligence.html
-
-No Supabase migration and no new Render environment variable are required.
-The PapaSense engine version remains papasense-v1.13.0.
+No Supabase migration or new environment variable is required.
+Never commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET.

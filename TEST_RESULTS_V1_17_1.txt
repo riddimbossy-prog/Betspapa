@@ -1,0 +1,341 @@
+
+> betspapa-api@1.17.1 test
+> node --test
+
+TAP version 13
+# Subtest: publishes one unanimous banker when all four engines agree
+ok 1 - publishes one unanimous banker when all four engines agree
+  ---
+  duration_ms: 2.345018
+  type: 'test'
+  ...
+# Subtest: recognizes equivalent team Over 1.5 keys as the same selection
+ok 2 - recognizes equivalent team Over 1.5 keys as the same selection
+  ---
+  duration_ms: 0.399937
+  type: 'test'
+  ...
+# Subtest: uses an exceptional 86 percent qualified single-engine pick when no engines agree
+ok 3 - uses an exceptional 86 percent qualified single-engine pick when no engines agree
+  ---
+  duration_ms: 0.434549
+  type: 'test'
+  ...
+# Subtest: rejects thin samples even when engines agree
+ok 4 - rejects thin samples even when engines agree
+  ---
+  duration_ms: 0.31965
+  type: 'test'
+  ...
+# Subtest: withholds an almost-even split instead of forcing one selection
+ok 5 - withholds an almost-even split instead of forcing one selection
+  ---
+  duration_ms: 0.348683
+  type: 'test'
+  ...
+# Subtest: publishes only one strongest banker per fixture
+ok 6 - publishes only one strongest banker per fixture
+  ---
+  duration_ms: 1.257759
+  type: 'test'
+  ...
+# Subtest: score order is inferred only when the score makes it certain
+ok 7 - score order is inferred only when the score makes it certain
+  ---
+  duration_ms: 0.767258
+  type: 'test'
+  ...
+# Subtest: team history conversion preserves the selected team perspective
+ok 8 - team history conversion preserves the selected team perspective
+  ---
+  duration_ms: 0.232522
+  type: 'test'
+  ...
+# Subtest: Boss Pick labels use real team names
+ok 9 - Boss Pick labels use real team names
+  ---
+  duration_ms: 0.279261
+  type: 'test'
+  ...
+# Subtest: all qualifying Boss Picks are retained and Prime ranks first
+ok 10 - all qualifying Boss Picks are retained and Prime ranks first
+  ---
+  duration_ms: 0.164823
+  type: 'test'
+  ...
+# Subtest: uploaded OMNI sample produces a qualified final market
+ok 11 - uploaded OMNI sample produces a qualified final market
+  ---
+  duration_ms: 86.164552
+  type: 'test'
+  ...
+# Subtest: available-data mode does not globally fail incomplete score-order and xG fields
+ok 12 - available-data mode does not globally fail incomplete score-order and xG fields
+  ---
+  duration_ms: 5.40816
+  type: 'test'
+  ...
+# Subtest: Boss Picks use audited OMNI v2.5.2
+ok 13 - Boss Picks use audited OMNI v2.5.2
+  ---
+  duration_ms: 0.125094
+  type: 'test'
+  ...
+# Subtest: OMNI evaluates 44 markets and removes full-match Over 0.5
+ok 14 - OMNI evaluates 44 markets and removes full-match Over 0.5
+  ---
+  duration_ms: 4.439482
+  type: 'test'
+  ...
+# Subtest: only six audited core markets can become Boss Picks
+ok 15 - only six audited core markets can become Boss Picks
+  ---
+  duration_ms: 0.9179
+  type: 'test'
+  ...
+# Subtest: v1.17.1 uses the full-market overhaul as the authoritative core
+ok 16 - v1.17.1 uses the full-market overhaul as the authoritative core
+  ---
+  duration_ms: 16.236675
+  type: 'test'
+  ...
+# Subtest: overhaul exposes the expanded independent goal-market scores
+ok 17 - overhaul exposes the expanded independent goal-market scores
+  ---
+  duration_ms: 2.384355
+  type: 'test'
+  ...
+# Subtest: overhaul market catalogue includes result, goal, team and half markets
+ok 18 - overhaul market catalogue includes result, goal, team and half markets
+  ---
+  duration_ms: 3.055377
+  type: 'test'
+  ...
+# Subtest: duplicate markets retain later common-sense blockers
+ok 19 - duplicate markets retain later common-sense blockers
+  ---
+  duration_ms: 2.674882
+  type: 'test'
+  ...
+# Subtest: engine generates a normalized nine-cell HT/FT matrix
+ok 20 - engine generates a normalized nine-cell HT/FT matrix
+  ---
+  duration_ms: 82.509715
+  type: 'test'
+  ...
+# Subtest: venue orientation maps the away W/W vs home L/L story to 2/2
+ok 21 - venue orientation maps the away W/W vs home L/L story to 2/2
+  ---
+  duration_ms: 2.422842
+  type: 'test'
+  ...
+# Subtest: balanced volatile profiles produce goal intelligence without forcing an exact HT/FT pick
+ok 22 - balanced volatile profiles produce goal intelligence without forcing an exact HT/FT pick
+  ---
+  duration_ms: 3.942115
+  type: 'test'
+  ...
+# Subtest: small samples receive a data-quality downgrade
+ok 23 - small samples receive a data-quality downgrade
+  ---
+  duration_ms: 3.443387
+  type: 'test'
+  ...
+# Subtest: invalid input is rejected
+ok 24 - invalid input is rejected
+  ---
+  duration_ms: 0.359238
+  type: 'test'
+  ...
+# Subtest: every valid fixture receives one market direction
+ok 25 - every valid fixture receives one market direction
+  ---
+  duration_ms: 6.321584
+  type: 'test'
+  ...
+# Subtest: decision trace reviews all nine HT/FT indicators
+ok 26 - decision trace reviews all nine HT/FT indicators
+  ---
+  duration_ms: 2.063638
+  type: 'test'
+  ...
+# Subtest: market ranking uses threshold-relative comparison
+ok 27 - market ranking uses threshold-relative comparison
+  ---
+  duration_ms: 2.729253
+  type: 'test'
+  ...
+# Subtest: reason trace explains why the selected market beat Double Chance
+ok 28 - reason trace explains why the selected market beat Double Chance
+  ---
+  duration_ms: 2.748245
+  type: 'test'
+  ...
+# Subtest: PapaSense v1.7 returns all four engine picks
+ok 29 - PapaSense v1.7 returns all four engine picks
+  ---
+  duration_ms: 1.950077
+  type: 'test'
+  ...
+# Subtest: Venue Pattern includes Potosi-style opposite transition evidence
+ok 30 - Venue Pattern includes Potosi-style opposite transition evidence
+  ---
+  duration_ms: 0.967843
+  type: 'test'
+  ...
+# Subtest: Aggressive and safer engines use distinct selection policies
+ok 31 - Aggressive and safer engines use distinct selection policies
+  ---
+  duration_ms: 1.455895
+  type: 'test'
+  ...
+# Subtest: PapaSense blocks prior-only zombie predictions
+ok 32 - PapaSense blocks prior-only zombie predictions
+  ---
+  duration_ms: 0.187125
+  type: 'test'
+  ...
+# Subtest: Safer engine does not automatically force Double Chance
+ok 33 - Safer engine does not automatically force Double Chance
+  ---
+  duration_ms: 3.076919
+  type: 'test'
+  ...
+# Subtest: Prediction output carries an analysis fingerprint when supplied
+ok 34 - Prediction output carries an analysis fingerprint when supplied
+  ---
+  duration_ms: 1.181496
+  type: 'test'
+  ...
+# Subtest: default engine is named Papa's Pick
+ok 35 - default engine is named Papa's Pick
+  ---
+  duration_ms: 1.5103
+  type: 'test'
+  ...
+# Subtest: every engine pick contains a match-specific explanation paragraph
+ok 36 - every engine pick contains a match-specific explanation paragraph
+  ---
+  duration_ms: 1.480542
+  type: 'test'
+  ...
+# Subtest: explanations use simple rounded samples instead of floating counts
+ok 37 - explanations use simple rounded samples instead of floating counts
+  ---
+  duration_ms: 1.201271
+  type: 'test'
+  ...
+# Subtest: explanation evidence gives a plain-English market decision
+ok 38 - explanation evidence gives a plain-English market decision
+  ---
+  duration_ms: 1.328077
+  type: 'test'
+  ...
+# Subtest: 1/1 main story becomes home team to win either half
+ok 39 - 1/1 main story becomes home team to win either half
+  ---
+  duration_ms: 1.13612
+  type: 'test'
+  ...
+# Subtest: draw transition family becomes Draw in Either Half
+ok 40 - draw transition family becomes Draw in Either Half
+  ---
+  duration_ms: 1.469791
+  type: 'test'
+  ...
+# Subtest: comeback story becomes GG or Over 1.5
+ok 41 - comeback story becomes GG or Over 1.5
+  ---
+  duration_ms: 1.164322
+  type: 'test'
+  ...
+# Subtest: actual team Over 0.5 odds below 1.20 are not kept
+ok 42 - actual team Over 0.5 odds below 1.20 are not kept
+  ---
+  duration_ms: 1.049253
+  type: 'test'
+  ...
+# Subtest: straight-win candidates require comeback and lead-surrender evidence
+ok 43 - straight-win candidates require comeback and lead-surrender evidence
+  ---
+  duration_ms: 1.688022
+  type: 'test'
+  ...
+# Subtest: two early-leading teams create an unblocked First Half Over 1.5 candidate
+ok 44 - two early-leading teams create an unblocked First Half Over 1.5 candidate
+  ---
+  duration_ms: 1.003365
+  type: 'test'
+  ...
+# Subtest: targeted hydration accepts targetTeamIds without ReferenceError
+ok 45 - targeted hydration accepts targetTeamIds without ReferenceError
+  ---
+  duration_ms: 1.636616
+  type: 'test'
+  ...
+# Subtest: banker slate selects up to three strict picks per engine
+ok 46 - banker slate selects up to three strict picks per engine
+  ---
+  duration_ms: 1.858246
+  type: 'test'
+  ...
+# Subtest: banker slate rejects thin individual samples
+ok 47 - banker slate rejects thin individual samples
+  ---
+  duration_ms: 0.390545
+  type: 'test'
+  ...
+# Subtest: anti-zombie detector withholds three cloned evidence signatures
+ok 48 - anti-zombie detector withholds three cloned evidence signatures
+  ---
+  duration_ms: 0.345087
+  type: 'test'
+  ...
+# Subtest: pending, live and settled fixture states are classified
+ok 49 - pending, live and settled fixture states are classified
+  ---
+  duration_ms: 1.179819
+  type: 'test'
+  ...
+# Subtest: new PapaSense v1.13 markets settle automatically
+ok 50 - new PapaSense v1.13 markets settle automatically
+  ---
+  duration_ms: 0.316656
+  type: 'test'
+  ...
+# Subtest: match-state summary counts each public category
+ok 51 - match-state summary counts each public category
+  ---
+  duration_ms: 0.641723
+  type: 'test'
+  ...
+# Subtest: profile builder creates correct team-perspective HT/FT transitions
+ok 52 - profile builder creates correct team-perspective HT/FT transitions
+  ---
+  duration_ms: 2.065156
+  type: 'test'
+  ...
+# Subtest: goal profile derives GG and totals from actual scores
+ok 53 - goal profile derives GG and totals from actual scores
+  ---
+  duration_ms: 0.554184
+  type: 'test'
+  ...
+# Subtest: Results handles large historical fixture sets in safe Supabase batches
+ok 54 - Results handles large historical fixture sets in safe Supabase batches
+  ---
+  duration_ms: 12.419007
+  type: 'test'
+  ...
+1..54
+# tests 54
+# suites 0
+# pass 54
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 401.744844
+
+JavaScript syntax checks:
+All active JavaScript syntax checks passed.
