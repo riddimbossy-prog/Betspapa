@@ -433,10 +433,7 @@
         renderFixtures();
         renderAnalysis();
         renderExplanation();
-
-        if (window.innerWidth <= 900) {
-          $("#why-this-pick")?.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
+        openPickReasonDialog();
       });
     });
   }
@@ -564,7 +561,6 @@
     const cautions = $("#decisionCautions");
     const alternatives = $("#decisionAlternatives");
     const table = $("#indicatorTable");
-    const marketTable = $("#marketComparisonTable");
     const quality = $("#indicatorQuality");
 
     if (!fixture?.livePrediction) {
@@ -578,7 +574,6 @@
       if (cautions) cautions.innerHTML = "<li>Do not treat this fixture as a pick until the processing label is replaced by a market.</li>";
       if (alternatives) alternatives.innerHTML = '<div class="alternative-card">No alternatives available yet.</div>';
       if (table) table.innerHTML = '<tr><td colspan="5">Awaiting prediction generation.</td></tr>';
-      if (marketTable) marketTable.innerHTML = '<tr><td colspan="5">Awaiting PapaSense v1.6 market comparison.</td></tr>';
       if (quality) quality.textContent = "Data quality: pending";
       return;
     }
@@ -640,29 +635,7 @@
             <td><b>${scorePercent(indicator.combinedProbability || 0)}</b></td>
             <td>${escapeHtml(indicator.interpretation || "Reviewed")}</td>
           </tr>`).join("")
-        : '<tr><td colspan="5">Detailed indicator review is unavailable for this older prediction row. Regenerate this date with PapaSense v1.6.</td></tr>';
-    }
-
-    const marketComparison =
-      explanation.marketComparison ||
-      prediction.engine?.decisionTrace?.marketComparison ||
-      [];
-
-    if (marketTable) {
-      marketTable.innerHTML = marketComparison.length
-        ? marketComparison.map((row) => {
-            const blocker = row.blockers?.[0] || (row.qualified ? "Passed all checks" : "Below threshold");
-            const statusClass = row.qualified ? "comparison-qualified" : "comparison-directional";
-            return `
-              <tr>
-                <td><strong>${escapeHtml(row.family || row.market || "Market")}</strong><small>${escapeHtml(row.market || "")}</small></td>
-                <td>${escapeHtml(row.selection || "—")}</td>
-                <td><b>${scorePercent(row.score || 0)}</b></td>
-                <td>${scorePercent(row.threshold || 0)}</td>
-                <td><span class="comparison-status ${statusClass}">${row.qualified ? "Qualified" : "Directional"}</span><small>${escapeHtml(blocker)}</small></td>
-              </tr>`;
-          }).join("")
-        : '<tr><td colspan="5">Market-family comparison is unavailable for this older prediction row. Regenerate with PapaSense v1.6.</td></tr>';
+        : '<tr><td colspan="5">Detailed indicator review is unavailable for this older prediction row. Regenerate this date with v1.5.</td></tr>';
     }
 
     const qualityLabel =
@@ -760,6 +733,169 @@
         `${error.message}. Check Render deployment and API health.`
       );
     }
+  }
+
+  function marketComparisonRows(prediction) {
+    return (
+      prediction.marketComparison ||
+      prediction.explanation?.marketComparison ||
+      prediction.engine?.decisionTrace?.marketComparison ||
+      []
+    );
+  }
+
+  function openPickReasonDialog() {
+    const fixture = fixtures.find((item) => item.id === selectedId) || fixtures[0];
+    const dialog = $("#pickReasonDialog");
+    const content = $("#pickReasonContent");
+    if (!dialog || !content || !fixture) return;
+
+    if (!fixture.livePrediction) {
+      content.innerHTML = `
+        <div class="reason-popup-heading">
+          <span class="fixture-mode pending">Processing</span>
+          <h2 id="pickReasonTitle">${escapeHtml(fixture.home.name)} vs ${escapeHtml(fixture.away.name)}</h2>
+          <p>PapaSense is still building this fixture’s direction from the stored HT/FT and goal profiles.</p>
+        </div>`;
+      dialog.showModal();
+      return;
+    }
+
+    const prediction = fixture.livePrediction;
+    const explanation = prediction.explanation || prediction.engine?.decisionTrace || {};
+    const qualified = Boolean(prediction.primary?.qualified);
+    const reasons = explanation.whyChosen || prediction.reasons || [];
+    const cautions = explanation.cautions || prediction.warnings || [];
+    const indicators =
+      prediction.allHtftIndicators ||
+      explanation.allHtftIndicators ||
+      prediction.engine?.allHtftIndicators ||
+      [];
+    const comparisons = marketComparisonRows(prediction);
+
+    content.innerHTML = `
+      <div class="reason-popup-heading">
+        <span class="fixture-mode ${qualified ? "qualified" : "directional"}">
+          ${qualified ? "Qualified" : "Directional"}
+        </span>
+        <span class="reason-popup-league">${escapeHtml(fixture.league)} · ${escapeHtml(fixture.kickoff)}</span>
+        <h2 id="pickReasonTitle">${escapeHtml(fixture.home.name)} vs ${escapeHtml(fixture.away.name)}</h2>
+        <div class="reason-popup-pick">
+          <small>${escapeHtml(prediction.primary?.market || "Market")}</small>
+          <strong>${escapeHtml(prediction.primary?.selection || "Prediction")}</strong>
+          <b>${percent(prediction.primary?.confidence || 0, 1)}</b>
+        </div>
+        <p>${escapeHtml(explanation.summary || prediction.reasons?.[0] || "PapaSense selected the highest-ranked common-sense route.")}</p>
+      </div>
+
+      <div class="reason-popup-grid">
+        <section>
+          <h3>Why this pick won</h3>
+          <ul class="reason-list">
+            ${reasons.length
+              ? reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")
+              : "<li>Highest threshold-relative market score.</li>"}
+          </ul>
+        </section>
+        <section>
+          <h3>Cautions</h3>
+          <ul class="caution-list">
+            ${cautions.length
+              ? cautions.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("")
+              : "<li>No major contradiction survived the safety checks.</li>"}
+          </ul>
+        </section>
+      </div>
+
+      <section class="reason-popup-section">
+        <div class="reason-popup-section-head">
+          <div>
+            <span class="eyebrow">MARKET COMPARISON</span>
+            <h3>Why it was not automatically Double Chance</h3>
+          </div>
+        </div>
+        <p class="selection-method">
+          ${escapeHtml(
+            prediction.selectionMethod ||
+            explanation.selectionMethod ||
+            "Every market is compared against its own threshold. A broad two-outcome market cannot win merely because its raw probability is larger."
+          )}
+        </p>
+        <div class="comparison-table-wrap">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Market</th>
+                <th>Selection</th>
+                <th>Score</th>
+                <th>Threshold</th>
+                <th>Relative rank</th>
+                <th>Decision</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${comparisons.length
+                ? comparisons.slice(0, 10).map((market) => `
+                  <tr class="${market.selected ? "selected-market-row" : ""}">
+                    <td>${escapeHtml(market.market || market.family || "Market")}</td>
+                    <td><strong>${escapeHtml(market.selection || "—")}</strong></td>
+                    <td>${scorePercent(market.score || 0)}</td>
+                    <td>${scorePercent(market.threshold || 0)}</td>
+                    <td>${Number(market.comparisonScore || 0).toFixed(3)}</td>
+                    <td>${market.selected ? "Selected" : market.qualified ? "Qualified alternative" : "Below threshold"}</td>
+                  </tr>`).join("")
+                : '<tr><td colspan="6">Regenerate this date with PapaSense v1.6 to see the calibrated market comparison.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="reason-popup-section">
+        <div class="reason-popup-section-head">
+          <div>
+            <span class="eyebrow">ALL NINE HT/FT INDICATORS</span>
+            <h3>Home profile vs away opposite profile</h3>
+          </div>
+        </div>
+        <div class="comparison-table-wrap">
+          <table class="comparison-table htft-popup-table">
+            <thead>
+              <tr>
+                <th>HT/FT</th>
+                <th>Home</th>
+                <th>Away opposite</th>
+                <th>Combined</th>
+                <th>Reading</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${indicators.length
+                ? indicators.map((indicator) => `
+                  <tr>
+                    <td><strong>${escapeHtml(indicator.code || indicator.transition)}</strong><small>${escapeHtml(indicator.transition || "")}</small></td>
+                    <td>${scorePercent(indicator.homeRate || 0)}</td>
+                    <td>${scorePercent(indicator.awayOppositeRate || 0)}</td>
+                    <td><b>${scorePercent(indicator.combinedProbability || 0)}</b></td>
+                    <td>${escapeHtml(indicator.interpretation || "Reviewed")}</td>
+                  </tr>`).join("")
+                : '<tr><td colspan="5">Regenerate this date with PapaSense v1.6 to see all nine indicators.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    `;
+
+    dialog.showModal();
+  }
+
+  function setupPickReasonDialog() {
+    const dialog = $("#pickReasonDialog");
+    const close = $("#pickReasonClose");
+
+    close?.addEventListener("click", () => dialog?.close());
+    dialog?.addEventListener("click", (event) => {
+      if (event.target === dialog) dialog.close();
+    });
   }
 
   function setupModal() {
@@ -882,7 +1018,8 @@
           closeSearch();
           renderFixtures();
           renderAnalysis();
-          $("#prediction-board")?.scrollIntoView({ behavior: "smooth" });
+          renderExplanation();
+          openPickReasonDialog();
         });
       });
     });
@@ -977,6 +1114,7 @@
   clearAnalysis();
   renderResults();
   setupModal();
+  setupPickReasonDialog();
   setupMobile();
   setupSearch();
   setupFixtureFilters();

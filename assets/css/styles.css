@@ -1691,56 +1691,808 @@ body {
   }
 }
 
+
 /* ================================================================
-   BETSPAPA v1.6.0 — MARKET FAMILY COMPARISON
+   BETSPAPA v1.6.0 — REASONS POPUP + BALANCED MARKET PRESENTATION
    ================================================================ */
-.market-comparison-heading {
-  margin-top: 22px;
-}
 
-.market-comparison-table td:nth-child(2) {
-  min-width: 210px;
+.pick-reason-dialog {
+  width: min(1080px, calc(100vw - 28px));
+  max-height: min(900px, calc(100dvh - 28px));
+  padding: 0;
+  border: 1px solid rgba(242,196,79,.30);
+  border-radius: 22px;
   color: #fff;
-  font-weight: 700;
+  background: #0b001e;
+  box-shadow: 0 30px 100px rgba(0,0,0,.72);
 }
 
-.market-comparison-table td:last-child {
-  min-width: 230px;
+.pick-reason-dialog::backdrop {
+  background: rgba(4,0,13,.82);
+  backdrop-filter: blur(10px);
 }
 
-.market-comparison-table td:last-child > small {
+.pick-reason-shell {
+  position: relative;
+  max-height: min(900px, calc(100dvh - 28px));
+  padding: 24px;
+  overflow: auto;
+  background:
+    radial-gradient(circle at 88% 3%, rgba(111,33,217,.24), transparent 34%),
+    linear-gradient(145deg, rgba(28,4,60,.98), rgba(8,0,24,.99));
+}
+
+.pick-reason-close {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  float: right;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 12px;
+  color: #fff;
+  background: rgba(12,1,31,.92);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.reason-popup-heading {
+  padding-right: 56px;
+}
+
+.reason-popup-league {
   display: block;
-  margin-top: 5px;
-  color: var(--muted);
-  line-height: 1.45;
+  margin-top: 10px;
+  color: #bba4d8;
+  font-size: 12px;
 }
 
-.comparison-status {
-  display: inline-flex;
-  align-items: center;
-  width: max-content;
-  padding: 5px 8px;
-  border-radius: 999px;
-  font-size: 9px;
+.reason-popup-heading h2 {
+  margin: 8px 0 10px;
+  font-size: clamp(25px, 4vw, 42px);
+  line-height: 1.08;
+}
+
+.reason-popup-heading > p {
+  max-width: 800px;
+  color: #d7c9e8;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.reason-popup-pick {
+  margin: 15px 0;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px 18px;
+  border: 1px solid rgba(242,196,79,.30);
+  border-radius: 15px;
+  background: rgba(242,196,79,.055);
+}
+
+.reason-popup-pick small {
+  grid-column: 1 / -1;
+  color: var(--gold);
+  font-size: 10px;
   font-weight: 900;
-  letter-spacing: .04em;
   text-transform: uppercase;
 }
 
-.comparison-status.comparison-qualified {
-  color: #8dffbe;
-  border: 1px solid rgba(55,233,137,.24);
-  background: rgba(55,233,137,.11);
+.reason-popup-pick strong {
+  font-family: var(--font-display, inherit);
+  font-size: 21px;
 }
 
-.comparison-status.comparison-directional {
-  color: #ffdd7c;
-  border: 1px solid rgba(242,196,79,.24);
-  background: rgba(242,196,79,.10);
+.reason-popup-pick b {
+  align-self: center;
+  color: #73f5a8;
+  font-size: 20px;
+}
+
+.reason-popup-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 12px;
+}
+
+.reason-popup-grid section,
+.reason-popup-section {
+  padding: 16px;
+  border: 1px solid rgba(155,76,255,.18);
+  border-radius: 15px;
+  background: rgba(255,255,255,.018);
+}
+
+.reason-popup-grid h3,
+.reason-popup-section h3 {
+  margin: 0 0 10px;
+  font-family: var(--font-display, inherit);
+  font-size: 17px;
+}
+
+.reason-popup-section {
+  margin-top: 12px;
+}
+
+.reason-popup-section-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+}
+
+.selection-method {
+  margin: 0 0 12px;
+  color: #d4c4e7;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.comparison-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(155,76,255,.15);
+  border-radius: 12px;
+}
+
+.comparison-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.comparison-table th,
+.comparison-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.055);
+  text-align: left;
+  font-size: 11px;
+}
+
+.comparison-table th {
+  color: #aa90c9;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.comparison-table td strong {
+  color: #fff;
+}
+
+.comparison-table td b {
+  color: var(--gold);
+}
+
+.comparison-table td small {
+  display: block;
+  color: #a88ec8;
+  font-size: 9px;
+}
+
+.selected-market-row {
+  background: rgba(55,233,137,.07);
+  box-shadow: inset 3px 0 #37e989;
+}
+
+.fixture-item {
+  cursor: pointer;
+}
+
+.fixture-why {
+  color: #d8b8ff;
+  font-weight: 800;
 }
 
 @media (max-width: 720px) {
-  .market-comparison-table {
-    min-width: 820px;
+  .pick-reason-dialog {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .pick-reason-shell {
+    min-height: 100dvh;
+    max-height: 100dvh;
+    padding: 18px;
+    padding-bottom: calc(90px + env(safe-area-inset-bottom));
+  }
+
+  .reason-popup-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reason-popup-heading h2 {
+    font-size: 27px;
+  }
+
+  .reason-popup-pick {
+    grid-template-columns: 1fr;
+  }
+
+  .reason-popup-pick b {
+    font-size: 18px;
+  }
+
+  .pick-reason-close {
+    width: 46px;
+    height: 46px;
+  }
+}
+
+
+/* ================================================================
+   BETSPAPA v1.7.0 — FOUR ENGINES + DESKTOP LAYOUT REPAIR
+   ================================================================ */
+
+.engine-switcher {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0 0;
+}
+
+.engine-tab {
+  min-width: 0;
+  min-height: 76px;
+  padding: 12px 13px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  gap: 3px 9px;
+  align-items: center;
+  border: 1px solid rgba(155,76,255,.20);
+  border-radius: 14px;
+  color: #d8c9e9;
+  background: linear-gradient(145deg, rgba(30,5,65,.85), rgba(13,1,35,.92));
+  text-align: left;
+  cursor: pointer;
+}
+
+.engine-tab > span {
+  grid-row: 1 / span 2;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--gold);
+  background: rgba(242,196,79,.08);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.engine-tab strong {
+  color: #fff;
+  font-family: var(--font-display, inherit);
+  font-size: 12px;
+}
+
+.engine-tab small {
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.engine-tab.active {
+  border-color: rgba(242,196,79,.52);
+  background:
+    radial-gradient(circle at 90% 0, rgba(242,196,79,.12), transparent 38%),
+    linear-gradient(145deg, rgba(63,12,118,.94), rgba(22,2,50,.96));
+  box-shadow: inset 0 0 0 1px rgba(242,196,79,.08), 0 12px 28px rgba(0,0,0,.18);
+}
+
+.popup-engine-tabs {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: 0 0 13px;
+}
+
+.popup-engine-tabs button {
+  min-height: 36px;
+  padding: 0 11px;
+  border: 1px solid rgba(155,76,255,.22);
+  border-radius: 999px;
+  color: #d8c8ea;
+  background: rgba(255,255,255,.025);
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.popup-engine-tabs button.active {
+  color: #1b0d00;
+  border-color: var(--gold);
+  background: linear-gradient(135deg,#ffe18b,#daa32e);
+}
+
+.fixture-mode {
+  max-width: 100%;
+  white-space: normal;
+  line-height: 1.25;
+}
+
+@media (min-width: 1200px) {
+  .topbar {
+    height: 84px;
+    grid-template-columns: 270px minmax(520px, 1fr) auto;
+    gap: 18px;
+    padding: 0 24px;
+  }
+
+  .desktop-nav {
+    gap: clamp(14px, 1.7vw, 28px);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .top-actions {
+    white-space: nowrap;
+  }
+
+  .sidebar {
+    top: 84px;
+    width: 226px;
+  }
+
+  .main {
+    width: calc(100% - 226px);
+    margin-left: 226px;
+    padding: 108px 26px 38px;
+  }
+
+  .hero-section,
+  .dashboard-grid,
+  .principles-section,
+  footer {
+    width: 100%;
+    max-width: 1680px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-section {
+    display: block;
+  }
+
+  .hero-card {
+    width: 100%;
+    min-height: 350px;
+    grid-template-columns: minmax(0, 1.18fr) minmax(330px, .82fr);
+    padding: 34px 38px;
+  }
+
+  .hero-copy h1 {
+    max-width: 760px;
+    font-size: clamp(45px, 4.2vw, 70px);
+  }
+
+  .hero-copy p {
+    max-width: 780px;
+    font-size: 14px;
+  }
+
+  .hero-visual {
+    min-height: 310px;
+  }
+
+  .hero-logo {
+    width: min(100%, 390px);
+    max-height: 340px;
+  }
+
+  .live-data-strip {
+    margin-top: 14px;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-top: 14px;
+  }
+
+  .metric-card {
+    min-height: 132px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns:
+      minmax(270px, .92fr)
+      minmax(430px, 1.35fr)
+      minmax(280px, .92fr);
+    gap: 15px;
+  }
+
+  .matrix-panel {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .primary-panel {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .insights-panel {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .fixture-panel {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .explanation-panel {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .results-panel {
+    grid-column: 1 / -1;
+    grid-row: 4;
+  }
+
+  .mobile-tabs {
+    display: none !important;
+  }
+
+  .mobile-menu {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1021px) and (max-width: 1199px) {
+  .topbar {
+    grid-template-columns: 235px minmax(430px, 1fr) auto;
+    gap: 12px;
+    padding: 0 18px;
+  }
+
+  .desktop-nav {
+    gap: 12px;
+    font-size: 11px;
+  }
+
+  .login-button {
+    display: none;
+  }
+
+  .sidebar {
+    width: 210px;
+  }
+
+  .main {
+    width: calc(100% - 210px);
+    margin-left: 210px;
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .hero-section {
+    display: block;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 14px;
+  }
+
+  .engine-switcher {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .engine-switcher {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 5px;
+  }
+
+  .engine-tab {
+    min-width: 225px;
+    scroll-snap-align: start;
+  }
+}
+
+@media (max-width: 620px) {
+  .engine-switcher {
+    margin-left: -4px;
+    margin-right: -4px;
+  }
+
+  .engine-tab {
+    min-width: 205px;
+    min-height: 72px;
+  }
+
+  .engine-tab strong {
+    font-size: 13px;
+  }
+
+  .engine-tab small {
+    font-size: 9px;
+  }
+}
+
+
+/* ================================================================
+   BETSPAPA v1.8.0 — INDIVIDUAL HISTORY / ANTI-ZOMBIE AUDIT
+   ================================================================ */
+
+.fixture-audit {
+  display: block;
+  margin-top: 8px;
+  padding: 7px 8px;
+  border: 1px solid rgba(155,76,255,.16);
+  border-radius: 9px;
+  color: #bfa8dd;
+  background: rgba(255,255,255,.018);
+  font-size: 9px;
+  line-height: 1.35;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.anti-zombie-note {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid rgba(55,233,137,.22);
+  border-radius: 12px;
+  color: #a8f6c8;
+  background: rgba(55,233,137,.06);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.profile-audit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.profile-audit-grid > div {
+  min-width: 0;
+  padding: 12px;
+  display: grid;
+  gap: 5px;
+  border: 1px solid rgba(155,76,255,.15);
+  border-radius: 11px;
+  background: rgba(255,255,255,.018);
+}
+
+.profile-audit-grid span {
+  color: #a88ec8;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.profile-audit-grid strong {
+  color: #fff;
+  font-family: var(--font-display, inherit);
+  font-size: 14px;
+}
+
+.profile-audit-grid small {
+  color: #cdbde0;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.fixture-mode.pending {
+  color: #ffcf6c;
+  border-color: rgba(242,196,79,.32);
+  background: rgba(242,196,79,.08);
+}
+
+@media (max-width: 720px) {
+  .profile-audit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fixture-audit {
+    font-size: 10px;
+  }
+}
+
+
+/* ================================================================
+   BETSPAPA v1.8.2 — PAPA'S PICK EXPLANATION + POPUP CLOSE FIX
+   ================================================================ */
+
+body.pick-reason-open {
+  overflow: hidden;
+}
+
+.pick-reason-shell {
+  isolation: isolate;
+}
+
+.pick-reason-close {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  float: right;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+.papa-explanation-block {
+  margin: 16px 0 4px;
+  padding: 16px 18px;
+  border-left: 4px solid var(--gold);
+  border-top: 1px solid rgba(242,196,79,.22);
+  border-right: 1px solid rgba(242,196,79,.22);
+  border-bottom: 1px solid rgba(242,196,79,.22);
+  border-radius: 0 14px 14px 0;
+  background:
+    linear-gradient(90deg, rgba(242,196,79,.075), rgba(111,33,217,.055)),
+    rgba(255,255,255,.018);
+}
+
+.papa-explanation-block > span {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.papa-explanation-block p {
+  margin: 0;
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+@media (max-width: 720px) {
+  .papa-explanation-block {
+    padding: 14px;
+  }
+
+  .papa-explanation-block p {
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .pick-reason-close {
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top));
+    right: 12px;
+  }
+
+  .reason-popup-heading {
+    padding-right: 52px;
+  }
+}
+
+
+/* BETSPAPA v1.8.3 — CLEAN BACKGROUND PICK PREPARATION */
+.background-picks-banner{grid-column:1/-1;min-height:68px;padding:13px 14px;display:flex;align-items:center;justify-content:space-between;gap:14px;border:1px solid rgba(242,196,79,.24);border-radius:14px;background:linear-gradient(90deg,rgba(242,196,79,.055),rgba(111,33,217,.055)),rgba(255,255,255,.018)}
+.background-picks-banner>div{min-width:0;display:flex;align-items:center;gap:11px}.background-picks-banner strong{display:block;color:#fff;font-family:var(--font-display,inherit);font-size:13px}.background-picks-banner small{display:block;margin-top:3px;color:#bea9d8;font-size:10px;line-height:1.45}
+.background-picks-banner button,.picks-preparing-card button{flex:0 0 auto;min-height:39px;padding:0 13px;border:1px solid rgba(242,196,79,.34);border-radius:10px;color:#1c0d00;background:linear-gradient(135deg,#ffe18b,#dda52d);font-size:11px;font-weight:900;cursor:pointer}
+.background-picks-dot{width:11px;height:11px;flex:0 0 11px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 5px rgba(242,196,79,.10);animation:backgroundPickPulse 1.1s ease-in-out infinite alternate}@keyframes backgroundPickPulse{from{opacity:.45;transform:scale(.82)}to{opacity:1;transform:scale(1.14)}}
+.picks-preparing-card{grid-column:1/-1;min-height:260px;padding:34px 22px;display:grid;place-items:center;align-content:center;gap:12px;text-align:center;border:1px solid rgba(155,76,255,.22);border-radius:18px;background:radial-gradient(circle at 50% 10%,rgba(111,33,217,.16),transparent 48%),rgba(255,255,255,.015)}.picks-preparing-card strong{color:#fff;font-family:var(--font-display,inherit);font-size:clamp(20px,3vw,30px)}.picks-preparing-card p{max-width:620px;margin:0;color:#cdbde0;font-size:13px;line-height:1.65}
+.preparing-orbit{width:44px;height:44px;border:3px solid rgba(155,76,255,.22);border-top-color:var(--gold);border-radius:50%;animation:preparingOrbit 1s linear infinite}@keyframes preparingOrbit{to{transform:rotate(360deg)}}
+@media(max-width:720px){.background-picks-banner{align-items:stretch;flex-direction:column}.background-picks-banner button,.picks-preparing-card button{width:100%}}
+
+
+/* ================================================================
+   BETSPAPA v1.9.2 — SIMPLE ENGLISH PROOF CARDS + BROAD FILTERS
+   ================================================================ */
+
+.plain-evidence-grid {
+  margin-top: 15px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.plain-evidence-card {
+  min-width: 0;
+  padding: 12px;
+  display: grid;
+  gap: 5px;
+  border: 1px solid rgba(155,76,255,.20);
+  border-radius: 12px;
+  background: rgba(255,255,255,.025);
+}
+
+.plain-evidence-card > span,
+.plain-decision-box > span {
+  color: var(--gold);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.plain-evidence-card strong {
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.plain-evidence-card small {
+  color: #bea9d8;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.plain-decision-box {
+  margin-top: 10px;
+  padding: 13px 14px;
+  border: 1px solid rgba(55,233,137,.20);
+  border-radius: 12px;
+  background: rgba(55,233,137,.055);
+}
+
+.plain-decision-box p {
+  margin: 6px 0 0;
+  color: #eafcf1;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.fixture-filters select optgroup {
+  color: var(--gold);
+  background: #16052d;
+  font-weight: 800;
+}
+
+.fixture-filters select option {
+  color: #fff;
+  background: #16052d;
+}
+
+@media (max-width: 720px) {
+  .plain-evidence-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plain-evidence-card strong {
+    font-size: 15px;
+  }
+}
+
+
+/* ================================================================
+   BETSPAPA v1.10.0 — ENGINE PAGE LINKS
+   ================================================================ */
+.engine-page-actions{
+  margin:10px 0 0;display:flex;gap:8px;flex-wrap:wrap
+}
+.engine-page-actions a{
+  min-height:38px;padding:0 12px;display:inline-flex;align-items:center;gap:8px;
+  border:1px solid rgba(245,201,94,.22);border-radius:10px;color:#f6d878;
+  background:rgba(245,201,94,.05);font-size:9px;font-weight:900
+}
+.engine-page-actions a:hover{background:rgba(245,201,94,.11)}
+@media(max-width:620px){
+  .engine-page-actions{display:grid;grid-template-columns:1fr}
+  .engine-page-actions a{justify-content:space-between}
+}
+
+
+/* BetsPapa v1.10.1 public cleanup */
+.engine-page-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.text-button[href] {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+@media (max-width: 900px) {
+  .main {
+    padding-bottom: 112px;
   }
 }

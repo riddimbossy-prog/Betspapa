@@ -8,6 +8,13 @@ import { gradePredictionsForDate } from "../services/gradingService.js";
 import { generatePredictionsForDate } from "../services/predictionService.js";
 import { rebuildProfiles } from "../services/profileService.js";
 import { syncDate, syncLeagueHistory } from "../services/syncService.js";
+import {
+  hydrateProfilesForFixtures,
+  planHydrationForFixtures
+} from "../services/historyHydrationService.js";
+import { fetchAllRows } from "../services/supabaseHelpers.js";
+import { getPredictionDiagnostics } from "../services/intelligenceService.js";
+import { getBackgroundProcessingStatus } from "../services/publicService.js";
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
@@ -19,6 +26,84 @@ function positiveInt(value, field) {
   }
   return parsed;
 }
+
+
+async function loadHydrationContext(supabase, date) {
+  const { dateRangeUtc } = await import("../utils/date.js");
+  const { start, end } = dateRangeUtc(date);
+
+  const fixtures = await fetchAllRows(() =>
+    supabase
+      .from("fixtures")
+      .select("*")
+      .gte("fixture_date", start)
+      .lt("fixture_date", end)
+      .order("fixture_date", { ascending: true })
+  );
+
+  const teamIds = [...new Set(
+    fixtures.flatMap((fixture) => [
+      fixture.home_team_id,
+      fixture.away_team_id
+    ])
+  )];
+
+  if (!teamIds.length) {
+    return {
+      fixtures,
+      teams: new Map(),
+      teamIds: []
+    };
+  }
+
+  const { data: teamRows, error } = await supabase
+    .from("teams")
+    .select("id,external_team_id,name,country,logo_url")
+    .in("id", teamIds);
+
+  if (error) throw error;
+
+  return {
+    fixtures,
+    teams: new Map((teamRows || []).map((team) => [team.id, team])),
+    teamIds
+  };
+}
+
+
+adminRouter.get("/diagnostics", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.query?.date || todayUtc());
+    const supabase = getSupabaseAdmin();
+    const diagnostics = await getPredictionDiagnostics(supabase, date);
+
+    let provider = null;
+    try {
+      const status = await fetchProviderStatus();
+      provider = {
+        available: true,
+        results: status.results ?? null,
+        quota: status.quota || null,
+        response: status.response || null
+      };
+    } catch (error) {
+      provider = {
+        available: false,
+        error: error.message || String(error)
+      };
+    }
+
+    res.json({
+      status: "ok",
+      date,
+      diagnostics,
+      processing: getBackgroundProcessingStatus(date),
+      provider
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 adminRouter.get("/provider-status", async (_req, res, next) => {
   try {
@@ -72,6 +157,86 @@ adminRouter.post("/rebuild-profiles", async (req, res, next) => {
   }
 });
 
+
+adminRouter.get("/hydration-plan", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.query?.date || todayUtc());
+    const force = String(req.query?.force || "").toLowerCase() === "true";
+    const supabase = getSupabaseAdmin();
+    const context = await loadHydrationContext(supabase, date);
+    const result = await planHydrationForFixtures(
+      supabase,
+      context.fixtures,
+      context.teams,
+      { force }
+    );
+
+    res.json({
+      status: "ok",
+      action: "hydration-plan",
+      date,
+      fixtures: context.fixtures.length,
+      result
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.post("/hydrate-team", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.body?.date || todayUtc());
+    const teamId = positiveInt(req.body?.teamId, "teamId");
+    const supabase = getSupabaseAdmin();
+    const context = await loadHydrationContext(supabase, date);
+
+    if (!context.teamIds.includes(teamId)) {
+      throw new HttpError(
+        404,
+        `Team ${teamId} is not part of the fixtures for ${date}`
+      );
+    }
+
+    const result = await hydrateProfilesForFixtures(
+      supabase,
+      context.fixtures,
+      context.teams,
+      {
+        force: Boolean(req.body?.force),
+        targetTeamIds: [teamId]
+      }
+    );
+
+    res.json({
+      status: "ok",
+      action: "hydrate-team",
+      date,
+      teamId,
+      result
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.post("/hydrate-date", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.body?.date || todayUtc());
+    const supabase = getSupabaseAdmin();
+    const context = await loadHydrationContext(supabase, date);
+    const result = await hydrateProfilesForFixtures(
+      supabase,
+      context.fixtures,
+      context.teams,
+      { force: Boolean(req.body?.force) }
+    );
+
+    res.json({ status: "ok", action: "hydrate-date", date, result });
+  } catch (error) {
+    next(error);
+  }
+});
+
 adminRouter.post("/generate-predictions", async (req, res, next) => {
   try {
     const date = assertIsoDate(req.body?.date || todayUtc());
@@ -87,6 +252,24 @@ adminRouter.post("/grade-results", async (req, res, next) => {
     const date = assertIsoDate(req.body?.date || todayUtc());
     const result = await gradePredictionsForDate(getSupabaseAdmin(), date);
     res.json({ status: "ok", action: "grade-results", result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.post("/settle-date", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.body?.date || todayUtc());
+    const supabase = getSupabaseAdmin();
+    const synced = await syncDate(supabase, date);
+    const graded = await gradePredictionsForDate(supabase, date);
+    res.json({
+      status: "ok",
+      action: "settle-date",
+      date,
+      synced,
+      graded
+    });
   } catch (error) {
     next(error);
   }
