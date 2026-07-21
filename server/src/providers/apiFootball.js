@@ -130,9 +130,8 @@ export async function fetchTeamRecentFixtures({ teamId, last = 24 }) {
 export async function fetchProviderStatus() {
   return apiFootballRequest("/status");
 }
-
-export async function fetchFixtureEvents(fixtureId) {
-  return apiFootballRequest("/fixtures/events", {
+export async function fetchFixtureOdds({ fixtureId }) {
+  return apiFootballRequest("/odds", {
     fixture: Number(fixtureId)
   });
 }

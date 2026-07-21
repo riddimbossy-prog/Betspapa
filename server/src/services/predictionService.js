@@ -1,9 +1,11 @@
 import { ENGINE_VERSION, PREDICTABLE_STATUSES } from "../config.js";
 import { predictMatch } from "../engine/transitionEngine.js";
 import { dateRangeUtc } from "../utils/date.js";
+import { fetchFixtureOdds } from "../providers/apiFootball.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 import { hydrateProfilesForFixtures } from "./historyHydrationService.js";
 import { detectSuspiciousPredictionCandidates } from "./intelligenceService.js";
+import { extractTeamGoalOdds } from "./oddsService.js";
 
 const TRANSITIONS = ["WW", "WD", "WL", "DW", "DD", "DL", "LW", "LD", "LL"];
 
@@ -401,6 +403,8 @@ function predictionRow(fixture, prediction) {
       dataQuality: prediction.dataQuality,
       directionMode: prediction.directionMode,
       qualified: prediction.qualified,
+      papaPolicy: prediction.papaPolicy,
+      odds: prediction.odds || null,
       decisionTrace: prediction.decisionTrace,
       allHtftIndicators: prediction.decisionTrace?.allHtftIndicators || [],
       enginePicks: prediction.enginePicks,
@@ -426,6 +430,34 @@ function predictionRow(fixture, prediction) {
   };
 }
 
+async function loadFixtureMarketOdds(fixture, homeTeam, awayTeam, cached) {
+  const key = `fixture-odds:${fixture.external_fixture_id}`;
+  if (cached.has(key)) return cached.get(key);
+
+  const promise = fetchFixtureOdds({ fixtureId: fixture.external_fixture_id })
+    .then((payload) => ({
+      ...extractTeamGoalOdds(payload.response, {
+        homeName: homeTeam.name,
+        awayName: awayTeam.name
+      }),
+      fetchedAt: new Date().toISOString()
+    }))
+    .catch((error) => ({
+      source: "api-football",
+      status: "unavailable",
+      bookmakerCount: 0,
+      teamGoals: {
+        home: { over05: null, over15: null },
+        away: { over05: null, over15: null }
+      },
+      warning: error?.message || String(error),
+      fetchedAt: new Date().toISOString()
+    }));
+
+  cached.set(key, promise);
+  return promise;
+}
+
 async function predictFixture(supabase, fixture, cached) {
   const cacheKey = `${fixture.league_id}:${fixture.season}`;
   let context = cached.get(cacheKey);
@@ -448,9 +480,10 @@ async function predictFixture(supabase, fixture, cached) {
   const awayTeam = teams.get(fixture.away_team_id);
   if (!homeTeam || !awayTeam) throw new Error(`Fixture ${fixture.id} has unresolved teams`);
 
-  const [homeHistory, awayHistory] = await Promise.all([
+  const [homeHistory, awayHistory, odds] = await Promise.all([
     loadTeamHistoryProfiles(supabase, fixture.home_team_id, cached),
-    loadTeamHistoryProfiles(supabase, fixture.away_team_id, cached)
+    loadTeamHistoryProfiles(supabase, fixture.away_team_id, cached),
+    loadFixtureMarketOdds(fixture, homeTeam, awayTeam, cached)
   ]);
 
   const historyHtftRows = [
@@ -492,9 +525,9 @@ async function predictFixture(supabase, fixture, cached) {
     kickoff: fixture.fixture_date,
     home,
     away,
+    odds,
     profileAudit,
     analysisFingerprint: profileAudit.analysisFingerprint,
-    odds: fixture.market_odds || fixture.odds || fixture.bookmaker_odds || null,
     league: {
       transitionBaseline: deriveLeagueBaseline(context.htftRows),
       goals: {
@@ -507,7 +540,7 @@ async function predictFixture(supabase, fixture, cached) {
   return predictMatch(input);
 }
 
-export async function generatePredictionsForDate(supabase, date) {
+export async function generatePredictionsForDate(supabase, date, { skipHydration = false } = {}) {
   const { start, end } = dateRangeUtc(date);
   const fixtures = await fetchAllRows(() =>
     supabase
@@ -536,11 +569,23 @@ export async function generatePredictionsForDate(supabase, date) {
     ? await loadTeams(supabase, teamIds)
     : new Map();
 
-  const hydration = await hydrateProfilesForFixtures(
-    supabase,
-    predictable,
-    teams
-  );
+  const hydration = skipHydration
+    ? {
+        teamsChecked: 0,
+        hydratedTeams: 0,
+        readyTeams: 0,
+        providerCalls: 0,
+        importedFixtures: 0,
+        rebuiltLeagueSeasons: [],
+        audits: [],
+        byTeamId: new Map(),
+        skippedBecauseAlreadyReady: true
+      }
+    : await hydrateProfilesForFixtures(
+        supabase,
+        predictable,
+        teams
+      );
 
   cached.set("__teams", teams);
   cached.set("__hydrationByTeam", hydration.byTeamId);

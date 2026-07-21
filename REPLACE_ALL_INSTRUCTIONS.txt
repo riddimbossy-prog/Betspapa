@@ -1,41 +1,93 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.16.0
+BETSPAPA FULL REPOSITORY REPLACEMENT — v1.13.0
 ================================================
 
-ADDED
------
-- Official BetsPapa branded PWA icon.
-- Standard, maskable and Apple home-screen icons.
-- New branded portrait and landscape launch screens.
-- Five-step first-user walkthrough.
-- One-time local completion memory.
-- Swipe, keyboard and accessibility support.
-- Mobile and Samsung Z Fold 6 responsive layouts.
-- Replay button in the Today page footer.
-- Direct replay URL: https://betspapa.com/?tour=1
-- Install prompt waits until the walkthrough closes.
+IMPORTANT
+---------
+Do not deploy the older v1.11 ZIP. This package preserves its account features
+and adds the amended Papa's Pick engine.
 
-DEPLOY
-------
-1. Replace every repository file with this package.
-2. Commit:
-   BetsPapa v1.16 branded PWA and first user walkthrough
-3. Push origin.
-4. Confirm:
+DEPLOY CODE
+-----------
+1. Extract this ZIP.
+2. Replace every file in your Betspapa repository.
+3. Commit:
+   BetsPapa v1.13 amended Papa's Pick
+4. Push origin from GitHub Desktop.
+5. Wait for GitHub Pages and Render.
+6. Confirm:
    https://api.betspapa.com/api/health
+   Service version must show 1.13.0.
+   Engine version must show papasense-v1.13.0.
 
-Expected version:
-   1.16.0
+PAPA'S PICK v1.13
+-----------------
+- Team Over 0.5 odds below 1.20 are rejected.
+- Only the same team's Over 1.5 may replace it.
+- The replacement must pass every statistical and value gate.
+- When it fails, no forced upgrade is made.
+- 1/1 and 2/2 map to the relevant Team to Win Either Half.
+- X routes map to Draw in Either Half.
+- Reversal routes map to GG or Match Over 1.5 after their gates.
+- Straight wins require 6 overall wins, 6 relevant split wins and HT/FT
+  behaviour confirmation.
 
-5. Open once:
-   https://betspapa.com/reset.html
+Full rule sheet:
+PAPASENSE_V1_13_AMENDMENTS.md
 
-6. Test first-user mode in a private/incognito window:
-   https://betspapa.com/?tour=1
+ONE-TIME SUPABASE DATABASE STEP
+-------------------------------
+Open Supabase → SQL Editor and run:
 
-PWA ICON NOTE
--------------
-Android and Samsung Internet may keep an old installed icon until the existing
-app is uninstalled and installed again. The website itself uses fresh asset
-filenames, so a new installation receives the official branded icon.
+server/supabase/migrations/20260717_v111_accounts_watchlist_push.sql
 
-No Supabase migration and no new Render environment variable are required.
+This is still the correct migration because v1.13 preserves the v1.11 account,
+watchlist, notification and pipeline tables.
+
+AUTH SETUP
+----------
+Render environment variables:
+- SUPABASE_URL
+- SUPABASE_ANON_KEY
+- SUPABASE_SERVICE_ROLE_KEY
+- API_FOOTBALL_KEY
+
+Supabase → Authentication → URL Configuration:
+Site URL:
+https://betspapa.com
+
+Redirect URLs:
+https://betspapa.com/account.html
+https://www.betspapa.com/account.html
+
+For Google sign-in:
+Supabase → Authentication → Providers → Google → Enable
+Then add the Google client ID and client secret.
+
+PUSH SETUP
+----------
+From the server folder:
+
+npm.cmd run vapid
+
+Add the displayed values to Render:
+- VAPID_PUBLIC_KEY
+- VAPID_PRIVATE_KEY
+- PUSH_SUBJECT=mailto:admin@betspapa.com
+
+PIPELINE
+--------
+The automatic workflow has separate jobs for previous results, today and
+tomorrow. Run the normal automatic workflow after deployment so predictions are
+regenerated with papasense-v1.13.0 and current team-goal odds.
+
+PWA UPDATE
+----------
+Installed users receive an Update Now card when the new service worker is ready.
+
+FINAL CACHE RESET
+-----------------
+Open once:
+https://betspapa.com/reset.html
+
+Then open:
+https://betspapa.com/account.html

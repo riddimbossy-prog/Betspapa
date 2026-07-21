@@ -1,102 +1,37 @@
 # Changelog
 
-## v1.16.0 — Branded PWA and First-User Walkthrough
+## v1.13.0 — Amended Papa's Pick + Team-Goal Value Protection
 
-- Added official BetsPapa standard and maskable PWA icons.
-- Added a fresh Apple touch icon.
-- Rebuilt portrait and landscape launch screens.
-- Added a five-step first-user walkthrough.
-- Added swipe, keyboard, focus-trap and reduced-motion support.
-- Added responsive layouts for mobile and Samsung Z Fold 6.
-- Added a replay button and `?tour=1` replay URL.
-- Delayed the installation prompt until onboarding closes.
-- Bumped the PWA cache and service version.
+- Replaced the old PapaSense v1.10 engine label with `papasense-v1.13.0`.
+- Rejects Team Over 0.5 prices below 1.20 as low value.
+- Evaluates only the same team's Over 1.5 as the upgrade and never forces it when any full gate fails.
+- Added API-Football Team Over 0.5/1.5 odds extraction and median-price normalization.
+- Converts 1/1 and 2/2 into the appropriate Team to Win Either Half market.
+- Converts reversal routes to GG or Match Over 1.5 and X routes to Draw in Either Half.
+- Added six-overall-win and six-relevant-split-win safeguards for straight results.
+- Added lead-hold, comeback and opponent lead-surrender checks with safer downgrades.
+- Added First Half Over 0.5, First Half Over 1.5, Second Half Over 0.5, and individual Team Over 1.5 markets.
+- Stores odds and the complete Papa policy trace inside each prediction audit.
+- Preserved v1.11 accounts, watchlists, alerts, PWA updates and resumable pipeline features.
+- Expanded the backend suite to 32 passing tests.
 
-## v1.15.3 — Today Desktop Width Hotfix
+## v1.11.0 — Accounts, Watchlist, Push Alerts and Pipeline Recovery
 
-- Fixed the left-aligned desktop canvas and large blank area on the right.
-- Widened and centred the Today page.
-- Reasserted the full-width fixture board after legacy CSS.
-- Contained filter controls inside the fixture panel.
-- Preserved mobile and Samsung Z Fold 6 layouts.
-- Bumped the PWA cache and Today stylesheet filename.
-
-## v1.15.1 — Live & Fixtures Responsive UI
-
-- Added a dedicated `live-fixtures.html` match centre.
-- Added separate Pending, Live, Settling, Settled and Delayed views.
-- Added real-time score cards with Papa's published analysis.
-- Added cached-board fallback when the live API is temporarily unavailable.
-- Added automatic 60-second refresh while matches are live.
-- Added a mobile filter sheet and narrow cover-screen layout.
-- Added dedicated Samsung Z Fold 6 cover and unfolded breakpoints.
-- Redesigned the homepage fixture preview as a full-width responsive grid.
-- Updated every public navigation link and PWA shortcut to the live match centre.
-- No prediction logic, settlement rules or database schema changed.
-
-## v1.15.0 — Modern Unified UI
-
-- Introduced one consistent navigation system.
-- Added mobile bottom navigation and mobile filter bottom sheet.
-- Reorganised the homepage around featured analysis, fixtures, status and results.
-- Redesigned match, metric, Boss Pick and result cards.
-- Improved accessibility, touch targets and responsive behavior.
-- Preserved all prediction and settlement logic.
-
-## v1.14.0 — Live Match States and Automatic Settlement
-
-- Added Pending, Live, Settling and Settled labels to prediction cards.
-- Added current scores for live and completed matches.
-- Added automatic settlement for every active PapaSense v1.13 market.
-- Added separate outcomes for Papa's Pick, Aggressive, Safer and Venue Pattern.
-- Added dynamic Boss Pick settlement, including goal-event checks for lead-at-any-time markets.
-- Added a two-minute backend live-refresh cooldown.
-- Added 60-second browser refresh while a match is live.
-- Added an hourly lightweight GitHub settlement workflow.
-- Added `/api/matches/status` and protected `/api/admin/settle-date` endpoints.
-- Extended finished-state support to FT, AET and PEN.
-- Kept BetsPapa free and public.
-
-## v1.13.0 — Papa Common-Sense Market Intelligence
-
-- Added practical HT/FT translations.
-- Added win either half, draw either half and half-goal markets.
-- Added actual-odds Team O0.5 value upgrade.
-- Added comeback and lead-surrender checks for straight wins.
-- Added first-half lead-pressure logic.
-- Preserved OMNI v2.5.2 Boss Picks.
-
-## v1.12.2 — OMNI v2.5.2 Boss Picks
-
-- Upgraded Boss Picks to uploaded audited OMNI v2.5.2.
-- Evaluates 44 active markets.
-- Only six audited core markets can become final selections.
-- Removes full-match Over 0.5.
-- Shows scores as rule points out of 100.
-- Preserves unlimited qualifying Boss Picks.
-- Keeps BetsPapa free and public.
-
-## v1.12.1 — Unlimited Papa’s Boss Picks
-
-- Removed the maximum-three Boss Pick cap.
-- Every fixture passing all OMNI gates at 80 or higher is published.
-- PRIME picks remain ranked above Qualified picks.
-- Removed the Boss Picks `limit=3` API request and backend clamp.
-- No account, subscription or database migration was added.
-
-## v1.12.0 — Papa’s Boss Picks
-
-- Replaced the public Bankers page with Papa’s Boss Picks.
-- Integrated the uploaded OMNI HT/FT Gatekeeper Engine v2.0.
-- Added a live `/api/boss-picks/today` endpoint.
-- Evaluates 48 markets and publishes one final market per accepted fixture.
-- Qualified threshold is 80; Prime threshold is 87.
-- Limits the board to the strongest three fixtures and never forces a selection.
-- Uses eight overall matches, six relevant venue matches and a 30-match league minimum.
-- Added score breakdowns for HT/FT, components, streaks and context.
-- Added rejection summaries explaining why other fixtures stayed off the board.
-- Kept the site free and public with no account, login, subscription or watchlist system.
-- Preserved the larger PWA install prompt, custom splash screen and mobile navigation.
+- Added Supabase email/password authentication.
+- Added Google sign-in support.
+- Added password reset and profile editing.
+- Added personal Watchlist for teams, leagues, fixtures, predictions and engines.
+- Added notification settings with quiet hours and kickoff timing.
+- Added opt-in Web Push subscriptions and test notifications.
+- Added Papa's Pick, Banker and result notification dispatch.
+- Added PWA update notification with an Update Now button.
+- Added prediction transparency showing samples, last update and engine version.
+- Added resumable pipeline progress stored in Supabase.
+- Added retry handling for aborted, timed-out, 429 and server requests.
+- Split previous results, today and tomorrow into separate GitHub Actions jobs.
+- Skipped the duplicate hydration pass during final generation.
+- Added a public latest-pipeline timestamp endpoint.
+- Prediction engine logic remains `papasense-v1.10.0`.
 
 ## v1.10.3 — Bigger PWA Install and Custom Splash Screen
 

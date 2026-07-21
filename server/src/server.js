@@ -2,14 +2,16 @@ import express from "express";
 import cors from "cors";
 
 import {
-  BOSS_ENGINE_VERSION,
   DEFAULT_ALLOWED_ORIGINS,
+  ENGINE_VERSION,
   SERVICE_NAME,
   SERVICE_VERSION
 } from "./config.js";
+import { accountRouter } from "./routes/accountRoutes.js";
 import { adminRouter } from "./routes/adminRoutes.js";
 import { publicRouter } from "./routes/publicRoutes.js";
 import { getSupabaseAdmin } from "./supabase.js";
+import { authFeaturesConfigured, pushFeaturesConfigured } from "./config.js";
 import { getErrorDetails, HttpError } from "./utils/errors.js";
 
 const app = express();
@@ -87,7 +89,6 @@ app.get("/", (_req, res) => {
     demo: "/api/demo",
     predictionsToday: "/api/predictions/today",
     fixturesToday: "/api/fixtures/today",
-    matchStates: "/api/matches/status",
     dashboardToday: "/api/dashboard/today",
     recentResults: "/api/results/recent",
     engineStats: "/api/stats/engine",
@@ -96,10 +97,11 @@ app.get("/", (_req, res) => {
     aggressive: "/api/engines/aggressive",
     safer: "/api/engines/safer",
     venuePattern: "/api/engines/venue",
-    bossPicks: "/api/boss-picks/today",
-    legacyBankers: "/api/bankers/today",
+    bankers: "/api/bankers/today",
     resultsIntelligence: "/api/results/intelligence",
-    adminDiagnostics: "/api/admin/diagnostics"
+    adminDiagnostics: "/api/admin/diagnostics",
+    accountConfig: "/api/account/config",
+    account: "/api/account/me"
   });
 });
 
@@ -110,7 +112,7 @@ app.get("/api/health", async (_req, res) => {
       status: "ok",
       service: SERVICE_NAME,
       version: SERVICE_VERSION,
-      bossEngineVersion: BOSS_ENGINE_VERSION,
+      engineVersion: ENGINE_VERSION,
       database: "connected",
       leaguesCount: database.leaguesCount,
       providerKeyConfigured: Boolean(
@@ -119,6 +121,8 @@ app.get("/api/health", async (_req, res) => {
           process.env.API_STATS_KEY
       ),
       adminSecretConfigured: Boolean(process.env.ADMIN_SYNC_SECRET),
+      authConfigured: authFeaturesConfigured(),
+      pushConfigured: pushFeaturesConfigured(),
       environment: process.env.NODE_ENV || "development",
       timestamp: new Date().toISOString()
     });
@@ -129,7 +133,6 @@ app.get("/api/health", async (_req, res) => {
       status: "error",
       service: SERVICE_NAME,
       version: SERVICE_VERSION,
-      bossEngineVersion: BOSS_ENGINE_VERSION,
       database: "disconnected",
       message: details.message,
       code: details.code,
@@ -140,6 +143,7 @@ app.get("/api/health", async (_req, res) => {
   }
 });
 
+app.use("/api/account", accountRouter);
 app.use("/api", publicRouter);
 app.use("/api/admin", adminRouter);
 

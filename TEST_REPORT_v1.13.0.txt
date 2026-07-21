@@ -1,0 +1,25 @@
+BetsPapa v1.13.0 Verification Report
+====================================
+
+Service version: 1.13.0
+Engine version: papasense-v1.13.0
+Test command: npm test
+Result: 32 passed, 0 failed
+
+Verified amended Papa's Pick behaviour:
+- 1/1 -> Home Team to Win Either Half
+- 2/2 -> Away Team to Win Either Half
+- X routes -> Draw in Either Half
+- Team Over 0.5 odds below 1.20 are rejected
+- Same-team Over 1.5 upgrade occurs only when every gate passes
+- No forced upgrade when same-team Over 1.5 fails
+- Six overall and six relevant split wins are enforced for straight wins
+- New first-half, second-half and individual Team Over 1.5 markets exist
+- API-Football team-goal odds parser returns normalized median prices
+
+Static syntax checks passed:
+- server/src/server.js
+- server/src/services/predictionService.js
+- server/src/services/gradingService.js
+- server/src/services/oddsService.js
+- server/src/engine/transitionEngine.js

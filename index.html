@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#070b16">
+  <meta name="theme-color" content="#12002b">
   <meta name="description" content="BetsPapa football prediction intelligence. Papa knows the game.">
   <meta property="og:title" content="BetsPapa — Papa Knows the Game">
   <meta property="og:description" content="Common-sense football predictions powered by HT/FT transition logic and goal thresholds.">
@@ -16,14 +16,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.v140.css">
+  <link rel="stylesheet" href="assets/css/styles.v1110.css">
   <style id="betspapa-critical-search-guard">
     #searchDrawer { display: none !important; }
     #searchDrawer.is-open:not([hidden]) { display: grid !important; }
   </style>
   <script>
     (function () {
-      window.__BETSPAPA_BUILD__ = "1.16.0";
+      window.__BETSPAPA_BUILD__ = "1.13.0";
       function forceSearchClosed() {
         var drawer = document.getElementById("searchDrawer");
         if (drawer) {
@@ -45,8 +45,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="BetsPapa">
-  <link rel="manifest" href="/manifest.webmanifest?v=1160">
-  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/pwa-brand-apple-180.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon-180.png">
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-1290x2796.jpg" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2796x1290.jpg" media="(device-width: 932px) and (device-height: 430px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-1170x2532.jpg" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
@@ -55,9 +55,7 @@
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-1334x750.jpg" media="(device-width: 667px) and (device-height: 375px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2048x2732.jpg" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
   <link rel="apple-touch-startup-image" href="/assets/images/pwa-splash-2732x2048.jpg" media="(device-width: 1366px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
-  <link rel="stylesheet" href="/assets/css/pwa.v1160.css">
-  <link rel="stylesheet" href="/assets/css/ui.v151.css">
-  <link rel="stylesheet" href="/assets/css/today.v153.css">
+  <link rel="stylesheet" href="/assets/css/pwa.v1110.css">
   <script>
     (function () {
       var standalone = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
@@ -72,7 +70,7 @@
     })();
   </script>
 </head>
-<body data-page="dashboard">
+<body>
   <div class="pwa-launch-splash" id="pwaSplash" role="status" aria-live="polite">
     <span class="pwa-splash-accessible">Launching BetsPapa — Papa Knows the Game</span>
   </div>
@@ -89,7 +87,14 @@
       </span>
     </a>
 
-    <nav class="desktop-nav" aria-label="Primary navigation"><a class="active" href="index.html">Today</a><a href="papas-pick.html">Papa’s Pick</a><a href="boss-picks.html">Boss Picks</a><a href="live-fixtures.html">Live & Fixtures</a><a href="results-intelligence.html">Results</a><a href="responsible.html">More</a></nav>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a class="active" href="#dashboard">Home</a>
+      <a href="papas-pick.html">Predictions</a>
+      <a href="venue-pattern.html">HT/FT Engine</a>
+      <a href="bankers.html">Bankers</a>
+      <a href="results-intelligence.html">Results</a>
+      <a href="#pricing">Pricing</a>
+    </nav>
 
     <div class="top-actions">
       <button class="icon-button" id="searchButton" aria-label="Search" aria-controls="searchDrawer" aria-expanded="false">⌕</button>
@@ -106,12 +111,12 @@
       <a class="side-link active" href="#dashboard"><span>⌂</span>Dashboard</a>
       <a class="side-link" href="papas-pick.html"><span>◈</span>Predictions</a>
       <a class="side-link" href="venue-pattern.html"><span>◎</span>HT/FT Engine</a>
-      <a class="side-link" href="boss-picks.html"><span>♛</span>Boss Picks</a>
+      <a class="side-link" href="bankers.html"><span>♜</span>Bankers</a>
       <a class="side-link" href="results-intelligence.html"><span>✓</span>Results</a>
-      <a class="side-link" href="live-fixtures.html"><span>▦</span>Fixtures</a>
+      <a class="side-link" href="#fixtures"><span>▦</span>Fixtures</a>
     </nav>
 
-    <div class="premium-card" id="papa-edge">
+    <div class="premium-card" id="pricing">
       <img class="sidebar-papa" src="assets/images/betspapa-papa-mark.png" alt="">
       <h3>Papa’s Edge</h3>
       <p>See the strongest transition, the supporting goal route and the exact reasons other markets were rejected.</p>
@@ -132,11 +137,11 @@
       <div class="hero-card papa-hero">
         <div class="hero-copy">
           <span class="kicker">PAPA'S FOOTBALL INTELLIGENCE</span>
-          <h1>Football intelligence, <span>explained clearly.</span></h1>
-          <p>Today’s fixtures, live status, model reasoning and verified results — organised around one clear match story and one practical market direction.</p>
-          <div class="papa-promise"><span>✓</span> Strong analyses are promoted. Weaker directions stay clearly labelled.</div>
+          <h1>Every Match Gets a Direction. <span>Papa Explains Why.</span></h1>
+          <p>Every imported fixture is read through all nine HT/FT transitions, venue form, recent form, goal support and common-sense risk checks before one direction is selected.</p>
+          <div class="papa-promise"><span>✓</span> Strong calls are Qualified. Weaker calls are clearly marked Directional.</div>
           <div class="hero-actions">
-            <a class="gold-button" href="#prediction-board">Open Today’s Analysis <span>→</span></a>
+            <a class="gold-button" href="#prediction-board">View Papa's Picks <span>→</span></a>
             <button class="gold-button pwa-install-primary" id="pwaInstallPrimary" data-pwa-install type="button" hidden>Install BetsPapa App</button>
             <button class="glass-button" id="howItWorks">How Papa Thinks</button>
           </div>
@@ -161,34 +166,6 @@
       </div>
 
 
-      <section class="today-overview" aria-labelledby="todayOverviewTitle">
-        <div class="today-overview-head">
-          <div>
-            <span class="eyebrow">TODAY AT A GLANCE</span>
-            <h2 id="todayOverviewTitle">Today’s match board</h2>
-            <p id="todayDateLabel">Loading today’s date…</p>
-          </div>
-          <a class="today-live-link" href="live-fixtures.html">Open full live centre <span>→</span></a>
-        </div>
-        <div class="today-status-grid" id="todayStatusGrid" aria-label="Today match-state summary">
-          <button type="button" class="today-status-card active" data-today-state="all">
-            <span>All</span><strong id="todayAllCount">0</strong><small>Analysed fixtures</small>
-          </button>
-          <button type="button" class="today-status-card live" data-today-state="live">
-            <span>Live</span><strong id="todayLiveCount">0</strong><small>In progress now</small>
-          </button>
-          <button type="button" class="today-status-card pending" data-today-state="pending">
-            <span>Pending</span><strong id="todayPendingCount">0</strong><small>Not started</small>
-          </button>
-          <button type="button" class="today-status-card settling" data-today-state="settling">
-            <span>Settling</span><strong id="todaySettlingCount">0</strong><small>Awaiting grading</small>
-          </button>
-          <button type="button" class="today-status-card settled" data-today-state="settled">
-            <span>Settled</span><strong id="todaySettledCount">0</strong><small>Graded results</small>
-          </button>
-        </div>
-      </section>
-
       <div class="engine-switcher" id="engineSwitcher" aria-label="Prediction engine filter">
         <button class="engine-tab active" type="button" data-engine="primary">
           <span>01</span><strong>Papa's Pick</strong><small>Default all-evidence pick</small>
@@ -205,7 +182,7 @@
       </div>
       <div class="engine-page-actions">
         <a id="enginePageLink" href="papas-pick.html">Open Papa’s Pick page <span>→</span></a>
-        <a href="boss-picks.html">Open Papa’s Boss Picks <span>→</span></a>
+        <a href="bankers.html">View today’s bankers <span>→</span></a>
       </div>
 
       <div class="metric-grid" id="stats">
@@ -236,8 +213,8 @@
       <article class="panel matrix-panel" id="engine">
         <div class="panel-heading">
           <div>
-            <span class="eyebrow">MATCH STORY</span>
-            <h2>HT/FT intelligence</h2>
+            <span class="eyebrow">MATCH STATE MODEL</span>
+            <h2>HT/FT Transition Matrix</h2>
           </div>
           <button class="info-button" title="Matrix probabilities">i</button>
         </div>
@@ -284,7 +261,7 @@
 
       <article class="panel insights-panel">
         <div class="panel-heading compact">
-          <div><span class="eyebrow">MARKET SUPPORT</span><h2>Why the market fits</h2></div>
+          <div><span class="eyebrow">COMMON-SENSE FILTERS</span><h2>Market Insights</h2></div>
           <a class="text-button" href="papas-pick.html">Open all picks</a>
         </div>
         <div class="insight-list" id="marketInsights"></div>
@@ -293,49 +270,14 @@
 
       <article class="panel fixture-panel" id="fixtures">
         <div class="panel-heading compact">
-          <div><span class="eyebrow">TODAY’S BOARD</span><h2>Fixtures, status and analysis</h2></div>
-          <div class="fixture-panel-actions">
-            <span class="panel-note" id="fixtureSummary">Loading live fixtures</span>
-            <a class="fixture-page-link" href="live-fixtures.html">Open live match centre →</a>
-          </div>
+          <div><span class="eyebrow">MATCH CATALOGUE</span><h2>Every Fixture, Four Engine Picks</h2></div>
+          <span class="panel-note" id="fixtureSummary">Loading live fixtures</span>
         </div>
 
-        <div class="today-board-toolbar">
-          <label class="today-mobile-date">
-            <span>Date</span>
-            <input type="date" id="todayMobileDateFilter" aria-label="Today board date">
-          </label>
-          <div class="today-state-tabs" id="todayStateTabs" role="tablist" aria-label="Filter fixtures by match state">
-            <button type="button" class="active" data-today-state="all">All</button>
-            <button type="button" data-today-state="live">Live</button>
-            <button type="button" data-today-state="pending">Pending</button>
-            <button type="button" data-today-state="settling">Settling</button>
-            <button type="button" data-today-state="settled">Settled</button>
-          </div>
-          <button class="today-filter-toggle" id="todayFilterToggle" type="button" aria-controls="todayFilterSheet" aria-expanded="false">
-            Filters <span id="todayFilterCount">0</span>
-          </button>
-        </div>
-
-        <div class="fixture-filters" id="todayFilterSheet" aria-label="Fixture filters">
-          <div class="today-filter-sheet-head">
-            <div><span>FILTER TODAY’S BOARD</span><strong>Filters</strong></div>
-            <button type="button" id="todayFilterClose" aria-label="Close filters">×</button>
-          </div>
+        <div class="fixture-filters" aria-label="Fixture filters">
           <label>
             <span>Date</span>
             <input type="date" id="dateFilter">
-          </label>
-          <label>
-            <span>Match state</span>
-            <select id="matchStateFilter">
-              <option value="all">All states</option>
-              <option value="live">Live</option>
-              <option value="pending">Pending</option>
-              <option value="settling">Settling</option>
-              <option value="settled">Settled</option>
-              <option value="delayed">Delayed / postponed</option>
-            </select>
           </label>
           <label>
             <span>League</span>
@@ -450,13 +392,13 @@
       <article><span>01</span><h3>Two-team agreement</h3><p>Every prediction must be supported by the selected team and the opponent’s matching weakness.</p></article>
       <article><span>02</span><h3>Latest GG thresholds</h3><p>GG only qualifies when both teams independently have credible scoring routes.</p></article>
       <article><span>03</span><h3>Dominant-team route</h3><p>Over 2.5 can qualify through one team alone when scoring and conceding 2+ thresholds agree.</p></article>
-      <article><span>04</span><h3>Direction with honesty</h3><p>Every fixture receives one market direction, but weaker calls are never presented as Boss Picks.</p></article>
+      <article><span>04</span><h3>Direction with honesty</h3><p>Every fixture receives one market direction, but weaker calls are never presented as bankers.</p></article>
     </section>
 
     <footer>
       <div class="footer-brand"><img src="assets/images/betspapa-papa-mark.png" alt="" width="34" height="34"><strong>BetsPapa</strong><small>Papa Knows the Game</small></div>
       <p>Sports analytics only. No prediction is a guarantee. 18+.</p>
-      <div><button class="bp-footer-tour-button" data-start-walkthrough type="button">Take app tour</button><a href="responsible.html">Responsible Use</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>
+      <div><a href="responsible.html">Responsible Use</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>
     </footer>
   </main>
 
@@ -491,10 +433,9 @@
     </div>
   </dialog>
 
-  <script src="assets/js/app.v152.js"></script>
-  <script src="assets/js/mobile-nav.v120.js"></script>
-  <script src="/assets/js/pwa.v1160.js"></script>
-  <script src="/assets/js/ui.v151.js"></script>
-  <script src="/assets/js/today.v152.js"></script>
+  <script type="module" src="assets/js/auth.v1110.js"></script>
+  <script src="assets/js/app.v1101.js"></script>
+  <script src="assets/js/mobile-nav.v1110.js"></script>
+  <script src="/assets/js/pwa.v1110.js"></script>
 </body>
 </html>
