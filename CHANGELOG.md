@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.17.3 — Day-Ahead Board Preparation
+
+- Added a dedicated workflow that prepares tomorrow's board at 17:25 and 22:25 UTC.
+- Imports tomorrow's fixtures, hydrates missing team histories, generates picks and verifies board coverage.
+- Added `/api/board-preparation/status`.
+- Match-day automation now maintains today's already-prepared board.
+- Added a second evening pass for late fixture additions.
+- Preserved PapaSense v1.17.1 Overhaul, Consensus Bankers, Boss Picks and live settlement.
+
 ## v1.17.2 — Zero Picks Automatic Preparation Fix
 
 - Fixed Papa’s Pick and the other engine pages showing zero games after an engine-version upgrade.

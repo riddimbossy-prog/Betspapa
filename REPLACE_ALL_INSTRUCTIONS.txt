@@ -1,32 +1,23 @@
-BETSPAPA FULL REPOSITORY REPLACEMENT — v1.17.2
-================================================
+BETSPAPA FULL REPLACEMENT v1.17.3
+=================================
 
 1. Extract this ZIP.
 2. Replace every file and folder in the local BetsPapa repository.
 3. Commit:
-   BetsPapa v1.17.2 zero picks automatic preparation fix
+   BetsPapa v1.17.3 day-ahead board preparation
 4. Push origin.
-5. Wait for both GitHub Pages and Render deployments to finish.
+5. Wait for GitHub Pages and Render deployments.
 6. Confirm:
    https://api.betspapa.com/api/health
+   Version must show 1.17.3.
+7. In GitHub Actions, run:
+   BetsPapa Prepare Tomorrow Board
+8. Leave date blank to prepare tomorrow automatically.
+9. Confirm tomorrow's status:
+   https://api.betspapa.com/api/board-preparation/status?date=YYYY-MM-DD
 
-Expected:
-- version: 1.17.2
-- engineVersion: papasense-v1.17.1-overhaul
-- database: connected
+The workflow automatically runs at 17:25 UTC and 22:25 UTC daily.
+Tomorrow's Papa's Pick, Aggressive, Safer, Venue Pattern and consensus data
+will be stored before match day.
 
-7. Open once:
-   https://betspapa.com/reset.html
-
-8. Open Papa's Pick for the required date.
-
-Imported fixtures will display immediately. Missing current-engine selections
-show Processing while the server generates them automatically. The page checks
-again every eight seconds and replaces those cards with real picks.
-
-The first generation pass can take longer when many teams need individual
-history. Those fixtures remain visible as Waiting for history and will be
-retried by BetsPapa Automatic Picks.
-
-No database migration is required.
-Do not commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET.
+Do not commit ADMIN_SYNC_SECRET or API keys.

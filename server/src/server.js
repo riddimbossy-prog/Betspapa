@@ -4,6 +4,7 @@ import cors from "cors";
 import {
   BOSS_ENGINE_VERSION,
   DEFAULT_ALLOWED_ORIGINS,
+  ENGINE_VERSION,
   SERVICE_NAME,
   SERVICE_VERSION
 } from "./config.js";
@@ -98,6 +99,7 @@ app.get("/", (_req, res) => {
     recentResults: "/api/results/recent",
     engineStats: "/api/stats/engine",
     processingStatus: "/api/processing/status",
+    boardPreparationStatus: "/api/board-preparation/status",
     papasPick: "/api/engines/primary",
     aggressive: "/api/engines/aggressive",
     safer: "/api/engines/safer",
@@ -118,6 +120,7 @@ app.get("/api/health", async (_req, res) => {
       service: SERVICE_NAME,
       version: SERVICE_VERSION,
       bossEngineVersion: BOSS_ENGINE_VERSION,
+      engineVersion: ENGINE_VERSION,
       database: "connected",
       leaguesCount: database.leaguesCount,
       providerKeyConfigured: Boolean(
@@ -137,6 +140,7 @@ app.get("/api/health", async (_req, res) => {
       service: SERVICE_NAME,
       version: SERVICE_VERSION,
       bossEngineVersion: BOSS_ENGINE_VERSION,
+      engineVersion: ENGINE_VERSION,
       database: "disconnected",
       message: details.message,
       code: details.code,

@@ -14,6 +14,7 @@ import {
 import {
   buildEngineBoardItems,
   getBackgroundProcessingStatus,
+  getBoardPreparationStatus,
   getDashboardData,
   getDashboardStats,
   listFixtures,
@@ -193,6 +194,21 @@ publicRouter.post("/predict", (req, res, next) => {
       return res.status(400).json({ error: "A JSON fixture object is required" });
     }
     return res.json(predictMatch(req.body));
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+publicRouter.get("/board-preparation/status", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.query.date || todayUtc());
+    const status = await getBoardPreparationStatus(getSupabaseAdmin(), date);
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.json({
+      generatedAt: new Date().toISOString(),
+      ...status
+    });
   } catch (error) {
     next(error);
   }

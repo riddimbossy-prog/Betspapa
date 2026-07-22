@@ -279,7 +279,7 @@ async function main() {
   heading("BetsPapa automatic pipeline");
   console.log(`API: ${API_BASE}`);
   console.log(`Target date: ${targetDate}`);
-  console.log(`Tomorrow: ${tomorrow}`);
+  console.log(`Tomorrow board workflow: dedicated day-ahead preparation`);
   console.log(`Previous results date: ${yesterday}`);
   console.log(`Maximum team-history requests this run: ${MAX_HYDRATION_TEAMS}`);
   console.log(`Parallel hydration workers: ${HYDRATION_WORKERS}`);
@@ -313,7 +313,8 @@ async function main() {
     console.log(`Today grading warning: ${compactError(error)}`);
   }
 
-  await processPredictionDate(tomorrow);
+  heading("Tomorrow board");
+  console.log(`Tomorrow (${tomorrow}) is prepared by the dedicated Prepare Tomorrow Board workflow.`);
 
   heading("Pipeline complete");
   console.log("The website can now load completed picks from Supabase.");

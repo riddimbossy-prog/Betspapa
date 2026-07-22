@@ -535,6 +535,77 @@ export async function listRecentResults(supabase, limit = 12) {
   });
 }
 
+
+export function summarizeBoardPreparation({
+  date,
+  fixtures = [],
+  predictions = []
+} = {}) {
+  const predictableFixtures = fixtures.filter((fixture) =>
+    PREDICTABLE_STATUSES.has(fixture.status)
+  );
+
+  const readyFixtureIds = new Set(
+    predictions
+      .map((prediction) => Number(prediction.internalFixtureId))
+      .filter(Number.isFinite)
+  );
+
+  const readyPredictions = predictableFixtures.filter((fixture) =>
+    readyFixtureIds.has(Number(fixture.id))
+  ).length;
+
+  const waitingForHistory = Math.max(
+    0,
+    predictableFixtures.length - readyPredictions
+  );
+
+  const coveragePercent = predictableFixtures.length
+    ? Number(((readyPredictions / predictableFixtures.length) * 100).toFixed(1))
+    : 0;
+
+  let state = "empty";
+  if (predictableFixtures.length && waitingForHistory === 0) {
+    state = "ready";
+  } else if (readyPredictions > 0) {
+    state = "partial";
+  } else if (predictableFixtures.length) {
+    state = "preparing";
+  }
+
+  return {
+    date,
+    engineVersion: ENGINE_VERSION,
+    state,
+    prepared: state === "ready",
+    fixturesFound: predictableFixtures.length,
+    readyPredictions,
+    waitingForHistory,
+    coveragePercent,
+    message:
+      state === "ready"
+        ? "Tomorrow's board is fully prepared."
+        : state === "partial"
+          ? "Tomorrow's board is partially prepared; remaining teams need more history."
+          : state === "preparing"
+            ? "Fixtures are imported and Papa is preparing predictions."
+            : "No predictable fixtures are available for this date."
+  };
+}
+
+export async function getBoardPreparationStatus(supabase, date) {
+  const [fixtures, predictions] = await Promise.all([
+    listFixtures(supabase, date),
+    listPublicPredictions(supabase, date)
+  ]);
+
+  return summarizeBoardPreparation({
+    date,
+    fixtures,
+    predictions
+  });
+}
+
 export async function getDashboardStats(supabase, {
   predictionsToday = [],
   fixturesToday = [],

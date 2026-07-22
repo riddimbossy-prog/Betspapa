@@ -1,30 +1,33 @@
-name: BetsPapa Automatic Picks
+name: BetsPapa Prepare Tomorrow Board
 
 on:
   schedule:
-    # GitHub schedules use UTC. Maintain today’s already-prepared board three times daily.
-    - cron: "17 4,10,15 * * *"
+    # Ghana uses UTC. First pass prepares tomorrow in the early evening.
+    - cron: "25 17 * * *"
+    # Second pass catches late fixture additions and team-history gaps.
+    - cron: "25 22 * * *"
 
   workflow_dispatch:
     inputs:
       date:
-        description: "Optional target date in YYYY-MM-DD. Blank uses today in UTC."
+        description: "Optional board date in YYYY-MM-DD. Blank uses tomorrow in UTC."
         required: false
         type: string
       force_hydration:
-        description: "Re-download history even for teams already ready"
+        description: "Re-download history even when a team already looks ready"
         required: false
         default: false
         type: boolean
       max_hydration_teams:
-        description: "Maximum thin-data teams to hydrate in this run"
+        description: "Maximum teams to hydrate in each preparation round"
         required: false
-        default: "40"
+        default: "100"
         type: string
-
-  workflow_run:
-    workflows: ["Deploy BetsPapa to GitHub Pages"]
-    types: [completed]
+      preparation_rounds:
+        description: "History and prediction rounds"
+        required: false
+        default: "2"
+        type: string
 
 permissions:
   contents: read
@@ -34,21 +37,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  update-picks:
-    # Run after a successful Pages deployment, on schedule, or manually.
-    if: >
-      github.event_name != 'workflow_run' ||
-      github.event.workflow_run.conclusion == 'success'
-
+  prepare-tomorrow:
     runs-on: ubuntu-latest
     timeout-minutes: 55
 
     env:
       ADMIN_SYNC_SECRET: ${{ secrets.ADMIN_SYNC_SECRET }}
       BETSPAPA_API_BASE: ${{ vars.BETSPAPA_API_BASE }}
-      PIPELINE_DATE: ${{ inputs.date }}
+      BOARD_DATE: ${{ inputs.date }}
       FORCE_HYDRATION: ${{ inputs.force_hydration }}
       MAX_HYDRATION_TEAMS: ${{ inputs.max_hydration_teams }}
+      PREPARATION_ROUNDS: ${{ inputs.preparation_rounds }}
       HYDRATION_WORKERS: ${{ vars.HYDRATION_WORKERS }}
 
     steps:
@@ -60,12 +59,9 @@ jobs:
         run: |
           if [ -z "$ADMIN_SYNC_SECRET" ]; then
             echo "::error::ADMIN_SYNC_SECRET is missing."
-            echo "Add the same value used on Render under:"
-            echo "GitHub repository → Settings → Secrets and variables → Actions → New repository secret"
             exit 1
           fi
 
-      - name: Run automatic fixture and prediction pipeline
+      - name: Prepare tomorrow's complete board
         shell: bash
-        run: |
-          node scripts/automatic-pipeline.mjs
+        run: node scripts/prepare-next-board.mjs
