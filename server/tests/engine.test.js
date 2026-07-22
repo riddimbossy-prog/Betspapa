@@ -140,18 +140,38 @@ test("default engine is named Papa's Pick", () => {
   assert.equal(prediction.enginePicks.primary.engineName, "Papa's Pick");
 });
 
-test("every engine pick contains a match-specific explanation paragraph", () => {
+test("every engine pick contains a market-specific explanation paragraph", () => {
   const prediction = predictMatch(demoFixtures[0]);
   for (const pick of Object.values(prediction.enginePicks)) {
     assert.ok(pick.explanationParagraph);
-    assert.match(pick.explanationParagraph, /strongest exact transition/i);
-    assert.ok(
-      pick.explanationParagraph.includes(demoFixtures[0].home.name) ||
-      pick.explanationParagraph.includes(demoFixtures[0].away.name)
-    );
+    assert.ok(pick.explanationParagraph.includes(pick.selection));
+    assert.ok(pick.explanationEvidence.selectionBasis);
   }
 });
 
+
+
+
+test("Safer Over 1.5 is qualified by the overhaul and explained with goal evidence", () => {
+  const prediction = predictMatch(demoFixtures[1]);
+  const safer = prediction.enginePicks.safer;
+  assert.equal(safer.key, "over-15");
+  assert.equal(safer.qualified, true);
+  assert.equal(safer.marketPolicy.allEnginesUseOverhaulCatalogue, true);
+  assert.match(safer.explanationParagraph, /venue Over 1\.5 agreement/i);
+  assert.match(safer.explanationParagraph, /did not create the goal pick/i);
+  assert.doesNotMatch(safer.explanationParagraph, /strongest exact transition/i);
+});
+
+test("repeated fallback engines are not independent banker votes", () => {
+  const prediction = predictMatch(demoFixtures[0]);
+  const repeated = Object.values(prediction.enginePicks).filter(
+    (pick) => pick.selection === prediction.enginePicks.primary.selection && pick.engineKey !== "primary"
+  );
+  for (const pick of repeated) {
+    assert.equal(pick.consensusEligible, false);
+  }
+});
 
 test("explanations use simple rounded samples instead of floating counts", () => {
   const prediction = predictMatch(demoFixtures[0]);

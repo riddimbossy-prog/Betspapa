@@ -2,7 +2,7 @@
 
 ## v1.17.1 full-market engine overhaul
 
-Papa's Pick now uses the audited full-market overhaul while the v1.17 Consensus Banker, venue, aggressive, safer, OMNI Boss Picks and PWA layers remain intact. The API engine version is `papasense-v1.17.1-overhaul`. See `PAPASENSE_V1_17_1_ENGINE_OVERHAUL.md`.
+Papa, Aggressive, Safer and Venue Pattern now all select from the audited full-market overhaul catalogue. The v1.17 Consensus Banker, OMNI Boss Picks and PWA layers remain intact. The API engine version is `papasense-v1.17.4-overhaul-all-engines`. See `PAPASENSE_V1_17_1_ENGINE_OVERHAUL.md`.
 
 Royal-purple responsive football prediction platform with a private Render backend, Supabase database, API-Football importer, HT/FT profile builder, common-sense prediction engine, and automatic result grading.
 

@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.17.3",
+  "version": "1.17.4",
   "private": true,
-  "description": "BetsPapa v1.17.3 with day-ahead board preparation, full-market overhaul, consensus Bankers and automatic settlement.",
+  "description": "BetsPapa v1.17.4 with audited full-market logic across Papa, Aggressive, Safer and Venue engines.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

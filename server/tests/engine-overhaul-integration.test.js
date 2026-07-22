@@ -4,14 +4,17 @@ import assert from "node:assert/strict";
 import { demoFixtures } from "../src/data/demoFixtures.js";
 import { predictMatch } from "../src/engine/transitionEngine.js";
 
-test("v1.17.1 uses the full-market overhaul as the authoritative core", () => {
+test("v1.17.4 uses the full-market overhaul across all four engines", () => {
   const prediction = predictMatch(demoFixtures[0]);
-  assert.equal(prediction.engineArchitecture.version, "1.17.1");
+  assert.equal(prediction.engineArchitecture.version, "1.17.4");
   assert.match(prediction.engineArchitecture.authoritativeCore, /full-market overhaul/i);
   assert.equal(
     prediction.enginePicks.primary.selection,
     prediction.primaryPrediction.selection
   );
+  for (const pick of Object.values(prediction.enginePicks)) {
+    assert.equal(pick.marketPolicy.allEnginesUseOverhaulCatalogue, true);
+  }
 });
 
 test("overhaul exposes the expanded independent goal-market scores", () => {

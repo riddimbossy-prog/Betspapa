@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.17.4 — Full Overhaul Across All Four Engines
+
+- Fixed Aggressive, Safer and Venue still using the older support-engine picks.
+- All four engines now select from the audited full-market catalogue.
+- Safer cannot choose blocked or sub-threshold Over 1.5 merely because it is a lower line.
+- Goal explanations now cite goal evidence instead of treating the strongest exact HT/FT transition as proof.
+- GG and Over 1.5 common-sense nominations must independently qualify in the overhaul.
+- Repeated fallback picks no longer count as independent Consensus Banker votes.
+- Added an optional Supabase cleanup script for ungraded old v1.17 predictions.
+- Engine version bumped to `papasense-v1.17.4-overhaul-all-engines` so boards regenerate automatically.
+
 ## v1.17.3 — Day-Ahead Board Preparation
 
 - Added a dedicated workflow that prepares tomorrow's board at 17:25 and 22:25 UTC.

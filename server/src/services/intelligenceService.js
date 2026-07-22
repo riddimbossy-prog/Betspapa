@@ -88,6 +88,9 @@ function bankerEligibility(prediction, engineKey) {
   const reasons = [];
 
   if (!pick.qualified) reasons.push("Pick did not pass its qualification threshold");
+  if (pick.consensusEligible === false) {
+    reasons.push("Engine repeated another pick and is not an independent consensus vote");
+  }
   if (confidence < threshold) reasons.push(`Confidence below ${threshold}%`);
   if (!evidence.individuallyAnalysed) reasons.push("Individual profile audit is incomplete");
   if (evidence.homeOverall < 6 || evidence.awayOverall < 6) {

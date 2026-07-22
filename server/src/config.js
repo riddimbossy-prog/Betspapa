@@ -1,6 +1,6 @@
 export const SERVICE_NAME = "BetsPapa Prediction API";
-export const SERVICE_VERSION = "1.17.3";
-export const ENGINE_VERSION = "papasense-v1.17.1-overhaul";
+export const SERVICE_VERSION = "1.17.4";
+export const ENGINE_VERSION = "papasense-v1.17.4-overhaul-all-engines";
 export const BOSS_ENGINE_VERSION = "omni-htft-v2.5.2";
 
 export function getApiFootballKey() {
