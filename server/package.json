@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.17.4",
+  "version": "1.17.5",
   "private": true,
-  "description": "BetsPapa v1.17.4 with audited full-market logic across Papa, Aggressive, Safer and Venue engines.",
+  "description": "BetsPapa v1.17.5 with country flags beside league names across the full public site.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

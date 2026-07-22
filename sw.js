@@ -1,4 +1,4 @@
-const CACHE_NAME = "betspapa-pwa-v1174";
+const CACHE_NAME = "betspapa-pwa-v1175";
 const OFFLINE_URL = "/offline.html";
 
 const CORE_ASSETS = [
@@ -18,7 +18,8 @@ const CORE_ASSETS = [
   "/terms.html",
   "/responsible.html",
   "/assets/css/styles.v140.css",
-  "/assets/css/portal.v1174.css",
+  "/assets/css/country-flags.v1175.css",
+  "/assets/css/portal.v1175.css",
   "/assets/css/mobile-nav.v111.css",
   "/assets/css/content.v111.css",
   "/assets/css/pwa.v1160.css",
@@ -26,13 +27,14 @@ const CORE_ASSETS = [
   "/assets/css/today.v153.css",
   "/assets/css/live-fixtures.v151.css",
   "/assets/css/bankers.v1170.css",
-  "/assets/js/app.v1161.js",
+  "/assets/js/country-flags.v1175.js",
+  "/assets/js/app.v1162.js",
   "/assets/js/today.v152.js",
-  "/assets/js/portal.v1174.js",
+  "/assets/js/portal.v1175.js",
   "/assets/js/mobile-nav.v1170.js",
   "/assets/js/pwa.v1160.js",
   "/assets/js/ui.v1170.js",
-  "/assets/js/live-fixtures.v151.js",
+  "/assets/js/live-fixtures.v152.js",
   "/assets/images/pwa-brand-icon-192.png",
   "/assets/images/pwa-brand-icon-512.png",
   "/assets/images/pwa-brand-maskable-192.png",

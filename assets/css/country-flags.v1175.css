@@ -1,0 +1,19 @@
+/* BetsPapa v1.17.5 — country flags beside every league */
+.bp-league-flag,
+.country-flag {
+  display: inline-block;
+  margin-right: .32em;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-style: normal;
+  line-height: 1;
+  vertical-align: -.08em;
+}
+
+.pick-meta > span:first-child,
+.reason-popup-league,
+.dialog-title p,
+.lf-card-league strong,
+.lf-card-league small,
+.fixture-top > span:first-child {
+  font-family: "Manrope", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}

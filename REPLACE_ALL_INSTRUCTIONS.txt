@@ -1,36 +1,18 @@
-BETSPAPA FULL REPLACEMENT v1.17.4
-=================================
+BETSPAPA FULL REPLACEMENT v1.17.5
+===================================
 
 1. Extract this ZIP.
-2. Copy every file and folder into the local BetsPapa repository.
-3. Choose Replace/Overwrite All.
-4. Commit:
-   BetsPapa v1.17.4 all engines full overhaul
-5. Push origin.
-6. Wait for GitHub Pages and Render to finish deploying.
-7. Confirm:
+2. Replace every file and folder in the local BetsPapa repository.
+3. Commit:
+   BetsPapa v1.17.5 country flags for leagues
+4. Push origin.
+5. Wait for GitHub Pages and Render.
+6. Confirm:
    https://api.betspapa.com/api/health
-
-Expected:
-- version: 1.17.4
-- engineVersion: papasense-v1.17.4-overhaul-all-engines
-- database: connected
-
-8. Open once:
+   Service version should be 1.17.5.
+   Engine version remains papasense-v1.17.4-overhaul-all-engines.
+7. Open once:
    https://betspapa.com/reset.html
-9. Run GitHub Action:
-   BetsPapa Prepare Tomorrow Board
+8. Reopen the site. Country flags should appear beside leagues everywhere.
 
-The engine version changed, so the new board will be regenerated automatically.
-SQL IS NOT REQUIRED for the normal upgrade.
-
-Optional cleanup only when old v1.17 rows remain visible after deployment:
-- Open Supabase SQL Editor.
-- Review and run:
-  supabase/OPTIONAL_CLEAN_OLD_V117_PREDICTIONS.sql
-- Then run BetsPapa Prepare Tomorrow Board again.
-
-The optional SQL preserves graded results and deletes only ungraded old-engine
-predictions for fixtures from yesterday onward.
-
-Do not commit API keys, Supabase service-role keys or ADMIN_SYNC_SECRET.
+No SQL or Supabase migration is required. Existing predictions remain valid.

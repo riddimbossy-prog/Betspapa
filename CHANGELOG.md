@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.17.5 — Country Flags Beside Leagues
+
+- Added the correct country flag beside league names on Today, Papa’s Pick, Aggressive, Safer, Venue Pattern, Bankers, Boss Picks, Results and Live Fixtures.
+- Added flags to league filter options and match explanation dialogs.
+- Added football-specific handling for England, Scotland, Wales, Northern Ireland, Kosovo and international competitions.
+- Added a complete ISO country-name and three-letter-code resolver with football aliases.
+- No database migration is required; flags are derived from the existing league country value.
+- PapaSense remains `papasense-v1.17.4-overhaul-all-engines`; predictions do not need regeneration.
+
 ## v1.17.4 — Full Overhaul Across All Four Engines
 
 - Fixed Aggressive, Safer and Venue still using the older support-engine picks.
