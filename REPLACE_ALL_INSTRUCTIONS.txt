@@ -1,18 +1,35 @@
-BETSPAPA FULL REPLACEMENT v1.17.5
-===================================
+BETSPAPA FULL REPLACEMENT v1.18.0
+=================================
 
 1. Extract this ZIP.
-2. Replace every file and folder in the local BetsPapa repository.
-3. Commit:
-   BetsPapa v1.17.5 country flags for leagues
-4. Push origin.
-5. Wait for GitHub Pages and Render.
-6. Confirm:
+2. Copy every file and folder into the local Betspapa GitHub repository.
+3. Choose Replace/Overwrite All.
+4. Commit:
+   BetsPapa v1.18 HTFT-first market firing engine
+5. Push origin.
+6. Wait for GitHub Pages and Render to finish deploying.
+7. Open:
    https://api.betspapa.com/api/health
-   Service version should be 1.17.5.
-   Engine version remains papasense-v1.17.4-overhaul-all-engines.
-7. Open once:
+8. Confirm:
+   version: 1.18.0
+   engineVersion: papasense-v1.18.0-htft-first
+   database: connected
+9. Clear the previous PWA cache once:
    https://betspapa.com/reset.html
-8. Reopen the site. Country flags should appear beside leagues everywhere.
+10. In GitHub Actions, run BetsPapa Prepare Tomorrow Board once with the date blank.
+11. Run BetsPapa Automatic Picks once only when today also needs immediate regeneration.
 
-No SQL or Supabase migration is required. Existing predictions remain valid.
+WHY THE BOARD REGENERATES
+-------------------------
+The engine version changed. Existing v1.17 predictions remain in Supabase for
+historical grading, but public current-board queries use the v1.18 engine version.
+No Supabase migration or SQL cleanup is required.
+
+FIRST PREPARATION
+-----------------
+The first board run can show Processing or Waiting for history while team profiles
+are prepared. Completed v1.18 picks will then appear automatically.
+
+DO NOT COMMIT
+-------------
+API keys, Supabase service-role keys or ADMIN_SYNC_SECRET.

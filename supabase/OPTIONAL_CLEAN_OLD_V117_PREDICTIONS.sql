@@ -1,3 +1,8 @@
+-- HISTORICAL OPTIONAL SCRIPT FROM v1.17
+-- BetsPapa v1.18.0 does NOT require this script.
+-- Current-board queries automatically use papasense-v1.18.0-htft-first.
+-- Keep this file only as repository history; do not run it for the v1.18 upgrade.
+
 -- BetsPapa v1.17.4 OPTIONAL cleanup
 -- Run only after the v1.17.4 backend is deployed.
 -- The new engine version normally makes this unnecessary because current API

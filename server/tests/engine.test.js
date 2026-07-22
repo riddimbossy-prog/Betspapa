@@ -152,15 +152,13 @@ test("every engine pick contains a market-specific explanation paragraph", () =>
 
 
 
-test("Safer Over 1.5 is qualified by the overhaul and explained with goal evidence", () => {
+test("Safer uses the strongest qualified HT/FT-gated cushion instead of a fixed first option", () => {
   const prediction = predictMatch(demoFixtures[1]);
   const safer = prediction.enginePicks.safer;
-  assert.equal(safer.key, "over-15");
   assert.equal(safer.qualified, true);
   assert.equal(safer.marketPolicy.allEnginesUseOverhaulCatalogue, true);
-  assert.match(safer.explanationParagraph, /venue Over 1\.5 agreement/i);
-  assert.match(safer.explanationParagraph, /did not create the goal pick/i);
-  assert.doesNotMatch(safer.explanationParagraph, /strongest exact transition/i);
+  assert.equal(safer.htftGate?.eligible, true);
+  assert.match(safer.explanationParagraph, /HT\/FT firing rule/i);
 });
 
 test("repeated fallback engines are not independent banker votes", () => {

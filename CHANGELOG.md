@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.18.0 — HT/FT-First Market Firing Engine
+
+- Rebuilt the final selection architecture so HT/FT eligibility is the first hard gate for every market.
+- Goal, venue, recent-form, clean-sheet and failed-to-score data now confirm an eligible HT/FT direction instead of creating a market by themselves.
+- Removed market-family ranking bonuses; qualified markets are compared by threshold-relative strength, HT/FT gate strength and threshold margin.
+- Fixed X/X being treated as positive Over 1.5 evidence.
+- Added strict HT/FT firing maps for Double Chance, No Draw, DNB, result markets, GG, totals, team goals, clean sheets and half markets.
+- Corrected Home/Away Win Either Half route sets.
+- Corrected Draw in Either Half so only X/1, X/X and X/2 count as guaranteed drawn-half routes.
+- Fixed the Team Over 0.5 odds override so it applies only when the actual selected price is below 1.20.
+- Merged common-sense blockers before selecting the final primary market.
+- Changed Safer and Aggressive from fixed first-option lists to strongest eligible-market comparison.
+- Made Venue Pattern require real venue evidence.
+- Added historical age decay and removed double application of the league baseline.
+- Changed public wording from probability/confidence to Engine strength where appropriate.
+- Added the HT/FT firing rule, trigger routes, confirmations and blockers to the explanation popup.
+- Engine version is `papasense-v1.18.0-htft-first`; existing boards must regenerate.
+- No Supabase migration is required.
+
 ## v1.17.5 — Country Flags Beside Leagues
 
 - Added the correct country flag beside league names on Today, Papa’s Pick, Aggressive, Safer, Venue Pattern, Bankers, Boss Picks, Results and Live Fixtures.

@@ -54,6 +54,7 @@ export const MARKET_THRESHOLDS = {
   halfTimeResult: 0.5,
   exactHtFt: 0.28,
   winEitherHalf: 0.65,
+  drawEitherHalf: 0.56,
   ggYes: 0.67,
   ggNo: 0.68,
   over15: 0.68,
@@ -68,6 +69,7 @@ export const MARKET_THRESHOLDS = {
   teamUnder15: 0.68,
   cleanSheet: 0.64,
   firstHalfOver05: 0.67,
+  firstHalfOver15: 0.7,
   secondHalfOver05: 0.69
 };
 

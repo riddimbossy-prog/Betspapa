@@ -121,45 +121,47 @@ function marketIdentity(market) {
 
 function mergeMarkets(overhaulMarkets = [], supportMarkets = []) {
   const merged = [];
-  const seen = new Set();
+  const byIdentity = new Map();
 
   for (const market of overhaulMarkets) {
-    const normalized = normalizeMarket(market, "full-market-overhaul");
+    const normalized = normalizeMarket(market, "htft-first-full-market-overhaul");
     const identity = marketIdentity(normalized);
-    if (!identity || seen.has(identity)) continue;
-    seen.add(identity);
+    if (!identity || byIdentity.has(identity)) continue;
+    byIdentity.set(identity, normalized);
     merged.push(normalized);
   }
 
+  // The support layer may add anti-zombie or resilience blockers only to a
+  // market that already exists in the overhaul. Those blockers are merged
+  // before primary selection. Support-only markets cannot enter the catalogue.
   for (const market of supportMarkets) {
-    const normalized = normalizeMarket(market, "v1.17-common-sense-extension");
+    const normalized = normalizeMarket(market, "legacy-support-audit-only");
     const identity = marketIdentity(normalized);
-    if (!identity) continue;
+    const existing = byIdentity.get(identity);
+    if (!existing) continue;
 
-    if (seen.has(identity)) {
-      const existing = merged.find((row) => marketIdentity(row) === identity);
-      if (existing) {
-        existing.reasons = [...new Set([...(existing.reasons || []), ...(normalized.reasons || [])])];
-        existing.blockers = [...new Set([...(existing.blockers || []), ...(normalized.blockers || [])])];
-        existing.qualified = Boolean(existing.qualified) && existing.blockers.length === 0;
-        existing.directional = !existing.qualified;
-        existing.supportLayer = {
-          score: normalized.safetyAdjustedScore,
-          threshold: normalized.threshold,
-          qualified: normalized.qualified,
-          comparisonScore: normalized.comparisonScore
-        };
-      }
-      continue;
-    }
-
-    seen.add(identity);
-    merged.push(normalized);
+    existing.reasons = [...new Set([...(existing.reasons || []), ...(normalized.reasons || [])])];
+    existing.blockers = [...new Set([...(existing.blockers || []), ...(normalized.blockers || [])])];
+    existing.qualified =
+      Boolean(existing.htftGate?.eligible) &&
+      Number(existing.safetyAdjustedScore || 0) >= Number(existing.threshold || 0) &&
+      existing.blockers.length === 0;
+    existing.directional = !existing.qualified;
+    existing.supportLayer = {
+      score: normalized.safetyAdjustedScore,
+      threshold: normalized.threshold,
+      qualified: normalized.qualified,
+      comparisonScore: normalized.comparisonScore
+    };
   }
 
   return merged.sort((a, b) => {
     if (a.qualified !== b.qualified) return a.qualified ? -1 : 1;
-    return Number(b.directionalRankScore || 0) - Number(a.directionalRankScore || 0);
+    if (Boolean(a.htftGate?.eligible) !== Boolean(b.htftGate?.eligible)) {
+      return a.htftGate?.eligible ? -1 : 1;
+    }
+    return Number(b.comparisonScore || b.directionalRankScore || 0) -
+      Number(a.comparisonScore || a.directionalRankScore || 0);
   });
 }
 
@@ -191,32 +193,139 @@ function selectionSide(market, input, overhaul) {
   return home > away ? "home" : "away";
 }
 
-function authoritativePrimary(overhaul, support) {
-  const supportPrimary = support?.primaryPrediction;
-  const policy = supportPrimary?.marketPolicy;
+function readDecimalOdds(input, side, line) {
+  const sources = [input?.odds, input?.marketOdds, input?.bookmakerOdds].filter(Boolean);
+  const keys = side === "home"
+    ? (line === "05" ? ["homeOver05", "home_team_over_05"] : ["homeOver15", "home_team_over_15"])
+    : (line === "05" ? ["awayOver05", "away_team_over_05"] : ["awayOver15", "away_team_over_15"]);
 
-  // Preserve the explicit real-odds upgrade rule. This is the only generic
-  // support-layer override because it reacts to a real market price.
-  if (supportPrimary && policy?.actualOddsUsed) {
-    return normalizeMarket(supportPrimary, "v1.17-odds-aware-common-sense-rule");
+  for (const source of sources) {
+    for (const key of keys) {
+      const value = Number(source?.[key]);
+      if (Number.isFinite(value) && value > 1) return value;
+    }
+    const nested = Number(source?.teamGoals?.[side]?.[line === "05" ? "over05" : "over15"]);
+    if (Number.isFinite(nested) && nested > 1) return nested;
+  }
+  return null;
+}
+
+function directPreferenceKeys(topTransition) {
+  switch (topTransition) {
+    case "WW":
+      return ["home-win-either-half", "home-win", "home-dnb", "home-1x"];
+    case "LL":
+      return ["away-win-either-half", "away-win", "away-dnb", "away-x2"];
+    case "WD":
+    case "LD":
+      return ["gg-yes", "over-15", "draw"];
+    case "WL":
+    case "LW":
+      return ["gg-yes", "over-25", "over-15"];
+    case "DW":
+      return ["draw-either-half", "home-win-either-half", "home-dnb"];
+    case "DL":
+      return ["draw-either-half", "away-win-either-half", "away-dnb"];
+    case "DD":
+      return ["draw-either-half", "draw", "under-25", "under-35"];
+    default:
+      return [];
+  }
+}
+
+function selectAuthoritativePrimary(markets, input, overhaul) {
+  const qualified = markets.filter((market) => qualifiedMarket(market));
+  const gatedDirectional = markets.filter(
+    (market) => cleanMarket(market) && market.htftGate?.eligible && market.fallbackEligible !== false
+  );
+  const topTransition = overhaul?.story?.topTransitions?.[0]?.transition || null;
+  const directKeys = directPreferenceKeys(topTransition);
+  const directMarkets = directKeys
+    .map((key) => marketByKey(markets, key))
+    .filter(Boolean);
+  const directQualified = directMarkets.filter((market) => qualifiedMarket(market));
+  const directGated = directMarkets.filter(
+    (market) => market.htftGate?.eligible && market.fallbackEligible !== false
+  );
+
+  let pool = qualified.length ? qualified : gatedDirectional;
+  let selected = directQualified[0] || pool[0] || directGated[0] || null;
+  let directionalFallback = false;
+
+  // Every fixture still receives one direction. When no normal gate passed,
+  // the fallback is never an arbitrary high statistical score: it is the
+  // broad market naturally translated from the strongest HT/FT route.
+  if (!selected) {
+    selected = directMarkets
+      .sort((a, b) => {
+        const gateGap = Number(b.htftGate?.score || 0) - Number(a.htftGate?.score || 0);
+        if (Math.abs(gateGap) > 0.0001) return gateGap;
+        return Number(b.comparisonScore || 0) - Number(a.comparisonScore || 0);
+      })[0] || markets
+        .slice()
+        .sort((a, b) => Number(b.htftGate?.score || 0) - Number(a.htftGate?.score || 0))[0] || null;
+    directionalFallback = Boolean(selected);
   }
 
-  // A comeback/equalisation common-sense story may nominate GG or Over 1.5,
-  // but it is accepted only when the same market independently qualifies in
-  // the audited overhaul. The support engine cannot revive a blocked goal pick.
-  if (supportPrimary && OVERHAUL_CONFIRMED_COMMON_SENSE_KEYS.has(supportPrimary.key) && policy) {
-    const audited = (overhaul.markets || []).find((market) => market.key === supportPrimary.key);
-    if (qualifiedMarket(audited)) {
-      return normalizeMarket(audited, "full-market-overhaul-confirmed-common-sense-rule");
+  if (selected) {
+    selected.marketPolicy = {
+      ...(selected.marketPolicy || {}),
+      version: "papa-htft-first-v1.18.0",
+      topTransition,
+      directTranslationApplied: directKeys.includes(selected.key),
+      directPreference: directKeys[0] || null,
+      directPreferenceSet: directKeys,
+      directionalFallback,
+      directionalFallbackReason: directionalFallback
+        ? `No normal market gate passed, so ${selected.selection} was retained only as the broad directional translation of the strongest ${topTransition || "HT/FT"} route.`
+        : null
+    };
+  }
+
+  let oddsPolicy = { applied: false, reason: null, observedPrice: null };
+  const side = selected?.key === "home-over-05"
+    ? "home"
+    : selected?.key === "away-over-05"
+      ? "away"
+      : null;
+
+  if (side) {
+    const price = readDecimalOdds(input, side, "05");
+    if (price !== null && price < 1.2) {
+      const upgrade = marketByKey(markets, `${side}-over-15`);
+      const replacementPool = [...qualified, ...gatedDirectional]
+        .filter((market, index, rows) => rows.findIndex((item) => item.key === market.key) === index)
+        .filter((market) => market.key !== selected.key)
+        .sort((a, b) => Number(b.comparisonScore || 0) - Number(a.comparisonScore || 0));
+      const nextBest = replacementPool[0] || null;
+      selected = qualifiedMarket(upgrade) ? upgrade : nextBest || selected;
+      oddsPolicy = {
+        applied: true,
+        observedPrice: price,
+        reason: qualifiedMarket(upgrade)
+          ? `Team Over 0.5 price ${price.toFixed(2)} was below 1.20, so the independently qualified Team Over 1.5 route replaced it.`
+          : `Team Over 0.5 price ${price.toFixed(2)} was below 1.20. Team Over 1.5 did not qualify, so the next strongest HT/FT-gated market replaced it.`
+      };
     }
   }
 
-  // Preserve only practical markets that the original overhaul does not own.
-  if (supportPrimary && SPECIAL_COMMON_SENSE_KEYS.has(supportPrimary.key) && policy) {
-    return normalizeMarket(supportPrimary, "v1.17-common-sense-special-rule");
+  if (selected) {
+    selected.marketPolicy = {
+      ...(selected.marketPolicy || {}),
+      version: "papa-htft-first-v1.18.0",
+      topTransition,
+      directTranslationApplied: directKeys.includes(selected.key),
+      directPreference: directKeys[0] || null,
+      directPreferenceSet: directKeys,
+      directionalFallback,
+      directionalFallbackReason: directionalFallback
+        ? `No normal market gate passed, so ${selected.selection} was retained only as the broad directional translation of the strongest ${topTransition || "HT/FT"} route.`
+        : null,
+      oddsPolicyApplied: oddsPolicy.applied
+    };
   }
 
-  return normalizeMarket(overhaul.primaryPrediction, "full-market-overhaul");
+  return { selected, oddsPolicy };
 }
 
 function preferredSaferKeys(primary, input, overhaul) {
@@ -249,11 +358,12 @@ function chooseSaferMarket(markets, primary, input, overhaul) {
   const preferred = preferredSaferKeys(primary, input, overhaul);
   const preferredCandidate = preferred
     .map((key) => marketByKey(markets, key))
-    .find((market) =>
+    .filter((market) =>
       qualifiedMarket(market) &&
       marketIdentity(market) !== marketIdentity(primary) &&
       !SAFER_DISALLOWED_KEYS.has(market.key)
-    );
+    )
+    .sort((a, b) => Number(b.comparisonScore || 0) - Number(a.comparisonScore || 0))[0];
 
   if (preferredCandidate) {
     return {
@@ -307,9 +417,10 @@ function chooseAggressiveMarket(markets, primary, input, overhaul) {
   const preferred = aggressivePreferences(primary, input, overhaul);
   const candidate = preferred
     .map((key) => marketByKey(markets, key))
-    .find((market) =>
+    .filter((market) =>
       qualifiedMarket(market) && marketIdentity(market) !== marketIdentity(primary)
-    );
+    )
+    .sort((a, b) => Number(b.comparisonScore || 0) - Number(a.comparisonScore || 0))[0];
 
   if (candidate) {
     return {
@@ -342,6 +453,15 @@ function chooseAggressiveMarket(markets, primary, input, overhaul) {
   };
 }
 
+function venueEvidenceScore(market) {
+  const evidence = market?.evidence || {};
+  const values = Object.entries(evidence)
+    .filter(([key, value]) => /venue/i.test(key) && Number.isFinite(Number(value)))
+    .map(([, value]) => Number(value));
+  if (!values.length) return 0;
+  return values.reduce((total, value) => total + value, 0) / values.length;
+}
+
 function chooseVenueMarket(markets, primary, support) {
   const requestedKey = support?.enginePicks?.venue?.key;
   const requested = requestedKey ? marketByKey(markets, requestedKey) : null;
@@ -359,15 +479,19 @@ function chooseVenueMarket(markets, primary, support) {
     .filter((market) =>
       qualifiedMarket(market) &&
       marketIdentity(market) !== marketIdentity(primary) &&
-      (market.evidence || market.supportLayer)
+      venueEvidenceScore(market) >= 0.55
     )
-    .sort((a, b) => Number(b.comparisonScore || 0) - Number(a.comparisonScore || 0))[0];
+    .sort((a, b) => {
+      const aScore = Number(a.comparisonScore || 0) * 0.7 + venueEvidenceScore(a) * 0.3;
+      const bScore = Number(b.comparisonScore || 0) * 0.7 + venueEvidenceScore(b) * 0.3;
+      return bScore - aScore;
+    })[0];
 
   if (venueEvidenceCandidate) {
     return {
       market: venueEvidenceCandidate,
       independent: true,
-      reason: "The requested venue route failed, so the venue engine used the strongest other qualified overhaul market with auditable evidence.",
+      reason: "The requested venue route failed, so the venue engine used the strongest qualified market with explicit venue-rate evidence.",
       venueRoute: support?.enginePicks?.venue?.venueRoute || null
     };
   }
@@ -398,6 +522,9 @@ function marketSpecificExplanation(engineName, market, overhaul, support, select
   const blockerSentence = (market.blockers || []).length
     ? ` Cautions: ${market.blockers.join("; ")}.`
     : " No market-specific blocker remained.";
+  const gateSentence = market.htftGate
+    ? ` HT/FT firing rule: ${market.htftGate.rule} Gate strength ${percent(market.htftGate.score)}.`
+    : "";
 
   if (market.key === "over-15") {
     const topContext = top
@@ -407,7 +534,7 @@ function marketSpecificExplanation(engineName, market, overhaul, support, select
       `${engineName}'s pick is Over 1.5. ` +
       `The audited goal model used venue Over 1.5 agreement ${percent(metrics.venueO15)}, recent Over 1.5 agreement ${percent(metrics.recentO15)}, ` +
       `the strongest one-team scoring route ${percent(metrics.strongestGoalRoute)}, and low-score pressure ${percent(metrics.lowScorePressure)}. ` +
-      `${topContext} ${qualifiedSentence} ${selectionReason}${blockerSentence}`
+      `${topContext} ${qualifiedSentence}${gateSentence} ${selectionReason}${blockerSentence}`
     );
   }
 
@@ -416,7 +543,7 @@ function marketSpecificExplanation(engineName, market, overhaul, support, select
       `${engineName}'s pick is GG — Yes. ` +
       `Home scoring support is ${percent(metrics.homeGoalSupport)} and away scoring support is ${percent(metrics.awayGoalSupport)}. ` +
       `Forced two-sided scoring routes carry ${percent(metrics.forcedGgMass)}, while recent GG agreement is ${percent(metrics.latestGgAgreement)}. ` +
-      `Both teams had to pass independently; one dominant attack was not enough. ${qualifiedSentence} ${selectionReason}${blockerSentence}`
+      `Both teams had to pass independently; one dominant attack was not enough. ${qualifiedSentence}${gateSentence} ${selectionReason}${blockerSentence}`
     );
   }
 
@@ -425,7 +552,7 @@ function marketSpecificExplanation(engineName, market, overhaul, support, select
       `${engineName}'s pick is GG — No. ` +
       `The strongest shutout route is ${percent(Math.max(metrics.homeShutoutSupport || 0, metrics.awayShutoutSupport || 0))}, ` +
       `while the two-sided scoring floor is ${percent(metrics.twoSidedGoalFloor)} and forced GG mass is ${percent(metrics.forcedGgMass)}. ` +
-      `${qualifiedSentence} ${selectionReason}${blockerSentence}`
+      `${qualifiedSentence}${gateSentence} ${selectionReason}${blockerSentence}`
     );
   }
 
@@ -435,7 +562,7 @@ function marketSpecificExplanation(engineName, market, overhaul, support, select
       `The model separated two-sided scoring from one-sided dominance. Dominant 2+ support is ${percent(metrics.dominant2PlusSupport)}, ` +
       `recent Over 2.5 agreement is ${percent(metrics.recentO25)}, venue Over 2.5 agreement is ${percent(metrics.venueO25)}, ` +
       `and full-reversal mass is ${percent(structure.fullReversalMass)}. ` +
-      `${qualifiedSentence} ${selectionReason}${blockerSentence}`
+      `${qualifiedSentence}${gateSentence} ${selectionReason}${blockerSentence}`
     );
   }
 
@@ -446,7 +573,7 @@ function marketSpecificExplanation(engineName, market, overhaul, support, select
       `${engineName}'s pick is ${market.selection}. ` +
       `Low-score pressure is ${percent(metrics.lowScorePressure)}, venue ceiling agreement is ${percent(venueValue)}, ` +
       `recent ceiling agreement is ${percent(recentValue)}, and full-reversal risk is ${percent(structure.fullReversalMass)}. ` +
-      `${qualifiedSentence} ${selectionReason}${blockerSentence}`
+      `${qualifiedSentence}${gateSentence} ${selectionReason}${blockerSentence}`
     );
   }
 
@@ -454,7 +581,7 @@ function marketSpecificExplanation(engineName, market, overhaul, support, select
     return (
       `${engineName}'s pick is 2–3 Total Goals. ` +
       `Over 1.5 scored ${percent(scores.over15)} and Under 3.5 scored ${percent(scores.under35)}, so both models point to the same middle goal corridor. ` +
-      `${qualifiedSentence} ${selectionReason}${blockerSentence}`
+      `${qualifiedSentence}${gateSentence} ${selectionReason}${blockerSentence}`
     );
   }
 
@@ -463,7 +590,7 @@ function marketSpecificExplanation(engineName, market, overhaul, support, select
       `${engineName}'s pick is ${market.selection}. ` +
       `${(market.reasons || []).join(" ")} ` +
       `Home goal support is ${percent(metrics.homeGoalSupport)} and away goal support is ${percent(metrics.awayGoalSupport)}. ` +
-      `${qualifiedSentence} ${selectionReason}${blockerSentence}`
+      `${qualifiedSentence}${gateSentence} ${selectionReason}${blockerSentence}`
     );
   }
 
@@ -471,7 +598,7 @@ function marketSpecificExplanation(engineName, market, overhaul, support, select
     return (
       `${engineName}'s pick is ${market.selection}. ` +
       `Home shutout support is ${percent(metrics.homeShutoutSupport)} and away shutout support is ${percent(metrics.awayShutoutSupport)}. ` +
-      `Forced GG mass is ${percent(metrics.forcedGgMass)}. ${qualifiedSentence} ${selectionReason}${blockerSentence}`
+      `Forced GG mass is ${percent(metrics.forcedGgMass)}. ${qualifiedSentence}${gateSentence} ${selectionReason}${blockerSentence}`
     );
   }
 
@@ -483,20 +610,20 @@ function marketSpecificExplanation(engineName, market, overhaul, support, select
       `${engineName}'s pick is ${market.selection}. ${topSentence} ` +
       `Home-win mass is ${percent(structure.homeWinMass || direct?.fullTime?.home)}, draw mass is ${percent(structure.drawMass || direct?.fullTime?.draw)}, ` +
       `and away-win mass is ${percent(structure.awayWinMass || direct?.fullTime?.away)}. ` +
-      `${qualifiedSentence} ${selectionReason}${blockerSentence}`
+      `${qualifiedSentence}${gateSentence} ${selectionReason}${blockerSentence}`
     );
   }
 
   if (GOAL_MARKET_KEYS.has(market.key)) {
     return (
       `${engineName}'s pick is ${market.selection}. ${(market.reasons || []).join(" ")} ` +
-      `${qualifiedSentence} ${selectionReason}${blockerSentence}`
+      `${qualifiedSentence}${gateSentence} ${selectionReason}${blockerSentence}`
     );
   }
 
   return (
     `${engineName}'s pick is ${market.selection}. ${(market.reasons || []).join(" ")} ` +
-    `${qualifiedSentence} ${selectionReason}${blockerSentence}`
+    `${qualifiedSentence}${gateSentence} ${selectionReason}${blockerSentence}`
   );
 }
 
@@ -520,7 +647,7 @@ function buildEnginePick({
   );
 
   const descriptions = {
-    primary: "Authoritative audited full-market HT/FT intelligence.",
+    primary: "Authoritative HT/FT-first market intelligence with market-specific confirmations.",
     aggressive: "Higher-specificity qualified market selected from the same audited overhaul catalogue.",
     safer: "Lower-risk qualified market selected only after its own threshold and blocker checks.",
     venue: "Venue-led route mapped back into the audited overhaul market catalogue."
@@ -581,6 +708,7 @@ function buildEnginePick({
           ? "market-specific result and HT/FT evidence"
           : "market-specific overhaul evidence",
       marketEvidence: market.evidence || {},
+      htftGate: market.htftGate || null,
       goalMetrics: overhaul?.goalIntelligence?.metrics || {},
       goalScores: overhaul?.goalIntelligence?.scores || {},
       resultStructure: overhaul?.resultStructure || {},
@@ -591,9 +719,10 @@ function buildEnginePick({
     independentConsensusVote: Boolean(independent),
     consensusEligible: Boolean(independent),
     engineSource: market.engineSource || "full-market-overhaul",
+    htftGate: market.htftGate || null,
     marketPolicy: {
       ...(market.marketPolicy || {}),
-      version: "papa-full-market-overhaul-v1.17.4",
+      version: "papa-htft-first-v1.18.0",
       authoritativeCore: true,
       allEnginesUseOverhaulCatalogue: true,
       independentConsensusVote: Boolean(independent)
@@ -613,7 +742,7 @@ function buildEngineSuite(primary, markets, overhaul, support, input) {
       market: primary,
       overhaul,
       support,
-      selectionReason: "The audited overhaul ranked this as the strongest safety-adjusted interpretation of the match.",
+      selectionReason: "This market passed its HT/FT firing gate, survived its own statistical confirmations and blockers, then ranked highest by threshold-relative strength.",
       independent: true
     }),
     aggressive: buildEnginePick({
@@ -670,7 +799,8 @@ function buildDecisionTrace(primary, markets, overhaul, support, enginePicks) {
       comparisonScore: market.comparisonScore,
       supportRatio: market.supportRatio,
       thresholdEdge: market.thresholdEdge,
-      engineSource: market.engineSource
+      engineSource: market.engineSource,
+      htftGate: market.htftGate
     }));
 
   return {
@@ -682,6 +812,8 @@ function buildDecisionTrace(primary, markets, overhaul, support, enginePicks) {
       : "Papa’s best available direction",
     summary: `${primary.selection}. ${overhaul.story?.narrative || "All market families were compared separately."}`,
     whyChosen: [
+      `HT/FT firing rule: ${primary.htftGate?.rule || "No registered rule"}`,
+      ...(primary.htftGate?.confirmations || []),
       ...(primary.reasons || []),
       protectedMarketReason,
       `Model score: ${percent(primary.modelScore)}; safety-adjusted score: ${percent(primary.safetyAdjustedScore)}.`,
@@ -711,14 +843,15 @@ function buildDecisionTrace(primary, markets, overhaul, support, enginePicks) {
       selected: marketIdentity(market) === marketIdentity(primary),
       reasons: market.reasons || [],
       blockers: market.blockers || [],
-      engineSource: market.engineSource
+      engineSource: market.engineSource,
+      htftGate: market.htftGate
     })),
     selectionMethod:
-      "All four engines now select from the audited overhaul catalogue. Goal markets use goal evidence; result markets use result and HT/FT evidence. Auxiliary engines cannot revive a blocked or sub-threshold market.",
+      "Every market first passes a hard HT/FT eligibility rule, then competes by threshold-relative strength. Relevant goal, venue, recent and defensive statistics confirm or reject it. All four engines select from the same gated catalogue.",
     enginePicks,
     venuePatternReview: support?.decisionTrace?.venuePatternReview || null,
     marketPolicy: {
-      version: "papa-full-market-overhaul-v1.17.4",
+      version: "papa-htft-first-v1.18.0",
       authoritativeCore: true,
       allEnginesUseOverhaulCatalogue: true,
       specialCommonSenseCompatibility: SPECIAL_COMMON_SENSE_KEYS.has(primary.key)
@@ -732,8 +865,8 @@ export function predictMatch(input) {
   const support = predictWithConsensusSupport(input);
   const overhaul = predictWithOverhaul(input);
 
-  const primary = authoritativePrimary(overhaul, support);
   const markets = mergeMarkets(overhaul.markets, support.markets);
+  const { selected: primary, oddsPolicy } = selectAuthoritativePrimary(markets, input, overhaul);
   const enginePicks = buildEngineSuite(primary, markets, overhaul, support, input);
 
   const supportingPrediction = markets.find(
@@ -750,6 +883,7 @@ export function predictMatch(input) {
     support,
     enginePicks
   );
+  decisionTrace.oddsPolicy = oddsPolicy;
 
   return {
     ...support,
@@ -768,15 +902,19 @@ export function predictMatch(input) {
     venuePattern: support.venuePattern || null,
     resultStructure: overhaul.resultStructure || null,
     engineArchitecture: {
-      version: "1.17.4",
-      authoritativeCore: "Papa full-market overhaul",
-      supportLayer: "v1.17 anti-zombie, real-odds and venue context only",
+      version: "1.18.0",
+      authoritativeCore: "Papa HT/FT-first full-market overhaul",
+      supportLayer: "anti-zombie, resilience and venue audit only; never owns primary selection",
       policy:
-        "Papa, Aggressive, Safer and Venue Pattern all select from the audited overhaul market catalogue."
+        "Every market must pass its own HT/FT trigger before statistics may qualify it. All engines select from the post-blocker gated catalogue."
     },
     safeguards: [
       ...(overhaul.safeguards || []),
-      "The v1.17 prior-only anti-zombie gate remains active.",
+      "The prior-only anti-zombie gate remains active.",
+      "Primary selection occurs after all duplicate blockers are merged.",
+      "Low Team Over 0.5 odds affect selection only when the observed price is below 1.20.",
+      "Safer and Aggressive compare every preferred qualified option instead of taking the first fixed-list item.",
+      "Venue Pattern requires explicit venue-rate evidence.",
       "Safer cannot choose a blocked or sub-threshold Over 1.5 merely because it is a lower line.",
       "Goal-market explanations cite goal evidence instead of treating the strongest exact HT/FT route as proof.",
       "Repeated fallback picks are marked ineligible as independent consensus votes.",

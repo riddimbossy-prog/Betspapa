@@ -1,6 +1,6 @@
 {
   "id": "/",
-  "name": "BetsPapa — Football Intelligence",
+  "name": "BetsPapa \u2014 Football Intelligence",
   "short_name": "BetsPapa",
   "description": "BetsPapa football intelligence with consensus Bankers, Papa's Pick, strict Boss Picks, live match states and verified results.",
   "start_url": "/?source=pwa&v=1170",
@@ -130,5 +130,5 @@
       "label": "BetsPapa football intelligence dashboard"
     }
   ],
-  "version": "1.17.0"
+  "version": "1.18.0"
 }

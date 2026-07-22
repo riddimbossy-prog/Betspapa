@@ -4,10 +4,10 @@ import assert from "node:assert/strict";
 import { demoFixtures } from "../src/data/demoFixtures.js";
 import { predictMatch } from "../src/engine/transitionEngine.js";
 
-test("v1.17.4 uses the full-market overhaul across all four engines", () => {
+test("v1.18 uses the HT/FT-first overhaul across all four engines", () => {
   const prediction = predictMatch(demoFixtures[0]);
-  assert.equal(prediction.engineArchitecture.version, "1.17.4");
-  assert.match(prediction.engineArchitecture.authoritativeCore, /full-market overhaul/i);
+  assert.equal(prediction.engineArchitecture.version, "1.18.0");
+  assert.match(prediction.engineArchitecture.authoritativeCore, /HT\/FT-first full-market overhaul/i);
   assert.equal(
     prediction.enginePicks.primary.selection,
     prediction.primaryPrediction.selection

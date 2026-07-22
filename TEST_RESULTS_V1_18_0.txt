@@ -1,0 +1,19 @@
+BetsPapa v1.18.0 validation
+===========================
+
+Service version: 1.18.0
+Engine version: papasense-v1.18.0-htft-first
+Automated tests: 69 passed
+HT/FT-specific gate tests: 5 passed
+JavaScript syntax: 92 files passed
+Workflow YAML: 4 files passed
+ZIP integrity: pending final packaging validation
+
+Critical regression tests:
+- every selectable market has a registered HT/FT gate
+- X/X cannot create Over 1.5 without a separate two-goal route
+- 1/2 and 2/1 open GG and Over 2.5 gates
+- full-time draw after a first-half lead does not falsely count as Draw Either Half
+- Team Over 0.5 odds at 1.20 or above do not trigger the low-price override
+- Safer chooses the strongest qualified gated cushion instead of a fixed first option
+- repeated fallback views do not create false Consensus Banker votes

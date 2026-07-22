@@ -34,13 +34,22 @@ function goalProfile(row) {
 }
 
 function profileWeight(row, currentLeagueId, currentSeason) {
-  if (
-    Number(row.league_id) === Number(currentLeagueId) &&
-    Number(row.season) === Number(currentSeason)
-  ) return 1.5;
-  if (Number(row.league_id) === Number(currentLeagueId)) return 1.1;
-  if (Number(row.season) === Number(currentSeason)) return 0.9;
-  return 0.65;
+  const rowLeague = Number(row.league_id);
+  const rowSeason = Number(row.season);
+  const leagueMatches = rowLeague === Number(currentLeagueId);
+  const seasonMatches = rowSeason === Number(currentSeason);
+  const seasonGap = Number.isFinite(rowSeason) && Number.isFinite(Number(currentSeason))
+    ? Math.abs(Number(currentSeason) - rowSeason)
+    : 3;
+
+  // Old seasons decay instead of remaining permanently influential. A move to
+  // another league is useful background only and can never outweigh current
+  // league/season evidence.
+  const ageDecay = Math.max(0.12, 0.72 ** seasonGap);
+  if (leagueMatches && seasonMatches) return 1.5;
+  if (leagueMatches) return 1.05 * ageDecay;
+  if (seasonMatches) return 0.68;
+  return 0.38 * ageDecay;
 }
 
 function aggregateHtftProfiles(rows, currentLeagueId, currentSeason) {

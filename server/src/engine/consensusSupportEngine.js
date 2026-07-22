@@ -436,9 +436,12 @@ function commonSenseMarketLayer({ input, matrix, direct, goals, quality, homePro
   const homeWinResilience = geometricMean(homeComeback, awayLoseLead);
   const awayWinResilience = geometricMean(awayComeback, homeLoseLead);
 
-  const homeWinEitherHalf = p.WW + p.WD + p.WL + p.DW + p.LW;
-  const awayWinEitherHalf = p.LL + p.LD + p.LW + p.DL + p.WL;
-  const drawEitherHalf = p.DD + p.DW + p.DL + p.WD + p.LD;
+  const homeWinEitherHalf = p.WW + p.WD + p.WL + p.DW + p.LW + p.LD;
+  const awayWinEitherHalf = p.LL + p.LD + p.LW + p.DL + p.WL + p.WD;
+  // HT/FT letters can guarantee Draw in Either Half only through a drawn
+  // first half: X/1, X/X or X/2. A full-time draw after a first-half leader
+  // does not imply that the second half was drawn.
+  const drawEitherHalf = p.DW + p.DD + p.DL;
 
   const firstHalfOver05 = clamp(
     (1 - (1 - homeFirstHalf) * (1 - awayFirstHalf)) * 0.72 +
@@ -519,7 +522,7 @@ function commonSenseMarketLayer({ input, matrix, direct, goals, quality, homePro
       score: drawEitherHalf,
       threshold: 0.66,
       risk: dataPenalty,
-      reasons: ['X/X, X/1, X/2, 1/X and 2/X all contain a drawn half']
+      reasons: ['X/1, X/X and X/2 guarantee that the first half was drawn']
     }),
     makeMarket({
       key: 'first-half-over-05',
@@ -1079,6 +1082,7 @@ function applyPapaCommonSensePolicy({ selected, rankedMarkets, input, matrix, go
   const topTransition = Object.entries(p).sort((a,b)=>b[1]-a[1])[0]?.[0] || null;
   const reasons = [];
   const excluded = new Set();
+  let lowPriceRuleApplied = false;
   const qualified = (key) => byKey.get(key)?.qualified ? byKey.get(key) : null;
   const switchTo = (key, reason) => {
     const next = qualified(key);
@@ -1092,6 +1096,7 @@ function applyPapaCommonSensePolicy({ selected, rankedMarkets, input, matrix, go
   if (side) {
     const price = readDecimalOdds(input, side, '05');
     if (price !== null && price < 1.20) {
+      lowPriceRuleApplied = true;
       excluded.add(selected.key);
       const upgrade = side === 'home' ? 'home-over-15' : 'away-over-15';
       if (switchTo(upgrade, `Actual team Over 0.5 odds were ${price.toFixed(2)}, below 1.20, so Papa upgraded to team Over 1.5 after the 2+ route passed.`)) {
@@ -1112,8 +1117,8 @@ function applyPapaCommonSensePolicy({ selected, rankedMarkets, input, matrix, go
     } else {
       switchTo('over-15','The strongest route was 1/2 or 2/1, but the two-sided GG leak test failed; Over 1.5 is the safer expression.');
     }
-  } else if (['DD','DW','DL','WD','LD'].includes(topTransition)) {
-    switchTo('draw-either-half','The strongest HT/FT family contains a drawn half, so Papa converted it to Draw in Either Half.');
+  } else if (['DD','DW','DL'].includes(topTransition)) {
+    switchTo('draw-either-half','The strongest HT/FT route starts from a half-time draw, so Papa translated it to Draw in Either Half.');
   }
 
   const fh15=qualified('first-half-over-15');
@@ -1153,7 +1158,8 @@ function applyPapaCommonSensePolicy({ selected, rankedMarkets, input, matrix, go
     marketPolicy:{
       version:'papa-common-sense-v1.0',
       topTransition,
-      actualOddsUsed: readDecimalOdds(input,'home','05') !== null || readDecimalOdds(input,'away','05') !== null,
+      actualOddsUsed: lowPriceRuleApplied,
+      oddsRuleApplied: lowPriceRuleApplied,
       reasons,
       rulesApplied:{
         lowPriceTeamGoalUpgrade:true,

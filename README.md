@@ -1,8 +1,8 @@
 # BetsPapa
 
-## v1.17.1 full-market engine overhaul
+## v1.18.0 HT/FT-first market firing engine
 
-Papa, Aggressive, Safer and Venue Pattern now all select from the audited full-market overhaul catalogue. The v1.17 Consensus Banker, OMNI Boss Picks and PWA layers remain intact. The API engine version is `papasense-v1.17.4-overhaul-all-engines`. See `PAPASENSE_V1_17_1_ENGINE_OVERHAUL.md`.
+Papa, Aggressive, Safer and Venue Pattern now use one authoritative HT/FT-first catalogue. Every market must pass a market-specific HT/FT eligibility gate before goal, venue, recent-form and defensive evidence can confirm it. The API engine version is `papasense-v1.18.0-htft-first`. See `PAPASENSE_V1_18_HTFT_FIRST_ENGINE.md`.
 
 Royal-purple responsive football prediction platform with a private Render backend, Supabase database, API-Football importer, HT/FT profile builder, common-sense prediction engine, and automatic result grading.
 
