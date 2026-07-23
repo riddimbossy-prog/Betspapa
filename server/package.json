@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.18.0",
+  "version": "1.18.1",
   "private": true,
-  "description": "BetsPapa v1.18.0 HT/FT-first market firing engine with hard eligibility gates for every market family.",
+  "description": "BetsPapa v1.18.1 HT/FT-first engine with No-Draw misfire guard and high-scoring goal-market diversion.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

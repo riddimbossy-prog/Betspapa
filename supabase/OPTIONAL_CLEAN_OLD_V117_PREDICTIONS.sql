@@ -1,6 +1,6 @@
 -- HISTORICAL OPTIONAL SCRIPT FROM v1.17
--- BetsPapa v1.18.0 does NOT require this script.
--- Current-board queries automatically use papasense-v1.18.0-htft-first.
+-- BetsPapa v1.18.1 does NOT require this script.
+-- Current-board queries automatically use papasense-v1.18.1-no-draw-guard.
 -- Keep this file only as repository history; do not run it for the v1.18 upgrade.
 
 -- BetsPapa v1.17.4 OPTIONAL cleanup

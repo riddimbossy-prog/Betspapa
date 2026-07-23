@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.18.1 — Either Team to Win Misfire Guard
+
+- Rebuilt the No Draw policy around clean decisive HT/FT routes.
+- Raised the No Draw market threshold from 74% to 78%.
+- Added a high-scoring diversion to GG or Over 1.5 when their own HT/FT gates pass.
+- Added league Over 1.5 context as confirmation for O1.5.
+- Prevented a high-scoring league label from triggering a goal market by itself.
+- Prevented Venue Pattern from selecting a blocked No Draw market.
+- Added detailed No Draw diagnostics and four regression tests.
+- Engine version is `papasense-v1.18.1-no-draw-guard`.
+
 ## v1.18.0 — HT/FT-First Market Firing Engine
 
 - Rebuilt the final selection architecture so HT/FT eligibility is the first hard gate for every market.

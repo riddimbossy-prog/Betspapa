@@ -16,6 +16,7 @@ import {
   sum
 } from "./utils.js";
 import { applyHtftGates } from "./htftEligibility.js";
+import { evaluateNoDrawPolicy } from "./noDrawPolicy.js";
 
 const HOME_WIN_ROUTES = ["WW", "DW", "LW"];
 const DRAW_ROUTES = ["WD", "DD", "LD"];
@@ -271,6 +272,8 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality, dir
   const homeGoals = goalProfile(input.home);
   const awayGoals = goalProfile(input.away);
   const leagueGoals = input.league?.goals || {};
+  const leagueBttsRate = safeRate(leagueGoals.bttsRate, 0.5);
+  const leagueOver15Rate = safeRate(leagueGoals.over15Rate, 0.7);
 
   const homeGoalSupport = geometricMean(homeGoals.scoreRate, awayGoals.concedeRate);
   const awayGoalSupport = geometricMean(awayGoals.scoreRate, homeGoals.concedeRate);
@@ -311,7 +314,7 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality, dir
       transitionGg * 0.25 +
       latestGgAgreement * 0.2 +
       venueGgAgreement * 0.11 +
-      safeRate(leagueGoals.bttsRate, 0.5) * 0.1
+      leagueBttsRate * 0.1
   );
 
   const homeShutoutSupport = geometricMean(
@@ -361,10 +364,11 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality, dir
       clamp(oneSideTwoGoalHtft / 0.18) * 0.32
   );
   const over15 = clamp(
-    transitionO15 * 0.45 +
-      venueO15 * 0.2 +
-      recentO15 * 0.15 +
-      strongestGoalRoute * 0.2
+    transitionO15 * 0.42 +
+      venueO15 * 0.18 +
+      recentO15 * 0.14 +
+      strongestGoalRoute * 0.18 +
+      leagueOver15Rate * 0.08
   );
 
   const venueU15 = geometricMean(
@@ -560,6 +564,8 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality, dir
       lowScorePressure,
       venueO15,
       recentO15,
+      leagueBttsRate,
+      leagueOver15Rate,
       venueO25,
       recentO25,
       venueU25,
@@ -724,16 +730,7 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
     })
   );
 
-  const noDrawScore = clamp(
-    direct.doubleChance.noDraw * 0.56 +
-      structure.decisiveBreadth * 0.12 +
-      structure.twoSideWinSupport * 0.1 +
-      goals.metrics.goalBreakingSupport * 0.08 +
-      (1 - structure.permanentDrawMass) * 0.07 +
-      (1 - structure.leadToDrawMass) * 0.07
-  );
-  const meaningfulDecisiveRoutes = DECISIVE_ROUTES.filter((route) => p[route] >= 0.055).length;
-  const oneSidedNoDraw = structure.underdogMass < 0.12 && direct.ft.draw >= structure.underdogMass + 0.06;
+  const noDrawPolicy = evaluateNoDrawPolicy({ matrix, direct, structure, goals });
 
   candidates.push(
     makeMarket({
@@ -741,33 +738,40 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
       family: "Result Safety",
       market: "Double Chance",
       selection: "Either Team to Win (12)",
-      score: noDrawScore,
+      score: noDrawPolicy.score,
       threshold: MARKET_THRESHOLDS.noDraw,
       risk: generalPenalty,
-      blockers: [
-        ...(direct.ft.draw > 0.29 ? [`Draw-ending mass is too high at ${percentText(direct.ft.draw)}`] : []),
-        ...(structure.permanentDrawMass > 0.2 ? [`X/X remains strong at ${percentText(structure.permanentDrawMass)}`] : []),
-        ...(structure.leadToDrawMass > 0.19 ? ["Lead-to-draw routes are too active"] : []),
-        ...(meaningfulDecisiveRoutes < 2 ? ["Too few independent win-ending routes"] : []),
-        ...(oneSidedNoDraw ? ["The weaker side has too little outright-win support; favourite protection is safer"] : []),
-        ...(goals.metrics.goalBreakingSupport < 0.55 && direct.ft.draw > 0.22
-          ? ["Goal pressure may not be strong enough to break a draw"]
-          : [])
-      ],
+      blockers: noDrawPolicy.blockers,
       reasons: [
-        `Six win-ending routes carry ${percentText(direct.doubleChance.noDraw)}`,
-        `Three draw-ending routes carry ${percentText(direct.ft.draw)}`,
-        `${meaningfulDecisiveRoutes} independent decisive routes remain meaningful`,
-        `X/X is controlled at ${percentText(structure.permanentDrawMass)}`
+        `Six win-ending routes carry ${percentText(noDrawPolicy.decisiveMass)}`,
+        `Clean decisive routes carry ${percentText(noDrawPolicy.cleanDecisiveMass)}`,
+        `Three draw-ending routes carry ${percentText(noDrawPolicy.drawMass)}`,
+        `${noDrawPolicy.meaningfulDecisiveRoutes} independent decisive routes remain meaningful`,
+        ...(noDrawPolicy.divertedToGoals
+          ? [`High-scoring structure diverts the match to ${noDrawPolicy.preferredGoalMarket === "gg-yes" ? "GG" : "Over 1.5"}`]
+          : [])
       ],
       evidence: {
         homeWinMass: direct.ft.home,
         awayWinMass: direct.ft.away,
-        drawMass: direct.ft.draw,
-        permanentDrawMass: structure.permanentDrawMass,
-        leadToDrawMass: structure.leadToDrawMass,
+        drawMass: noDrawPolicy.drawMass,
+        permanentDrawMass: noDrawPolicy.permanentDrawMass,
+        leadToDrawMass: noDrawPolicy.leadToDrawMass,
         decisiveBreadth: structure.decisiveBreadth,
-        meaningfulDecisiveRoutes
+        meaningfulDecisiveRoutes: noDrawPolicy.meaningfulDecisiveRoutes,
+        cleanDecisiveMass: noDrawPolicy.cleanDecisiveMass,
+        reversalWinMass: noDrawPolicy.reversalWinMass,
+        forcedGgMass: noDrawPolicy.forcedGgMass,
+        highScoringEnvironment: noDrawPolicy.highScoringEnvironment,
+        goalMarketDiversion: noDrawPolicy.goalMarketDiversion,
+        divertedToGoals: noDrawPolicy.divertedToGoals,
+        exceptionalResultStructure: noDrawPolicy.exceptionalResultStructure,
+        preferredGoalMarket: noDrawPolicy.preferredGoalMarket,
+        leagueBttsRate: noDrawPolicy.leagueBttsRate,
+        leagueOver15Rate: noDrawPolicy.leagueOver15Rate,
+        ggScore: noDrawPolicy.ggScore,
+        over15Score: noDrawPolicy.over15Score,
+        noDrawPolicy
       }
     })
   );

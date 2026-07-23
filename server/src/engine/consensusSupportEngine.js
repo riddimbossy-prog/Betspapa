@@ -196,6 +196,8 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality) {
   const homeGoals = goalProfile(input.home);
   const awayGoals = goalProfile(input.away);
   const leagueGoals = input.league?.goals || {};
+  const leagueBttsRate = safeRate(leagueGoals.bttsRate, 0.5);
+  const leagueOver15Rate = safeRate(leagueGoals.over15Rate, 0.7);
 
   const homeGoalSupport = geometricMean(homeGoals.scoreRate, awayGoals.concedeRate);
   const awayGoalSupport = geometricMean(awayGoals.scoreRate, homeGoals.concedeRate);
@@ -236,7 +238,7 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality) {
       transitionGgScore * 0.25 +
       latestGgAgreement * 0.2 +
       venueGgAgreement * 0.1 +
-      safeRate(leagueGoals.bttsRate, 0.5) * 0.1
+      leagueBttsRate * 0.1
   );
 
   const homeBlankSupport = geometricMean(homeGoals.failedToScoreRate, awayGoals.cleanSheetRate);
@@ -259,10 +261,11 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality) {
     safeRate(input.away.goals?.recent?.over15Rate, awayGoals.over15Rate)
   );
   const over15 = clamp(
-    transitionO15 * 0.32 +
-      venueO15 * 0.28 +
-      recentO15 * 0.22 +
-      Math.max(homeGoalSupport, awayGoalSupport) * 0.18
+    transitionO15 * 0.3 +
+      venueO15 * 0.24 +
+      recentO15 * 0.18 +
+      Math.max(homeGoalSupport, awayGoalSupport) * 0.18 +
+      leagueOver15Rate * 0.1
   );
 
   const direct = directProbabilities(matrix);
@@ -335,6 +338,10 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality) {
       twoSidedGoalFloor,
       latestGgAgreement,
       venueGgAgreement,
+      leagueBttsRate,
+      leagueOver15Rate,
+      venueO15,
+      recentO15,
       forcedGgMass,
       stableMass,
       extremeReversalMass,
@@ -662,10 +669,15 @@ function marketCandidates(input, matrix, direct, goals, quality) {
       score: direct.doubleChance.noDraw,
       threshold: MARKET_THRESHOLDS.noDraw,
       risk: dataPenalty,
-      blockers: direct.ft.draw > 0.28
-        ? ["Draw transition mass is too high for the 12 route"]
-        : [],
-      reasons: ["Low normalized draw-transition mass supports either team winning"]
+      blockers: [
+        ...(direct.ft.draw > 0.26 ? ["Draw transition mass is too high for the 12 route"] : []),
+        ...((goals.metrics.leagueOver15Rate >= 0.76 || goals.metrics.leagueBttsRate >= 0.58) &&
+          goals.metrics.forcedGgMass >= 0.16 &&
+          (goals.scores.ggYes >= MARKET_THRESHOLDS.ggYes - 0.02 || goals.scores.over15 >= MARKET_THRESHOLDS.over15 - 0.02)
+          ? ["Open high-scoring structure is better represented by GG or Over 1.5 than by 12"]
+          : [])
+      ],
+      reasons: ["Low normalized draw-transition mass supports either team winning only when goal-market evidence does not describe the match better"]
     }),
     makeMarket({
       key: "home-dnb",

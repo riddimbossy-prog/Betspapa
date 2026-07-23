@@ -1,5 +1,9 @@
 # BetsPapa
 
+## v1.18.1 Either Team to Win Misfire Guard
+
+PapaSense now separates clean decisive HT/FT routes from open scoring routes before allowing Either Team to Win. In high-scoring environments, 12 is blocked when GG or Over 1.5 has the stronger independently gated explanation. A high-scoring league alone cannot trigger a goal market. The API engine version is `papasense-v1.18.1-no-draw-guard`. See `PAPASENSE_V1_18_1_NO_DRAW_GUARD.md`.
+
 ## v1.18.0 HT/FT-first market firing engine
 
 Papa, Aggressive, Safer and Venue Pattern now use one authoritative HT/FT-first catalogue. Every market must pass a market-specific HT/FT eligibility gate before goal, venue, recent-form and defensive evidence can confirm it. The API engine version is `papasense-v1.18.0-htft-first`. See `PAPASENSE_V1_18_HTFT_FIRST_ENGINE.md`.

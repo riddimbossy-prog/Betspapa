@@ -46,7 +46,7 @@ export const PROFILE_WEIGHTS = {
 
 export const MARKET_THRESHOLDS = {
   doubleChance: 0.73,
-  noDraw: 0.74,
+  noDraw: 0.78,
   dnb: 0.66,
   fullTimeWin: 0.56,
   fullTimeDraw: 0.5,

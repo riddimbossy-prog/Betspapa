@@ -1,4 +1,5 @@
 import { HTFT_CODE } from "./overhaulConstants.js";
+import { evaluateNoDrawPolicy } from "./noDrawPolicy.js";
 import { clamp, round, sum } from "./utils.js";
 
 const HOME_WIN_ROUTES = ["WW", "DW", "LW"];
@@ -126,36 +127,24 @@ export function evaluateHtftGate({ market, matrix, direct, structure, goals, qua
   }
 
   if (key === "no-draw") {
-    const decisive = direct.doubleChance.noDraw;
-    const meaningful = routeList(p, [...HOME_WIN_ROUTES, ...AWAY_WIN_ROUTES], 0.05);
-    const score = clamp(
-      decisive * 0.62 +
-      structure.decisiveBreadth * 0.16 +
-      structure.twoSideWinSupport * 0.1 +
-      (1 - structure.permanentDrawMass) * 0.06 +
-      (1 - structure.leadToDrawMass) * 0.06
-    );
+    const policy = evaluateNoDrawPolicy({ matrix, direct, structure, goals });
+    const meaningful = routeList(p, [...HOME_WIN_ROUTES, ...AWAY_WIN_ROUTES], 0.055);
     return buildGate({
-      eligible:
-        decisive >= 0.62 &&
-        direct.ft.draw <= 0.34 &&
-        meaningful.length >= 2 &&
-        structure.underdogMass >= 0.08,
-      score,
-      rule: "Six win-ending routes must outweigh all three draw-ending routes, with more than one independent winning path.",
+      eligible: policy.eligible,
+      score: policy.score,
+      rule: "Either Team to Win must be driven by clean decisive HT/FT routes. In high-scoring environments, verified GG or Over 1.5 structures take priority over 12.",
       triggerRoutes: meaningful,
       contradictionRoutes: routeList(p, DRAW_ROUTES),
-      triggerMass: decisive,
+      triggerMass: policy.decisiveMass,
       confirmations: [
-        `Decisive HT/FT mass is ${(decisive * 100).toFixed(1)}%.`,
-        `${meaningful.length} independent win-ending routes are meaningful.`
+        `Decisive HT/FT mass is ${(policy.decisiveMass * 100).toFixed(1)}%.`,
+        `Clean decisive mass is ${(policy.cleanDecisiveMass * 100).toFixed(1)}%.`,
+        `${policy.meaningfulDecisiveRoutes} independent win-ending routes are meaningful.`,
+        ...(policy.highScoringEnvironment
+          ? [`High-scoring environment detected: league O1.5 ${(policy.leagueOver15Rate * 100).toFixed(1)}%, league GG ${(policy.leagueBttsRate * 100).toFixed(1)}%.`]
+          : [])
       ],
-      blockers: [
-        ...(direct.ft.draw > 0.34 ? ["Draw-ending HT/FT mass is too high for Either Team to Win."] : []),
-        ...(structure.permanentDrawMass > 0.23 ? ["X/X remains too strong for a No Draw direction."] : []),
-        ...(meaningful.length < 2 ? ["Only one meaningful win-ending route is present."] : []),
-        ...(structure.underdogMass < 0.08 ? ["The weaker side has almost no outright-win HT/FT route."] : [])
-      ]
+      blockers: policy.blockers
     });
   }
 

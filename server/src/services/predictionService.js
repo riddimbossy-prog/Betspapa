@@ -508,6 +508,7 @@ async function predictFixture(supabase, fixture, cached) {
       transitionBaseline: deriveLeagueBaseline(context.htftRows),
       goals: {
         bttsRate: weightedLeagueGoalRate(context.goalRows, "btts_rate", 0.5),
+        over15Rate: weightedLeagueGoalRate(context.goalRows, "over_15_rate", 0.7),
         under35Rate: weightedLeagueGoalRate(context.goalRows, "under_35_rate", 0.72)
       }
     }

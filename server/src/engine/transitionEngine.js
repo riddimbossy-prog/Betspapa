@@ -267,10 +267,56 @@ function selectAuthoritativePrimary(markets, input, overhaul) {
     directionalFallback = Boolean(selected);
   }
 
+  let resultVsGoalPolicy = {
+    applied: false,
+    originalSelection: null,
+    replacementSelection: null,
+    reason: null
+  };
+
+  if (selected?.key === "no-draw") {
+    const policy = selected.evidence?.noDrawPolicy || selected.evidence || {};
+    const goalAlternatives = [marketByKey(markets, "gg-yes"), marketByKey(markets, "over-15")]
+      .filter((market) => qualifiedMarket(market))
+      .sort((a, b) => Number(b.comparisonScore || 0) - Number(a.comparisonScore || 0));
+    const preferred = policy.preferredGoalMarket
+      ? goalAlternatives.find((market) => market.key === policy.preferredGoalMarket)
+      : null;
+    const replacement = preferred || goalAlternatives[0] || null;
+
+    if (policy.divertedToGoals && replacement) {
+      resultVsGoalPolicy = {
+        applied: true,
+        originalSelection: selected.selection,
+        replacementSelection: replacement.selection,
+        reason:
+          `Either Team to Win was rejected because the high-scoring environment and forced HT/FT goal routes were better explained by ${replacement.selection}.`
+      };
+      selected = replacement;
+      directionalFallback = false;
+    }
+  }
+
+  const noDrawCandidate = marketByKey(markets, "no-draw");
+  const noDrawPolicy = noDrawCandidate?.evidence?.noDrawPolicy || noDrawCandidate?.evidence || {};
+  if (
+    !resultVsGoalPolicy.applied &&
+    ["gg-yes", "over-15"].includes(selected?.key) &&
+    noDrawPolicy.divertedToGoals
+  ) {
+    resultVsGoalPolicy = {
+      applied: true,
+      originalSelection: noDrawCandidate.selection,
+      replacementSelection: selected.selection,
+      reason:
+        `Either Team to Win was screened out because clean decisive routes were weaker than the open high-scoring HT/FT structure. ${selected.selection} passed its own goal-market gate.`
+    };
+  }
+
   if (selected) {
     selected.marketPolicy = {
       ...(selected.marketPolicy || {}),
-      version: "papa-htft-first-v1.18.0",
+      version: "papa-htft-first-v1.18.1",
       topTransition,
       directTranslationApplied: directKeys.includes(selected.key),
       directPreference: directKeys[0] || null,
@@ -278,7 +324,8 @@ function selectAuthoritativePrimary(markets, input, overhaul) {
       directionalFallback,
       directionalFallbackReason: directionalFallback
         ? `No normal market gate passed, so ${selected.selection} was retained only as the broad directional translation of the strongest ${topTransition || "HT/FT"} route.`
-        : null
+        : null,
+      resultVsGoalPolicyApplied: resultVsGoalPolicy.applied
     };
   }
 
@@ -312,7 +359,7 @@ function selectAuthoritativePrimary(markets, input, overhaul) {
   if (selected) {
     selected.marketPolicy = {
       ...(selected.marketPolicy || {}),
-      version: "papa-htft-first-v1.18.0",
+      version: "papa-htft-first-v1.18.1",
       topTransition,
       directTranslationApplied: directKeys.includes(selected.key),
       directPreference: directKeys[0] || null,
@@ -325,7 +372,7 @@ function selectAuthoritativePrimary(markets, input, overhaul) {
     };
   }
 
-  return { selected, oddsPolicy };
+  return { selected, oddsPolicy, resultVsGoalPolicy };
 }
 
 function preferredSaferKeys(primary, input, overhaul) {
@@ -526,6 +573,19 @@ function marketSpecificExplanation(engineName, market, overhaul, support, select
     ? ` HT/FT firing rule: ${market.htftGate.rule} Gate strength ${percent(market.htftGate.score)}.`
     : "";
 
+  if (market.key === "no-draw") {
+    const evidence = market.evidence?.noDrawPolicy || market.evidence || {};
+    const diversionSentence = evidence.divertedToGoals
+      ? ` The open high-scoring structure pointed more strongly to ${evidence.preferredGoalMarket === "gg-yes" ? "GG" : "Over 1.5"}, so 12 should not be used.`
+      : " Goal-market evidence did not describe the match better than the decisive result structure.";
+    return (
+      `${engineName}'s pick is Either Team to Win (12). ` +
+      `Decisive HT/FT mass is ${percent(evidence.decisiveMass || direct?.doubleChance?.noDraw)}, while clean decisive routes carry ${percent(evidence.cleanDecisiveMass)} and draw-ending routes carry ${percent(evidence.drawMass || direct?.fullTime?.draw)}. ` +
+      `Forced GG mass is ${percent(evidence.forcedGgMass)}, league Over 1.5 is ${percent(evidence.leagueOver15Rate)}, and league GG is ${percent(evidence.leagueBttsRate)}.` +
+      `${diversionSentence} ${qualifiedSentence}${gateSentence} ${selectionReason}${blockerSentence}`
+    );
+  }
+
   if (market.key === "over-15") {
     const topContext = top
       ? `The leading exact HT/FT route is ${top.code} at ${percent(top.probability)}, but that route is context only and did not create the goal pick.`
@@ -722,7 +782,7 @@ function buildEnginePick({
     htftGate: market.htftGate || null,
     marketPolicy: {
       ...(market.marketPolicy || {}),
-      version: "papa-htft-first-v1.18.0",
+      version: "papa-htft-first-v1.18.1",
       authoritativeCore: true,
       allEnginesUseOverhaulCatalogue: true,
       independentConsensusVote: Boolean(independent)
@@ -730,7 +790,7 @@ function buildEnginePick({
   };
 }
 
-function buildEngineSuite(primary, markets, overhaul, support, input) {
+function buildEngineSuite(primary, markets, overhaul, support, input, resultVsGoalPolicy = null) {
   const safer = chooseSaferMarket(markets, primary, input, overhaul);
   const aggressive = chooseAggressiveMarket(markets, primary, input, overhaul);
   const venue = chooseVenueMarket(markets, primary, support);
@@ -742,7 +802,9 @@ function buildEngineSuite(primary, markets, overhaul, support, input) {
       market: primary,
       overhaul,
       support,
-      selectionReason: "This market passed its HT/FT firing gate, survived its own statistical confirmations and blockers, then ranked highest by threshold-relative strength.",
+      selectionReason: resultVsGoalPolicy?.applied
+        ? resultVsGoalPolicy.reason
+        : "This market passed its HT/FT firing gate, survived its own statistical confirmations and blockers, then ranked highest by threshold-relative strength.",
       independent: true
     }),
     aggressive: buildEnginePick({
@@ -851,7 +913,7 @@ function buildDecisionTrace(primary, markets, overhaul, support, enginePicks) {
     enginePicks,
     venuePatternReview: support?.decisionTrace?.venuePatternReview || null,
     marketPolicy: {
-      version: "papa-htft-first-v1.18.0",
+      version: "papa-htft-first-v1.18.1",
       authoritativeCore: true,
       allEnginesUseOverhaulCatalogue: true,
       specialCommonSenseCompatibility: SPECIAL_COMMON_SENSE_KEYS.has(primary.key)
@@ -866,8 +928,8 @@ export function predictMatch(input) {
   const overhaul = predictWithOverhaul(input);
 
   const markets = mergeMarkets(overhaul.markets, support.markets);
-  const { selected: primary, oddsPolicy } = selectAuthoritativePrimary(markets, input, overhaul);
-  const enginePicks = buildEngineSuite(primary, markets, overhaul, support, input);
+  const { selected: primary, oddsPolicy, resultVsGoalPolicy } = selectAuthoritativePrimary(markets, input, overhaul);
+  const enginePicks = buildEngineSuite(primary, markets, overhaul, support, input, resultVsGoalPolicy);
 
   const supportingPrediction = markets.find(
     (market) =>
@@ -884,6 +946,7 @@ export function predictMatch(input) {
     enginePicks
   );
   decisionTrace.oddsPolicy = oddsPolicy;
+  decisionTrace.resultVsGoalPolicy = resultVsGoalPolicy;
 
   return {
     ...support,
@@ -902,7 +965,7 @@ export function predictMatch(input) {
     venuePattern: support.venuePattern || null,
     resultStructure: overhaul.resultStructure || null,
     engineArchitecture: {
-      version: "1.18.0",
+      version: "1.18.1",
       authoritativeCore: "Papa HT/FT-first full-market overhaul",
       supportLayer: "anti-zombie, resilience and venue audit only; never owns primary selection",
       policy:
@@ -918,7 +981,8 @@ export function predictMatch(input) {
       "Safer cannot choose a blocked or sub-threshold Over 1.5 merely because it is a lower line.",
       "Goal-market explanations cite goal evidence instead of treating the strongest exact HT/FT route as proof.",
       "Repeated fallback picks are marked ineligible as independent consensus votes.",
-      "Consensus Bankers remain separate and require strict multi-engine agreement."
+      "Consensus Bankers remain separate and require strict multi-engine agreement.",
+      "Either Team to Win is diverted to GG or Over 1.5 when an open high-scoring HT/FT structure explains the fixture better."
     ]
   };
 }

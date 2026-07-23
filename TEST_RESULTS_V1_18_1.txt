@@ -1,0 +1,14 @@
+BetsPapa v1.18.1 validation
+===========================
+
+Service version: 1.18.1
+Engine version: papasense-v1.18.1-no-draw-guard
+Automated tests: 73 passed
+No-Draw-specific tests: 4 passed
+
+Critical regression checks:
+- high-scoring open HT/FT structures block Either Team to Win
+- clean decisive structures can still qualify Either Team to Win
+- a high-scoring league alone cannot create GG or Over 1.5
+- Venue Pattern cannot select a blocked No Draw market
+- No Draw diagnostics expose clean decisive and goal-diversion evidence
