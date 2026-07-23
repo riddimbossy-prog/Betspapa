@@ -1,7 +1,7 @@
 (() => {
   "use strict";
   const path = (location.pathname.split("/").pop() || "index.html").toLowerCase();
-  document.documentElement.dataset.betspapaUi = "1.18.2";
+  document.documentElement.dataset.betspapaUi = "1.18.3";
 
   const header = document.querySelector(".topbar, .portal-header, .content-header-v150");
   if (header && !document.querySelector(".responsible-strip-v150") && !document.body.classList.contains("no-responsible-strip")) {

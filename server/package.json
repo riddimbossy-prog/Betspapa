@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.18.2",
+  "version": "1.18.3",
   "private": true,
-  "description": "BetsPapa v1.18.2 fast prepared-board delivery with the v1.18.1 HT/FT-first engine unchanged.",
+  "description": "BetsPapa v1.18.3 Papa-first PWA shell with Z Fold and tablet responsive delivery; prediction engine unchanged.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

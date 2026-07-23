@@ -1,9 +1,9 @@
 {
   "id": "/",
-  "name": "BetsPapa \u2014 Football Intelligence",
+  "name": "BetsPapa — Football Intelligence",
   "short_name": "BetsPapa",
-  "description": "BetsPapa football intelligence with consensus Bankers, Papa's Pick, strict Boss Picks, live match states and verified results.",
-  "start_url": "/?source=pwa&v=1170",
+  "description": "BetsPapa opens directly on Papa's Pick with consensus Bankers, live match states and verified results.",
+  "start_url": "/?source=pwa&v=1183",
   "scope": "/",
   "display": "standalone",
   "display_override": [
@@ -52,7 +52,7 @@
       "name": "Papa's Pick",
       "short_name": "Papa's Pick",
       "description": "Open Papa's default picks",
-      "url": "/papas-pick.html?source=shortcut",
+      "url": "/?source=shortcut",
       "icons": [
         {
           "src": "/assets/images/pwa-brand-icon-192.png",
@@ -130,5 +130,5 @@
       "label": "BetsPapa football intelligence dashboard"
     }
   ],
-  "version": "1.18.2"
+  "version": "1.18.3"
 }

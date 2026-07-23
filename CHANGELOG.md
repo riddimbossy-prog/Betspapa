@@ -1,3 +1,5 @@
+## v1.18.3 — Papa-First Z Fold and Tablet Shell
+
 # BetsPapa Changelog
 
 ## v1.18.2 — Fast Prepared-Board Delivery

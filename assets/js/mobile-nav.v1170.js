@@ -10,9 +10,9 @@
     const file = location.pathname.replace(/\/+$/, "").split("/").pop() || "index.html";
 
     const active = (() => {
-      if (!file || file === "index.html") return "home";
-      if (file === "papas-pick.html") return "picks";
+      if (!file || file === "index.html" || file === "papas-pick.html") return "picks";
       if (file === "bankers.html") return "bankers";
+      if (file === "live-fixtures.html") return "live";
       if (file === "results-intelligence.html") return "results";
       return "more";
     })();
@@ -22,14 +22,14 @@
 
     document.body.insertAdjacentHTML("beforeend", `
       <nav class="bp-mobile-nav" id="bpMobileNav" aria-label="Mobile navigation">
-        <a href="${link("index.html")}" data-bp-tab="home" aria-label="Home">
-          <span aria-hidden="true">⌂</span><small>Home</small>
-        </a>
-        <a href="${link("papas-pick.html")}" data-bp-tab="picks" aria-label="Papa's Pick">
-          <span aria-hidden="true">★</span><small>Papa's Pick</small>
+        <a href="${link("index.html")}" data-bp-tab="picks" aria-label="Papa's Pick">
+          <span aria-hidden="true">★</span><small>Papa</small>
         </a>
         <a href="${link("bankers.html")}" data-bp-tab="bankers" aria-label="Consensus Bankers">
           <span aria-hidden="true">◆</span><small>Bankers</small>
+        </a>
+        <a href="${link("live-fixtures.html")}" data-bp-tab="live" aria-label="Live and fixtures">
+          <span aria-hidden="true">●</span><small>Live</small>
         </a>
         <a href="${link("results-intelligence.html")}" data-bp-tab="results" aria-label="Results">
           <span aria-hidden="true">✓</span><small>Results</small>

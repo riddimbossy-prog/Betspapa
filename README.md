@@ -1,5 +1,9 @@
 # BetsPapa
 
+## v1.18.3 Papa-First Z Fold and Tablet Shell
+
+BetsPapa now opens directly on Papa's Pick. The retired home dashboard and Today/Home navigation were removed. The portal layout now uses the Samsung Z Fold inner display and tablet widths with responsive two/three-column boards while keeping the cover display readable. Prediction logic remains `papasense-v1.18.1-no-draw-guard`. See `BETSPAPA_V1_18_3_PAPA_FIRST_FOLD_TABLET.md`.
+
 ## v1.18.2 Fast Prepared-Board Delivery
 
 Public pick pages now display prepared boards without running live provider refresh, history hydration or prediction generation. Repeat visits render the locally saved board immediately while the API checks quietly for a newer snapshot. PapaSense remains `papasense-v1.18.1-no-draw-guard`; this release changes delivery speed, not prediction logic. See `BETSPAPA_V1_18_2_FAST_BOARD_DELIVERY.md`.

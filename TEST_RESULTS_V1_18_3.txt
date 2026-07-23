@@ -1,0 +1,24 @@
+BetsPapa v1.18.3 validation
+===========================
+
+Service version: 1.18.3
+Prediction engine: papasense-v1.18.1-no-draw-guard
+Automated tests: 82 passed
+Papa-first/Fold regression tests: 5 passed
+JavaScript syntax: 100 files passed
+Workflow YAML: 4 files passed
+HTML/local asset checks: 17 pages passed
+Service-worker asset checks: 37 assets passed
+ZIP integrity: passed
+
+Requested behaviour:
+- betspapa.com opens Papa's Pick directly
+- former home dashboard removed
+- Today/Home navigation removed
+- old /papas-pick.html redirects to /
+- PWA starts at Papa's Pick
+- Fold cover display remains single-column
+- Fold inner display uses multiple columns where space permits
+- tablet landscape uses up to three card columns
+- tablet/Fold bottom navigation remains available through 1100px
+- prediction engine and saved board rows remain unchanged

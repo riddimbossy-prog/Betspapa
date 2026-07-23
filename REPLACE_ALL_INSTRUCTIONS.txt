@@ -1,23 +1,12 @@
-BETSPAPA FULL REPLACEMENT v1.18.2
-================================
+BETSPAPA FULL REPLACEMENT v1.18.3
 
 1. Extract this ZIP.
-2. Replace every file in the GitHub repository with the extracted files.
-3. Commit message:
-   BetsPapa v1.18.2 fast prepared-board delivery
-4. Push to main.
-5. Wait for GitHub Pages and Render to finish deployment.
-6. Confirm:
-   https://api.betspapa.com/api/health
+2. Copy every file and folder into the root of the Betspapa repository.
+3. Choose Replace All when prompted.
+4. Commit: BetsPapa v1.18.3 Papa-first Z Fold tablet shell
+5. Push to main and wait for GitHub Pages and Render.
+6. Confirm https://api.betspapa.com/api/health reports service version 1.18.3.
+7. Open https://betspapa.com/reset.html once on each installed device.
+8. Open https://betspapa.com — it now starts at Papa's Pick.
 
-Expected:
-- version: 1.18.2
-- engineVersion: papasense-v1.18.1-no-draw-guard
-- database: connected
-
-7. Open once:
-   https://betspapa.com/reset.html
-8. Run GitHub Actions → BetsPapa Prepare Tomorrow Board once.
-
-No Supabase SQL migration is required.
-The prediction engine did not change, so existing v1.18.1 prepared picks remain valid.
+No Supabase SQL and no prediction regeneration are required.
