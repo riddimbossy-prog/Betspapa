@@ -1,0 +1,53 @@
+services:
+  - type: web
+    name: betynz-v2
+    runtime: node
+    rootDir: .
+    buildCommand: npm install && npm run build -w apps/api
+    startCommand: npm run start -w apps/api
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: CORS_ORIGINS
+        value: https://betynz.com,https://www.betynz.com
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ADMIN_IMPORT_TOKEN
+        generateValue: true
+      - key: API_FOOTBALL_KEY
+        sync: false
+      - key: API_FOOTBALL_BASE_URL
+        value: https://v3.football.api-sports.io
+      - key: API_FOOTBALL_MAX_ODDS_PAGES
+        value: 50
+      - key: FIXTURE_PROVIDER
+        value: betexplorer
+      - key: BETEXPLORER_ENABLED
+        value: true
+      - key: BETEXPLORER_BASE_URL
+        value: https://www.betexplorer.com
+      - key: BETEXPLORER_FIXTURE_URL_TEMPLATE
+        value: https://www.betexplorer.com/football/?year={YYYY}&month={MM}&day={DD}
+      - key: BETEXPLORER_FALLBACK_URL_TEMPLATES
+        value: https://www.betexplorer.com/next/soccer/?year={YYYY}&month={MM}&day={DD};https://www.betexplorer.com/?year={YYYY}&month={MM}&day={DD}
+      - key: BETEXPLORER_DISCOVERY_URLS
+        value: https://www.betexplorer.com/football/;https://www.betexplorer.com/next/soccer/
+      - key: BETEXPLORER_RATE_MS
+        value: 1800
+      - key: BETEXPLORER_TIMEOUT_MS
+        value: 25000
+      - key: BETEXPLORER_MAX_PAGES
+        value: 24
+      - key: BETEXPLORER_UTC_OFFSET_MINUTES
+        value: 0
+      - key: PREDICTION_DAYS
+        value: 6
+      - key: PREDICTION_TIMEZONE
+        value: Africa/Accra
+      - key: API_FOOTBALL_LEAGUE_IDS
+        sync: false
+      - key: API_FOOTBALL_SEASON
+        sync: false

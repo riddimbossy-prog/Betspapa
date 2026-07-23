@@ -1,0 +1,46 @@
+name: Test BetExplorer fixture feed
+
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: Start date (YYYY-MM-DD); leave blank for today
+        required: false
+        type: string
+      to:
+        description: End date (YYYY-MM-DD); leave blank for prediction-window end
+        required: false
+        type: string
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call protected BetExplorer test endpoint
+        env:
+          API_URL: ${{ secrets.BETYNZ_API_URL }}
+          ADMIN_TOKEN: ${{ secrets.BETYNZ_ADMIN_IMPORT_TOKEN }}
+          FROM_DATE: ${{ inputs.from }}
+          TO_DATE: ${{ inputs.to }}
+        run: |
+          test -n "$API_URL" && test -n "$ADMIN_TOKEN"
+          BODY=$(printf '{"from":"%s","to":"%s"}' "$FROM_DATE" "$TO_DATE")
+          curl --fail --silent --show-error \
+            -X POST "$API_URL/api/v1/admin/test-betexplorer" \
+            -H "content-type: application/json" \
+            -H "x-admin-token: $ADMIN_TOKEN" \
+            --data "$BODY" | tee betexplorer-report.json
+          python -m json.tool betexplorer-report.json
+          python - <<'PY_CHECK'
+          import json, sys
+          report = json.load(open('betexplorer-report.json', encoding='utf-8')).get('report', {})
+          parsed = int(report.get('parsedFixtures') or 0)
+          priced = int(report.get('fixturesWith1X2') or 0)
+          print(f"Parsed fixtures: {parsed}; complete 1X2: {priced}")
+          if parsed < 1:
+              print('BetExplorer test failed: no fixtures were parsed.', file=sys.stderr)
+              sys.exit(22)
+          if priced < 1:
+              print('BetExplorer test failed: fixtures were found but no complete 1X2 prices were parsed.', file=sys.stderr)
+              sys.exit(23)
+          PY_CHECK

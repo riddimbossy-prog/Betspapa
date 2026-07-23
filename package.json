@@ -1,46 +1,20 @@
 {
-  "name": "predict2u-site-quality",
+  "name": "betynz-chronos-fusion",
   "private": true,
-  "version": "2.7.0",
+  "version": "2.3.0",
+  "workspaces": [
+    "apps/web",
+    "apps/api"
+  ],
   "scripts": {
-    "health": "node generate-site-health.js",
-    "audit": "node audit-site.js",
-    "test:mobile": "playwright test",
-    "quality": "npm run build:public && npm run release:security && npm run release:gate && npm run budget && npm run test:pwa && npm run preflight && npm run audit",
-    "preflight": "node repository-preflight.js",
-    "budget": "node performance-budget.js",
-    "test:push": "playwright test tests/push-notifications.spec.js",
-    "test:visual": "playwright test tests/visual-performance.spec.js",
-    "test:analytics": "playwright test tests/analytics.spec.js",
-    "test:news": "playwright test tests/news.spec.js",
-    "test:learning": "node engine-learning-selftest.js",
-    "test:governance": "node model-governance-selftest.js",
-    "quality:models": "npm run test:learning && npm run test:governance && npm run test:consensus && npm run test:context",
-    "test:consensus": "node consensus-selftest.js",
-    "test:context": "node context-selftest.js",
-    "test:news-resilience": "playwright test tests/news-resilience.spec.js",
-    "test:news-comments": "node news-comment-selftest.js",
-    "test:health": "node system-health-selftest.js",
-    "quality:reliability": "npm run test:news-comments && npm run test:health",
-    "test:pwa": "node pwa-selftest.js",
-    "quality:launch": "npm run quality",
-    "fixtures": "node fetch-data.js",
-    "fixtures:week": "node fetch-data.js && node verify-week-data.js",
-    "scores": "node fetch-scores.js",
-    "verify:week": "node verify-week-data.js",
-    "fixtures:snapshot": "node fetch-fixtures-snapshot.js",
-    "verify:fixtures": "node verify-fixture-snapshot.js",
-    "odds:enrich": "node enrich-odds-api.js",
-    "test:odds": "node tests/odds-api-integration.test.js",
-    "quality:odds": "npm run test:odds",
-    "audit:odds-engines": "node audit-odds-engines-v251.js",
-    "build:public": "node build-public-data.js",
-    "release:security": "node release-security-scan.js",
-    "release:gate": "node release-gate-v270.js",
-    "learning:auto": "node auto-picks-learning-worker-v270.js"
+    "dev": "concurrently -n API,WEB -c auto \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
+    "build": "npm run build -w apps/api && npm run build -w apps/web",
+    "start": "npm run start -w apps/api",
+    "import:local": "npm run import:local -w apps/api",
+    "test:engine": "npm run test:engine -w apps/api",
+    "test:betexplorer-parser": "npm run test:betexplorer-parser -w apps/api"
   },
   "devDependencies": {
-    "@playwright/test": "^1.53.0",
-    "http-server": "^14.1.1"
+    "concurrently": "^9.1.2"
   }
 }
