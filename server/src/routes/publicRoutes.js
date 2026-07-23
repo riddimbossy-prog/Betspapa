@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { PREDICTABLE_STATUSES } from "../config.js";
 import { demoFixtures } from "../data/demoFixtures.js";
 import { predictMatch } from "../engine/transitionEngine.js";
 import { getSupabaseAdmin } from "../supabase.js";
@@ -12,20 +11,19 @@ import {
   selectConsensusBankers
 } from "../services/intelligenceService.js";
 import {
-  buildEngineBoardItems,
   getBackgroundProcessingStatus,
   getBoardPreparationStatus,
   getDashboardData,
   getDashboardStats,
   listFixtures,
   listPublicPredictions,
-  listRecentResults,
-  startBackgroundGeneration
+  listRecentResults
 } from "../services/publicService.js";
 import {
   refreshCurrentMatchData,
   summarizeMatchStates
 } from "../services/matchStateService.js";
+import { getPreparedEngineBoard } from "../services/boardSnapshotService.js";
 
 export const publicRouter = Router();
 
@@ -226,7 +224,7 @@ publicRouter.get("/dashboard/today", async (req, res, next) => {
   }
 });
 
-publicRouter.get("/engines/:engineKey", async (req, res, next) => {
+async function preparedBoardHandler(req, res, next) {
   try {
     const engineKey = String(req.params.engineKey || "").toLowerCase();
     if (!ENGINE_KEYS.includes(engineKey)) {
@@ -237,61 +235,38 @@ publicRouter.get("/engines/:engineKey", async (req, res, next) => {
     }
 
     const date = assertIsoDate(req.query.date || todayUtc());
-    const supabase = getSupabaseAdmin();
-    const refresh = await maybeRefreshMatches(req, date);
-
-    const [fixtures, predictions] = await Promise.all([
-      listFixtures(supabase, date),
-      listPublicPredictions(supabase, date)
-    ]);
-
-    const processing = startBackgroundGeneration(
-      supabase,
+    const force = ["1", "true", "force", "reload"].includes(
+      String(req.query.force || "").toLowerCase()
+    );
+    const snapshot = await getPreparedEngineBoard(
+      getSupabaseAdmin(),
       date,
-      fixtures,
-      predictions
+      engineKey,
+      { force }
     );
 
-    const items = buildEngineBoardItems({
-      fixtures,
-      predictions,
-      engineKey,
-      processing
-    });
-
-    const ready = items.filter((item) => Boolean(item.pick)).length;
-    const pending = Math.max(0, items.length - ready);
-
-    if (pending) {
-      res.set("Cache-Control", "no-store, no-cache, must-revalidate");
-      res.set("Pragma", "no-cache");
-      res.set("Expires", "0");
-    } else {
-      setPublicCache(res, 15, 120);
-    }
-
-    res.json({
-      date,
-      engineKey,
-      generatedAt: new Date().toISOString(),
-      count: ready,
-      fixturesFound: items.length,
-      ready,
-      pending,
-      processing,
-      matchStates: summarizeMatchStates(items),
-      liveRefresh: refresh,
-      items
-    });
+    const maxAge = snapshot.pending ? 15 : 60;
+    const staleAge = snapshot.pending ? 60 : 900;
+    setPublicCache(res, maxAge, staleAge);
+    res.set("Vary", "Origin, Accept-Encoding");
+    res.set("Last-Modified", snapshot.generatedAt);
+    return res.json(snapshot);
   } catch (error) {
-    next(error);
+    return next(error);
   }
-});
+}
+
+// v1.18.2 fast prepared-board endpoint. It never refreshes providers,
+// downloads history, grades results or generates predictions.
+publicRouter.get("/boards/:engineKey", preparedBoardHandler);
+
+// Backward-compatible alias for older PWA clients.
+publicRouter.get("/engines/:engineKey", preparedBoardHandler);
 
 publicRouter.get("/boss-picks/today", async (req, res, next) => {
   try {
     const date = assertIsoDate(req.query.date || todayUtc());
-    const refresh = await maybeRefreshMatches(req, date);
+    const refresh = { refreshed: false, skipped: true, reason: "Prepared pick reader" };
     const result = await getBossPicks(getSupabaseAdmin(), date);
     setPublicCache(res, 15, 120);
     res.json({
@@ -308,7 +283,7 @@ publicRouter.get("/bankers/today", async (req, res, next) => {
   try {
     const date = assertIsoDate(req.query.date || todayUtc());
     const limit = Math.max(1, Math.min(Number(req.query.limit) || 12, 20));
-    const refresh = await maybeRefreshMatches(req, date);
+    const refresh = { refreshed: false, skipped: true, reason: "Prepared pick reader" };
     const slate = await consensusBankersForDate(date, limit);
 
     setPublicCache(res, 15, 120);

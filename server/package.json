@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.18.1",
+  "version": "1.18.2",
   "private": true,
-  "description": "BetsPapa v1.18.1 HT/FT-first engine with No-Draw misfire guard and high-scoring goal-market diversion.",
+  "description": "BetsPapa v1.18.2 fast prepared-board delivery with the v1.18.1 HT/FT-first engine unchanged.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

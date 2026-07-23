@@ -1,3 +1,18 @@
+# BetsPapa Changelog
+
+## v1.18.2 — Fast Prepared-Board Delivery
+
+- Public engine pages now read prepared snapshots only.
+- Removed blocking `refresh=1` provider refresh from engine and Boss Pick page loads.
+- Removed visitor-triggered prediction generation from the engine route.
+- Added local prepared-board cache for instant repeat visits.
+- Added Render-side stale-while-revalidate board snapshots.
+- Consolidated fixture/prediction board loading to avoid duplicate fixture, team and league queries.
+- Added `/api/admin/warm-board` and automatic warming after board preparation.
+- Increased incomplete-board polling from eight seconds to sixty seconds.
+- Kept engine version `papasense-v1.18.1-no-draw-guard` unchanged.
+- No database migration required.
+
 # Changelog
 
 ## v1.18.1 — Either Team to Win Misfire Guard

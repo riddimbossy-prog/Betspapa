@@ -5,126 +5,25 @@ import {
 } from "../config.js";
 import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
-import { generatePredictionsForDate } from "./predictionService.js";
 import { gradeEnginePick } from "./gradingService.js";
 import { fixtureMatchState, summarizeMatchStates } from "./matchStateService.js";
 
 
-const backgroundJobs = new Map();
-const RESTART_COOLDOWN_MS = 2 * 60 * 1000;
-
-function publicJobState(job, { totalFixtures = 0, readyPredictions = 0 } = {}) {
-  const pending = Math.max(0, totalFixtures - readyPredictions);
-  if (!job) {
-    return {
-      state: pending ? "idle" : "complete",
-      totalFixtures,
-      readyPredictions,
-      pending,
-      withheld: 0,
-      startedAt: null,
-      completedAt: null,
-      message: pending
-        ? "Papa is preparing the remaining picks in the background."
-        : "All available picks are ready."
-    };
-  }
-  return {
-    state: job.state,
-    totalFixtures,
-    readyPredictions,
-    pending,
-    withheld: Number(job.withheld || 0),
-    startedAt: job.startedAt || null,
-    completedAt: job.completedAt || null,
-    generated: Number(job.generated || 0),
-    published: Number(job.published || readyPredictions),
-    error: job.error || null,
-    message:
-      job.state === "running"
-        ? "Papa is preparing the remaining picks in the background."
-        : job.state === "failed"
-          ? "Background preparation stopped. Existing completed picks remain available."
-          : pending
-            ? "Some fixtures are waiting for enough individual history."
-            : "All available picks are ready."
-  };
-}
-
-export function startBackgroundGeneration(supabase, date, fixtures, predictions) {
-  const predictableFixtures = fixtures.filter((fixture) =>
-    PREDICTABLE_STATUSES.has(fixture.status)
-  );
-  const readyFixtureIds = new Set(
-    predictions.map((prediction) => Number(prediction.internalFixtureId))
-  );
-  const missing = predictableFixtures.filter(
-    (fixture) => !readyFixtureIds.has(Number(fixture.id))
-  );
-  if (!missing.length) {
-    const complete = {
-      state: "complete", startedAt: null,
-      completedAt: new Date().toISOString(), generated: 0,
-      published: predictions.length, withheld: 0, error: null
-    };
-    backgroundJobs.set(date, complete);
-    return publicJobState(complete, {
-      totalFixtures: predictableFixtures.length,
-      readyPredictions: predictions.length
-    });
-  }
-  const existing = backgroundJobs.get(date);
-  if (existing?.state === "running") {
-    return publicJobState(existing, {
-      totalFixtures: predictableFixtures.length,
-      readyPredictions: predictions.length
-    });
-  }
-  const lastFinishedAt = existing?.completedAt ? new Date(existing.completedAt).getTime() : 0;
-  const coolingDown = existing && existing.state !== "running" &&
-    Date.now() - lastFinishedAt < RESTART_COOLDOWN_MS;
-  if (coolingDown) {
-    return publicJobState(existing, {
-      totalFixtures: predictableFixtures.length,
-      readyPredictions: predictions.length
-    });
-  }
-  const job = {
-    state: "running", startedAt: new Date().toISOString(), completedAt: null,
-    generated: 0, published: predictions.length, withheld: 0, error: null
-  };
-  backgroundJobs.set(date, job);
-  Promise.resolve()
-    .then(() => generatePredictionsForDate(supabase, date))
-    .then((result) => {
-      job.state = "complete";
-      job.completedAt = new Date().toISOString();
-      job.generated = Number(result.generated || 0);
-      job.published = Number(result.published || 0);
-      job.withheld = Array.isArray(result.skipped) ? result.skipped.length : 0;
-      job.error = null;
-      job.skipped = (result.skipped || []).map((item) => ({
-        fixtureId: item.fixtureId,
-        externalFixtureId: item.externalFixtureId,
-        code: item.code,
-        message: item.message
-      }));
-      job.hydration = result.hydration || null;
-    })
-    .catch((error) => {
-      job.state = "failed";
-      job.completedAt = new Date().toISOString();
-      job.error = error?.message || String(error);
-      console.error(`Background prediction preparation failed for ${date}:`, error);
-    });
-  return publicJobState(job, {
-    totalFixtures: predictableFixtures.length,
-    readyPredictions: predictions.length
-  });
-}
-
 export function getBackgroundProcessingStatus(date) {
-  return publicJobState(backgroundJobs.get(date));
+  return {
+    date,
+    state: "scheduled",
+    totalFixtures: 0,
+    readyPredictions: 0,
+    pending: 0,
+    withheld: 0,
+    startedAt: null,
+    completedAt: null,
+    generated: 0,
+    published: 0,
+    error: null,
+    message: "Prediction preparation runs only through the scheduled admin workflows."
+  };
 }
 
 
@@ -295,43 +194,16 @@ export async function listFixtures(supabase, date) {
   return fixtures.map((fixture) => publicFixture(fixture, teamMap, leagueMap));
 }
 
-export async function listPublicPredictions(supabase, date) {
-  const { start, end } = dateRangeUtc(date);
-  const fixtures = await fetchAllRows(() =>
-    supabase
-      .from("fixtures")
-      .select("*")
-      .gte("fixture_date", start)
-      .lt("fixture_date", end)
-      .order("fixture_date", { ascending: true })
-  );
-
-  if (!fixtures.length) return [];
-
-  const fixtureIds = fixtures.map((fixture) => fixture.id);
-  const { data: predictions, error } = await supabase
-    .from("predictions")
-    .select("*")
-    .in("fixture_id", fixtureIds)
-    .eq("engine_version", ENGINE_VERSION)
-    .eq("published", true)
-    .order("confidence", { ascending: false });
-
-  throwIfSupabaseError(error, "Unable to load public predictions");
-
-  const predictionIds = (predictions || []).map((prediction) => prediction.id);
-  const { data: resultRows, error: resultError } = predictionIds.length
-    ? await supabase
-        .from("prediction_results")
-        .select("*")
-        .in("prediction_id", predictionIds)
-    : { data: [], error: null };
-  throwIfSupabaseError(resultError, "Unable to load prediction settlements");
-
+function mapPublicPredictions({
+  fixtures,
+  predictions,
+  resultRows,
+  teamMap,
+  leagueMap
+}) {
   const resultMap = new Map(
     (resultRows || []).map((row) => [row.prediction_id, row])
   );
-  const { teamMap, leagueMap } = await loadEntityMaps(supabase, fixtures);
   const fixtureMap = new Map(fixtures.map((fixture) => [fixture.id, fixture]));
 
   return (predictions || [])
@@ -462,6 +334,64 @@ export async function listPublicPredictions(supabase, date) {
       };
     })
     .filter(Boolean);
+}
+
+export async function loadPreparedBoardData(supabase, date) {
+  const { start, end } = dateRangeUtc(date);
+  const fixtures = await fetchAllRows(() =>
+    supabase
+      .from("fixtures")
+      .select("*")
+      .gte("fixture_date", start)
+      .lt("fixture_date", end)
+      .order("fixture_date", { ascending: true })
+  );
+
+  if (!fixtures.length) {
+    return { fixtures: [], predictions: [] };
+  }
+
+  const fixtureIds = fixtures.map((fixture) => fixture.id);
+  const predictionQuery = supabase
+    .from("predictions")
+    .select("*")
+    .in("fixture_id", fixtureIds)
+    .eq("engine_version", ENGINE_VERSION)
+    .eq("published", true)
+    .order("confidence", { ascending: false });
+
+  const [{ data: predictions, error: predictionError }, entityMaps] = await Promise.all([
+    predictionQuery,
+    loadEntityMaps(supabase, fixtures)
+  ]);
+  throwIfSupabaseError(predictionError, "Unable to load prepared board predictions");
+
+  const predictionIds = (predictions || []).map((prediction) => prediction.id);
+  const { data: resultRows, error: resultError } = predictionIds.length
+    ? await supabase
+        .from("prediction_results")
+        .select("*")
+        .in("prediction_id", predictionIds)
+    : { data: [], error: null };
+  throwIfSupabaseError(resultError, "Unable to load prepared board settlements");
+
+  return {
+    fixtures: fixtures.map((fixture) =>
+      publicFixture(fixture, entityMaps.teamMap, entityMaps.leagueMap)
+    ),
+    predictions: mapPublicPredictions({
+      fixtures,
+      predictions,
+      resultRows,
+      teamMap: entityMaps.teamMap,
+      leagueMap: entityMaps.leagueMap
+    })
+  };
+}
+
+export async function listPublicPredictions(supabase, date) {
+  const board = await loadPreparedBoardData(supabase, date);
+  return board.predictions;
 }
 
 export async function listRecentResults(supabase, limit = 12) {
@@ -678,12 +608,29 @@ export async function getDashboardStats(supabase, {
 }
 
 export async function getDashboardData(supabase, date) {
-  const [fixtures, recentResults, predictions] = await Promise.all([
-    listFixtures(supabase, date),
-    listRecentResults(supabase, 12),
-    listPublicPredictions(supabase, date)
+  const [board, recentResults] = await Promise.all([
+    loadPreparedBoardData(supabase, date),
+    listRecentResults(supabase, 12)
   ]);
-  const processing = startBackgroundGeneration(supabase, date, fixtures, predictions);
+  const { fixtures, predictions } = board;
+  const predictable = fixtures.filter((fixture) =>
+    PREDICTABLE_STATUSES.has(fixture.status)
+  );
+  const readyIds = new Set(
+    predictions.map((prediction) => Number(prediction.internalFixtureId))
+  );
+  const pending = predictable.filter(
+    (fixture) => !readyIds.has(Number(fixture.id))
+  ).length;
+  const processing = {
+    state: pending ? "scheduled" : "complete",
+    totalFixtures: predictable.length,
+    readyPredictions: predictions.length,
+    pending,
+    message: pending
+      ? "Remaining picks are waiting for the scheduled board-preparation workflow."
+      : "The prepared board is ready."
+  };
   const stats = await getDashboardStats(supabase, {
     predictionsToday: predictions,
     fixturesToday: fixtures,

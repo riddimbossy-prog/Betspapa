@@ -15,6 +15,7 @@ import {
 import { fetchAllRows } from "../services/supabaseHelpers.js";
 import { getPredictionDiagnostics } from "../services/intelligenceService.js";
 import { getBackgroundProcessingStatus } from "../services/publicService.js";
+import { invalidatePreparedBoards, warmPreparedBoards } from "../services/boardSnapshotService.js";
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
@@ -118,6 +119,7 @@ adminRouter.post("/sync-date", async (req, res, next) => {
   try {
     const date = assertIsoDate(req.body?.date || todayUtc());
     const result = await syncDate(getSupabaseAdmin(), date);
+    invalidatePreparedBoards(date);
     res.json({ status: "ok", action: "sync-date", result });
   } catch (error) {
     next(error);
@@ -240,8 +242,11 @@ adminRouter.post("/hydrate-date", async (req, res, next) => {
 adminRouter.post("/generate-predictions", async (req, res, next) => {
   try {
     const date = assertIsoDate(req.body?.date || todayUtc());
-    const result = await generatePredictionsForDate(getSupabaseAdmin(), date);
-    res.json({ status: "ok", action: "generate-predictions", result });
+    const supabase = getSupabaseAdmin();
+    const result = await generatePredictionsForDate(supabase, date);
+    invalidatePreparedBoards(date);
+    const boardWarm = await warmPreparedBoards(supabase, date);
+    res.json({ status: "ok", action: "generate-predictions", result, boardWarm });
   } catch (error) {
     next(error);
   }
@@ -250,8 +255,11 @@ adminRouter.post("/generate-predictions", async (req, res, next) => {
 adminRouter.post("/grade-results", async (req, res, next) => {
   try {
     const date = assertIsoDate(req.body?.date || todayUtc());
-    const result = await gradePredictionsForDate(getSupabaseAdmin(), date);
-    res.json({ status: "ok", action: "grade-results", result });
+    const supabase = getSupabaseAdmin();
+    const result = await gradePredictionsForDate(supabase, date);
+    invalidatePreparedBoards(date);
+    const boardWarm = await warmPreparedBoards(supabase, date);
+    res.json({ status: "ok", action: "grade-results", result, boardWarm });
   } catch (error) {
     next(error);
   }
@@ -263,13 +271,28 @@ adminRouter.post("/settle-date", async (req, res, next) => {
     const supabase = getSupabaseAdmin();
     const synced = await syncDate(supabase, date);
     const graded = await gradePredictionsForDate(supabase, date);
+    invalidatePreparedBoards(date);
+    const boardWarm = await warmPreparedBoards(supabase, date);
     res.json({
       status: "ok",
       action: "settle-date",
       date,
       synced,
-      graded
+      graded,
+      boardWarm
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.post("/warm-board", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.body?.date || todayUtc());
+    const supabase = getSupabaseAdmin();
+    invalidatePreparedBoards(date);
+    const result = await warmPreparedBoards(supabase, date);
+    res.json({ status: "ok", action: "warm-board", result });
   } catch (error) {
     next(error);
   }
@@ -296,6 +319,8 @@ adminRouter.post("/bootstrap-league", async (req, res, next) => {
     const profiles = await rebuildProfiles(supabase, internal.leagueId, season);
     const upcoming = await syncDate(supabase, predictionDate);
     const predictions = await generatePredictionsForDate(supabase, predictionDate);
+    invalidatePreparedBoards(predictionDate);
+    const boardWarm = await warmPreparedBoards(supabase, predictionDate);
 
     res.json({
       status: "ok",
@@ -303,7 +328,8 @@ adminRouter.post("/bootstrap-league", async (req, res, next) => {
       history,
       profiles,
       upcoming,
-      predictions
+      predictions,
+      boardWarm
     });
   } catch (error) {
     next(error);
@@ -323,8 +349,10 @@ adminRouter.post("/run-daily", async (req, res, next) => {
 
     const graded = await gradePredictionsForDate(supabase, date);
     const predictions = await generatePredictionsForDate(supabase, date);
+    invalidatePreparedBoards(date);
+    const boardWarm = await warmPreparedBoards(supabase, date);
 
-    res.json({ status: "ok", action: "run-daily", date, synced, rebuilt, graded, predictions });
+    res.json({ status: "ok", action: "run-daily", date, synced, rebuilt, graded, predictions, boardWarm });
   } catch (error) {
     next(error);
   }

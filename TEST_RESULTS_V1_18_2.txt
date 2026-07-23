@@ -1,0 +1,22 @@
+BetsPapa v1.18.2 validation
+===========================
+
+Service version: 1.18.2
+Prediction engine version: papasense-v1.18.1-no-draw-guard
+Automated tests: 77 passed
+Fast-board regression tests: 4 passed
+JavaScript syntax: 98 files passed
+Workflow YAML: 4 files passed
+Active HTML asset references: passed
+ZIP integrity: passed
+Database migration: not required
+
+Key checks
+----------
+- public board route cannot trigger prediction generation
+- public board route cannot block on live provider refresh
+- browser paints a locally prepared board before network revalidation
+- incomplete boards poll every 60 seconds, not every 8 seconds
+- all four board snapshots warm after scheduled generation
+- engine version remains stable, preserving v1.18.1 predictions
+- board response strips unused heavy prediction fields

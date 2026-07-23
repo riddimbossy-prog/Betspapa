@@ -241,6 +241,19 @@ async function boardStatus() {
   );
 }
 
+async function warmPreparedBoard() {
+  heading(`Warm public board snapshot: ${targetDate}`);
+  const payload = await request("/api/admin/warm-board", {
+    method: "POST",
+    body: { date: targetDate },
+    timeoutMs: 120000,
+    retries: 1
+  });
+  const engines = payload.result?.engines || {};
+  console.log(`Warmed engines: ${Object.keys(engines).join(", ") || "none"}`);
+  return payload.result || {};
+}
+
 async function main() {
   heading("BetsPapa day-ahead board preparation");
   console.log(`API: ${API_BASE}`);
@@ -275,6 +288,8 @@ async function main() {
       `Coverage after round ${round}: ${status.readyPredictions}/${status.fixturesFound} (${status.coveragePercent}%)`
     );
   }
+
+  await warmPreparedBoard();
 
   heading("Tomorrow board summary");
   console.log(`State: ${status.state}`);
