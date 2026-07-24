@@ -1,3 +1,18 @@
+## v1.18.5 — Athena v1.1 Score-and-Safety Arbitration
+
+- Replaced Athena RC1's first-passing-market priority with full qualified-market comparison.
+- Preserved the original RC1 HT/FT scoring calculations as the underlying score source.
+- High-event and swing classifications now prefer the strongest qualified attacking goal market.
+- Win Either Half can replace a high-event goal market only when it is within five points and passes overall direction, venue, odds, lead-protection and opponent-comeback checks.
+- Stable Leader, Multi-Route Advantage and Late Separation classifications keep a directional market only when it remains within six points of the strongest non-directional option.
+- Draw Lock, False Over Trap and Controlled Corridor classifications use their own market-family arbitration rules.
+- Blocked BTTS and first-half goal candidates cannot become the primary merely because their numeric score is high.
+- Athena now returns best overall, best goal, best directional and safer alternative diagnostics.
+- Added the Aktobe 2 vs Kairat Almaty 2 regression: Over 2.5 at 100 replaces Away Win Either Half at 88.
+- Athena engine version is `athena-transition-v1.1.0-score-safety`.
+- PapaSense remains `papasense-v1.18.1-no-draw-guard`.
+- No Supabase migration is required.
+
 ## v1.18.4 — Athena replaces Boss Picks
 
 - Replaced the public Boss Picks/OMNI engine with Athena Transition Engine v1.0-RC1.

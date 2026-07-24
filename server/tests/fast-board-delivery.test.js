@@ -61,7 +61,7 @@ test("public board route is a read-only prepared-board endpoint", async () => {
 });
 
 test("portal shows a local prepared board before the network refresh", async () => {
-  const source = await readFile(resolve(root, "assets/js/portal.v1184.js"), "utf8");
+  const source = await readFile(resolve(root, "assets/js/portal.v1185.js"), "utf8");
   assert.match(source, /readCachedEngineBoard/);
   assert.match(source, /\/api\/boards\/\$\{engineKey\}/);
   assert.doesNotMatch(source, /\/api\/engines\/\$\{engineKey\}.*refresh=1/);
@@ -69,6 +69,6 @@ test("portal shows a local prepared board before the network refresh", async () 
 });
 
 test("performance release keeps the prediction-engine version stable", () => {
-  assert.equal(SERVICE_VERSION, "1.18.4");
+  assert.equal(SERVICE_VERSION, "1.18.5");
   assert.equal(ENGINE_VERSION, "papasense-v1.18.1-no-draw-guard");
 });

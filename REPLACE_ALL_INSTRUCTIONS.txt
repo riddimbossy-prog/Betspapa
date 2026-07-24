@@ -1,12 +1,32 @@
-BETSPAPA FULL REPLACEMENT v1.18.3
+BetsPapa v1.18.5 — FULL REPLACE
+================================
 
 1. Extract this ZIP.
-2. Copy every file and folder into the root of the Betspapa repository.
-3. Choose Replace All when prompted.
-4. Commit: BetsPapa v1.18.3 Papa-first Z Fold tablet shell
-5. Push to main and wait for GitHub Pages and Render.
-6. Confirm https://api.betspapa.com/api/health reports service version 1.18.3.
-7. Open https://betspapa.com/reset.html once on each installed device.
-8. Open https://betspapa.com — it now starts at Papa's Pick.
+2. Open the existing BetsPapa repository folder in File Explorer.
+3. Copy every extracted file and folder into the repository root.
+4. Choose Replace All when prompted.
+5. In GitHub Desktop, commit:
 
-No Supabase SQL and no prediction regeneration are required.
+   BetsPapa v1.18.5 Athena score safety arbitration
+
+6. Push origin.
+7. Wait for GitHub Pages and Render deployment.
+8. Confirm:
+
+   https://api.betspapa.com/api/health
+
+Expected service version:
+
+   1.18.5
+
+Expected Athena engine:
+
+   athena-transition-v1.1.0-score-safety
+
+9. Open once:
+
+   https://betspapa.com/reset.html
+
+10. Run GitHub Actions → BetsPapa Prepare Tomorrow Board.
+
+No Supabase SQL or migration is required.

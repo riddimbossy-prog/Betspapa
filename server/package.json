@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.18.4",
+  "version": "1.18.5",
   "private": true,
-  "description": "BetsPapa v1.18.4 replaces Boss Picks with the frozen Athena HT/FT transition engine.",
+  "description": "BetsPapa v1.18.5 upgrades Athena to score-and-safety market arbitration.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

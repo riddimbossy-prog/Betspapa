@@ -1,5 +1,9 @@
 # BetsPapa
 
+## v1.18.5 Athena v1.1 Score-and-Safety Arbitration
+
+Athena now evaluates every qualified market before publishing its primary selection. The original RC1 scoring core remains intact, but the old “first market above 80 wins” priority is replaced by classification-specific score-and-safety arbitration. High-event fixtures normally select the strongest qualified attacking goal market; a directional Win Either Half selection may replace it only when it is fully confirmed and within five points. Stable directional fixtures keep a team market only after overall direction, venue split, bookmaker direction, lead protection and opponent comeback checks all pass. See `ATHENA_TRANSITION_ENGINE_V1_18_5.md`.
+
 ## v1.18.4 Papa-First Z Fold and Tablet Shell
 
 BetsPapa now opens directly on Papa's Pick. The retired home dashboard and Today/Home navigation were removed. The portal layout now uses the Samsung Z Fold inner display and tablet widths with responsive two/three-column boards while keeping the cover display readable. Prediction logic remains `papasense-v1.18.1-no-draw-guard`. See `BETSPAPA_V1_18_3_PAPA_FIRST_FOLD_TABLET.md`.
@@ -96,7 +100,7 @@ npm test
 - `/aggressive.html`
 - `/safer.html`
 - `/venue-pattern.html`
-- `/athena.html` — Athena Transition Picks, powered by the frozen Athena v1.0-RC1 engine
+- `/athena.html` — Athena Transition Picks, powered by RC1 scoring plus Athena v1.1 arbitration
 - `/bankers.html` — consensus picks across Papa’s Pick, Aggressive, Safer and Venue Pattern
 - `/results-intelligence.html`
 - `/admin/` — private diagnostics (not linked publicly)
@@ -104,9 +108,9 @@ npm test
 See `BETSPAPA_V1_17_CONSENSUS_BANKERS.md` for current Banker criteria and `BETSPAPA_V1_10_GUIDE.md` for diagnostics and the anti-zombie similarity policy.
 
 
-## Athena Transition Picks v1.18.4
+## Athena Transition Picks v1.18.5
 
-Boss Picks are free and public. No account, login, watchlist, subscription, Supabase Auth migration or VAPID setup is required. The OMNI engine evaluates up to 48 markets and returns every selection scoring 80 or higher that passes all mandatory gates.
+Athena is free and public. No account or database migration is required. Athena uses the frozen RC1 transition scoring core plus the v1.1 score-and-safety arbiter. The page shows the selected primary market, best goal option, best directional option, safer alternative, arbitration rule and whether v1.1 replaced the former RC1 priority pick.
 
 
 ## Live status and settlement

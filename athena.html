@@ -10,14 +10,14 @@
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Space+Grotesk:wght@600;700&amp;display=swap" rel="stylesheet"/>
 <link href="assets/css/country-flags.v1175.css" rel="stylesheet"/>
-<link href="assets/css/portal.v1184.css" rel="stylesheet"/>
+<link href="assets/css/portal.v1185.css" rel="stylesheet"/>
 <script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
 <link href="assets/css/mobile-nav.v111.css" rel="stylesheet"/>
 <meta content="yes" name="mobile-web-app-capable"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="BetsPapa" name="apple-mobile-web-app-title"/>
-<link href="/manifest.webmanifest?v=1184" rel="manifest"/>
+<link href="/manifest.webmanifest?v=1185" rel="manifest"/>
 <link href="/assets/images/pwa-brand-apple-180.png" rel="apple-touch-icon" sizes="180x180"/>
 <link href="/assets/images/pwa-splash-1290x2796.jpg" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" rel="apple-touch-startup-image"/>
 <link href="/assets/images/pwa-splash-2796x1290.jpg" media="(device-width: 932px) and (device-height: 430px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)" rel="apple-touch-startup-image"/>
@@ -57,9 +57,9 @@
 </header>
 <main class="portal-main">
 <section class="portal-hero">
-<span class="eyebrow">BetsPapa v1.18.4</span>
+<span class="eyebrow">BetsPapa v1.18.5</span>
 <h1 id="portalTitle">Athena Transition Picks</h1>
-<p id="portalDescription">Athena reads the nine HT/FT states, compatible opposite routes, lead safety, comeback strength, draw structure, goals and odds disagreement. It returns one strongest pick or NO PICK.</p>
+<p id="portalDescription">Athena v1.1 reads the nine HT/FT states, scores every qualified market, applies venue, odds, lead-safety and comeback checks, then selects the strongest classification-safe pick or NO PICK.</p>
 </section>
 <div class="status-strip" id="portalStatus"><span>Connecting to live data…</span><small></small></div>
 <div aria-label="Match status legend" class="match-state-legend">
@@ -73,7 +73,7 @@
 <button id="refreshButton" type="button">Refresh Athena</button>
 </div>
 <section class="metric-row" id="portalMetrics"></section>
-<div class="section-title"><h2>Athena selections</h2><p>Qualified begins at 80/100 and Prime at 88/100. The score is a frozen RC1 rule strength, not a win probability.</p></div><div id="portalContent"></div><section class="boss-method"><strong>Athena RC1 rule</strong><p>Athena classifies each fixture from compatible HT/FT routes, then tests directional safety, draw locks, goal corridors and odds conflict. No market is published unless the frozen 80-point gate is cleared.</p></section>
+<div class="section-title"><h2>Athena selections</h2><p>Qualified begins at 80/100 and Prime at 88/100. Athena v1.1 compares every safe qualified market instead of stopping at the first market over 80.</p></div><div id="portalContent"></div><section class="boss-method"><strong>Athena v1.1 arbitration</strong><p>The RC1 scoring core remains intact, but the final decision now compares all qualified markets. High-event games favor the strongest goal market unless a fully confirmed Win Either Half option is within five points. Stable directional games keep the team market only when it passes venue, odds, lead-safety and comeback checks.</p></section>
 <footer class="portal-footer">
 <span>Sports analytics only. Predictions are not guarantees. 18+.</span>
 <div>
@@ -90,7 +90,7 @@
 </div>
 </dialog>
 <script src="assets/js/country-flags.v1175.js"></script>
-<script src="assets/js/portal.v1184.js"></script>
+<script src="assets/js/portal.v1185.js"></script>
 <script src="assets/js/mobile-nav.v1184.js"></script>
 <script src="/assets/js/pwa.v1160.js"></script>
 <script src="/assets/js/ui.v1170.js"></script>

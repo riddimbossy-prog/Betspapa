@@ -1,0 +1,24 @@
+BetsPapa v1.18.5 validation
+===========================
+
+Service version: 1.18.5
+PapaSense engine: papasense-v1.18.1-no-draw-guard
+Athena public engine: athena-transition-v1.1.0-score-safety
+Athena scoring runtime: 1.0.0-rc.1
+Automated tests: 87 passed
+Athena v1.1 arbitration regression tests: 5 passed
+JavaScript syntax: 109 files passed
+Workflow YAML: 4 files passed
+HTML/local asset checks: 17 pages passed
+Service-worker assets: 38 passed
+Manifest validation: passed
+Athena RC1 scoring source comparison: identical
+ZIP integrity: passed after packaging
+Database migration: not required
+
+Critical Athena v1.1 regressions:
+- Aktobe 2 vs Kairat Almaty 2 selects Over 2.5 at 100 instead of the RC1 Win Either Half priority at 88.
+- High-event Win Either Half can replace the goal market only inside a five-point margin.
+- Odds-direction conflict blocks the directional replacement.
+- Stable directional classifications use a six-point comparison margin.
+- BTTS with insufficient scoring evidence cannot become primary.
