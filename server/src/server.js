@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 
 import {
-  BOSS_ENGINE_VERSION,
+  ATHENA_ENGINE_VERSION,
   DEFAULT_ALLOWED_ORIGINS,
   ENGINE_VERSION,
   SERVICE_NAME,
@@ -104,7 +104,8 @@ app.get("/", (_req, res) => {
     aggressive: "/api/boards/aggressive",
     safer: "/api/boards/safer",
     venuePattern: "/api/boards/venue",
-    bossPicks: "/api/boss-picks/today",
+    athena: "/api/athena/today",
+    legacyBossPicks: "/api/boss-picks/today",
     consensusBankers: "/api/bankers/today",
     legacyBankersByEngine: "/api/bankers/by-engine",
     resultsIntelligence: "/api/results/intelligence",
@@ -119,7 +120,7 @@ app.get("/api/health", async (_req, res) => {
       status: "ok",
       service: SERVICE_NAME,
       version: SERVICE_VERSION,
-      bossEngineVersion: BOSS_ENGINE_VERSION,
+      athenaEngineVersion: ATHENA_ENGINE_VERSION,
       engineVersion: ENGINE_VERSION,
       database: "connected",
       leaguesCount: database.leaguesCount,
@@ -139,7 +140,7 @@ app.get("/api/health", async (_req, res) => {
       status: "error",
       service: SERVICE_NAME,
       version: SERVICE_VERSION,
-      bossEngineVersion: BOSS_ENGINE_VERSION,
+      athenaEngineVersion: ATHENA_ENGINE_VERSION,
       engineVersion: ENGINE_VERSION,
       database: "disconnected",
       message: details.message,

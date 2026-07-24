@@ -2,7 +2,7 @@ import { Router } from "express";
 import { demoFixtures } from "../data/demoFixtures.js";
 import { predictMatch } from "../engine/transitionEngine.js";
 import { getSupabaseAdmin } from "../supabase.js";
-import { getBossPicks, invalidateBossPickCache } from "../services/bossPickService.js";
+import { getAthenaPicks, invalidateAthenaPickCache } from "../services/athenaPickService.js";
 import { assertIsoDate, todayUtc } from "../utils/date.js";
 import {
   ENGINE_KEYS,
@@ -93,7 +93,7 @@ function invalidateDateCaches(date) {
   for (const key of bankersCache.keys()) {
     if (key.startsWith(`${date}:`)) bankersCache.delete(key);
   }
-  invalidateBossPickCache(date);
+  invalidateAthenaPickCache(date);
 }
 
 function queueMatchRefresh(date) {
@@ -263,21 +263,28 @@ publicRouter.get("/boards/:engineKey", preparedBoardHandler);
 // Backward-compatible alias for older PWA clients.
 publicRouter.get("/engines/:engineKey", preparedBoardHandler);
 
-publicRouter.get("/boss-picks/today", async (req, res, next) => {
+async function athenaPicksHandler(req, res, next) {
   try {
     const date = assertIsoDate(req.query.date || todayUtc());
-    const refresh = { refreshed: false, skipped: true, reason: "Prepared pick reader" };
-    const result = await getBossPicks(getSupabaseAdmin(), date);
-    setPublicCache(res, 15, 120);
+    const force = ["1", "true", "force", "reload"].includes(
+      String(req.query.force || "").toLowerCase()
+    );
+    const result = await getAthenaPicks(getSupabaseAdmin(), date, { force });
+    setPublicCache(res, result.cached ? 60 : 20, 900);
+    res.set("Vary", "Origin, Accept-Encoding");
     res.json({
       ...result,
       matchStates: summarizeMatchStates(result.picks || []),
-      liveRefresh: refresh
+      liveRefresh: { refreshed: false, skipped: true, reason: "Athena prepared-pick reader" }
     });
   } catch (error) {
     next(error);
   }
-});
+}
+
+publicRouter.get("/athena/today", athenaPicksHandler);
+// Backward-compatible alias for installed clients that still request Boss Picks.
+publicRouter.get("/boss-picks/today", athenaPicksHandler);
 
 publicRouter.get("/bankers/today", async (req, res, next) => {
   try {

@@ -254,6 +254,18 @@ async function warmPreparedBoard() {
   return payload.result || {};
 }
 
+async function warmAthenaBoard() {
+  heading(`Warm Athena RC1 board: ${targetDate}`);
+  const payload = await request(
+    `/api/athena/today?date=${encodeURIComponent(targetDate)}&force=1`,
+    { admin: false, timeoutMs: 180000, retries: 1 }
+  );
+  console.log(
+    `Athena reviewed ${payload.reviewedFixtures || 0} fixtures and prepared ${payload.qualifiedCount || 0} picks.`
+  );
+  return payload;
+}
+
 async function main() {
   heading("BetsPapa day-ahead board preparation");
   console.log(`API: ${API_BASE}`);
@@ -290,6 +302,7 @@ async function main() {
   }
 
   await warmPreparedBoard();
+  await warmAthenaBoard();
 
   heading("Tomorrow board summary");
   console.log(`State: ${status.state}`);

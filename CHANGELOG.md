@@ -1,4 +1,15 @@
-## v1.18.3 — Papa-First Z Fold and Tablet Shell
+## v1.18.4 — Athena replaces Boss Picks
+
+- Replaced the public Boss Picks/OMNI engine with Athena Transition Engine v1.0-RC1.
+- Preserved the original frozen Athena thresholds and one-pick-or-NO-PICK policy.
+- Added overall and home/away venue HT/FT adapters from Supabase fixture history.
+- Added venue confirmation for conflicted directional selections.
+- Added automatic settlement for all Athena markets.
+- Added `/api/athena/today` and retained `/api/boss-picks/today` as a compatibility alias.
+- Added `athena.html`; old Boss Picks bookmarks redirect to Athena.
+- Day-ahead preparation now warms the Athena board.
+
+## v1.18.4 — Papa-First Z Fold and Tablet Shell
 
 # BetsPapa Changelog
 

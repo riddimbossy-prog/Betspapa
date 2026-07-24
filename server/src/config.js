@@ -1,7 +1,9 @@
 export const SERVICE_NAME = "BetsPapa Prediction API";
-export const SERVICE_VERSION = "1.18.3";
+export const SERVICE_VERSION = "1.18.4";
 export const ENGINE_VERSION = "papasense-v1.18.1-no-draw-guard";
-export const BOSS_ENGINE_VERSION = "omni-htft-v2.5.2";
+export const ATHENA_ENGINE_VERSION = "athena-transition-v1.0.0-rc.1";
+// Backward-compatible alias for older diagnostics clients.
+export const BOSS_ENGINE_VERSION = ATHENA_ENGINE_VERSION;
 
 export function getApiFootballKey() {
   return (

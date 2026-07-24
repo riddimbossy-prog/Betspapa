@@ -1,6 +1,6 @@
 # BetsPapa
 
-## v1.18.3 Papa-First Z Fold and Tablet Shell
+## v1.18.4 Papa-First Z Fold and Tablet Shell
 
 BetsPapa now opens directly on Papa's Pick. The retired home dashboard and Today/Home navigation were removed. The portal layout now uses the Samsung Z Fold inner display and tablet widths with responsive two/three-column boards while keeping the cover display readable. Prediction logic remains `papasense-v1.18.1-no-draw-guard`. See `BETSPAPA_V1_18_3_PAPA_FIRST_FOLD_TABLET.md`.
 
@@ -27,7 +27,7 @@ Royal-purple responsive football prediction platform with a private Render backe
 - A single-engine pick appears only at 86%+ after every strict evidence gate passes.
 - One strongest Banker is published per fixture; split decisions are withheld.
 - Saved Bankers display immediately and refresh quietly in the background.
-- PapaSense remains `papasense-v1.13.0`; Boss Picks remain powered separately by OMNI v2.5.2.
+- PapaSense remains the primary engine; Athena Transition Engine v1.0-RC1 now replaces the retired OMNI Boss Picks page.
 
 ## v1.16.1 performance and Results repair
 
@@ -96,7 +96,7 @@ npm test
 - `/aggressive.html`
 - `/safer.html`
 - `/venue-pattern.html`
-- `/boss-picks.html` — Papa’s Boss Picks, powered by OMNI HT/FT Gatekeeper v2.5.2
+- `/athena.html` — Athena Transition Picks, powered by the frozen Athena v1.0-RC1 engine
 - `/bankers.html` — consensus picks across Papa’s Pick, Aggressive, Safer and Venue Pattern
 - `/results-intelligence.html`
 - `/admin/` — private diagnostics (not linked publicly)
@@ -104,7 +104,7 @@ npm test
 See `BETSPAPA_V1_17_CONSENSUS_BANKERS.md` for current Banker criteria and `BETSPAPA_V1_10_GUIDE.md` for diagnostics and the anti-zombie similarity policy.
 
 
-## Papa’s Boss Picks v1.12
+## Athena Transition Picks v1.18.4
 
 Boss Picks are free and public. No account, login, watchlist, subscription, Supabase Auth migration or VAPID setup is required. The OMNI engine evaluates up to 48 markets and returns every selection scoring 80 or higher that passes all mandatory gates.
 

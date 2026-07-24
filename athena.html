@@ -4,18 +4,20 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
 <meta content="#070b16" name="theme-color"/>
-<title>Privacy Policy — BetsPapa</title>
+<title>Athena Transition Picks — BetsPapa</title>
 <link href="assets/images/favicon-64.png" rel="icon" type="image/png"/>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Space+Grotesk:wght@600;700&amp;display=swap" rel="stylesheet"/>
-<link href="assets/css/content.v111.css" rel="stylesheet"/>
+<link href="assets/css/country-flags.v1175.css" rel="stylesheet"/>
+<link href="assets/css/portal.v1184.css" rel="stylesheet"/>
+<script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
 <link href="assets/css/mobile-nav.v111.css" rel="stylesheet"/>
 <meta content="yes" name="mobile-web-app-capable"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="BetsPapa" name="apple-mobile-web-app-title"/>
-<link href="/manifest.webmanifest?v=1170" rel="manifest"/>
+<link href="/manifest.webmanifest?v=1184" rel="manifest"/>
 <link href="/assets/images/pwa-brand-apple-180.png" rel="apple-touch-icon" sizes="180x180"/>
 <link href="/assets/images/pwa-splash-1290x2796.jpg" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" rel="apple-touch-startup-image"/>
 <link href="/assets/images/pwa-splash-2796x1290.jpg" media="(device-width: 932px) and (device-height: 430px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)" rel="apple-touch-startup-image"/>
@@ -41,26 +43,54 @@
     })();
   </script>
 </head>
-<body>
-<header class="content-header-v150"><a class="content-brand-v150" href="index.html"><img alt="" height="44" src="assets/images/betspapa-papa-mark.png" width="44"/><strong>BETS<span>PAPA</span></strong></a><nav aria-label="Primary navigation"><a href="index.html">Papa’s Pick</a><a href="bankers.html">Bankers</a><a href="athena.html">Athena</a><a href="live-fixtures.html">Live &amp; Fixtures</a><a href="results-intelligence.html">Results</a></nav></header>
+<body data-page="athena-picks">
 <div aria-live="polite" class="pwa-launch-splash" id="pwaSplash" role="status">
 <span class="pwa-splash-accessible">Launching BetsPapa — Papa Knows the Game</span>
 </div>
-<main class="content-main">
-<article class="content-card">
-<a class="content-brand" href="index.html">
+<header class="portal-header">
+<a class="portal-brand" href="index.html">
 <img alt="" src="assets/images/betspapa-papa-mark.png"/>
-<strong>BETS<span>PAPA</span></strong>
+<span><strong>BETS<span>PAPA</span></strong><small>PAPA KNOWS THE GAME</small></span>
 </a>
-<span class="content-kicker">Privacy</span>
-<h1>Privacy Policy</h1>
-<h2>Information used by the site</h2><p>BetsPapa uses the information required to operate football analytics, protect the service and understand technical performance. Private administrator credentials are never stored in public website files.</p><h2>Third-party services</h2><p>Fixture, result and team-history information may be processed through connected data providers, Render and Supabase. Their availability and policies also apply.</p><h2>Future accounts and payments</h2><p>Before public accounts, subscriptions or payments are enabled, BetsPapa should publish the exact information collected, the reason for collection, retention periods and deletion options.</p>
-<div class="content-actions">
-<a class="content-button" href="index.html">Back to BetsPapa</a>
-<a class="content-button secondary" href="index.html">View Papa's Pick</a>
+<nav aria-label="Primary navigation" class="portal-nav" id="portalNav"><a href="index.html">Papa’s Pick</a><a href="bankers.html">Bankers</a><a aria-current="page" class="active" href="athena.html">Athena</a><a href="live-fixtures.html">Live &amp; Fixtures</a><a href="results-intelligence.html">Results</a><a href="responsible.html">More</a></nav>
+<button aria-controls="portalNav" aria-expanded="false" aria-label="Open navigation" class="portal-menu" id="portalMenu" type="button">☰</button>
+</header>
+<main class="portal-main">
+<section class="portal-hero">
+<span class="eyebrow">BetsPapa v1.18.4</span>
+<h1 id="portalTitle">Athena Transition Picks</h1>
+<p id="portalDescription">Athena reads the nine HT/FT states, compatible opposite routes, lead safety, comeback strength, draw structure, goals and odds disagreement. It returns one strongest pick or NO PICK.</p>
+</section>
+<div class="status-strip" id="portalStatus"><span>Connecting to live data…</span><small></small></div>
+<div aria-label="Match status legend" class="match-state-legend">
+<span><i class="pending"></i> Pending</span>
+<span><i class="live"></i> Live</span>
+<span><i class="finished"></i> Settling</span>
+<span><i class="settled"></i> Settled</span>
 </div>
-</article>
+<div class="portal-toolbar">
+<label><span>Date</span><input id="dateFilter" type="date"/></label>
+<button id="refreshButton" type="button">Refresh Athena</button>
+</div>
+<section class="metric-row" id="portalMetrics"></section>
+<div class="section-title"><h2>Athena selections</h2><p>Qualified begins at 80/100 and Prime at 88/100. The score is a frozen RC1 rule strength, not a win probability.</p></div><div id="portalContent"></div><section class="boss-method"><strong>Athena RC1 rule</strong><p>Athena classifies each fixture from compatible HT/FT routes, then tests directional safety, draw locks, goal corridors and odds conflict. No market is published unless the frozen 80-point gate is cleared.</p></section>
+<footer class="portal-footer">
+<span>Sports analytics only. Predictions are not guarantees. 18+.</span>
+<div>
+<a href="responsible.html">Responsible Use</a>
+<a href="privacy.html">Privacy</a>
+<a href="terms.html">Terms</a>
+</div>
+</footer>
 </main>
+<dialog class="portal-dialog" id="portalDialog">
+<div class="dialog-shell">
+<button aria-label="Close" class="dialog-close" id="portalDialogClose" type="button">×</button>
+<div id="portalDialogContent"></div>
+</div>
+</dialog>
+<script src="assets/js/country-flags.v1175.js"></script>
+<script src="assets/js/portal.v1184.js"></script>
 <script src="assets/js/mobile-nav.v1184.js"></script>
 <script src="/assets/js/pwa.v1160.js"></script>
 <script src="/assets/js/ui.v1170.js"></script>

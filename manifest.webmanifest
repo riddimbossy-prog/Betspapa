@@ -1,9 +1,9 @@
 {
   "id": "/",
-  "name": "BetsPapa — Football Intelligence",
+  "name": "BetsPapa \u2014 Football Intelligence",
   "short_name": "BetsPapa",
-  "description": "BetsPapa opens directly on Papa's Pick with consensus Bankers, live match states and verified results.",
-  "start_url": "/?source=pwa&v=1183",
+  "description": "BetsPapa opens on Papa's Pick with Athena HT/FT transition analysis, consensus Bankers, live match states and verified results.",
+  "start_url": "/?source=pwa&v=1184",
   "scope": "/",
   "display": "standalone",
   "display_override": [
@@ -75,10 +75,10 @@
       ]
     },
     {
-      "name": "Papa's Boss Picks",
-      "short_name": "Boss Picks",
-      "description": "Open the strongest OMNI-gated selections",
-      "url": "/boss-picks.html?source=shortcut",
+      "name": "Athena Transition Picks",
+      "short_name": "Athena",
+      "description": "Open the frozen Athena HT/FT transition board",
+      "url": "/athena.html?source=shortcut",
       "icons": [
         {
           "src": "/assets/images/pwa-brand-icon-192.png",
@@ -130,5 +130,5 @@
       "label": "BetsPapa football intelligence dashboard"
     }
   ],
-  "version": "1.18.3"
+  "version": "1.18.4"
 }
