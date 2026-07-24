@@ -1,3 +1,9 @@
+## v1.19.0 — Athena Separation Engine v2
+
+- Splits high-event matches into early, late, mixed and goal-only separation.
+- Uses protected market arbitration for each separation type.
+- Preserves the conflict hard stop.
+
 ## v1.18.6 — Athena Conflict Hard Stop
 
 - Made `CONFLICT_NO_PICK` a mandatory final stop in Athena arbitration.

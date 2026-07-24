@@ -1,0 +1,22 @@
+BetsPapa v1.19.0 validation
+===========================
+
+Service version: 1.19.0
+Athena engine: athena-separation-v2.0.0
+Athena arbitration: 2.0.0
+Original Athena scoring runtime: 1.0.0-rc.1
+
+Automated tests: 94 passed
+Athena separation tests: 4 passed
+JavaScript syntax: passed
+Workflow YAML: passed
+HTML/local asset checks: passed
+Manifest JSON: passed
+ZIP integrity: passed after packaging
+
+Core v2 behaviours:
+- EARLY_SEPARATION prefers qualified Over 2.5.
+- LATE_SEPARATION protects with qualified Over 1.5.
+- MIXED_SEPARATION uses Over 1.5 unless Over 2.5 is at least five points stronger.
+- GOAL_ONLY_HIGH_EVENT requires a stricter Over 2.5 gate.
+- CONFLICT_NO_PICK remains a hard stop.

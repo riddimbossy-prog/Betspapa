@@ -15,6 +15,7 @@ import {
   ATHENA_PRIME_SCORE,
   arbitrateAthenaV11
 } from "../engine/athenaV11Arbiter.js";
+import { ATHENA_SEPARATION_VERSION, evaluateAthenaSeparationV2 } from "../engine/athenaSeparationEngineV2.js";
 import { dateRangeUtc } from "../utils/date.js";
 import { fixtureMatchState } from "./matchStateService.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
@@ -416,7 +417,7 @@ function routeAudit(routes) {
   })).sort((a, b) => b.adjusted - a.adjusted);
 }
 
-function explanationFor(result, venueResult, samples, arbitration) {
+function explanationFor(result, venueResult, samples, arbitration, separation) {
   const primary = arbitration?.primary || result.banker;
   const switched = Boolean(arbitration?.switchedFromRc1);
   const original = arbitration?.originalRc1Banker;
@@ -429,6 +430,7 @@ function explanationFor(result, venueResult, samples, arbitration) {
     ...(primary?.reasons || []),
     ...(arbitration?.rationale || []),
     `Athena classified the fixture as ${String(result.classification?.type || "CONFLICT").replaceAll("_", " ").toLowerCase()}.`,
+    separation ? `Athena v2 separation timing: ${String(separation.type).replaceAll("_", " ").toLowerCase()} (${separation.confidence}/100).` : null,
     `The selected market reached ${Number(primary?.score || 0).toFixed(0)}/100 and cleared Athena v1.1.1's ${ATHENA_PRIMARY_SCORE}-point score-and-safety gate.`
   ].filter(Boolean);
 
@@ -471,6 +473,7 @@ function explanationFor(result, venueResult, samples, arbitration) {
     oddsConflict: result.oddsConflict,
     routes: routeAudit(result.routes),
     venueClassification: venueResult?.classification || null,
+    separation,
     arbitration: {
       version: arbitration?.version || ATHENA_ARBITRATION_VERSION,
       rule: arbitration?.rule || null,
@@ -539,7 +542,8 @@ async function buildAthenaPicks(supabase, date) {
       engineVersion: ATHENA_ENGINE_VERSION,
       runtimeEngineVersion: ATHENA_RUNTIME_VERSION,
       arbitrationVersion: ATHENA_ARBITRATION_VERSION,
-      mode: "score-safety-v1.1.1",
+      mode: "separation-v2",
+      separationVersion: ATHENA_SEPARATION_VERSION,
       reviewedFixtures: 0,
       qualifiedCount: 0,
       primeCount: 0,
@@ -649,7 +653,8 @@ async function buildAthenaPicks(supabase, date) {
         home: venueHome,
         away: venueAway
       });
-      const arbitration = arbitrateAthenaV11({ result, venueResult, samples });
+      const separation = evaluateAthenaSeparationV2(result);
+      const arbitration = arbitrateAthenaV11({ result, venueResult, samples, separation });
 
       if (arbitration.primary?.market === MARKETS.NO_PICK) {
         const conflictHardStop = arbitration.rule === "CONFLICT_HARD_STOP";
@@ -693,7 +698,8 @@ async function buildAthenaPicks(supabase, date) {
         engineVersion: ATHENA_ENGINE_VERSION,
         runtimeEngineVersion: ATHENA_RUNTIME_VERSION,
         arbitrationVersion: ATHENA_ARBITRATION_VERSION,
-        mode: "score-safety-v1.1.1",
+        mode: "separation-v2",
+        separationVersion: ATHENA_SEPARATION_VERSION,
         grade,
         score: Number(arbitration.primary.score || 0),
         marketId: market,
@@ -701,6 +707,7 @@ async function buildAthenaPicks(supabase, date) {
         selection,
         selected: arbitration.primary,
         classification: result.classification,
+        separation,
         story: result.story,
         arbitration,
         alternatives: (arbitration.alternatives || []).map((item) => ({
@@ -710,7 +717,7 @@ async function buildAthenaPicks(supabase, date) {
           role: item.role,
           warnings: item.warnings || []
         })),
-        explanation: explanationFor(result, venueResult, samples, arbitration),
+        explanation: explanationFor(result, venueResult, samples, arbitration, separation),
         samples,
         oddsConflict: result.oddsConflict,
         routeAudit: routeAudit(result.routes)

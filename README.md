@@ -1,3 +1,7 @@
+## v1.19.0 Athena Separation Engine v2
+
+Athena now predicts whether separation is likely early, late, mixed or goal-only before choosing the final market. See `ATHENA_SEPARATION_ENGINE_V2.md`.
+
 # BetsPapa
 
 ## v1.18.6 Athena Conflict Hard Stop

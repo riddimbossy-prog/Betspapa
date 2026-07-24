@@ -1,6 +1,6 @@
 import { CLASSIFICATIONS, MARKETS } from "./athena-transition-engine/src/index.js";
 
-export const ATHENA_ARBITRATION_VERSION = "1.1.1";
+export const ATHENA_ARBITRATION_VERSION = "2.0.0";
 export const ATHENA_PRIMARY_SCORE = 80;
 export const ATHENA_PRIME_SCORE = 88;
 
@@ -196,9 +196,10 @@ function describe(candidate) {
   };
 }
 
-function chooseByClassification({ result, candidates, bestOverall, bestDirectional, bestGoal, bestOpenGoal, bestControl }) {
+function chooseByClassification({ result, separation, candidates, bestOverall, bestDirectional, bestGoal, bestOpenGoal, bestControl }) {
   const type = result?.classification?.type;
   const rationale = [];
+
 
   if (type === CLASSIFICATIONS.CONFLICT_NO_PICK) {
     rationale.push(
@@ -211,6 +212,47 @@ function chooseByClassification({ result, candidates, bestOverall, bestDirection
       hardStop: true
     };
   }
+
+  if (separation?.type === "EARLY_SEPARATION") {
+    const over25 = strongest(candidates, (c) => c.market === MARKETS.OVER_2_5);
+    if (over25) {
+      rationale.push("Athena v2 detected early separation; Over 2.5 is preferred when it clears the primary gate.");
+      return { primary: over25, rationale, rule: "V2_EARLY_SEPARATION" };
+    }
+  }
+  if (separation?.type === "LATE_SEPARATION") {
+    const over15 = strongest(candidates, (c) => c.market === MARKETS.OVER_1_5);
+    if (over15) {
+      rationale.push("Athena v2 detected late separation; Over 1.5 protects against a quiet first half and a second-half break.");
+      return { primary: over15, rationale, rule: "V2_LATE_SEPARATION" };
+    }
+  }
+  if (separation?.type === "MIXED_SEPARATION") {
+    const over15 = strongest(candidates, (c) => c.market === MARKETS.OVER_1_5);
+    const over25 = strongest(candidates, (c) => c.market === MARKETS.OVER_2_5);
+    if (over25 && over15 && over25.score >= over15.score + 5) {
+      rationale.push("Athena v2 found mixed timing but Over 2.5 held a five-point score advantage.");
+      return { primary: over25, rationale, rule: "V2_MIXED_OVER25_MARGIN" };
+    }
+    if (over15) {
+      rationale.push("Athena v2 found mixed timing, so the lower Over 1.5 line is preferred unless Over 2.5 is clearly stronger.");
+      return { primary: over15, rationale, rule: "V2_MIXED_OVER15_PROTECTION" };
+    }
+  }
+  if (separation?.type === "GOAL_ONLY_HIGH_EVENT") {
+    const over15 = strongest(candidates, (c) => c.market === MARKETS.OVER_1_5);
+    const over25 = strongest(candidates, (c) => c.market === MARKETS.OVER_2_5);
+    if (over25 && over15 && over25.score >= 90 && over25.score >= over15.score + 4) {
+      rationale.push("The high-event profile lacked timing direction, but Over 2.5 cleared the stricter 90-point goal-only gate.");
+      return { primary: over25, rationale, rule: "V2_GOAL_ONLY_OVER25_STRICT" };
+    }
+    if (over15) {
+      rationale.push("The high-event profile lacked timing direction, so Athena v2 uses Over 1.5 as the protected goal-only selection.");
+      return { primary: over15, rationale, rule: "V2_GOAL_ONLY_OVER15" };
+    }
+  }
+
+
 
   if ([CLASSIFICATIONS.HIGH_EVENT_EARLY_SEPARATION, CLASSIFICATIONS.SWING_GAME].includes(type)) {
     if (bestOpenGoal) {
@@ -289,7 +331,7 @@ function saferAlternative(candidates, primary) {
   );
 }
 
-export function arbitrateAthenaV11({ result, venueResult = null, samples = {} }) {
+export function arbitrateAthenaV11({ result, venueResult = null, samples = {}, separation = null }) {
   const candidates = eligibleCandidates(result, venueResult, samples);
   const bestOverall = strongest(candidates);
   const bestDirectional = strongest(candidates, (candidate) => DIRECTIONAL_RESULT_MARKETS.has(candidate.market));
@@ -299,6 +341,7 @@ export function arbitrateAthenaV11({ result, venueResult = null, samples = {} })
 
   const decision = chooseByClassification({
     result,
+    separation,
     candidates,
     bestOverall,
     bestDirectional,
@@ -360,6 +403,7 @@ export function arbitrateAthenaV11({ result, venueResult = null, samples = {} })
     eligibleCount: candidates.length,
     rejectedCount: Math.max(0, uniqueMarkets(result).length - candidates.length),
     classification: result?.classification?.type || null,
+    separation,
     rationale: decision.rationale,
     rule: decision.rule
   };

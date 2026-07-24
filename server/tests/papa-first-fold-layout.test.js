@@ -36,7 +36,7 @@ test("mobile navigation starts with Papa and has no Home tab", async () => {
 });
 
 test("Fold and tablet responsive layer keeps multi-column boards", async () => {
-  const css = await source("assets/css/portal.v1186.css");
+  const css = await source("assets/css/portal.v1190.css");
   assert.match(css, /max-width:1080px/);
   assert.match(css, /min-width:520px/);
   assert.match(css, /repeat\(auto-fit,minmax\(260px,1fr\)\)/);
@@ -46,7 +46,7 @@ test("Fold and tablet responsive layer keeps multi-column boards", async () => {
 test("PWA launches at the Papa's Pick root", async () => {
   const manifest = JSON.parse(await source("manifest.webmanifest"));
   assert.equal(manifest.start_url, "/?source=pwa&v=1186");
-  assert.equal(manifest.version, "1.18.6");
+  assert.equal(manifest.version, "1.19.0");
   const papa = manifest.shortcuts.find((item) => item.name === "Papa's Pick");
   assert.equal(papa.url, "/?source=shortcut");
 });
