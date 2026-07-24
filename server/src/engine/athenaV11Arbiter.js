@@ -1,6 +1,6 @@
 import { CLASSIFICATIONS, MARKETS } from "./athena-transition-engine/src/index.js";
 
-export const ATHENA_ARBITRATION_VERSION = "1.1.0";
+export const ATHENA_ARBITRATION_VERSION = "1.1.1";
 export const ATHENA_PRIMARY_SCORE = 80;
 export const ATHENA_PRIME_SCORE = 88;
 
@@ -200,6 +200,18 @@ function chooseByClassification({ result, candidates, bestOverall, bestDirection
   const type = result?.classification?.type;
   const rationale = [];
 
+  if (type === CLASSIFICATIONS.CONFLICT_NO_PICK) {
+    rationale.push(
+      "Athena classified the fixture as CONFLICT_NO_PICK, so no scored market may be promoted to an official pick. Qualified scores remain observations only."
+    );
+    return {
+      primary: null,
+      rationale,
+      rule: "CONFLICT_HARD_STOP",
+      hardStop: true
+    };
+  }
+
   if ([CLASSIFICATIONS.HIGH_EVENT_EARLY_SEPARATION, CLASSIFICATIONS.SWING_GAME].includes(type)) {
     if (bestOpenGoal) {
       if (
@@ -267,7 +279,7 @@ function chooseByClassification({ result, candidates, bestOverall, bestDirection
     return { primary: bestOverall, rationale, rule: "HIGHEST_SAFE_SCORE" };
   }
 
-  return { primary: null, rationale: ["No market cleared Athena v1.1 score and safety arbitration."], rule: "NO_PICK" };
+  return { primary: null, rationale: ["No market cleared Athena v1.1.1 score and safety arbitration."], rule: "NO_PICK" };
 }
 
 function saferAlternative(candidates, primary) {
@@ -317,6 +329,7 @@ export function arbitrateAthenaV11({ result, venueResult = null, samples = {} })
 
   return {
     version: ATHENA_ARBITRATION_VERSION,
+    hardStop: Boolean(decision.hardStop),
     primary: primary
       ? {
           ...primary,
@@ -328,7 +341,9 @@ export function arbitrateAthenaV11({ result, venueResult = null, samples = {} })
           market: MARKETS.NO_PICK,
           score: 0,
           reasons: decision.rationale,
-          warnings: ["ATHENA_V11_NO_PICK"],
+          warnings: [decision.rule === "CONFLICT_HARD_STOP"
+            ? "ATHENA_V111_CONFLICT_HARD_STOP"
+            : "ATHENA_V11_NO_PICK"],
           fatal: false,
           role: "NO_PICK",
           arbitrationRule: decision.rule,

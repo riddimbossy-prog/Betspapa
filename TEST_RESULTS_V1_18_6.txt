@@ -1,0 +1,24 @@
+BetsPapa v1.18.6 validation
+===========================
+
+Service version: 1.18.6
+PapaSense engine: papasense-v1.18.1-no-draw-guard
+Athena engine: athena-transition-v1.1.1-conflict-hard-stop
+Athena arbitration: 1.1.1
+Frozen Athena RC1 scoring runtime: 1.0.0-rc.1
+
+Automated tests: 90 passed
+Athena conflict-hard-stop regression tests: 3 passed
+JavaScript syntax: 110 files passed
+Workflow YAML: 4 files passed
+HTML/local asset checks: 17 pages passed
+Manifest JSON: passed
+ZIP integrity: pending packaging validation
+
+Critical regression result:
+- Kopavogur vs Njardvik classification: CONFLICT_NO_PICK
+- RC1 market observation: Over 1.5 at 86
+- Athena v1.1.1 official output: NO PICK
+- Arbitration rule: CONFLICT_HARD_STOP
+- High-event directional conflict may still publish a qualified goal market
+- Conflict observations are not official picks

@@ -1,13 +1,13 @@
-BetsPapa v1.18.5 — FULL REPLACE
+BetsPapa v1.18.6 — FULL REPLACE
 ================================
 
 1. Extract this ZIP.
-2. Open the existing BetsPapa repository folder in File Explorer.
+2. Open the existing BetsPapa repository folder.
 3. Copy every extracted file and folder into the repository root.
 4. Choose Replace All when prompted.
-5. In GitHub Desktop, commit:
+5. Commit in GitHub Desktop:
 
-   BetsPapa v1.18.5 Athena score safety arbitration
+   BetsPapa v1.18.6 Athena conflict hard stop
 
 6. Push origin.
 7. Wait for GitHub Pages and Render deployment.
@@ -17,11 +17,11 @@ BetsPapa v1.18.5 — FULL REPLACE
 
 Expected service version:
 
-   1.18.5
+   1.18.6
 
 Expected Athena engine:
 
-   athena-transition-v1.1.0-score-safety
+   athena-transition-v1.1.1-conflict-hard-stop
 
 9. Open once:
 
@@ -29,4 +29,5 @@ Expected Athena engine:
 
 10. Run GitHub Actions → BetsPapa Prepare Tomorrow Board.
 
+The Athena engine version changed, so the Athena board must be regenerated.
 No Supabase SQL or migration is required.

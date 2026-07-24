@@ -1,3 +1,15 @@
+## v1.18.6 — Athena Conflict Hard Stop
+
+- Made `CONFLICT_NO_PICK` a mandatory final stop in Athena arbitration.
+- Prevented `HIGHEST_SAFE_SCORE` from publishing Over 1.5 or another high-scoring market after the classifier rejected the fixture.
+- Kept the strongest rejected market as an observation for diagnostics only.
+- Prevented conflict observations from being published, settled, or counted toward Consensus Bankers.
+- Preserved high-event goal selections when the classification is valid but team direction remains conflicted.
+- Added the Kopavogur vs Njardvik regression: Over 1.5 at 86 remains an observation while the official result is NO PICK.
+- Athena engine version is `athena-transition-v1.1.1-conflict-hard-stop`.
+- PapaSense remains `papasense-v1.18.1-no-draw-guard`.
+- No Supabase migration is required.
+
 ## v1.18.5 — Athena v1.1 Score-and-Safety Arbitration
 
 - Replaced Athena RC1's first-passing-market priority with full qualified-market comparison.

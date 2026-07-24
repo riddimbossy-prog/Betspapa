@@ -1,5 +1,9 @@
 # BetsPapa
 
+## v1.18.6 Athena Conflict Hard Stop
+
+Athena now treats `CONFLICT_NO_PICK` as a mandatory final decision. A market score above 80 can remain an internal observation, but it cannot be promoted to an official pick, graded, or counted in Consensus Bankers when the HT/FT classifier found no clear shared market. High-event goal classifications still work normally. See `ATHENA_TRANSITION_ENGINE_V1_18_6.md`.
+
 ## v1.18.5 Athena v1.1 Score-and-Safety Arbitration
 
 Athena now evaluates every qualified market before publishing its primary selection. The original RC1 scoring core remains intact, but the old “first market above 80 wins” priority is replaced by classification-specific score-and-safety arbitration. High-event fixtures normally select the strongest qualified attacking goal market; a directional Win Either Half selection may replace it only when it is fully confirmed and within five points. Stable directional fixtures keep a team market only after overall direction, venue split, bookmaker direction, lead protection and opponent comeback checks all pass. See `ATHENA_TRANSITION_ENGINE_V1_18_5.md`.

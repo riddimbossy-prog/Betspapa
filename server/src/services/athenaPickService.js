@@ -429,12 +429,12 @@ function explanationFor(result, venueResult, samples, arbitration) {
     ...(primary?.reasons || []),
     ...(arbitration?.rationale || []),
     `Athena classified the fixture as ${String(result.classification?.type || "CONFLICT").replaceAll("_", " ").toLowerCase()}.`,
-    `The selected market reached ${Number(primary?.score || 0).toFixed(0)}/100 and cleared Athena v1.1's ${ATHENA_PRIMARY_SCORE}-point score-and-safety gate.`
+    `The selected market reached ${Number(primary?.score || 0).toFixed(0)}/100 and cleared Athena v1.1.1's ${ATHENA_PRIMARY_SCORE}-point score-and-safety gate.`
   ].filter(Boolean);
 
   if (switched && original) {
     reasons.push(
-      `Athena v1.1 replaced the RC1 priority pick (${String(original.market || "").replaceAll("_", " ")} · ${Number(original.score || 0).toFixed(0)}) because another safe market ranked stronger after classification-specific arbitration.`
+      `Athena v1.1.1 replaced the RC1 priority pick (${String(original.market || "").replaceAll("_", " ")} · ${Number(original.score || 0).toFixed(0)}) because another safe market ranked stronger after classification-specific arbitration.`
     );
   }
 
@@ -453,7 +453,7 @@ function explanationFor(result, venueResult, samples, arbitration) {
     ...(primary?.warnings || []),
     ...(result.oddsConflict?.conflict ? ["Bookmaker direction disagreed with Athena's directional reading."] : []),
     "The Athena score is a rules-based strength score, not a guaranteed outcome probability.",
-    "Athena v1.1 keeps the RC1 scoring model but replaces first-passing-market priority with score-and-safety arbitration."
+    "Athena v1.1.1 keeps the RC1 scoring model but replaces first-passing-market priority with score-and-safety arbitration."
   ];
 
   if (venueResult) {
@@ -539,7 +539,7 @@ async function buildAthenaPicks(supabase, date) {
       engineVersion: ATHENA_ENGINE_VERSION,
       runtimeEngineVersion: ATHENA_RUNTIME_VERSION,
       arbitrationVersion: ATHENA_ARBITRATION_VERSION,
-      mode: "score-safety-v1.1",
+      mode: "score-safety-v1.1.1",
       reviewedFixtures: 0,
       qualifiedCount: 0,
       primeCount: 0,
@@ -551,7 +551,8 @@ async function buildAthenaPicks(supabase, date) {
         primeScore: ATHENA_PRIME_SCORE,
         onePickOnly: true,
         frozenScoringCore: true,
-        scoreSafetyArbitration: true
+        scoreSafetyArbitration: true,
+        conflictNoPickHardStop: true
       },
       picks: [],
       rejections: [],
@@ -651,14 +652,24 @@ async function buildAthenaPicks(supabase, date) {
       const arbitration = arbitrateAthenaV11({ result, venueResult, samples });
 
       if (arbitration.primary?.market === MARKETS.NO_PICK) {
+        const conflictHardStop = arbitration.rule === "CONFLICT_HARD_STOP";
         rejected.push({
           fixtureId: fixture.external_fixture_id,
-          reason: arbitration.primary?.reasons?.[0] || "Athena v1.1 returned NO PICK",
+          reason: conflictHardStop
+            ? "Athena conflict hard stop — no clear shared HT/FT market"
+            : arbitration.primary?.reasons?.[0] || "Athena v1.1.1 returned NO PICK",
           failures: [
             ...(result.classification?.warnings || []),
             ...(result.oddsConflict?.conflict ? ["ODDS_DIRECTION_CONFLICT"] : []),
             ...(arbitration.primary?.warnings || [])
-          ]
+          ],
+          observation: conflictHardStop
+            ? {
+                bestOverall: arbitration.bestOverall || null,
+                bestGoal: arbitration.bestGoal || null,
+                note: "Observation only — not an official Athena selection"
+              }
+            : null
         });
         continue;
       }
@@ -682,7 +693,7 @@ async function buildAthenaPicks(supabase, date) {
         engineVersion: ATHENA_ENGINE_VERSION,
         runtimeEngineVersion: ATHENA_RUNTIME_VERSION,
         arbitrationVersion: ATHENA_ARBITRATION_VERSION,
-        mode: "score-safety-v1.1",
+        mode: "score-safety-v1.1.1",
         grade,
         score: Number(arbitration.primary.score || 0),
         marketId: market,
@@ -720,7 +731,7 @@ async function buildAthenaPicks(supabase, date) {
     engineVersion: ATHENA_ENGINE_VERSION,
     runtimeEngineVersion: ATHENA_RUNTIME_VERSION,
     arbitrationVersion: ATHENA_ARBITRATION_VERSION,
-    mode: "score-safety-v1.1",
+    mode: "score-safety-v1.1.1",
     reviewedFixtures: fixtures.length,
     qualifiedCount: picks.length,
     primeCount: picks.filter((pick) => pick.grade === "PRIME").length,
@@ -733,13 +744,14 @@ async function buildAthenaPicks(supabase, date) {
       onePickOnly: true,
       frozenScoringCore: true,
       scoreSafetyArbitration: true,
+      conflictNoPickHardStop: true,
       classifications: Object.values(CLASSIFICATIONS)
     },
     picks,
     rejections: rejectionCounter(rejected),
     status: picks.length
-      ? `${picks.length} Athena v1.1 pick${picks.length === 1 ? "" : "s"} cleared score-and-safety arbitration.`
-      : "NO ATHENA PICK — no fixture cleared Athena v1.1 score-and-safety arbitration."
+      ? `${picks.length} Athena v1.1.1 pick${picks.length === 1 ? "" : "s"} cleared score-and-safety arbitration.`
+      : "NO ATHENA PICK — no fixture cleared Athena v1.1.1 score-and-safety arbitration."
   };
 }
 
