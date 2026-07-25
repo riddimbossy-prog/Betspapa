@@ -57,7 +57,7 @@
 </header>
 <main class="portal-main">
 <section class="portal-hero">
-<span class="eyebrow">BetsPapa v1.19.0</span>
+<span class="eyebrow">BetsPapa v1.19.1</span>
 <h1 id="portalTitle">Athena Transition Picks</h1>
 <p id="portalDescription">Athena v1.1.1 reads all nine HT/FT states, applies score-and-safety arbitration, and now treats CONFLICT NO PICK as a mandatory stop. Strong goal scores remain observations when the HT/FT structure has no clear shared market.</p>
 </section>
@@ -68,12 +68,21 @@
 <span><i class="finished"></i> Settling</span>
 <span><i class="settled"></i> Settled</span>
 </div>
-<div class="portal-toolbar">
+<div class="portal-toolbar athena-toolbar">
 <label><span>Date</span><input id="dateFilter" type="date"/></label>
+<label><span>Market</span><select id="athenaMarketFilter"><option value="">All markets</option></select></label>
+<label><span>Confidence</span>
+<select id="athenaConfidenceFilter">
+<option value="">All confidence</option>
+<option value="90-plus">Elite 90+</option>
+<option value="prime">Prime 88+</option>
+<option value="qualified">Qualified 80–87</option>
+</select>
+</label>
 <button id="refreshButton" type="button">Refresh Athena</button>
 </div>
 <section class="metric-row" id="portalMetrics"></section>
-<div class="section-title"><h2>Athena selections</h2><p>Qualified begins at 80/100 and Prime at 88/100. A score above 80 is not enough when the classifier returns CONFLICT NO PICK.</p></div><div id="portalContent"></div><section class="boss-method"><strong>Athena v1.1.1 conflict guard</strong><p>The RC1 scoring core remains intact. Score-and-safety arbitration still compares every qualified market, but CONFLICT NO PICK is now a hard stop. In that state, goal scores may be recorded as observations only and cannot become an official Athena selection.</p></section>
+<div class="section-title"><h2>Athena selections</h2><p id="athenaFilterSummary">Qualified begins at 80/100 and Prime at 88/100. Use the filters to narrow the board instantly.</p></div><div id="portalContent"></div><section class="boss-method"><strong>Athena v1.1.1 conflict guard</strong><p>The RC1 scoring core remains intact. Score-and-safety arbitration still compares every qualified market, but CONFLICT NO PICK is now a hard stop. In that state, goal scores may be recorded as observations only and cannot become an official Athena selection.</p></section>
 <footer class="portal-footer">
 <span>Sports analytics only. Predictions are not guarantees. 18+.</span>
 <div>

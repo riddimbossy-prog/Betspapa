@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.19.0",
+  "version": "1.19.1",
   "private": true,
-  "description": "BetsPapa v1.19.0 makes Athena CONFLICT_NO_PICK a mandatory hard stop.",
+  "description": "BetsPapa v1.19.1 adds instant market and confidence filters to Athena.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

@@ -1,0 +1,11 @@
+BetsPapa v1.19.1 — Athena Filters Test Results
+Date: 2026-07-25
+
+PASS — 94/94 Node test cases
+PASS — portal.v1190.js syntax check
+PASS — sw.js syntax check
+PASS — Athena HTML control IDs are present and unique
+PASS — Market filter is populated from current Athena picks
+PASS — Confidence filters: Elite 90+, Prime 88+, Qualified 80–87
+PASS — Filtered-empty state is distinct from a true NO ATHENA PICK state
+PASS — Athena engine, API route, settlement and conflict guard remain unchanged

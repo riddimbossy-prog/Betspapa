@@ -1,4 +1,4 @@
-const CACHE_NAME = "betspapa-pwa-v1190";
+const CACHE_NAME = "betspapa-pwa-v1191";
 const OFFLINE_URL = "/offline.html";
 
 const CORE_ASSETS = [

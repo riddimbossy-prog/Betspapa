@@ -1,3 +1,11 @@
+# BetsPapa Changelog
+
+## v1.19.1 — Athena market and confidence filters
+- Added instant market filtering on Athena’s page.
+- Added Elite 90+, Prime 88+, and Qualified 80–87 confidence filters.
+- Added filtered result counts and a dedicated no-match message.
+- Preserved all Athena engine and API logic.
+
 ## v1.19.0 — Athena Separation Engine v2
 
 - Splits high-event matches into early, late, mixed and goal-only separation.

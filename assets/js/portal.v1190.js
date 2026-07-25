@@ -971,6 +971,15 @@
       ${alternatives.length ? `<div class="boss-alternatives"><h3>Qualified Athena alternatives</h3>${alternatives.map((alt) => `<span><b>${escapeHtml(String(alt.role || "ALTERNATIVE").replaceAll("_", " "))}</b> · ${escapeHtml(alt.marketName)} · ${Number(alt.score || 0).toFixed(0)}/100</span>`).join("")}</div>` : ""}`;
   }
 
+  function athenaConfidenceMatches(item, filterValue) {
+    const score = Number(item?.score || 0);
+    if (!filterValue) return true;
+    if (filterValue === "90-plus") return score >= 90;
+    if (filterValue === "prime") return score >= 88;
+    if (filterValue === "qualified") return score >= 80 && score < 88;
+    return true;
+  }
+
   function renderAthena(payload) {
     const picks = payload.picks || [];
     const rejectionRows = payload.rejections || [];
@@ -980,19 +989,53 @@
       <div class="metric"><span>Prime</span><strong>${payload.primeCount || 0}</strong><small>Engine strength of 88/100 or higher</small></div>
       <div class="metric"><span>No Pick</span><strong>${payload.rejectedCount || 0}</strong><small>Sample, conflict or arbitration gate failed</small></div>`;
 
-    $("#portalContent").innerHTML = picks.length
-      ? `<div class="portal-grid boss-grid athena-grid">${picks.map(athenaCard).join("")}</div>
-         <section class="boss-rejection-panel"><h2>Why other matches received NO PICK</h2>${rejectionRows.map((row) => `<div><span>${escapeHtml(row.reason)}</span><strong>${row.count}</strong></div>`).join("") || "<p>No rejection summary was returned.</p>"}</section>`
-      : `<div class="empty-card boss-empty"><strong>NO ATHENA PICK</strong><span>${escapeHtml(payload.status || "No fixture cleared Athena v1.1.1 score-and-safety arbitration.")}</span><small>CONFLICT NO PICK is a hard stop. Strong market scores may remain observations, but Athena will not publish them as official selections.</small></div>
-         <section class="boss-rejection-panel"><h2>Why the board is empty</h2>${rejectionRows.map((row) => `<div><span>${escapeHtml(row.reason)}</span><strong>${row.count}</strong></div>`).join("") || "<p>No fixture had enough complete history.</p>"}</section>`;
+    const marketFilter = $("#athenaMarketFilter");
+    const confidenceFilter = $("#athenaConfidenceFilter");
+    const previousMarket = marketFilter?.value || "";
+    const markets = [...new Set(picks.map((item) => item.market).filter(Boolean))].sort();
 
-    $$(".athena-card").forEach((card) => {
-      card.addEventListener("click", () => {
-        const item = picks.find((row) => String(row.fixtureId) === card.dataset.fixture);
-        if (item) openDialog(athenaDialog(item));
+    if (marketFilter) {
+      marketFilter.innerHTML = `<option value="">All markets</option>${markets.map((market) => `<option value="${escapeHtml(market)}">${escapeHtml(market)}</option>`).join("")}`;
+      marketFilter.value = markets.includes(previousMarket) ? previousMarket : "";
+    }
+
+    const draw = () => {
+      const selectedMarket = marketFilter?.value || "";
+      const selectedConfidence = confidenceFilter?.value || "";
+      const filtered = picks
+        .filter((item) => !selectedMarket || item.market === selectedMarket)
+        .filter((item) => athenaConfidenceMatches(item, selectedConfidence))
+        .sort((a, b) => Number(b.score || 0) - Number(a.score || 0) || new Date(a.kickoff) - new Date(b.kickoff));
+
+      const filtersActive = Boolean(selectedMarket || selectedConfidence);
+      const summary = $("#athenaFilterSummary");
+      if (summary) {
+        summary.textContent = filtersActive
+          ? `Showing ${filtered.length} of ${picks.length} Athena selections. Clear the filters to restore the full board.`
+          : `Showing all ${picks.length} Athena selections. Qualified begins at 80/100 and Prime at 88/100.`;
+      }
+
+      if (filtered.length) {
+        $("#portalContent").innerHTML = `<div class="portal-grid boss-grid athena-grid">${filtered.map(athenaCard).join("")}</div>
+          <section class="boss-rejection-panel"><h2>Why other matches received NO PICK</h2>${rejectionRows.map((row) => `<div><span>${escapeHtml(row.reason)}</span><strong>${row.count}</strong></div>`).join("") || "<p>No rejection summary was returned.</p>"}</section>`;
+      } else if (picks.length && filtersActive) {
+        $("#portalContent").innerHTML = `<div class="empty-card boss-empty"><strong>NO PICKS MATCH THESE FILTERS</strong><span>Try another market or confidence level.</span><small>Athena still has ${picks.length} qualified selection${picks.length === 1 ? "" : "s"} on the full board.</small></div>`;
+      } else {
+        $("#portalContent").innerHTML = `<div class="empty-card boss-empty"><strong>NO ATHENA PICK</strong><span>${escapeHtml(payload.status || "No fixture cleared Athena v1.1.1 score-and-safety arbitration.")}</span><small>CONFLICT NO PICK is a hard stop. Strong market scores may remain observations, but Athena will not publish them as official selections.</small></div>
+          <section class="boss-rejection-panel"><h2>Why the board is empty</h2>${rejectionRows.map((row) => `<div><span>${escapeHtml(row.reason)}</span><strong>${row.count}</strong></div>`).join("") || "<p>No fixture had enough complete history.</p>"}</section>`;
+      }
+
+      $$(".athena-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          const item = filtered.find((row) => String(row.fixtureId) === card.dataset.fixture);
+          if (item) openDialog(athenaDialog(item));
+        });
       });
-    });
+    };
 
+    if (marketFilter) marketFilter.onchange = draw;
+    if (confidenceFilter) confidenceFilter.onchange = draw;
+    draw();
     scheduleLiveReload(() => loadAthena({ silent: true }), picks);
   }
 

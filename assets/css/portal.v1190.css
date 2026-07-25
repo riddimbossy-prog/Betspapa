@@ -790,3 +790,9 @@ body.portal-dialog-open {
 
 /* Athena Separation Engine v2 */
 .athena-separation-badge{display:inline-flex;gap:.35rem;align-items:center;padding:.35rem .6rem;border:1px solid rgba(168,85,247,.4);border-radius:999px;background:rgba(88,28,135,.2);font-size:.75rem;font-weight:800}
+
+
+/* BetsPapa v1.19.1 — Athena market and confidence filters */
+.athena-toolbar select { cursor:pointer; }
+.athena-toolbar select:focus { border-color:rgba(245,201,94,.62); box-shadow:0 0 0 3px rgba(245,201,94,.10); }
+#athenaFilterSummary { overflow-wrap:anywhere; }

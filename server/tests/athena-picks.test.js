@@ -111,6 +111,10 @@ test("Boss Picks UI is replaced by Athena while old bookmarks redirect", async (
   const portal = await readFile(resolve(projectRoot, "assets/js/portal.v1190.js"), "utf8");
   assert.match(athenaHtml, /data-page="athena-picks"/);
   assert.match(athenaHtml, /Athena Transition Picks/);
+  assert.match(athenaHtml, /id="athenaMarketFilter"/);
+  assert.match(athenaHtml, /id="athenaConfidenceFilter"/);
+  assert.match(portal, /function athenaConfidenceMatches/);
+  assert.match(portal, /NO PICKS MATCH THESE FILTERS/);
   assert.match(bossRedirect, /location\.replace\("athena\.html"/);
   assert.match(portal, /\/api\/athena\/today/);
   assert.doesNotMatch(athenaHtml, /OMNI v2\.5\.2/);
