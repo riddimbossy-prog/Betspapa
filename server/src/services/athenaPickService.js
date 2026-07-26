@@ -1,5 +1,6 @@
 import {
   ATHENA_ENGINE_VERSION,
+  ATHENA_PROFILE_STATUSES,
   FINISHED_PROFILE_STATUSES
 } from "../config.js";
 import {
@@ -40,7 +41,11 @@ const DIRECTIONAL_MARKETS = new Map([
   [MARKETS.HOME_DOUBLE_CHANCE, "HOME"],
   [MARKETS.AWAY_DOUBLE_CHANCE, "AWAY"],
   [MARKETS.HOME_OVER_0_5, "HOME"],
-  [MARKETS.AWAY_OVER_0_5, "AWAY"]
+  [MARKETS.AWAY_OVER_0_5, "AWAY"],
+  [MARKETS.HOME_SECOND_HALF_OVER_0_5, "HOME"],
+  [MARKETS.AWAY_SECOND_HALF_OVER_0_5, "AWAY"],
+  [MARKETS.HOME_SECOND_HALF_DNB, "HOME"],
+  [MARKETS.AWAY_SECOND_HALF_DNB, "AWAY"]
 ]);
 
 function finite(value) {
@@ -50,7 +55,7 @@ function finite(value) {
 
 function validFinishedFixture(fixture) {
   return (
-    FINISHED_PROFILE_STATUSES.has(fixture?.status) &&
+    ATHENA_PROFILE_STATUSES.has(fixture?.status) &&
     finite(fixture.halftime_home) !== null &&
     finite(fixture.halftime_away) !== null &&
     finite(fixture.fulltime_home) !== null &&
@@ -72,12 +77,71 @@ function resultLetter(goalsFor, goalsAgainst) {
   return "d";
 }
 
+function eventPerspective(fixture, teamId, home) {
+  const events = Array.isArray(fixture._athenaEvents) ? fixture._athenaEvents : [];
+  const coverageComplete = fixture._athenaCoverage?.status === "COMPLETE";
+  if (!coverageComplete) {
+    return {
+      eventCoverageComplete: false,
+      goalsWhileTrailing: 0,
+      equalisersScored: 0,
+      winningGoalsAfterEqualising: 0,
+      leadsSurrendered: 0,
+      minute46To60For: 0,
+      minute61To75For: 0,
+      minute76To90For: 0
+    };
+  }
+
+  let goalsWhileTrailing = 0;
+  let equalisersScored = 0;
+  let winningGoalsAfterEqualising = 0;
+  let leadsSurrendered = 0;
+  let minute46To60For = 0;
+  let minute61To75For = 0;
+  let minute76To90For = 0;
+
+  for (const event of events) {
+    const scorerIsTeam = Number(event.scoring_team_id) === Number(teamId);
+    if (scorerIsTeam) {
+      if (event.is_comeback_goal) goalsWhileTrailing += 1;
+      if (event.is_equaliser) equalisersScored += 1;
+      if (event.is_winning_goal_after_equalising) winningGoalsAfterEqualising += 1;
+      const minute = Number(event.minute || 0) + Number(event.extra_minute || 0);
+      if (minute >= 46 && minute <= 60) minute46To60For += 1;
+      else if (minute >= 61 && minute <= 75) minute61To75For += 1;
+      else if (minute >= 76) minute76To90For += 1;
+      continue;
+    }
+
+    const beforeFor = Number(home ? event.home_score_before : event.away_score_before);
+    const beforeAgainst = Number(home ? event.away_score_before : event.home_score_before);
+    const afterFor = Number(home ? event.home_score_after : event.away_score_after);
+    const afterAgainst = Number(home ? event.away_score_after : event.home_score_after);
+    if (beforeFor > beforeAgainst && afterFor <= afterAgainst) leadsSurrendered += 1;
+  }
+
+  return {
+    eventCoverageComplete: true,
+    goalsWhileTrailing,
+    equalisersScored,
+    winningGoalsAfterEqualising,
+    leadsSurrendered,
+    minute46To60For,
+    minute61To75For,
+    minute76To90For
+  };
+}
+
 function teamPerspective(fixture, teamId) {
   const home = Number(fixture.home_team_id) === Number(teamId);
   const htFor = Number(home ? fixture.halftime_home : fixture.halftime_away);
   const htAgainst = Number(home ? fixture.halftime_away : fixture.halftime_home);
   const ftFor = Number(home ? fixture.fulltime_home : fixture.fulltime_away);
   const ftAgainst = Number(home ? fixture.fulltime_away : fixture.fulltime_home);
+  const secondHalfFor = Math.max(0, ftFor - htFor);
+  const secondHalfAgainst = Math.max(0, ftAgainst - htAgainst);
+  const eventMetrics = eventPerspective(fixture, teamId, home);
 
   return {
     date: fixture.fixture_date,
@@ -86,9 +150,30 @@ function teamPerspective(fixture, teamId) {
     htAgainst,
     ftFor,
     ftAgainst,
+    secondHalfFor,
+    secondHalfAgainst,
     transition: `${resultLetter(htFor, htAgainst)}${resultLetter(ftFor, ftAgainst)}`,
     totalGoals: ftFor + ftAgainst,
-    over25: ftFor + ftAgainst >= 3
+    over15: ftFor + ftAgainst >= 2,
+    over25: ftFor + ftAgainst >= 3,
+    btts: ftFor > 0 && ftAgainst > 0,
+    scored: ftFor > 0,
+    conceded: ftAgainst > 0,
+    failedToScore: ftFor === 0,
+    cleanSheet: ftAgainst === 0,
+    firstHalfScored: htFor > 0,
+    firstHalfConceded: htAgainst > 0,
+    secondHalfScored: secondHalfFor > 0,
+    secondHalfConceded: secondHalfAgainst > 0,
+    firstHalfOver05: htFor + htAgainst >= 1,
+    firstHalfOver15: htFor + htAgainst >= 2,
+    secondHalfOver05: secondHalfFor + secondHalfAgainst >= 1,
+    secondHalfOver15: secondHalfFor + secondHalfAgainst >= 2,
+    scoredBothHalves: htFor > 0 && secondHalfFor > 0,
+    goalsBothHalves: htFor + htAgainst > 0 && secondHalfFor + secondHalfAgainst > 0,
+    secondHalfWin: secondHalfFor > secondHalfAgainst,
+    secondHalfDraw: secondHalfFor === secondHalfAgainst,
+    ...eventMetrics
   };
 }
 
@@ -112,33 +197,143 @@ export function buildAthenaTeamInput(name, rows, teamId, venueType = null) {
     .filter((match) => !venueType || match.venue === venueType);
 
   const htft = emptyTransitions();
-  let over25 = 0;
-  let totalGoals = 0;
-  let goalsFor = 0;
-  let goalsAgainst = 0;
+  const totals = {
+    over15: 0,
+    over25: 0,
+    btts: 0,
+    scoredMatches: 0,
+    concededMatches: 0,
+    failedToScoreMatches: 0,
+    cleanSheetMatches: 0,
+    totalGoals: 0,
+    goalsFor: 0,
+    goalsAgainst: 0,
+    firstHalfGoalsFor: 0,
+    firstHalfGoalsAgainst: 0,
+    secondHalfGoalsFor: 0,
+    secondHalfGoalsAgainst: 0,
+    firstHalfScoringMatches: 0,
+    firstHalfConcedingMatches: 0,
+    secondHalfScoringMatches: 0,
+    secondHalfConcedingMatches: 0,
+    firstHalfOver05: 0,
+    firstHalfOver15: 0,
+    secondHalfOver05: 0,
+    secondHalfOver15: 0,
+    scoredBothHalves: 0,
+    goalsBothHalves: 0,
+    secondHalfWins: 0,
+    secondHalfDraws: 0,
+    eventCoverageMatches: 0,
+    goalsWhileTrailing: 0,
+    equalisersScored: 0,
+    winningGoalsAfterEqualising: 0,
+    leadsSurrendered: 0,
+    minute46To60For: 0,
+    minute61To75For: 0,
+    minute76To90For: 0
+  };
 
   for (const match of matches) {
     htft[match.transition] += 1;
-    over25 += match.over25 ? 1 : 0;
-    totalGoals += match.totalGoals;
-    goalsFor += match.ftFor;
-    goalsAgainst += match.ftAgainst;
+    totals.over15 += match.over15 ? 1 : 0;
+    totals.over25 += match.over25 ? 1 : 0;
+    totals.btts += match.btts ? 1 : 0;
+    totals.scoredMatches += match.scored ? 1 : 0;
+    totals.concededMatches += match.conceded ? 1 : 0;
+    totals.failedToScoreMatches += match.failedToScore ? 1 : 0;
+    totals.cleanSheetMatches += match.cleanSheet ? 1 : 0;
+    totals.totalGoals += match.totalGoals;
+    totals.goalsFor += match.ftFor;
+    totals.goalsAgainst += match.ftAgainst;
+    totals.firstHalfGoalsFor += match.htFor;
+    totals.firstHalfGoalsAgainst += match.htAgainst;
+    totals.secondHalfGoalsFor += match.secondHalfFor;
+    totals.secondHalfGoalsAgainst += match.secondHalfAgainst;
+    totals.firstHalfScoringMatches += match.firstHalfScored ? 1 : 0;
+    totals.firstHalfConcedingMatches += match.firstHalfConceded ? 1 : 0;
+    totals.secondHalfScoringMatches += match.secondHalfScored ? 1 : 0;
+    totals.secondHalfConcedingMatches += match.secondHalfConceded ? 1 : 0;
+    totals.firstHalfOver05 += match.firstHalfOver05 ? 1 : 0;
+    totals.firstHalfOver15 += match.firstHalfOver15 ? 1 : 0;
+    totals.secondHalfOver05 += match.secondHalfOver05 ? 1 : 0;
+    totals.secondHalfOver15 += match.secondHalfOver15 ? 1 : 0;
+    totals.scoredBothHalves += match.scoredBothHalves ? 1 : 0;
+    totals.goalsBothHalves += match.goalsBothHalves ? 1 : 0;
+    totals.secondHalfWins += match.secondHalfWin ? 1 : 0;
+    totals.secondHalfDraws += match.secondHalfDraw ? 1 : 0;
+    totals.eventCoverageMatches += match.eventCoverageComplete ? 1 : 0;
+    totals.goalsWhileTrailing += match.goalsWhileTrailing;
+    totals.equalisersScored += match.equalisersScored;
+    totals.winningGoalsAfterEqualising += match.winningGoalsAfterEqualising;
+    totals.leadsSurrendered += match.leadsSurrendered;
+    totals.minute46To60For += match.minute46To60For;
+    totals.minute61To75For += match.minute61To75For;
+    totals.minute76To90For += match.minute76To90For;
   }
 
+  const count = matches.length;
+  const rate = (value) => count ? value / count : 0;
   return {
     name,
-    matchesPlayed: matches.length,
+    matchesPlayed: count,
     htft,
     goals: {
-      over25,
-      under25: matches.length - over25,
-      averageTotalGoals: matches.length ? totalGoals / matches.length : 0,
-      goalsFor,
-      goalsAgainst,
+      over15: totals.over15,
+      over25: totals.over25,
+      under25: count - totals.over25,
+      btts: totals.btts,
+      scoredMatches: totals.scoredMatches,
+      concededMatches: totals.concededMatches,
+      failedToScoreMatches: totals.failedToScoreMatches,
+      cleanSheetMatches: totals.cleanSheetMatches,
+      averageTotalGoals: count ? totals.totalGoals / count : 0,
+      goalsFor: totals.goalsFor,
+      goalsAgainst: totals.goalsAgainst,
+      firstHalfGoalsFor: totals.firstHalfGoalsFor,
+      firstHalfGoalsAgainst: totals.firstHalfGoalsAgainst,
+      secondHalfGoalsFor: totals.secondHalfGoalsFor,
+      secondHalfGoalsAgainst: totals.secondHalfGoalsAgainst,
+      firstHalfScoringMatches: totals.firstHalfScoringMatches,
+      firstHalfConcedingMatches: totals.firstHalfConcedingMatches,
+      secondHalfScoringMatches: totals.secondHalfScoringMatches,
+      secondHalfConcedingMatches: totals.secondHalfConcedingMatches,
+      firstHalfOver05: totals.firstHalfOver05,
+      firstHalfOver15: totals.firstHalfOver15,
+      secondHalfOver05: totals.secondHalfOver05,
+      secondHalfOver15: totals.secondHalfOver15,
+      scoredBothHalves: totals.scoredBothHalves,
+      goalsBothHalves: totals.goalsBothHalves,
+      secondHalfWins: totals.secondHalfWins,
+      secondHalfDraws: totals.secondHalfDraws,
+      scoringRate: rate(totals.scoredMatches),
+      concedingRate: rate(totals.concededMatches),
+      failedToScoreRate: rate(totals.failedToScoreMatches),
+      cleanSheetRate: rate(totals.cleanSheetMatches),
+      firstHalfScoringRate: rate(totals.firstHalfScoringMatches),
+      firstHalfConcedingRate: rate(totals.firstHalfConcedingMatches),
+      secondHalfScoringRate: rate(totals.secondHalfScoringMatches),
+      secondHalfConcedingRate: rate(totals.secondHalfConcedingMatches),
+      firstHalfOver05Rate: rate(totals.firstHalfOver05),
+      firstHalfOver15Rate: rate(totals.firstHalfOver15),
+      secondHalfOver05Rate: rate(totals.secondHalfOver05),
+      secondHalfOver15Rate: rate(totals.secondHalfOver15),
+      scoredBothHalvesRate: rate(totals.scoredBothHalves),
+      goalsBothHalvesRate: rate(totals.goalsBothHalves),
+      secondHalfWinRate: rate(totals.secondHalfWins),
+      secondHalfDrawRate: rate(totals.secondHalfDraws),
+      eventCoverageMatches: totals.eventCoverageMatches,
+      goalsWhileTrailing: totals.goalsWhileTrailing,
+      equalisersScored: totals.equalisersScored,
+      winningGoalsAfterEqualising: totals.winningGoalsAfterEqualising,
+      leadsSurrendered: totals.leadsSurrendered,
+      minute46To60For: totals.minute46To60For,
+      minute61To75For: totals.minute61To75For,
+      minute76To90For: totals.minute76To90For,
       last5Over25: matches.slice(0, 5).map((match) => match.over25)
     },
     venue: venueType
-      ? { type: venueType.toUpperCase(), matchesPlayed: matches.length, htft: { ...htft } }
+      ? { type: venueType.toUpperCase(), matchesPlayed: count, htft: { ...htft }, goals: null }
       : null
   };
 }
@@ -203,11 +398,28 @@ function marketGroup(market) {
   if ([MARKETS.HOME_WIN_EITHER_HALF, MARKETS.AWAY_WIN_EITHER_HALF].includes(market)) {
     return "Win Either Half";
   }
-  if ([MARKETS.HOME_DNB, MARKETS.AWAY_DNB, MARKETS.HOME_DOUBLE_CHANCE, MARKETS.AWAY_DOUBLE_CHANCE, MARKETS.FULL_TIME_DRAW].includes(market)) {
+  if ([
+    MARKETS.HOME_DNB,
+    MARKETS.AWAY_DNB,
+    MARKETS.HOME_DOUBLE_CHANCE,
+    MARKETS.AWAY_DOUBLE_CHANCE,
+    MARKETS.FULL_TIME_DRAW
+  ].includes(market)) {
     return "Match Result";
   }
   if ([MARKETS.HOME_OVER_0_5, MARKETS.AWAY_OVER_0_5].includes(market)) {
     return "Team Goals";
+  }
+  if ([MARKETS.HOME_SECOND_HALF_DNB, MARKETS.AWAY_SECOND_HALF_DNB].includes(market)) {
+    return "Second Half Result";
+  }
+  if ([
+    MARKETS.HOME_SECOND_HALF_OVER_0_5,
+    MARKETS.AWAY_SECOND_HALF_OVER_0_5,
+    MARKETS.SECOND_HALF_OVER_0_5,
+    MARKETS.SECOND_HALF_OVER_1_5
+  ].includes(market)) {
+    return "Second Half";
   }
   if ([MARKETS.OVER_1_5, MARKETS.OVER_2_5, MARKETS.UNDER_2_5, MARKETS.UNDER_3_5].includes(market)) {
     return "Total Goals";
@@ -215,6 +427,7 @@ function marketGroup(market) {
   if ([MARKETS.FIRST_HALF_UNDER_1_5, MARKETS.FIRST_HALF_OVER_0_5, MARKETS.HALF_TIME_DRAW].includes(market)) {
     return "First Half";
   }
+  if (market === MARKETS.GOALS_BOTH_HALVES) return "Goals in Both Halves";
   if (market === MARKETS.BTTS_YES) return "Both Teams to Score";
   return "Athena Market";
 }
@@ -229,12 +442,19 @@ export function athenaSelectionLabel(market, homeName, awayName) {
     [MARKETS.AWAY_DOUBLE_CHANCE]: `${awayName} or Draw`,
     [MARKETS.HOME_OVER_0_5]: `${homeName} Over 0.5 Team Goals`,
     [MARKETS.AWAY_OVER_0_5]: `${awayName} Over 0.5 Team Goals`,
+    [MARKETS.HOME_SECOND_HALF_OVER_0_5]: `${homeName} to Score in the Second Half`,
+    [MARKETS.AWAY_SECOND_HALF_OVER_0_5]: `${awayName} to Score in the Second Half`,
+    [MARKETS.HOME_SECOND_HALF_DNB]: `${homeName} Second Half Draw No Bet`,
+    [MARKETS.AWAY_SECOND_HALF_DNB]: `${awayName} Second Half Draw No Bet`,
     [MARKETS.OVER_1_5]: "Over 1.5 Match Goals",
     [MARKETS.OVER_2_5]: "Over 2.5 Match Goals",
     [MARKETS.UNDER_2_5]: "Under 2.5 Match Goals",
     [MARKETS.UNDER_3_5]: "Under 3.5 Match Goals",
     [MARKETS.FIRST_HALF_UNDER_1_5]: "First Half Under 1.5 Goals",
     [MARKETS.FIRST_HALF_OVER_0_5]: "First Half Over 0.5 Goals",
+    [MARKETS.SECOND_HALF_OVER_0_5]: "Second Half Over 0.5 Goals",
+    [MARKETS.SECOND_HALF_OVER_1_5]: "Second Half Over 1.5 Goals",
+    [MARKETS.GOALS_BOTH_HALVES]: "Goals in Both Halves",
     [MARKETS.HALF_TIME_DRAW]: "Half-Time Draw",
     [MARKETS.FULL_TIME_DRAW]: "Full-Time Draw",
     [MARKETS.BTTS_YES]: "Both Teams to Score — Yes",
@@ -254,6 +474,13 @@ function scoreParts(fixture) {
 
 export function settleAthenaMarket(fixture, market) {
   if (!FINISHED_PROFILE_STATUSES.has(fixture.status)) return null;
+  if (!ATHENA_PROFILE_STATUSES.has(fixture.status)) {
+    return {
+      outcome: "REVIEW",
+      reason: "Athena settles 90-minute markets only; this fixture finished after extra time, a shootout or an administrative decision.",
+      persisted: false
+    };
+  }
   const score = scoreParts(fixture);
   if (!score) {
     return { outcome: "REVIEW", reason: "Final or half-time score is incomplete", persisted: false };
@@ -305,6 +532,27 @@ export function settleAthenaMarket(fixture, market) {
       break;
     case MARKETS.FIRST_HALF_OVER_0_5:
       outcome = hh + ha >= 1 ? "WIN" : "LOSS";
+      break;
+    case MARKETS.SECOND_HALF_OVER_0_5:
+      outcome = sh + sa >= 1 ? "WIN" : "LOSS";
+      break;
+    case MARKETS.SECOND_HALF_OVER_1_5:
+      outcome = sh + sa >= 2 ? "WIN" : "LOSS";
+      break;
+    case MARKETS.HOME_SECOND_HALF_OVER_0_5:
+      outcome = sh >= 1 ? "WIN" : "LOSS";
+      break;
+    case MARKETS.AWAY_SECOND_HALF_OVER_0_5:
+      outcome = sa >= 1 ? "WIN" : "LOSS";
+      break;
+    case MARKETS.HOME_SECOND_HALF_DNB:
+      outcome = sh > sa ? "WIN" : sh === sa ? "VOID" : "LOSS";
+      break;
+    case MARKETS.AWAY_SECOND_HALF_DNB:
+      outcome = sa > sh ? "WIN" : sh === sa ? "VOID" : "LOSS";
+      break;
+    case MARKETS.GOALS_BOTH_HALVES:
+      outcome = hh + ha >= 1 && sh + sa >= 1 ? "WIN" : "LOSS";
       break;
     case MARKETS.HALF_TIME_DRAW:
       outcome = hh === ha ? "WIN" : "LOSS";
@@ -372,13 +620,13 @@ async function loadEntities(supabase, fixtures) {
 
 async function loadTeamHistory(supabase, teamIds) {
   if (!teamIds.length) return [];
-  const select = "id,league_id,season,fixture_date,home_team_id,away_team_id,halftime_home,halftime_away,fulltime_home,fulltime_away,status";
+  const select = "id,external_fixture_id,league_id,season,fixture_date,home_team_id,away_team_id,halftime_home,halftime_away,fulltime_home,fulltime_away,status";
   const [homeRows, awayRows] = await Promise.all([
     fetchAllRows(() =>
       supabase
         .from("fixtures")
         .select(select)
-        .in("status", [...FINISHED_PROFILE_STATUSES])
+        .in("status", [...ATHENA_PROFILE_STATUSES])
         .in("home_team_id", teamIds)
         .order("fixture_date", { ascending: false })
     ),
@@ -386,7 +634,7 @@ async function loadTeamHistory(supabase, teamIds) {
       supabase
         .from("fixtures")
         .select(select)
-        .in("status", [...FINISHED_PROFILE_STATUSES])
+        .in("status", [...ATHENA_PROFILE_STATUSES])
         .in("away_team_id", teamIds)
         .order("fixture_date", { ascending: false })
     )
@@ -397,6 +645,86 @@ async function loadTeamHistory(supabase, teamIds) {
     if (validFinishedFixture(fixture)) unique.set(fixtureKey(fixture), fixture);
   }
   return newestFirst([...unique.values()]);
+}
+
+function missingAthenaEventTable(error) {
+  const message = String(error?.message || error || "");
+  return error?.code === "42P01" ||
+    /fixture_goal_events|fixture_event_coverage|relation .* does not exist/i.test(message);
+}
+
+async function fetchRowsInChunks(supabase, table, select, column, values, chunkSize = 400) {
+  const rows = [];
+  for (let index = 0; index < values.length; index += chunkSize) {
+    const chunk = values.slice(index, index + chunkSize);
+    const { data, error } = await supabase
+      .from(table)
+      .select(select)
+      .in(column, chunk);
+    if (error) throw error;
+    rows.push(...(data || []));
+  }
+  return rows;
+}
+
+async function loadAthenaEventContext(supabase, fixtures) {
+  const fixtureIds = [...new Set(fixtures.map((fixture) => Number(fixture.id)).filter(Boolean))];
+  if (!fixtureIds.length) {
+    return { coverageByFixture: new Map(), eventsByFixture: new Map(), available: false };
+  }
+
+  try {
+    const [coverageRows, eventRows] = await Promise.all([
+      fetchRowsInChunks(
+        supabase,
+        "fixture_event_coverage",
+        "fixture_id,status,goals_expected,goals_recorded,last_attempted_at,error_message",
+        "fixture_id",
+        fixtureIds
+      ),
+      fetchRowsInChunks(
+        supabase,
+        "fixture_goal_events",
+        "fixture_id,scoring_team_id,minute,extra_minute,home_score_before,away_score_before,home_score_after,away_score_after,is_equaliser,is_comeback_goal,is_winning_goal_after_equalising",
+        "fixture_id",
+        fixtureIds
+      )
+    ]);
+
+    const coverageByFixture = new Map(
+      coverageRows.map((row) => [Number(row.fixture_id), row])
+    );
+    const eventsByFixture = new Map();
+    for (const row of eventRows) {
+      const key = Number(row.fixture_id);
+      if (!eventsByFixture.has(key)) eventsByFixture.set(key, []);
+      eventsByFixture.get(key).push(row);
+    }
+    for (const rows of eventsByFixture.values()) {
+      rows.sort((a, b) =>
+        Number(a.minute || 0) - Number(b.minute || 0) ||
+        Number(a.extra_minute || 0) - Number(b.extra_minute || 0)
+      );
+    }
+
+    return { coverageByFixture, eventsByFixture, available: true };
+  } catch (error) {
+    if (!missingAthenaEventTable(error)) throw error;
+    return {
+      coverageByFixture: new Map(),
+      eventsByFixture: new Map(),
+      available: false,
+      warning: "Athena event tables are not installed yet"
+    };
+  }
+}
+
+function attachAthenaEventContext(fixtures, context) {
+  return fixtures.map((fixture) => ({
+    ...fixture,
+    _athenaCoverage: context.coverageByFixture.get(Number(fixture.id)) || null,
+    _athenaEvents: context.eventsByFixture.get(Number(fixture.id)) || []
+  }));
 }
 
 function routeAudit(routes) {
@@ -417,76 +745,169 @@ function routeAudit(routes) {
   })).sort((a, b) => b.adjusted - a.adjusted);
 }
 
-function explanationFor(result, venueResult, samples, arbitration, separation) {
+function roundedPercent(value) {
+  if (value === null || value === undefined || value === "") return null;
+  return Number.isFinite(Number(value)) ? Math.round(Number(value) * 100) : null;
+}
+
+function percentageText(value) {
+  const percent = roundedPercent(value);
+  return percent === null ? "not available" : `${percent}%`;
+}
+
+function publicReasonsForMarket(result, primary) {
+  const home = result.metrics?.home;
+  const away = result.metrics?.away;
+  const side = marketSide(primary?.market);
+  const selected = side === "HOME" ? home : side === "AWAY" ? away : null;
+  const opponent = side === "HOME" ? away : side === "AWAY" ? home : null;
+  const reasons = [];
+
+  switch (primary?.market) {
+    case MARKETS.SECOND_HALF_OVER_0_5:
+      reasons.push(
+        `At least one second-half goal appeared in ${percentageText(home?.secondHalfOver05Rate)} of ${home?.name}'s matches and ${percentageText(away?.secondHalfOver05Rate)} of ${away?.name}'s.`
+      );
+      reasons.push("The HT/FT patterns also show that these teams often change the match after the break.");
+      break;
+    case MARKETS.SECOND_HALF_OVER_1_5:
+      reasons.push(
+        `Two or more second-half goals appeared in ${percentageText(home?.secondHalfOver15Rate)} of ${home?.name}'s matches and ${percentageText(away?.secondHalfOver15Rate)} of ${away?.name}'s.`
+      );
+      reasons.push("Athena only keeps this higher line when the second-half goal volume agrees with the swing pattern.");
+      break;
+    case MARKETS.HOME_SECOND_HALF_OVER_0_5:
+    case MARKETS.AWAY_SECOND_HALF_OVER_0_5:
+      reasons.push(
+        `${selected?.name} scored after half-time in ${percentageText(selected?.secondHalfScoringRate)} of the sample.`
+      );
+      reasons.push(
+        `${opponent?.name} conceded after half-time in ${percentageText(opponent?.secondHalfConcedingRate)} of the sample.`
+      );
+      break;
+    case MARKETS.HOME_SECOND_HALF_DNB:
+    case MARKETS.AWAY_SECOND_HALF_DNB:
+      reasons.push(
+        `${selected?.name} produced the stronger second-half score in ${percentageText(selected?.secondHalfWinRate)} of the sample.`
+      );
+      reasons.push("The draw is protected because Athena trusts the second-half direction more than a full-match winner.");
+      break;
+    case MARKETS.GOALS_BOTH_HALVES:
+      reasons.push(
+        `Goals appeared in both halves in ${percentageText(home?.goalsBothHalvesRate)} of ${home?.name}'s matches and ${percentageText(away?.goalsBothHalvesRate)} of ${away?.name}'s.`
+      );
+      reasons.push("Both the early and late goal records are active enough for this market.");
+      break;
+    case MARKETS.BTTS_YES:
+      reasons.push(
+        `${home?.name} scored in ${percentageText(home?.scoringRate)} of the sample, while ${away?.name} scored in ${percentageText(away?.scoringRate)}.`
+      );
+      reasons.push("Athena checked that the expected goals are not coming from only one team.");
+      break;
+    case MARKETS.OVER_1_5:
+      reasons.push(
+        `The two teams' matches average about ${Number(result.classification?.combinedAvgGoals || 0).toFixed(1)} goals.`
+      );
+      reasons.push("The HT/FT routes show enough movement for at least two goals, without forcing a winner.");
+      break;
+    case MARKETS.OVER_2_5:
+      reasons.push(
+        `The combined Over 2.5 record is about ${percentageText(result.classification?.combinedOver25)}.`
+      );
+      reasons.push("The match has more than one route to reach three goals.");
+      break;
+    case MARKETS.UNDER_2_5:
+    case MARKETS.UNDER_3_5:
+      reasons.push(
+        `The teams' goal records and HT/FT structure point to a controlled scoring range.`
+      );
+      reasons.push("Athena checked that the visible swing risk was not strong enough to break the goal ceiling.");
+      break;
+    case MARKETS.FIRST_HALF_OVER_0_5:
+      reasons.push(
+        `A first-half goal appeared in ${percentageText(home?.firstHalfOver05Rate)} of ${home?.name}'s matches and ${percentageText(away?.firstHalfOver05Rate)} of ${away?.name}'s.`
+      );
+      break;
+    case MARKETS.FIRST_HALF_UNDER_1_5:
+      reasons.push(
+        `The first half stayed below two goals in ${percentageText(Number.isFinite(home?.firstHalfOver15Rate) ? 1 - home.firstHalfOver15Rate : null)} of ${home?.name}'s matches and ${percentageText(Number.isFinite(away?.firstHalfOver15Rate) ? 1 - away.firstHalfOver15Rate : null)} of ${away?.name}'s.`
+      );
+      break;
+    default:
+      if (selected && opponent) {
+        reasons.push(`${selected.name} has the clearer HT/FT route in the relevant home-and-away split.`);
+        reasons.push(`${opponent.name}'s recovery and lead-protection record was checked before Athena kept the team direction.`);
+      } else {
+        reasons.push(result.story);
+      }
+  }
+
+  return [...new Set(reasons.filter(Boolean))];
+}
+
+function explanationFor(result, venueResult, samples, arbitration) {
   const primary = arbitration?.primary || result.banker;
-  const switched = Boolean(arbitration?.switchedFromRc1);
-  const original = arbitration?.originalRc1Banker;
-  const bestGoal = arbitration?.bestGoal;
-  const bestDirectional = arbitration?.bestDirectional;
-  const safer = arbitration?.saferAlternative;
+  const home = result.metrics?.home;
+  const away = result.metrics?.away;
+  const eventCoverageRate = Math.min(
+    Number(home?.eventCoverageRate || 0),
+    Number(away?.eventCoverageRate || 0)
+  );
+  const cautions = [];
 
-  const reasons = [
-    result.story,
-    ...(primary?.reasons || []),
-    ...(arbitration?.rationale || []),
-    `Athena classified the fixture as ${String(result.classification?.type || "CONFLICT").replaceAll("_", " ").toLowerCase()}.`,
-    separation ? `Athena v2 separation timing: ${String(separation.type).replaceAll("_", " ").toLowerCase()} (${separation.confidence}/100).` : null,
-    `The selected market reached ${Number(primary?.score || 0).toFixed(0)}/100 and cleared Athena v1.1.1's ${ATHENA_PRIMARY_SCORE}-point score-and-safety gate.`
-  ].filter(Boolean);
-
-  if (switched && original) {
-    reasons.push(
-      `Athena v1.1.1 replaced the RC1 priority pick (${String(original.market || "").replaceAll("_", " ")} · ${Number(original.score || 0).toFixed(0)}) because another safe market ranked stronger after classification-specific arbitration.`
+  if (eventCoverageRate < 0.70) {
+    cautions.push(
+      "Exact goal timing is incomplete, so Athena used confirmed half-time and full-time scores and did not rely on missing event details."
     );
+  } else if (result.classification?.eventConfirmation) {
+    cautions.push("The available goal events also confirm the comeback or lead-surrender pattern seen in the half-time and full-time scores.");
+  } else {
+    cautions.push("Goal-event coverage is strong, but it did not add a separate comeback confirmation, so Athena relied on the confirmed goals-by-half picture only.");
   }
-
-  if (bestGoal) {
-    reasons.push(`Best qualified goal market: ${String(bestGoal.market).replaceAll("_", " ")} · ${Number(bestGoal.score).toFixed(0)}/100.`);
+  if (result.oddsConflict?.conflict) {
+    cautions.push("The bookmaker direction disagreed with the statistical direction, so Athena avoided forcing the conflicted team market.");
   }
-  if (bestDirectional) {
-    reasons.push(`Best fully confirmed directional market: ${String(bestDirectional.market).replaceAll("_", " ")} · ${Number(bestDirectional.score).toFixed(0)}/100.`);
+  if (result.classification?.warnings?.includes("DIRECTIONAL_CONFLICT")) {
+    cautions.push("Both teams still have credible routes, so Athena favoured a neutral goal market.");
   }
-  if (safer) {
-    reasons.push(`Safer qualified alternative: ${String(safer.market).replaceAll("_", " ")} · ${Number(safer.score).toFixed(0)}/100.`);
-  }
-
-  const cautions = [
-    ...(result.classification?.warnings || []),
-    ...(primary?.warnings || []),
-    ...(result.oddsConflict?.conflict ? ["Bookmaker direction disagreed with Athena's directional reading."] : []),
-    "The Athena score is a rules-based strength score, not a guaranteed outcome probability.",
-    "Athena v1.1.1 keeps the RC1 scoring model but replaces first-passing-market priority with score-and-safety arbitration."
-  ];
-
-  if (venueResult) {
-    reasons.push(
-      `Relevant venue split classified the match as ${String(venueResult.classification?.type || "CONFLICT").replaceAll("_", " ").toLowerCase()}.`
-    );
-  }
+  cautions.push("The score measures how strongly the rules agree; it is not a guaranteed probability.");
 
   return {
     summary: result.story,
-    reasons: [...new Set(reasons.filter(Boolean))],
-    cautions: [...new Set(cautions.filter(Boolean))],
+    whyPick: publicReasonsForMarket(result, primary),
+    reasons: publicReasonsForMarket(result, primary),
+    cautions: [...new Set(cautions)],
     samples,
-    classification: result.classification,
-    oddsConflict: result.oddsConflict,
-    routes: routeAudit(result.routes),
-    venueClassification: venueResult?.classification || null,
-    separation,
-    arbitration: {
-      version: arbitration?.version || ATHENA_ARBITRATION_VERSION,
-      rule: arbitration?.rule || null,
-      switchedFromRc1: switched,
-      originalRc1Banker: original || null,
-      bestOverall: arbitration?.bestOverall || null,
-      bestDirectional: bestDirectional || null,
-      bestGoal: bestGoal || null,
-      saferAlternative: safer || null,
-      scoreGapFromBest: arbitration?.scoreGapFromBest ?? null,
-      eligibleCount: arbitration?.eligibleCount || 0,
-      rejectedCount: arbitration?.rejectedCount || 0
-    }
+    dataPicture: {
+      home: {
+        name: home?.name,
+        firstHalfScoring: roundedPercent(home?.firstHalfScoringRate),
+        secondHalfScoring: roundedPercent(home?.secondHalfScoringRate),
+        secondHalfConceding: roundedPercent(home?.secondHalfConcedingRate),
+        secondHalfOver05: roundedPercent(home?.secondHalfOver05Rate),
+        secondHalfOver15: roundedPercent(home?.secondHalfOver15Rate),
+        goalsBothHalves: roundedPercent(home?.goalsBothHalvesRate)
+      },
+      away: {
+        name: away?.name,
+        firstHalfScoring: roundedPercent(away?.firstHalfScoringRate),
+        secondHalfScoring: roundedPercent(away?.secondHalfScoringRate),
+        secondHalfConceding: roundedPercent(away?.secondHalfConcedingRate),
+        secondHalfOver05: roundedPercent(away?.secondHalfOver05Rate),
+        secondHalfOver15: roundedPercent(away?.secondHalfOver15Rate),
+        goalsBothHalves: roundedPercent(away?.goalsBothHalvesRate)
+      }
+    },
+    coverage: {
+      halfTimeScores: "COMPLETE",
+      eventDetail: eventCoverageRate >= 0.70 ? "FULL" : eventCoverageRate > 0 ? "PARTIAL" : "NOT_AVAILABLE",
+      eventCoveragePercent: Math.round(eventCoverageRate * 100),
+      swingConfirmedByEvents: Boolean(result.classification?.eventConfirmation)
+    },
+    matchType: String(result.classification?.type || "UNCLASSIFIED").replaceAll("_", " ").toLowerCase(),
+    venueConfirmed: venueResult?.classification?.side
+      ? venueResult.classification.side === result.classification?.side
+      : null
   };
 }
 
@@ -542,7 +963,7 @@ async function buildAthenaPicks(supabase, date) {
       engineVersion: ATHENA_ENGINE_VERSION,
       runtimeEngineVersion: ATHENA_RUNTIME_VERSION,
       arbitrationVersion: ATHENA_ARBITRATION_VERSION,
-      mode: "separation-v2",
+      mode: "swing-half-goals-v3",
       separationVersion: ATHENA_SEPARATION_VERSION,
       reviewedFixtures: 0,
       qualifiedCount: 0,
@@ -554,8 +975,8 @@ async function buildAthenaPicks(supabase, date) {
         qualifiedScore: ATHENA_PRIMARY_SCORE,
         primeScore: ATHENA_PRIME_SCORE,
         onePickOnly: true,
-        frozenScoringCore: true,
-        scoreSafetyArbitration: true,
+        halfGoalsEnabled: true,
+        swingResolutionEnabled: true,
         conflictNoPickHardStop: true
       },
       picks: [],
@@ -569,7 +990,9 @@ async function buildAthenaPicks(supabase, date) {
     Number(fixture.home_team_id),
     Number(fixture.away_team_id)
   ]))];
-  const history = await loadTeamHistory(supabase, teamIds);
+  const rawHistory = await loadTeamHistory(supabase, teamIds);
+  const eventContext = await loadAthenaEventContext(supabase, rawHistory);
+  const history = attachAthenaEventContext(rawHistory, eventContext);
   const historyByTeam = new Map(teamIds.map((teamId) => [teamId, []]));
 
   for (const past of history) {
@@ -661,8 +1084,8 @@ async function buildAthenaPicks(supabase, date) {
         rejected.push({
           fixtureId: fixture.external_fixture_id,
           reason: conflictHardStop
-            ? "Athena conflict hard stop — no clear shared HT/FT market"
-            : arbitration.primary?.reasons?.[0] || "Athena v1.1.1 returned NO PICK",
+            ? "Athena hard stop — no safe shared HT/FT and half-goal route"
+            : arbitration.primary?.reasons?.[0] || "Athena v3 returned NO PICK",
           failures: [
             ...(result.classification?.warnings || []),
             ...(result.oddsConflict?.conflict ? ["ODDS_DIRECTION_CONFLICT"] : []),
@@ -698,7 +1121,7 @@ async function buildAthenaPicks(supabase, date) {
         engineVersion: ATHENA_ENGINE_VERSION,
         runtimeEngineVersion: ATHENA_RUNTIME_VERSION,
         arbitrationVersion: ATHENA_ARBITRATION_VERSION,
-        mode: "separation-v2",
+        mode: "swing-half-goals-v3",
         separationVersion: ATHENA_SEPARATION_VERSION,
         grade,
         score: Number(arbitration.primary.score || 0),
@@ -717,7 +1140,15 @@ async function buildAthenaPicks(supabase, date) {
           role: item.role,
           warnings: item.warnings || []
         })),
-        explanation: explanationFor(result, venueResult, samples, arbitration, separation),
+        explanation: explanationFor(result, venueResult, samples, arbitration),
+        internalAudit: {
+          classification: result.classification,
+          routes: routeAudit(result.routes),
+          separation,
+          arbitration,
+          oddsConflict: result.oddsConflict,
+          metrics: result.metrics
+        },
         samples,
         oddsConflict: result.oddsConflict,
         routeAudit: routeAudit(result.routes)
@@ -738,7 +1169,7 @@ async function buildAthenaPicks(supabase, date) {
     engineVersion: ATHENA_ENGINE_VERSION,
     runtimeEngineVersion: ATHENA_RUNTIME_VERSION,
     arbitrationVersion: ATHENA_ARBITRATION_VERSION,
-    mode: "score-safety-v1.1.1",
+    mode: "swing-half-goals-v3",
     reviewedFixtures: fixtures.length,
     qualifiedCount: picks.length,
     primeCount: picks.filter((pick) => pick.grade === "PRIME").length,
@@ -749,16 +1180,27 @@ async function buildAthenaPicks(supabase, date) {
       qualifiedScore: ATHENA_PRIMARY_SCORE,
       primeScore: ATHENA_PRIME_SCORE,
       onePickOnly: true,
-      frozenScoringCore: true,
-      scoreSafetyArbitration: true,
+      halfGoalsEnabled: true,
+      swingResolutionEnabled: true,
       conflictNoPickHardStop: true,
+      falseSwingHardStop: true,
+      halfGoalsRequiredForSwingMarkets: true,
+      eventClaimsRequireCoverage: true,
+      eventTablesAvailable: eventContext.available,
       classifications: Object.values(CLASSIFICATIONS)
     },
     picks,
     rejections: rejectionCounter(rejected),
+    dataCoverage: {
+      halfTimeAndFullTimeScores: "REQUIRED",
+      eventTablesAvailable: eventContext.available,
+      eventCoverageNote: eventContext.available
+        ? "Event-level comeback details are used only where fixture coverage is complete."
+        : "Half-goal analysis is active. Run the v1.20.0 Supabase migration to unlock event-level comeback details."
+    },
     status: picks.length
-      ? `${picks.length} Athena v1.1.1 pick${picks.length === 1 ? "" : "s"} cleared score-and-safety arbitration.`
-      : "NO ATHENA PICK — no fixture cleared Athena v1.1.1 score-and-safety arbitration."
+      ? `${picks.length} Athena v3 pick${picks.length === 1 ? "" : "s"} cleared swing, half-goal and safety checks.`
+      : "NO ATHENA PICK — no fixture cleared Athena v3’s swing, half-goal and safety checks."
   };
 }
 

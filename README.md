@@ -1,3 +1,7 @@
+## v1.20.0 Athena v3 Swing Resolution & Half-Goals
+
+Athena now separates five kinds of swing match, measures goals scored and conceded in each half, supports second-half and goals-in-both-halves markets, hydrates goal-event history in the background, and explains every published pick in plain English. Run `supabase/BETSPAPA_V1_20_0_ATHENA_V3.sql` before deployment. See `ATHENA_V3_SWING_HALF_GOALS.md`.
+
 ## v1.19.0 Athena Separation Engine v2
 
 Athena now predicts whether separation is likely early, late, mixed or goal-only before choosing the final market. See `ATHENA_SEPARATION_ENGINE_V2.md`.
@@ -116,9 +120,9 @@ npm test
 See `BETSPAPA_V1_17_CONSENSUS_BANKERS.md` for current Banker criteria and `BETSPAPA_V1_10_GUIDE.md` for diagnostics and the anti-zombie similarity policy.
 
 
-## Athena Transition Picks v1.18.5
+## Athena v3 Swing Resolution & Half-Goals
 
-Athena is free and public. No account or database migration is required. Athena uses the frozen RC1 transition scoring core plus the v1.1 score-and-safety arbiter. The page shows the selected primary market, best goal option, best directional option, safer alternative, arbitration rule and whether v1.1 replaced the former RC1 priority pick.
+Athena is free and public. Run `supabase/BETSPAPA_V1_20_0_ATHENA_V3.sql` before deployment. Athena remains HT/FT-first, then resolves full reversals, surrendered leads, late separation, two-way instability and false swings with verified goals-by-half evidence. Public cards explain the choice in plain English; the technical audit is protected. Only normal 90-minute FT history is used, and incomplete event timing never becomes a guessed value.
 
 
 ## Live status and settlement

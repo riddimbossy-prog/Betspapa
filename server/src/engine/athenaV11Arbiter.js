@@ -1,6 +1,7 @@
 import { CLASSIFICATIONS, MARKETS } from "./athena-transition-engine/src/index.js";
 
-export const ATHENA_ARBITRATION_VERSION = "2.0.0";
+// File name retained so deployed imports and older clients keep working.
+export const ATHENA_ARBITRATION_VERSION = "3.0.0";
 export const ATHENA_PRIMARY_SCORE = 80;
 export const ATHENA_PRIME_SCORE = 88;
 
@@ -10,18 +11,29 @@ const DIRECTIONAL_RESULT_MARKETS = new Set([
   MARKETS.HOME_DNB,
   MARKETS.AWAY_DNB,
   MARKETS.HOME_DOUBLE_CHANCE,
-  MARKETS.AWAY_DOUBLE_CHANCE
+  MARKETS.AWAY_DOUBLE_CHANCE,
+  MARKETS.HOME_SECOND_HALF_DNB,
+  MARKETS.AWAY_SECOND_HALF_DNB
+]);
+
+const DIRECTIONAL_GOAL_MARKETS = new Set([
+  MARKETS.HOME_OVER_0_5,
+  MARKETS.AWAY_OVER_0_5,
+  MARKETS.HOME_SECOND_HALF_OVER_0_5,
+  MARKETS.AWAY_SECOND_HALF_OVER_0_5
 ]);
 
 const GOAL_MARKETS = new Set([
-  MARKETS.HOME_OVER_0_5,
-  MARKETS.AWAY_OVER_0_5,
+  ...DIRECTIONAL_GOAL_MARKETS,
   MARKETS.OVER_1_5,
   MARKETS.OVER_2_5,
   MARKETS.UNDER_2_5,
   MARKETS.UNDER_3_5,
   MARKETS.FIRST_HALF_UNDER_1_5,
   MARKETS.FIRST_HALF_OVER_0_5,
+  MARKETS.SECOND_HALF_OVER_0_5,
+  MARKETS.SECOND_HALF_OVER_1_5,
+  MARKETS.GOALS_BOTH_HALVES,
   MARKETS.BTTS_YES
 ]);
 
@@ -29,7 +41,12 @@ const OPEN_GOAL_MARKETS = new Set([
   MARKETS.OVER_1_5,
   MARKETS.OVER_2_5,
   MARKETS.FIRST_HALF_OVER_0_5,
-  MARKETS.BTTS_YES
+  MARKETS.SECOND_HALF_OVER_0_5,
+  MARKETS.SECOND_HALF_OVER_1_5,
+  MARKETS.GOALS_BOTH_HALVES,
+  MARKETS.BTTS_YES,
+  MARKETS.HOME_SECOND_HALF_OVER_0_5,
+  MARKETS.AWAY_SECOND_HALF_OVER_0_5
 ]);
 
 const CONTROL_MARKETS = new Set([
@@ -43,12 +60,15 @@ const CONTROL_MARKETS = new Set([
 const SAFER_MARKETS = new Set([
   MARKETS.OVER_1_5,
   MARKETS.UNDER_3_5,
+  MARKETS.SECOND_HALF_OVER_0_5,
   MARKETS.HOME_DOUBLE_CHANCE,
   MARKETS.AWAY_DOUBLE_CHANCE,
   MARKETS.HOME_DNB,
   MARKETS.AWAY_DNB,
   MARKETS.HOME_OVER_0_5,
   MARKETS.AWAY_OVER_0_5,
+  MARKETS.HOME_SECOND_HALF_OVER_0_5,
+  MARKETS.AWAY_SECOND_HALF_OVER_0_5,
   MARKETS.FIRST_HALF_UNDER_1_5
 ]);
 
@@ -58,12 +78,22 @@ const MARKET_SIDE = new Map([
   [MARKETS.HOME_DNB, "HOME"],
   [MARKETS.AWAY_DNB, "AWAY"],
   [MARKETS.HOME_DOUBLE_CHANCE, "HOME"],
-  [MARKETS.AWAY_DOUBLE_CHANCE, "AWAY"]
+  [MARKETS.AWAY_DOUBLE_CHANCE, "AWAY"],
+  [MARKETS.HOME_SECOND_HALF_DNB, "HOME"],
+  [MARKETS.AWAY_SECOND_HALF_DNB, "AWAY"],
+  [MARKETS.HOME_SECOND_HALF_OVER_0_5, "HOME"],
+  [MARKETS.AWAY_SECOND_HALF_OVER_0_5, "AWAY"]
 ]);
 
 const PRIMARY_BLOCKING_WARNINGS = new Set([
   "INSUFFICIENT_SCORING_EVIDENCE",
-  "DIRECT_1H_GOAL_DATA_REQUIRED_FOR_BANKER"
+  "DIRECT_1H_GOAL_DATA_REQUIRED_FOR_BANKER",
+  "DIRECT_HALF_GOAL_DATA_REQUIRED",
+  "INSUFFICIENT_TEAM_SECOND_HALF_EVIDENCE",
+  "INSUFFICIENT_SECOND_HALF_GOAL_EVIDENCE",
+  "INSUFFICIENT_BOTH_HALVES_EVIDENCE",
+  "INSUFFICIENT_OVER15_EVIDENCE",
+  "INSUFFICIENT_TEAM_SCORING_EVIDENCE"
 ]);
 
 function finite(value, fallback = 0) {
@@ -133,14 +163,22 @@ function directionalSafety(result, venueResult, candidate, samples = {}) {
   const leadSafety = finite(selected?.leadHoldRate);
   const opponentComebackWeakness = 1 - finite(opponent?.comebackSaveRate);
   const warnings = candidate?.warnings || [];
+  const secondHalfGoalMarket = DIRECTIONAL_GOAL_MARKETS.has(candidate?.market);
+  const secondHalfResultMarket = [MARKETS.HOME_SECOND_HALF_DNB, MARKETS.AWAY_SECOND_HALF_DNB].includes(candidate?.market);
 
   const reasons = [];
   if (overallDirection !== side) reasons.push("Overall HT/FT direction does not support this side");
   if (!oddsAligned) reasons.push("Bookmaker direction conflicts with this side");
   if (!venueAligned) reasons.push("Home/away HT/FT split does not confirm this side");
-  if (leadSafety < 0.65) reasons.push("Lead-protection rate is below 65%");
-  if (opponentComebackWeakness < 0.45) reasons.push("Opponent comeback weakness is below 45%");
+  if (!secondHalfGoalMarket && !secondHalfResultMarket && leadSafety < 0.65) reasons.push("Lead-protection rate is below 65%");
+  if (!secondHalfGoalMarket && !secondHalfResultMarket && opponentComebackWeakness < 0.45) reasons.push("Opponent comeback weakness is below 45%");
   if (warnings.includes("ODDS_DIRECTION_CONFLICT")) reasons.push("Candidate carries an odds-direction warning");
+
+  const halfGoalReady = !secondHalfGoalMarket || (
+    finite(selected?.secondHalfScoringRate) >= 0.58 &&
+    finite(opponent?.secondHalfConcedingRate) >= 0.58
+  );
+  const halfResultReady = !secondHalfResultMarket || finite(selected?.secondHalfWinRate) >= 0.35;
 
   return {
     directional: true,
@@ -148,8 +186,9 @@ function directionalSafety(result, venueResult, candidate, samples = {}) {
       overallDirection === side &&
       oddsAligned &&
       venueAligned &&
-      leadSafety >= 0.65 &&
-      opponentComebackWeakness >= 0.45 &&
+      halfGoalReady &&
+      halfResultReady &&
+      (secondHalfGoalMarket || secondHalfResultMarket || (leadSafety >= 0.65 && opponentComebackWeakness >= 0.45)) &&
       !warnings.includes("ODDS_DIRECTION_CONFLICT"),
     side,
     overallDirection,
@@ -159,6 +198,8 @@ function directionalSafety(result, venueResult, candidate, samples = {}) {
     leadSafety,
     opponentComebackWeakness,
     venueReliability,
+    halfGoalReady,
+    halfResultReady,
     reasons
   };
 }
@@ -192,67 +233,144 @@ function describe(candidate) {
     family: candidate.family,
     warnings: candidate.warnings || [],
     reasons: candidate.reasons || [],
-    side: candidate.safety?.side || null
+    side: candidate.safety?.side || null,
+    evidence: candidate.evidence || null
   };
+}
+
+function chooseFirst(candidates, marketIds) {
+  for (const market of marketIds) {
+    const found = strongest(candidates, (candidate) => candidate.market === market);
+    if (found) return found;
+  }
+  return null;
+}
+
+function teamMarket(side, homeMarket, awayMarket) {
+  return side === "HOME" ? homeMarket : awayMarket;
 }
 
 function chooseByClassification({ result, separation, candidates, bestOverall, bestDirectional, bestGoal, bestOpenGoal, bestControl }) {
   const type = result?.classification?.type;
+  const side = result?.classification?.side;
   const rationale = [];
 
-
-  if (type === CLASSIFICATIONS.CONFLICT_NO_PICK) {
+  if ([CLASSIFICATIONS.CONFLICT_NO_PICK, CLASSIFICATIONS.SWING_FALSE_SIGNAL].includes(type)) {
     rationale.push(
-      "Athena classified the fixture as CONFLICT_NO_PICK, so no scored market may be promoted to an official pick. Qualified scores remain observations only."
+      type === CLASSIFICATIONS.SWING_FALSE_SIGNAL
+        ? "Athena saw a possible HT/FT swing, but the goals scored in each half did not confirm enough second-half activity."
+        : "Athena found no safe shared route, so scored markets remain observations only."
     );
     return {
       primary: null,
       rationale,
-      rule: "CONFLICT_HARD_STOP",
+      rule: type === CLASSIFICATIONS.SWING_FALSE_SIGNAL ? "FALSE_SWING_HARD_STOP" : "CONFLICT_HARD_STOP",
       hardStop: true
     };
   }
 
+  if (type === CLASSIFICATIONS.SWING_FULL_REVERSAL) {
+    const primary = chooseFirst(candidates, [
+      teamMarket(side, MARKETS.HOME_SECOND_HALF_OVER_0_5, MARKETS.AWAY_SECOND_HALF_OVER_0_5),
+      MARKETS.SECOND_HALF_OVER_0_5,
+      teamMarket(side, MARKETS.HOME_WIN_EITHER_HALF, MARKETS.AWAY_WIN_EITHER_HALF),
+      MARKETS.OVER_1_5,
+      MARKETS.BTTS_YES,
+      MARKETS.SECOND_HALF_OVER_1_5,
+      MARKETS.OVER_2_5
+    ]);
+    if (primary) {
+      rationale.push("The comeback-versus-collapse route is confirmed by second-half scoring, so Athena follows the clearest second-half market before considering a full-match goal line.");
+      return { primary, rationale, rule: "V3_FULL_REVERSAL_ROUTE" };
+    }
+  }
+
+  if (type === CLASSIFICATIONS.SWING_LEAD_SURRENDER) {
+    const primary = chooseFirst(candidates, [
+      MARKETS.SECOND_HALF_OVER_0_5,
+      teamMarket(side, MARKETS.HOME_SECOND_HALF_OVER_0_5, MARKETS.AWAY_SECOND_HALF_OVER_0_5),
+      MARKETS.OVER_1_5,
+      MARKETS.BTTS_YES,
+      teamMarket(side, MARKETS.HOME_DOUBLE_CHANCE, MARKETS.AWAY_DOUBLE_CHANCE)
+    ]);
+    if (primary) {
+      rationale.push("One side often gives up a lead and the other often responds, so Athena protects the decision with a second-half or lower goal market.");
+      return { primary, rationale, rule: "V3_LEAD_SURRENDER_ROUTE" };
+    }
+  }
+
+  if (type === CLASSIFICATIONS.SWING_LATE_SEPARATION) {
+    const primary = chooseFirst(candidates, [
+      teamMarket(side, MARKETS.HOME_SECOND_HALF_OVER_0_5, MARKETS.AWAY_SECOND_HALF_OVER_0_5),
+      MARKETS.SECOND_HALF_OVER_0_5,
+      teamMarket(side, MARKETS.HOME_WIN_EITHER_HALF, MARKETS.AWAY_WIN_EITHER_HALF),
+      teamMarket(side, MARKETS.HOME_SECOND_HALF_DNB, MARKETS.AWAY_SECOND_HALF_DNB),
+      MARKETS.OVER_1_5
+    ]);
+    if (primary) {
+      rationale.push("The match is likely to separate after the break, and the team-specific second-half goal data identifies the safest expression.");
+      return { primary, rationale, rule: "V3_LATE_SEPARATION_ROUTE" };
+    }
+  }
+
+  if (type === CLASSIFICATIONS.SWING_TWO_WAY_INSTABILITY) {
+    const primary = chooseFirst(candidates, [
+      MARKETS.SECOND_HALF_OVER_0_5,
+      MARKETS.OVER_1_5,
+      MARKETS.BTTS_YES,
+      MARKETS.SECOND_HALF_OVER_1_5,
+      MARKETS.GOALS_BOTH_HALVES,
+      MARKETS.OVER_2_5
+    ]);
+    if (primary) {
+      rationale.push("Both teams have credible ways to recover and collapse, so Athena avoids a winner and selects the strongest neutral goal market.");
+      return { primary, rationale, rule: "V3_TWO_WAY_SWING_ROUTE" };
+    }
+  }
+
   if (separation?.type === "EARLY_SEPARATION") {
-    const over25 = strongest(candidates, (c) => c.market === MARKETS.OVER_2_5);
+    const over25 = strongest(candidates, (candidate) => candidate.market === MARKETS.OVER_2_5);
     if (over25) {
-      rationale.push("Athena v2 detected early separation; Over 2.5 is preferred when it clears the primary gate.");
-      return { primary: over25, rationale, rule: "V2_EARLY_SEPARATION" };
+      rationale.push("Early separation supports Over 2.5 when the direct goal data clears the primary gate.");
+      return { primary: over25, rationale, rule: "V3_EARLY_SEPARATION" };
     }
   }
   if (separation?.type === "LATE_SEPARATION") {
-    const over15 = strongest(candidates, (c) => c.market === MARKETS.OVER_1_5);
+    const secondHalf = strongest(candidates, (candidate) => candidate.market === MARKETS.SECOND_HALF_OVER_0_5);
+    const over15 = strongest(candidates, (candidate) => candidate.market === MARKETS.OVER_1_5);
+    if (secondHalf) {
+      rationale.push("Late separation is now expressed directly through at least one second-half goal when the half-goal data qualifies.");
+      return { primary: secondHalf, rationale, rule: "V3_LATE_SEPARATION_HALF_GOAL" };
+    }
     if (over15) {
-      rationale.push("Athena v2 detected late separation; Over 1.5 protects against a quiet first half and a second-half break.");
-      return { primary: over15, rationale, rule: "V2_LATE_SEPARATION" };
+      rationale.push("Late separation is present, but the lower full-match Over 1.5 line is safer than forcing a team direction.");
+      return { primary: over15, rationale, rule: "V3_LATE_SEPARATION_OVER15" };
     }
   }
   if (separation?.type === "MIXED_SEPARATION") {
-    const over15 = strongest(candidates, (c) => c.market === MARKETS.OVER_1_5);
-    const over25 = strongest(candidates, (c) => c.market === MARKETS.OVER_2_5);
+    const over15 = strongest(candidates, (candidate) => candidate.market === MARKETS.OVER_1_5);
+    const over25 = strongest(candidates, (candidate) => candidate.market === MARKETS.OVER_2_5);
     if (over25 && over15 && over25.score >= over15.score + 5) {
-      rationale.push("Athena v2 found mixed timing but Over 2.5 held a five-point score advantage.");
-      return { primary: over25, rationale, rule: "V2_MIXED_OVER25_MARGIN" };
+      rationale.push("Mixed timing still supports Over 2.5 because it holds a clear five-point advantage.");
+      return { primary: over25, rationale, rule: "V3_MIXED_OVER25_MARGIN" };
     }
     if (over15) {
-      rationale.push("Athena v2 found mixed timing, so the lower Over 1.5 line is preferred unless Over 2.5 is clearly stronger.");
-      return { primary: over15, rationale, rule: "V2_MIXED_OVER15_PROTECTION" };
+      rationale.push("Mixed timing favours the protected Over 1.5 line unless Over 2.5 is clearly stronger.");
+      return { primary: over15, rationale, rule: "V3_MIXED_OVER15_PROTECTION" };
     }
   }
   if (separation?.type === "GOAL_ONLY_HIGH_EVENT") {
-    const over15 = strongest(candidates, (c) => c.market === MARKETS.OVER_1_5);
-    const over25 = strongest(candidates, (c) => c.market === MARKETS.OVER_2_5);
+    const over15 = strongest(candidates, (candidate) => candidate.market === MARKETS.OVER_1_5);
+    const over25 = strongest(candidates, (candidate) => candidate.market === MARKETS.OVER_2_5);
     if (over25 && over15 && over25.score >= 90 && over25.score >= over15.score + 4) {
-      rationale.push("The high-event profile lacked timing direction, but Over 2.5 cleared the stricter 90-point goal-only gate.");
-      return { primary: over25, rationale, rule: "V2_GOAL_ONLY_OVER25_STRICT" };
+      rationale.push("The high-event profile supports Over 2.5 at the stricter 90-point gate.");
+      return { primary: over25, rationale, rule: "V3_GOAL_ONLY_OVER25_STRICT" };
     }
     if (over15) {
-      rationale.push("The high-event profile lacked timing direction, so Athena v2 uses Over 1.5 as the protected goal-only selection.");
-      return { primary: over15, rationale, rule: "V2_GOAL_ONLY_OVER15" };
+      rationale.push("The match looks open but the direction is unclear, so Athena uses Over 1.5.");
+      return { primary: over15, rationale, rule: "V3_GOAL_ONLY_OVER15" };
     }
   }
-
-
 
   if ([CLASSIFICATIONS.HIGH_EVENT_EARLY_SEPARATION, CLASSIFICATIONS.SWING_GAME].includes(type)) {
     if (bestOpenGoal) {
@@ -262,12 +380,10 @@ function chooseByClassification({ result, separation, candidates, bestOverall, b
         [MARKETS.HOME_WIN_EITHER_HALF, MARKETS.AWAY_WIN_EITHER_HALF].includes(bestDirectional.market) &&
         bestDirectional.score >= bestOpenGoal.score - 5
       ) {
-        rationale.push(
-          `The directional market stayed within 5 points of the strongest high-event goal market and passed direction, venue, odds, lead-safety and comeback checks.`
-        );
+        rationale.push("The team direction stayed close to the strongest goal market and passed the venue, odds and safety checks.");
         return { primary: bestDirectional, rationale, rule: "HIGH_EVENT_CLOSE_DIRECTION" };
       }
-      rationale.push("High-event and swing classifications choose the strongest qualified attacking goal market unless a fully confirmed Win Either Half option is within five points.");
+      rationale.push("The high-event structure uses the strongest qualified attacking goal market.");
       return { primary: bestOpenGoal, rationale, rule: "HIGH_EVENT_GOAL_FIRST" };
     }
   }
@@ -276,19 +392,17 @@ function chooseByClassification({ result, separation, candidates, bestOverall, b
     if (bestDirectional) {
       const strongestNonDirectional = strongest(candidates, (candidate) => !candidate.safety.directional);
       if (!strongestNonDirectional || bestDirectional.score >= strongestNonDirectional.score - 6) {
-        rationale.push("A stable directional classification keeps the strongest fully confirmed directional market when it is within six points of the strongest non-directional option.");
+        rationale.push("The team direction is fully confirmed and remains within six points of the strongest neutral market.");
         return { primary: bestDirectional, rationale, rule: "STABLE_DIRECTION_WITHIN_MARGIN" };
       }
-      rationale.push("A non-directional market was more than six points stronger, so Athena did not force the team direction.");
+      rationale.push("A neutral market was clearly stronger, so Athena did not force the team direction.");
       return { primary: strongestNonDirectional, rationale, rule: "STABLE_SCORE_OVERRIDE" };
     }
   }
 
-  if (type === CLASSIFICATIONS.DRAW_LOCK) {
-    if (bestControl) {
-      rationale.push("Draw-lock fixtures choose the strongest qualified draw or under control market.");
-      return { primary: bestControl, rationale, rule: "DRAW_LOCK_CONTROL" };
-    }
+  if (type === CLASSIFICATIONS.DRAW_LOCK && bestControl) {
+    rationale.push("The draw-lock structure uses the strongest qualified draw or under market.");
+    return { primary: bestControl, rationale, rule: "DRAW_LOCK_CONTROL" };
   }
 
   if (type === CLASSIFICATIONS.FALSE_OVER_TRAP) {
@@ -299,7 +413,7 @@ function chooseByClassification({ result, separation, candidates, bestOverall, b
       MARKETS.UNDER_2_5
     ].includes(candidate.market));
     if (falseOver) {
-      rationale.push("False-over classifications choose the strongest qualified first-half or full-match control market.");
+      rationale.push("The apparent high-goal trend is not supported by the match structure, so Athena uses a control market.");
       return { primary: falseOver, rationale, rule: "FALSE_OVER_CONTROL" };
     }
   }
@@ -311,17 +425,17 @@ function chooseByClassification({ result, separation, candidates, bestOverall, b
       MARKETS.UNDER_2_5
     ].includes(candidate.market));
     if (corridor) {
-      rationale.push("Controlled-corridor fixtures choose the strongest qualified market inside the two-to-three-goal corridor.");
+      rationale.push("The match fits a controlled two-to-three-goal range.");
       return { primary: corridor, rationale, rule: "CONTROLLED_CORRIDOR" };
     }
   }
 
   if (bestOverall) {
-    rationale.push("No classification-specific preference overruled the highest safe score.");
+    rationale.push("No match-type rule overruled the highest safe score.");
     return { primary: bestOverall, rationale, rule: "HIGHEST_SAFE_SCORE" };
   }
 
-  return { primary: null, rationale: ["No market cleared Athena v1.1.1 score and safety arbitration."], rule: "NO_PICK" };
+  return { primary: null, rationale: ["No market cleared Athena v3’s score and safety checks."], rule: "NO_PICK" };
 }
 
 function saferAlternative(candidates, primary) {
@@ -332,12 +446,14 @@ function saferAlternative(candidates, primary) {
 }
 
 export function arbitrateAthenaV11({ result, venueResult = null, samples = {}, separation = null }) {
+  const rawCandidates = uniqueMarkets(result);
   const candidates = eligibleCandidates(result, venueResult, samples);
   const bestOverall = strongest(candidates);
   const bestDirectional = strongest(candidates, (candidate) => DIRECTIONAL_RESULT_MARKETS.has(candidate.market));
   const bestGoal = strongest(candidates, (candidate) => GOAL_MARKETS.has(candidate.market));
   const bestOpenGoal = strongest(candidates, (candidate) => OPEN_GOAL_MARKETS.has(candidate.market));
   const bestControl = strongest(candidates, (candidate) => CONTROL_MARKETS.has(candidate.market));
+  const bestGoalObservation = strongest(rawCandidates, (candidate) => GOAL_MARKETS.has(candidate.market));
 
   const decision = chooseByClassification({
     result,
@@ -385,8 +501,10 @@ export function arbitrateAthenaV11({ result, venueResult = null, samples = {}, s
           score: 0,
           reasons: decision.rationale,
           warnings: [decision.rule === "CONFLICT_HARD_STOP"
-            ? "ATHENA_V111_CONFLICT_HARD_STOP"
-            : "ATHENA_V11_NO_PICK"],
+            ? "ATHENA_V3_CONFLICT_HARD_STOP"
+            : decision.rule === "FALSE_SWING_HARD_STOP"
+              ? "ATHENA_V3_FALSE_SWING_HARD_STOP"
+              : "ATHENA_V3_NO_PICK"],
           fatal: false,
           role: "NO_PICK",
           arbitrationRule: decision.rule,
@@ -397,7 +515,7 @@ export function arbitrateAthenaV11({ result, venueResult = null, samples = {}, s
     scoreGapFromBest,
     bestOverall: describe(bestOverall),
     bestDirectional: describe(bestDirectional),
-    bestGoal: describe(bestGoal),
+    bestGoal: describe(decision.hardStop ? bestGoalObservation : bestGoal),
     saferAlternative: describe(safer),
     alternatives,
     eligibleCount: candidates.length,

@@ -137,7 +137,7 @@ export async function persistProviderFixtures(supabase, providerItems) {
   const { data, error } = await supabase
     .from("fixtures")
     .upsert(fixtureRows, { onConflict: "external_fixture_id" })
-    .select("id,external_fixture_id,league_id,season,status,fixture_date");
+    .select("id,external_fixture_id,league_id,season,status,fixture_date,home_team_id,away_team_id,halftime_home,halftime_away,fulltime_home,fulltime_away");
   throwIfSupabaseError(error, "Unable to upsert fixtures");
 
   const leagueSeasons = uniqueBy(

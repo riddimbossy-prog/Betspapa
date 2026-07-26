@@ -42,7 +42,7 @@ function venueResult(side = "AWAY") {
 
 const samples = { homeVenue: 12, awayVenue: 12 };
 
-test("Athena v2 preserves the Aktobe 2 vs Kairat Almaty 2 example to Over 2.5", () => {
+test("Athena v3 preserves the high-event Aktobe 2 vs Kairat Almaty 2 route to Over 2.5", () => {
   const input = {
     id: "aktobe-kairat",
     home: {
@@ -68,7 +68,7 @@ test("Athena v2 preserves the Aktobe 2 vs Kairat Almaty 2 example to Over 2.5", 
     samples: { homeVenue: 15, awayVenue: 15 }
   });
 
-  assert.equal(ATHENA_ARBITRATION_VERSION, "2.0.0");
+  assert.equal(ATHENA_ARBITRATION_VERSION, "3.0.0");
   assert.equal(rc1.banker.market, MARKETS.AWAY_WIN_EITHER_HALF);
   assert.equal(arbitration.primary.market, MARKETS.OVER_2_5);
   assert.equal(arbitration.primary.score, 100);
@@ -154,7 +154,7 @@ test("CONFLICT_NO_PICK is a mandatory hard stop even when a goal score clears 80
   assert.equal(arbitration.primary.score, 0);
   assert.equal(arbitration.bestGoal.market, MARKETS.OVER_1_5);
   assert.equal(arbitration.bestGoal.score, 96);
-  assert.ok(arbitration.primary.warnings.includes("ATHENA_V111_CONFLICT_HARD_STOP"));
+  assert.ok(arbitration.primary.warnings.includes("ATHENA_V3_CONFLICT_HARD_STOP"));
 });
 
 test("Kopavogur vs Njardvik returns NO PICK while preserving Over 1.5 as observation only", () => {
@@ -184,8 +184,8 @@ test("Kopavogur vs Njardvik returns NO PICK while preserving Over 1.5 as observa
   });
 
   assert.equal(rc1.classification.type, CLASSIFICATIONS.CONFLICT_NO_PICK);
-  assert.equal(rc1.banker.market, MARKETS.OVER_1_5);
-  assert.equal(rc1.banker.score, 86);
+  assert.equal(rc1.banker.market, MARKETS.NO_PICK);
+  assert.equal(rc1.banker.score, 0);
   assert.equal(arbitration.primary.market, MARKETS.NO_PICK);
   assert.equal(arbitration.rule, "CONFLICT_HARD_STOP");
   assert.equal(arbitration.bestGoal.market, MARKETS.OVER_1_5);

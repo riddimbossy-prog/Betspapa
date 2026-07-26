@@ -1,5 +1,5 @@
-export const ENGINE_NAME = 'Athena Transition Engine';
-export const ENGINE_VERSION = '1.0.0-rc.1';
+export const ENGINE_NAME = 'Athena Swing Resolution & Half-Goals Engine';
+export const ENGINE_VERSION = '3.0.0';
 
 export const CLASSIFICATIONS = Object.freeze({
   STABLE_LEADER: 'STABLE_LEADER',
@@ -9,6 +9,11 @@ export const CLASSIFICATIONS = Object.freeze({
   HIGH_EVENT_EARLY_SEPARATION: 'HIGH_EVENT_EARLY_SEPARATION',
   FALSE_OVER_TRAP: 'FALSE_OVER_TRAP',
   SWING_GAME: 'SWING_GAME',
+  SWING_FULL_REVERSAL: 'SWING_FULL_REVERSAL',
+  SWING_LEAD_SURRENDER: 'SWING_LEAD_SURRENDER',
+  SWING_LATE_SEPARATION: 'SWING_LATE_SEPARATION',
+  SWING_TWO_WAY_INSTABILITY: 'SWING_TWO_WAY_INSTABILITY',
+  SWING_FALSE_SIGNAL: 'SWING_FALSE_SIGNAL',
   MULTI_ROUTE_ADVANTAGE: 'MULTI_ROUTE_ADVANTAGE',
   CONFLICT_NO_PICK: 'CONFLICT_NO_PICK'
 });
@@ -22,12 +27,19 @@ export const MARKETS = Object.freeze({
   AWAY_DOUBLE_CHANCE: 'AWAY_OR_DRAW',
   HOME_OVER_0_5: 'HOME_TEAM_OVER_0_5',
   AWAY_OVER_0_5: 'AWAY_TEAM_OVER_0_5',
+  HOME_SECOND_HALF_OVER_0_5: 'HOME_SECOND_HALF_OVER_0_5',
+  AWAY_SECOND_HALF_OVER_0_5: 'AWAY_SECOND_HALF_OVER_0_5',
+  HOME_SECOND_HALF_DNB: 'HOME_SECOND_HALF_DNB',
+  AWAY_SECOND_HALF_DNB: 'AWAY_SECOND_HALF_DNB',
   OVER_1_5: 'OVER_1_5',
   OVER_2_5: 'OVER_2_5',
   UNDER_2_5: 'UNDER_2_5',
   UNDER_3_5: 'UNDER_3_5',
   FIRST_HALF_UNDER_1_5: 'FIRST_HALF_UNDER_1_5',
   FIRST_HALF_OVER_0_5: 'FIRST_HALF_OVER_0_5',
+  SECOND_HALF_OVER_0_5: 'SECOND_HALF_OVER_0_5',
+  SECOND_HALF_OVER_1_5: 'SECOND_HALF_OVER_1_5',
+  GOALS_BOTH_HALVES: 'GOALS_BOTH_HALVES',
   HALF_TIME_DRAW: 'HALF_TIME_DRAW',
   FULL_TIME_DRAW: 'FULL_TIME_DRAW',
   BTTS_YES: 'BTTS_YES',
@@ -49,6 +61,14 @@ export const DEFAULT_CONFIG = Object.freeze({
   strongRouteRate: 0.25,
   meaningfulStateSample: 3,
   matchedReversalCountStrong: 2,
+  matchedSwingCountMinimum: 1,
+  secondHalfActivityStrong: 0.66,
+  secondHalfScoringStrong: 0.58,
+  secondHalfConcedingStrong: 0.58,
+  secondHalfOver15Strong: 0.42,
+  goalsBothHalvesStrong: 0.52,
+  eventCoverageRequired: 0.70,
+  eventCoverageSampleTarget: 20,
   marketOddsConflictRatio: 1.35,
   useOddsAsConfirmation: true,
   requireVenueSplitForConflictedDirection: true,

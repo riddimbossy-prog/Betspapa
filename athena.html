@@ -10,7 +10,7 @@
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Space+Grotesk:wght@600;700&amp;display=swap" rel="stylesheet"/>
 <link href="assets/css/country-flags.v1175.css" rel="stylesheet"/>
-<link href="assets/css/portal.v1190.css" rel="stylesheet"/>
+<link href="assets/css/portal.v1200.css" rel="stylesheet"/>
 <script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
 <link href="assets/css/mobile-nav.v111.css" rel="stylesheet"/>
 <meta content="yes" name="mobile-web-app-capable"/>
@@ -57,9 +57,9 @@
 </header>
 <main class="portal-main">
 <section class="portal-hero">
-<span class="eyebrow">BetsPapa v1.19.1</span>
+<span class="eyebrow">BetsPapa v1.20.0</span>
 <h1 id="portalTitle">Athena Transition Picks</h1>
-<p id="portalDescription">Athena v1.1.1 reads all nine HT/FT states, applies score-and-safety arbitration, and now treats CONFLICT NO PICK as a mandatory stop. Strong goal scores remain observations when the HT/FT structure has no clear shared market.</p>
+<p id="portalDescription">Athena v3 reads all nine HT/FT transitions, separates five kinds of swing match, and checks when each team scores and concedes. It chooses one supported market or returns NO PICK when the direction or data is unclear.</p>
 </section>
 <div class="status-strip" id="portalStatus"><span>Connecting to live data…</span><small></small></div>
 <div aria-label="Match status legend" class="match-state-legend">
@@ -82,7 +82,7 @@
 <button id="refreshButton" type="button">Refresh Athena</button>
 </div>
 <section class="metric-row" id="portalMetrics"></section>
-<div class="section-title"><h2>Athena selections</h2><p id="athenaFilterSummary">Qualified begins at 80/100 and Prime at 88/100. Use the filters to narrow the board instantly.</p></div><div id="portalContent"></div><section class="boss-method"><strong>Athena v1.1.1 conflict guard</strong><p>The RC1 scoring core remains intact. Score-and-safety arbitration still compares every qualified market, but CONFLICT NO PICK is now a hard stop. In that state, goal scores may be recorded as observations only and cannot become an official Athena selection.</p></section>
+<div class="section-title"><h2>Athena selections</h2><p id="athenaFilterSummary">Qualified begins at 80/100 and Prime at 88/100. Use the filters to narrow the board instantly.</p></div><div id="portalContent"></div><section class="boss-method"><strong>Athena v3 — Swing Resolution &amp; Half-Goals</strong><p>Athena now distinguishes full reversals, lead surrender, late separation, two-way instability and false swing signals. It compares first-half and second-half scoring, second-half conceding, goals in both halves, comeback evidence and venue HT/FT routes. Public explanations say in plain English why the market was selected. Missing event timing is never guessed.</p></section>
 <footer class="portal-footer">
 <span>Sports analytics only. Predictions are not guarantees. 18+.</span>
 <div>
@@ -99,7 +99,7 @@
 </div>
 </dialog>
 <script src="assets/js/country-flags.v1175.js"></script>
-<script src="assets/js/portal.v1190.js"></script>
+<script src="assets/js/portal.v1200.js"></script>
 <script src="assets/js/mobile-nav.v1184.js"></script>
 <script src="/assets/js/pwa.v1160.js"></script>
 <script src="/assets/js/ui.v1170.js"></script>

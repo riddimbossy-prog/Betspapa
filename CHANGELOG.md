@@ -1,5 +1,19 @@
 # BetsPapa Changelog
 
+## v1.20.0 — Athena v3 Swing Resolution & Half-Goals
+- Replaced the single swing bucket with full reversal, lead surrender, late separation, two-way instability and false-swing classifications.
+- Added first-half and second-half scoring/conceding profiles.
+- Added second-half Over 0.5, second-half Over 1.5, team second-half goal, second-half DNB and goals-in-both-halves markets.
+- Connected API-Football fixture events to background hydration with strict coverage checks.
+- Verifies event count and reconstructed score before event-based comeback claims are allowed.
+- Added retry cooldowns so failed or partial event requests do not repeatedly consume the API allowance.
+- Restricted Athena history and settlement to normal 90-minute FT results; extra time, shootouts and administrative results are excluded.
+- Added Supabase tables for goal events, event coverage and team half-goal profiles.
+- Added automatic settlement for every new Athena market.
+- Added plain-English public explanations and protected internal audits.
+- Preserved market and confidence filters, mobile layout and PapaSense logic.
+- Added 107 passing automated tests.
+
 ## v1.19.1 — Athena market and confidence filters
 - Added instant market filtering on Athena’s page.
 - Added Elite 90+, Prime 88+, and Qualified 80–87 confidence filters.

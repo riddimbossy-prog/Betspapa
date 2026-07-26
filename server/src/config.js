@@ -1,7 +1,7 @@
 export const SERVICE_NAME = "BetsPapa Prediction API";
-export const SERVICE_VERSION = "1.19.0";
+export const SERVICE_VERSION = "1.20.0";
 export const ENGINE_VERSION = "papasense-v1.18.1-no-draw-guard";
-export const ATHENA_ENGINE_VERSION = "athena-separation-v2.0.0";
+export const ATHENA_ENGINE_VERSION = "athena-v3.0.0-swing-half-goals";
 // Backward-compatible alias for older diagnostics clients.
 export const BOSS_ENGINE_VERSION = ATHENA_ENGINE_VERSION;
 
@@ -15,6 +15,9 @@ export function getApiFootballKey() {
 }
 
 export const FINISHED_PROFILE_STATUSES = new Set(["FT", "AET", "PEN", "AWD", "WO"]);
+// Athena markets are 90-minute markets. Extra-time, shootout and awarded results
+// must not be mixed into its transition or half-goal history.
+export const ATHENA_PROFILE_STATUSES = new Set(["FT"]);
 export const PREDICTABLE_STATUSES = new Set(["NS", "TBD"]);
 
 export const DEFAULT_ALLOWED_ORIGINS = [

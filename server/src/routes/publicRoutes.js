@@ -32,6 +32,18 @@ const dashboardCache = new Map();
 const resultsCache = new Map();
 const bankersCache = new Map();
 
+
+function publicAthenaPick(pick) {
+  if (!pick || typeof pick !== "object") return pick;
+  const {
+    internalAudit,
+    routeAudit,
+    arbitration,
+    ...publicPick
+  } = pick;
+  return publicPick;
+}
+
 function setPublicCache(res, maxAge, staleWhileRevalidate) {
   res.set("Cache-Control", `public, max-age=${maxAge}, stale-while-revalidate=${staleWhileRevalidate}`);
 }
@@ -272,9 +284,11 @@ async function athenaPicksHandler(req, res, next) {
     const result = await getAthenaPicks(getSupabaseAdmin(), date, { force });
     setPublicCache(res, result.cached ? 60 : 20, 900);
     res.set("Vary", "Origin, Accept-Encoding");
+    const publicPicks = (result.picks || []).map(publicAthenaPick);
     res.json({
       ...result,
-      matchStates: summarizeMatchStates(result.picks || []),
+      picks: publicPicks,
+      matchStates: summarizeMatchStates(publicPicks),
       liveRefresh: { refreshed: false, skipped: true, reason: "Athena prepared-pick reader" }
     });
   } catch (error) {

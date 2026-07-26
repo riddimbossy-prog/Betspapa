@@ -47,8 +47,8 @@ function scoreParts(fixture) {
     away,
     halfHome,
     halfAway,
-    secondHome: home - halfHome,
-    secondAway: away - halfAway,
+    secondHome: Math.max(0, home - halfHome),
+    secondAway: Math.max(0, away - halfAway),
     total: home + away
   };
 }
@@ -90,6 +90,12 @@ export function gradeEnginePick(pick, fixture, homeName, awayName) {
     case "first-half-over-05": return hh + ha >= 1 ? "WIN" : "LOSS";
     case "first-half-over-15": return hh + ha >= 2 ? "WIN" : "LOSS";
     case "second-half-over-05": return sh + sa >= 1 ? "WIN" : "LOSS";
+    case "second-half-over-15": return sh + sa >= 2 ? "WIN" : "LOSS";
+    case "goals-both-halves": return hh + ha >= 1 && sh + sa >= 1 ? "WIN" : "LOSS";
+    case "home-second-half-over-05": return sh >= 1 ? "WIN" : "LOSS";
+    case "away-second-half-over-05": return sa >= 1 ? "WIN" : "LOSS";
+    case "home-second-half-dnb": return sh === sa ? "VOID" : sh > sa ? "WIN" : "LOSS";
+    case "away-second-half-dnb": return sh === sa ? "VOID" : sa > sh ? "WIN" : "LOSS";
     case "gg-yes": return h > 0 && a > 0 ? "WIN" : "LOSS";
     case "gg-no": return h === 0 || a === 0 ? "WIN" : "LOSS";
     case "over-15": return total >= 2 ? "WIN" : "LOSS";

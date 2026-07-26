@@ -1,7 +1,13 @@
-BetsPapa v1.19.0 — FULL REPLACE
-1. Replace all repository files.
-2. Commit: BetsPapa v1.19.0 Athena Separation Engine v2
-3. Wait for GitHub Pages and Render.
-4. Check /api/health for service 1.19.0 and athena-separation-v2.0.0.
-5. Open /reset.html once.
-6. Run BetsPapa Prepare Tomorrow Board.
+BetsPapa v1.20.0 — FULL REPLACE
+
+1. In Supabase SQL Editor, run: supabase/BETSPAPA_V1_20_0_ATHENA_V3.sql
+2. Replace all repository files with this package.
+3. Commit: BetsPapa v1.20.0 Athena v3 Swing Resolution and Half Goals
+4. Wait for GitHub Pages and Render deployments to finish.
+5. Check /api/health for service 1.20.0 and athena-v3.0.0-swing-half-goals.
+6. Open /reset.html once to clear the old PWA cache.
+7. Run the protected Prepare Tomorrow Board workflow.
+8. Use POST /api/admin/hydrate-events or the normal history hydration job to backfill goal events gradually.
+
+Important: Athena never treats missing event timing as zero. Half-time/full-time scores remain usable, while event-dependent comeback claims stay disabled until coverage is complete.
+Athena also verifies that saved events reproduce the final score and uses only normal 90-minute FT history. Extra-time, shootout, awarded and walkover results do not enter Athena's half-goal model.

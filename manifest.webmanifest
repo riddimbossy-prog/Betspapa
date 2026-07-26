@@ -2,8 +2,8 @@
   "id": "/",
   "name": "BetsPapa \u2014 Football Intelligence",
   "short_name": "BetsPapa",
-  "description": "BetsPapa opens on Papa's Pick with Athena HT/FT transition analysis, consensus Bankers, live match states and verified results.",
-  "start_url": "/?source=pwa&v=1186",
+  "description": "BetsPapa opens on Papa's Pick with Athena v3 swing and half-goal analysis, consensus Bankers, live match states and verified results.",
+  "start_url": "/?source=pwa&v=1200",
   "scope": "/",
   "display": "standalone",
   "display_override": [
@@ -77,7 +77,7 @@
     {
       "name": "Athena Transition Picks",
       "short_name": "Athena",
-      "description": "Open Athena v1.1 score-and-safety transition picks",
+      "description": "Open Athena v3 swing-resolution and goals-by-half picks",
       "url": "/athena.html?source=shortcut",
       "icons": [
         {
@@ -130,5 +130,5 @@
       "label": "BetsPapa football intelligence dashboard"
     }
   ],
-  "version": "1.19.0"
+  "version": "1.20.0"
 }

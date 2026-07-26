@@ -16,6 +16,8 @@ import { fetchAllRows } from "../services/supabaseHelpers.js";
 import { getPredictionDiagnostics } from "../services/intelligenceService.js";
 import { getBackgroundProcessingStatus } from "../services/publicService.js";
 import { invalidatePreparedBoards, warmPreparedBoards } from "../services/boardSnapshotService.js";
+import { getAthenaPicks, invalidateAthenaPickCache } from "../services/athenaPickService.js";
+import { hydrateFixtureGoalEvents } from "../services/goalEventService.js";
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
@@ -234,6 +236,59 @@ adminRouter.post("/hydrate-date", async (req, res, next) => {
     );
 
     res.json({ status: "ok", action: "hydrate-date", date, result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.post("/hydrate-events", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.body?.date || todayUtc());
+    const supabase = getSupabaseAdmin();
+    const context = await loadHydrationContext(supabase, date);
+    const result = await hydrateFixtureGoalEvents(
+      supabase,
+      context.fixtures,
+      {
+        force: Boolean(req.body?.force),
+        limit: req.body?.limit
+      }
+    );
+
+    const rebuilt = [];
+    const leagueSeasons = new Map();
+    for (const fixture of context.fixtures) {
+      if (!fixture.league_id || !fixture.season) continue;
+      leagueSeasons.set(`${fixture.league_id}:${fixture.season}`, {
+        leagueId: fixture.league_id,
+        season: fixture.season
+      });
+    }
+    for (const item of leagueSeasons.values()) {
+      rebuilt.push(await rebuildProfiles(supabase, item.leagueId, item.season));
+    }
+
+    invalidateAthenaPickCache(date);
+    res.json({
+      status: "ok",
+      action: "hydrate-events",
+      date,
+      result,
+      rebuilt
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.get("/athena-audit", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.query?.date || todayUtc());
+    const force = ["1", "true", "force", "reload"].includes(
+      String(req.query?.force || "").toLowerCase()
+    );
+    const result = await getAthenaPicks(getSupabaseAdmin(), date, { force });
+    res.json({ status: "ok", action: "athena-audit", ...result });
   } catch (error) {
     next(error);
   }
