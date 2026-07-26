@@ -11,6 +11,8 @@ const HT_DRAW_ROUTES = ["DW", "DD", "DL"];
 const HOME_SCORES_ROUTES = ["WW", "WD", "WL", "DW", "LW", "LD"];
 const AWAY_SCORES_ROUTES = ["LL", "LD", "LW", "DL", "WL", "WD"];
 const SECOND_HALF_CHANGE_ROUTES = ["WD", "WL", "DW", "DL", "LW", "LD"];
+const HOME_SECOND_HALF_SCORE_ROUTES = ["DW", "LW", "LD"];
+const AWAY_SECOND_HALF_SCORE_ROUTES = ["DL", "WL", "WD"];
 
 function mass(p, routes) {
   return sum(routes.map((route) => Number(p[route] || 0)));
@@ -616,14 +618,128 @@ export function evaluateHtftGate({ market, matrix, direct, structure, goals, qua
   }
 
   if (key === "second-half-over-05") {
+    const halfAttack = Math.max(
+      Number(goals.homeHalfGoals?.secondHalfScoringRate || goals.homeGoals.secondHalfScoringRate || 0),
+      Number(goals.awayHalfGoals?.secondHalfScoringRate || goals.awayGoals.secondHalfScoringRate || 0)
+    );
     return buildGate({
       eligible: secondHalfChangeMass >= 0.34,
-      score: clamp(secondHalfChangeMass * 0.7 + Math.max(goals.homeGoals.secondHalfScoringRate, goals.awayGoals.secondHalfScoringRate) * 0.3),
+      score: clamp(secondHalfChangeMass * 0.7 + halfAttack * 0.3),
       rule: "Second Half Over 0.5 starts from HT/FT routes whose state changes after the break, because those routes require a second-half goal.",
       triggerRoutes: routeList(p, SECOND_HALF_CHANGE_ROUTES),
       contradictionRoutes: routeList(p, ["WW", "DD", "LL"]),
       triggerMass: secondHalfChangeMass,
       confirmations: [`State-changing HT/FT mass is ${(secondHalfChangeMass * 100).toFixed(1)}%.`]
+    });
+  }
+
+  if (key === "second-half-over-15") {
+    const twoGoalSupport = Number(goals.scores.secondHalfOver15 || 0);
+    const meaningfulChanges = routeList(p, SECOND_HALF_CHANGE_ROUTES, 0.045);
+    return buildGate({
+      eligible:
+        secondHalfChangeMass >= 0.38 &&
+        meaningfulChanges.length >= 2 &&
+        twoGoalSupport >= 0.58 &&
+        quality.score >= 0.62,
+      score: clamp(
+        secondHalfChangeMass * 0.42 +
+        twoGoalSupport * 0.4 +
+        quality.score * 0.18
+      ),
+      rule: "Second Half Over 1.5 needs several state-changing HT/FT routes plus independently repeated two-goal second halves.",
+      triggerRoutes: meaningfulChanges,
+      contradictionRoutes: routeList(p, ["WW", "DD", "LL"]),
+      triggerMass: secondHalfChangeMass,
+      confirmations: [
+        `State-changing HT/FT mass is ${(secondHalfChangeMass * 100).toFixed(1)}%.`,
+        `Independent second-half two-goal support is ${(twoGoalSupport * 100).toFixed(1)}%.`
+      ],
+      blockers: [
+        ...(meaningfulChanges.length < 2 ? ["The two-goal second-half call depends on one narrow transition route."] : []),
+        ...(quality.score < 0.62 ? ["Data quality is too weak for a two-goal second-half market."] : [])
+      ]
+    });
+  }
+
+  if (key === "goals-both-halves") {
+    const firstHalfGoalMass = 1 - direct.ht.draw;
+    const bothHalvesSupport = Number(goals.scores.goalsBothHalves || 0);
+    return buildGate({
+      eligible:
+        firstHalfGoalMass >= 0.48 &&
+        secondHalfChangeMass >= 0.3 &&
+        bothHalvesSupport >= 0.58 &&
+        quality.score >= 0.62,
+      score: clamp(
+        firstHalfGoalMass * 0.28 +
+        secondHalfChangeMass * 0.28 +
+        bothHalvesSupport * 0.32 +
+        quality.score * 0.12
+      ),
+      rule: "Goals in Both Halves requires one HT/FT route for an early goal and a separate state-changing route for a goal after the break.",
+      triggerRoutes: routeList(p, [...SECOND_HALF_CHANGE_ROUTES, "WW", "LL"]),
+      contradictionRoutes: routeList(p, ["DD"]),
+      triggerMass: Math.min(firstHalfGoalMass, secondHalfChangeMass),
+      confirmations: [
+        `Non-draw half-time mass is ${(firstHalfGoalMass * 100).toFixed(1)}%.`,
+        `State-changing second-half mass is ${(secondHalfChangeMass * 100).toFixed(1)}%.`
+      ]
+    });
+  }
+
+  if (key === "home-second-half-over-05" || key === "away-second-half-over-05") {
+    const side = key.startsWith("home") ? "home" : "away";
+    const routes = side === "home" ? HOME_SECOND_HALF_SCORE_ROUTES : AWAY_SECOND_HALF_SCORE_ROUTES;
+    const routeMass = mass(p, routes);
+    const goalSupport = side === "home"
+      ? Number(goals.metrics.homeSecondHalfGoalSupport || 0)
+      : Number(goals.metrics.awaySecondHalfGoalSupport || 0);
+    return buildGate({
+      eligible: routeMass >= 0.16 && goalSupport >= 0.55,
+      score: clamp(routeMass * 0.46 + goalSupport * 0.54),
+      rule: "A team second-half goal needs HT/FT routes that require that team to score after the break, confirmed by second-half scoring and opponent conceding.",
+      triggerRoutes: routeList(p, routes),
+      contradictionRoutes: routeList(p, side === "home" ? AWAY_SECOND_HALF_SCORE_ROUTES : HOME_SECOND_HALF_SCORE_ROUTES),
+      triggerMass: routeMass,
+      confirmations: [
+        `${side === "home" ? "Home" : "Away"} required second-half scoring mass is ${(routeMass * 100).toFixed(1)}%.`,
+        `Second-half team-goal support is ${(goalSupport * 100).toFixed(1)}%.`
+      ]
+    });
+  }
+
+  if (key === "home-second-half-dnb" || key === "away-second-half-dnb") {
+    const side = key.startsWith("home") ? "home" : "away";
+    const routes = side === "home" ? HOME_SECOND_HALF_SCORE_ROUTES : AWAY_SECOND_HALF_SCORE_ROUTES;
+    const routeMass = mass(p, routes);
+    const marketScore = side === "home"
+      ? Number(goals.scores.homeSecondHalfDnb || 0)
+      : Number(goals.scores.awaySecondHalfDnb || 0);
+    const selectedWinRate = side === "home"
+      ? Number(goals.homeHalfGoals?.secondHalfWinRate || 0)
+      : Number(goals.awayHalfGoals?.secondHalfWinRate || 0);
+    const opponentWinRate = side === "home"
+      ? Number(goals.awayHalfGoals?.secondHalfWinRate || 0)
+      : Number(goals.homeHalfGoals?.secondHalfWinRate || 0);
+    return buildGate({
+      eligible:
+        routeMass >= 0.16 &&
+        marketScore >= 0.54 &&
+        selectedWinRate - opponentWinRate >= 0.08 &&
+        quality.score >= 0.65,
+      score: clamp(routeMass * 0.34 + marketScore * 0.44 + quality.score * 0.12 + scaled(selectedWinRate - opponentWinRate, 0, 0.3) * 0.1),
+      rule: "Second-half DNB requires a clear post-break winning route, not only a team goal expectation.",
+      triggerRoutes: routeList(p, routes),
+      contradictionRoutes: routeList(p, side === "home" ? AWAY_SECOND_HALF_SCORE_ROUTES : HOME_SECOND_HALF_SCORE_ROUTES),
+      triggerMass: routeMass,
+      confirmations: [
+        `Selected-side second-half win-rate edge is ${((selectedWinRate - opponentWinRate) * 100).toFixed(1)} points.`
+      ],
+      blockers: [
+        ...(selectedWinRate - opponentWinRate < 0.08 ? ["The second-half win-rate edge is too small for DNB."] : []),
+        ...(quality.score < 0.65 ? ["Data quality is too weak for a second-half result market."] : [])
+      ]
     });
   }
 

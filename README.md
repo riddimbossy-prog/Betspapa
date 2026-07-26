@@ -1,3 +1,7 @@
+## v1.21.0 PapaSense v2 Four-Engine Resolution
+
+Papa’s Pick, Safer, Aggressive and Venue Pattern now use separate decision contracts on top of the shared HT/FT, venue, half-goal and event-aware evidence layer. Papa can return NO PICK; Safer must be a true broader containment market; Aggressive must be a same-story escalation; and Venue Pattern is independently generated from home-versus-away evidence. Per-engine settled results feed conservative confidence calibration. Run `supabase/BETSPAPA_V1_21_0_PAPASENSE_V2.sql` after the Athena v3 migration. See `PAPASENSE_V2_FOUR_ENGINE_RESOLUTION.md`.
+
 ## v1.20.0 Athena v3 Swing Resolution & Half-Goals
 
 Athena now separates five kinds of swing match, measures goals scored and conceded in each half, supports second-half and goals-in-both-halves markets, hydrates goal-event history in the background, and explains every published pick in plain English. Run `supabase/BETSPAPA_V1_20_0_ATHENA_V3.sql` before deployment. See `ATHENA_V3_SWING_HALF_GOALS.md`.

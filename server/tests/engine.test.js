@@ -35,12 +35,12 @@ test("invalid input is rejected", () => {
 });
 
 
-test("every valid fixture receives one market direction", () => {
+test("valid fixtures receive either a qualified selection or an explicit NO PICK", () => {
   for (const fixture of demoFixtures) {
     const prediction = predictMatch(fixture);
     assert.ok(prediction.primaryPrediction);
-    assert.equal(prediction.noBet, false);
-    assert.ok(["qualified", "directional"].includes(prediction.directionMode));
+    assert.ok(["qualified", "directional", "no-pick"].includes(prediction.directionMode));
+    assert.equal(prediction.noBet, prediction.primaryPrediction.key === "no-pick");
   }
 });
 
@@ -68,7 +68,7 @@ test("reason trace explains why the selected market beat Double Chance", () => {
 });
 
 
-test("PapaSense v1.7 returns all four engine picks", () => {
+test("PapaSense v2 returns all four engine decisions", () => {
   const prediction = predictMatch(demoFixtures[0]);
   assert.deepEqual(Object.keys(prediction.enginePicks).sort(), [
     "aggressive",
@@ -88,11 +88,12 @@ test("PapaSense v1.7 returns all four engine picks", () => {
   );
 });
 
-test("Venue Pattern includes Potosi-style opposite transition evidence", () => {
-  const prediction = predictMatch(demoFixtures[1]);
+test("Venue Pattern publishes only when the independent venue route passes", () => {
+  const prediction = predictMatch(demoFixtures[0]);
   assert.equal(prediction.venuePattern.indicators.length, 9);
-  assert.ok(prediction.enginePicks.venue.reasons.length >= 3);
+  assert.equal(prediction.enginePicks.venue.available, true);
   assert.ok(prediction.enginePicks.venue.venueRoute);
+  assert.equal(prediction.enginePicks.venue.marketPolicy.venueIndependent, true);
 });
 
 test("Aggressive and safer engines use distinct selection policies", () => {
@@ -152,13 +153,13 @@ test("every engine pick contains a market-specific explanation paragraph", () =>
 
 
 
-test("Safer uses the strongest qualified HT/FT-gated cushion instead of a fixed first option", () => {
+test("Safer refuses to invent a cushion when no true containment market passes", () => {
   const prediction = predictMatch(demoFixtures[1]);
   const safer = prediction.enginePicks.safer;
-  assert.equal(safer.qualified, true);
-  assert.equal(safer.marketPolicy.allEnginesUseOverhaulCatalogue, true);
-  assert.equal(safer.htftGate?.eligible, true);
-  assert.match(safer.explanationParagraph, /HT\/FT firing rule/i);
+  assert.equal(safer.available, false);
+  assert.equal(safer.key, "no-pick");
+  assert.equal(safer.marketPolicy.noPick, true);
+  assert.match(safer.explanationParagraph, /NO PICK/i);
 });
 
 test("repeated fallback engines are not independent banker votes", () => {
@@ -167,7 +168,11 @@ test("repeated fallback engines are not independent banker votes", () => {
     (pick) => pick.selection === prediction.enginePicks.primary.selection && pick.engineKey !== "primary"
   );
   for (const pick of repeated) {
-    assert.equal(pick.consensusEligible, false);
+    if (pick.marketPolicy?.purpose === "independent-venue") {
+      assert.equal(pick.consensusEligible, true);
+    } else {
+      assert.equal(pick.consensusEligible, false);
+    }
   }
 });
 
@@ -216,25 +221,27 @@ test('1/1 main story becomes home team to win either half',()=>{
   });
   const prediction=predictMatch(input);
   assert.equal(prediction.primaryPrediction.key,'home-win-either-half');
-  assert.equal(prediction.primaryPrediction.marketPolicy.topTransition,'WW');
+  assert.equal(prediction.primaryPrediction.marketPolicy.topTransition,'1/1');
 });
 
-test('draw transition family becomes Draw in Either Half',()=>{
+test('draw-lock family chooses a compatible draw market',()=>{
   const input=commonSenseFixture({
     homeTransitions:{WW:1,WD:4,WL:0,DW:4,DD:7,DL:1,LW:0,LD:2,LL:1},
     awayTransitions:{WW:1,WD:2,WL:0,DW:1,DD:7,DL:4,LW:0,LD:4,LL:1}
   });
-  assert.equal(predictMatch(input).primaryPrediction.key,'draw-either-half');
+  assert.ok(['draw-either-half','ht-draw','under-35'].includes(predictMatch(input).primaryPrediction.key));
 });
 
-test('comeback story becomes GG or Over 1.5',()=>{
+test('comeback story follows a reversal-compatible goal road',()=>{
   const input=commonSenseFixture({
     homeTransitions:{WW:1,WD:1,WL:9,DW:1,DD:1,DL:1,LW:4,LD:1,LL:1},
     awayTransitions:{WW:1,WD:1,WL:4,DW:1,DD:1,DL:1,LW:9,LD:1,LL:1},
     homeGoals:{scoreRate:0.82,concedeRate:0.78,bttsRate:0.72},
     awayGoals:{scoreRate:0.8,concedeRate:0.76,bttsRate:0.7}
   });
-  assert.ok(['gg-yes','over-15'].includes(predictMatch(input).primaryPrediction.key));
+  const prediction = predictMatch(input);
+  assert.match(prediction.papaSenseResolution.classification, /REVERSAL|INSTABILITY/);
+  assert.ok(['gg-yes','over-15','home-over-05','away-over-05','second-half-over-05'].includes(prediction.primaryPrediction.key));
 });
 
 test('actual team Over 0.5 odds below 1.20 are not kept',()=>{

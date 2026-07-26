@@ -3,6 +3,7 @@ import {
   FINISHED_PROFILE_STATUSES
 } from "../config.js";
 import { dateRangeUtc } from "../utils/date.js";
+import { saveEnginePickResults } from "./calibrationService.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 
 function resultLetter(teamGoals, opponentGoals) {
@@ -54,6 +55,9 @@ function scoreParts(fixture) {
 }
 
 export function gradeEnginePick(pick, fixture, homeName, awayName) {
+  if (!pick || pick.available === false || pick.key === "no-pick") {
+    return "UNABLE_TO_GRADE";
+  }
   const score = scoreParts(fixture);
   if (!score) return "UNABLE_TO_GRADE";
 
@@ -175,6 +179,7 @@ export async function gradePredictionsForDate(supabase, date) {
   const teamMap = new Map((teams || []).map((team) => [team.id, team.name]));
   const fixtureMap = new Map(fixtures.map((fixture) => [fixture.id, fixture]));
   const rows = [];
+  const engineResultRows = [];
   const skipped = [];
 
   for (const prediction of predictions || []) {
@@ -211,6 +216,32 @@ export async function gradePredictionsForDate(supabase, date) {
       graded_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     });
+
+    const enginePicks = prediction.market_scores?.enginePicks || {};
+    for (const [engineKey, pick] of Object.entries(enginePicks)) {
+      if (!pick || pick.available === false || pick.key === "no-pick") continue;
+      const engineOutcome = gradeEnginePick(
+        pick,
+        fixture,
+        teamMap.get(fixture.home_team_id),
+        teamMap.get(fixture.away_team_id)
+      );
+      if (!["WIN", "LOSS", "VOID"].includes(engineOutcome)) continue;
+      engineResultRows.push({
+        prediction_id: prediction.id,
+        fixture_id: fixture.id,
+        league_id: fixture.league_id || null,
+        engine_version: ENGINE_VERSION,
+        engine_key: engineKey,
+        market_key: pick.key,
+        market: pick.market || null,
+        selection: pick.selection,
+        confidence: Number(pick.confidence || 0),
+        outcome: engineOutcome,
+        graded_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+    }
   }
 
   if (rows.length) {
@@ -220,6 +251,8 @@ export async function gradePredictionsForDate(supabase, date) {
     throwIfSupabaseError(error, "Unable to save prediction results");
   }
 
+  const calibration = await saveEnginePickResults(supabase, engineResultRows);
+
   return {
     date,
     finishedFixtures: fixtures.length,
@@ -227,6 +260,9 @@ export async function gradePredictionsForDate(supabase, date) {
     wins: rows.filter((row) => row.outcome === "WIN").length,
     losses: rows.filter((row) => row.outcome === "LOSS").length,
     voids: rows.filter((row) => row.outcome === "VOID").length,
+    enginePicksGraded: engineResultRows.length,
+    calibrationProfilesUpdated: calibration.calibrationProfiles,
+    calibrationWarning: calibration.warning,
     skipped,
     results: rows
   };

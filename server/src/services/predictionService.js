@@ -33,6 +33,43 @@ function goalProfile(row) {
   };
 }
 
+function halfGoalProfile(row) {
+  if (!row) return { matches: 0, eventCoverageRate: 0 };
+  const matches = Number(row.matches_played || 0);
+  const eventCoverageMatches = Number(row.event_coverage_matches || 0);
+  return {
+    matches,
+    firstHalfGoalsFor: Number(row.first_half_goals_for || 0),
+    firstHalfGoalsAgainst: Number(row.first_half_goals_against || 0),
+    secondHalfGoalsFor: Number(row.second_half_goals_for || 0),
+    secondHalfGoalsAgainst: Number(row.second_half_goals_against || 0),
+    firstHalfScoringRate: Number(row.first_half_scoring_rate || 0),
+    firstHalfConcedingRate: Number(row.first_half_conceding_rate || 0),
+    secondHalfScoringRate: Number(row.second_half_scoring_rate || 0),
+    secondHalfConcedingRate: Number(row.second_half_conceding_rate || 0),
+    firstHalfOver05Rate: Number(row.first_half_over_05_rate || 0),
+    firstHalfOver15Rate: Number(row.first_half_over_15_rate || 0),
+    secondHalfOver05Rate: Number(row.second_half_over_05_rate || 0),
+    secondHalfOver15Rate: Number(row.second_half_over_15_rate || 0),
+    scoredBothHalvesRate: Number(row.scored_both_halves_rate || 0),
+    goalsBothHalvesRate: Number(row.goals_both_halves_rate || 0),
+    secondHalfWinRate: Number(row.second_half_win_rate || 0),
+    secondHalfDrawRate: Number(row.second_half_draw_rate || 0),
+    eventCoverageMatches,
+    eventCoverageRate: matches ? eventCoverageMatches / matches : 0,
+    goalsWhileTrailing: Number(row.goals_while_trailing || 0),
+    equalisersScored: Number(row.equalisers_scored || 0),
+    winningGoalsAfterEqualising: Number(row.winning_goals_after_equalising || 0),
+    leadsSurrendered: Number(row.leads_surrendered || 0),
+    minute46To60For: Number(row.minute_46_60_for || 0),
+    minute46To60Against: Number(row.minute_46_60_against || 0),
+    minute61To75For: Number(row.minute_61_75_for || 0),
+    minute61To75Against: Number(row.minute_61_75_against || 0),
+    minute76To90For: Number(row.minute_76_90_for || 0),
+    minute76To90Against: Number(row.minute_76_90_against || 0)
+  };
+}
+
 function profileWeight(row, currentLeagueId, currentSeason) {
   const rowLeague = Number(row.league_id);
   const rowSeason = Number(row.season);
@@ -138,6 +175,82 @@ function aggregateGoalProfiles(rows, currentLeagueId, currentSeason) {
 }
 
 
+function aggregateHalfGoalProfiles(rows, currentLeagueId, currentSeason) {
+  const rateColumns = [
+    "first_half_scoring_rate",
+    "first_half_conceding_rate",
+    "second_half_scoring_rate",
+    "second_half_conceding_rate",
+    "first_half_over_05_rate",
+    "first_half_over_15_rate",
+    "second_half_over_05_rate",
+    "second_half_over_15_rate",
+    "scored_both_halves_rate",
+    "goals_both_halves_rate",
+    "second_half_win_rate",
+    "second_half_draw_rate"
+  ];
+  const totalColumns = [
+    "first_half_goals_for",
+    "first_half_goals_against",
+    "second_half_goals_for",
+    "second_half_goals_against",
+    "event_coverage_matches",
+    "goals_while_trailing",
+    "equalisers_scored",
+    "winning_goals_after_equalising",
+    "leads_surrendered",
+    "minute_46_60_for",
+    "minute_46_60_against",
+    "minute_61_75_for",
+    "minute_61_75_against",
+    "minute_76_90_for",
+    "minute_76_90_against"
+  ];
+  const grouped = new Map();
+
+  for (const row of rows || []) {
+    const key = `${row.team_id}:${row.scope}`;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(row);
+  }
+
+  const map = new Map();
+  for (const [key, profileRows] of grouped.entries()) {
+    const row = {
+      team_id: profileRows[0].team_id,
+      scope: profileRows[0].scope,
+      matches_played: 0
+    };
+    const weightedRates = Object.fromEntries(rateColumns.map((column) => [column, 0]));
+    const weightedTotals = Object.fromEntries(totalColumns.map((column) => [column, 0]));
+    let totalWeight = 0;
+
+    for (const profile of profileRows) {
+      const matches = Number(profile.matches_played || 0);
+      const weight = profileWeight(profile, currentLeagueId, currentSeason);
+      const sampleWeight = matches * weight;
+      row.matches_played += sampleWeight;
+      totalWeight += sampleWeight;
+      for (const column of rateColumns) {
+        weightedRates[column] += Number(profile[column] || 0) * sampleWeight;
+      }
+      for (const column of totalColumns) {
+        weightedTotals[column] += Number(profile[column] || 0) * weight;
+      }
+    }
+
+    for (const column of rateColumns) {
+      row[column] = totalWeight ? weightedRates[column] / totalWeight : 0;
+    }
+    for (const column of totalColumns) row[column] = weightedTotals[column];
+    map.set(key, row);
+  }
+
+  return map;
+}
+
+
 function roundedSample(value) {
   return Number(Number(value || 0).toFixed(2));
 }
@@ -148,7 +261,14 @@ function teamEvidence(team) {
     venue: roundedSample(team.htft?.venue?.matches),
     recent: roundedSample(team.htft?.recent?.matches),
     goalOverall: roundedSample(team.goals?.overall?.matches),
-    goalVenue: roundedSample(team.goals?.venue?.matches)
+    goalVenue: roundedSample(team.goals?.venue?.matches),
+    halfOverall: roundedSample(team.halfGoals?.overall?.matches),
+    halfVenue: roundedSample(team.halfGoals?.venue?.matches),
+    eventCoverageRate: roundedSample(
+      team.halfGoals?.venue?.eventCoverageRate ||
+      team.halfGoals?.overall?.eventCoverageRate ||
+      0
+    )
   };
 }
 
@@ -190,7 +310,28 @@ function teamProfileVector(team) {
     ];
   });
 
-  return [...htft, ...goals].map((value) => Number(value || 0).toFixed(4));
+  const halfGoals = ["overall", "venue", "recent"].flatMap((scope) => {
+    const row = team.halfGoals?.[scope] || {};
+    return [
+      row.matches || 0,
+      row.firstHalfScoringRate || 0,
+      row.firstHalfConcedingRate || 0,
+      row.secondHalfScoringRate || 0,
+      row.secondHalfConcedingRate || 0,
+      row.firstHalfOver05Rate || 0,
+      row.firstHalfOver15Rate || 0,
+      row.secondHalfOver05Rate || 0,
+      row.secondHalfOver15Rate || 0,
+      row.scoredBothHalvesRate || 0,
+      row.goalsBothHalvesRate || 0,
+      row.eventCoverageRate || 0,
+      row.goalsWhileTrailing || 0,
+      row.equalisersScored || 0,
+      row.leadsSurrendered || 0
+    ];
+  });
+
+  return [...htft, ...goals, ...halfGoals].map((value) => Number(value || 0).toFixed(4));
 }
 
 function buildProfileAudit({
@@ -220,8 +361,18 @@ function buildProfileAudit({
 
   return {
     minimums: {
-      overall: 4,
-      venueOrRecent: 2
+      analysisFloor: {
+        overall: 4,
+        venueOrRecent: 2
+      },
+      publicMarketGates: {
+        broadGoals: { overall: 8, venue: 5 },
+        protection: { overall: 10, venue: 6 },
+        straightResult: { overall: 12, venue: 7 },
+        exactHtft: { overall: 14, venue: 8 },
+        halfSpecific: { completeHalfTimeMatches: 5 },
+        eventDependent: { minimumEventCoverageRate: 0.7 }
+      }
     },
     home: {
       teamId: homeTeam.id,
@@ -285,6 +436,38 @@ function weightedLeagueGoalRate(goalRows, column, fallback) {
   return matches ? weighted / matches : fallback;
 }
 
+
+function buildCalibrationMap(rows = []) {
+  const output = {};
+  for (const row of rows) {
+    const engine = String(row.engine_key || "all");
+    const market = String(row.market_key || "");
+    if (!market) continue;
+    if (!output[engine]) output[engine] = {};
+    const current = output[engine][market];
+    const sampleCount = Number(row.sample_count || 0);
+    const isLeagueScope = row.league_id !== null && row.league_id !== undefined;
+    // Prefer league-specific calibration only after it has enough settled
+    // selections. Until then, a deeper global profile remains the safer base.
+    const scopePriority = isLeagueScope ? (sampleCount >= 50 ? 2 : 0) : 1;
+    const currentPriority = Number(current?.scopePriority ?? -1);
+    const shouldReplace = !current ||
+      scopePriority > currentPriority ||
+      (scopePriority === currentPriority && sampleCount >= Number(current.sampleCount || 0));
+    if (shouldReplace) {
+      output[engine][market] = {
+        sampleCount,
+        observedHitRate: Number(row.observed_hit_rate || 0),
+        lowerBound: Number(row.lower_bound || row.observed_hit_rate || 0),
+        scopeKey: row.scope_key || (scopePriority === 2 ? `LEAGUE:${row.league_id}` : "GLOBAL"),
+        leagueId: row.league_id ?? null,
+        scopePriority
+      };
+    }
+  }
+  return output;
+}
+
 async function loadTeams(supabase, teamIds) {
   const { data, error } = await supabase
     .from("teams")
@@ -302,6 +485,21 @@ async function loadLeague(supabase, leagueId) {
     .single();
   throwIfSupabaseError(error, "Unable to load league");
   return data;
+}
+
+
+function optionalTableMissing(error, tableName) {
+  const message = String(error?.message || error || "");
+  return /42P01|does not exist|schema cache/i.test(message) && message.includes(tableName);
+}
+
+async function loadOptionalRows(queryFactory, tableName) {
+  try {
+    return await fetchAllRows(queryFactory);
+  } catch (error) {
+    if (optionalTableMissing(error, tableName)) return [];
+    throw error;
+  }
 }
 
 async function loadTeamHistoryProfiles(supabase, teamId, cache) {
@@ -322,15 +520,23 @@ async function loadTeamHistoryProfiles(supabase, teamId, cache) {
         .select("*")
         .eq("team_id", teamId)
         .order("season", { ascending: false })
+    ),
+    loadOptionalRows(() =>
+      supabase
+        .from("team_half_goal_profiles")
+        .select("*")
+        .eq("team_id", teamId)
+        .order("season", { ascending: false }),
+      "team_half_goal_profiles"
     )
-  ]).then(([htftRows, goalRows]) => ({ htftRows, goalRows }));
+  ]).then(([htftRows, goalRows, halfGoalRows]) => ({ htftRows, goalRows, halfGoalRows }));
 
   cache.set(key, promise);
   return promise;
 }
 
 async function loadProfiles(supabase, leagueId, season) {
-  const [htftRows, goalRows] = await Promise.all([
+  const [htftRows, goalRows, halfGoalRows, calibrationRows] = await Promise.all([
     fetchAllRows(() =>
       supabase
         .from("team_htft_profiles")
@@ -344,12 +550,28 @@ async function loadProfiles(supabase, leagueId, season) {
         .select("*")
         .eq("league_id", leagueId)
         .eq("season", season)
+    ),
+    loadOptionalRows(() =>
+      supabase
+        .from("team_half_goal_profiles")
+        .select("*")
+        .eq("league_id", leagueId)
+        .eq("season", season),
+      "team_half_goal_profiles"
+    ),
+    loadOptionalRows(() =>
+      supabase
+        .from("engine_calibration_profiles")
+        .select("engine_key,market_key,scope_key,league_id,sample_count,observed_hit_rate,lower_bound")
+        .eq("engine_version", ENGINE_VERSION)
+        .or(`league_id.eq.${leagueId},league_id.is.null`),
+      "engine_calibration_profiles"
     )
   ]);
-  return { htftRows, goalRows };
+  return { htftRows, goalRows, halfGoalRows, calibrationRows };
 }
 
-function buildTeamInput(team, side, htftMap, goalMap) {
+function buildTeamInput(team, side, htftMap, goalMap, halfGoalMap) {
   const venueScope = side === "home" ? "home" : "away";
   return {
     name: team.name,
@@ -369,6 +591,11 @@ function buildTeamInput(team, side, htftMap, goalMap) {
       overall: goalProfile(goalMap.get(`${team.id}:overall`)),
       venue: goalProfile(goalMap.get(`${team.id}:${venueScope}`)),
       recent: goalProfile(goalMap.get(`${team.id}:recent6`))
+    },
+    halfGoals: {
+      overall: halfGoalProfile(halfGoalMap?.get(`${team.id}:overall`)),
+      venue: halfGoalProfile(halfGoalMap?.get(`${team.id}:${venueScope}`)),
+      recent: halfGoalProfile(halfGoalMap?.get(`${team.id}:recent6`))
     }
   };
 }
@@ -380,7 +607,11 @@ function predictionRow(fixture, prediction) {
   const warnings = [
     ...(prediction.dataQuality?.label === "Small sample" ? ["Small profile sample"] : []),
     ...(primary?.blockers || []),
-    ...(!primary?.qualified ? ["Directional pick — below the strong-pick threshold"] : [])
+    ...(prediction.noBet
+      ? ["NO PICK — no market cleared the story, sample and confidence gates"]
+      : !primary?.qualified
+        ? ["Directional pick — below the strong-pick threshold"]
+        : [])
   ];
 
   return {
@@ -389,7 +620,9 @@ function predictionRow(fixture, prediction) {
     primary_market: primary?.market || "No Bet",
     primary_selection: primary?.selection || "No Bet",
     probability: primary?.modelScore ?? null,
-    confidence: primary ? Number((primary.safetyAdjustedScore * 100).toFixed(2)) : 0,
+    confidence: primary
+      ? Number(((primary.calibratedConfidence ?? primary.safetyAdjustedScore ?? 0) * 100).toFixed(2))
+      : 0,
     confidence_tier: primary?.tier || "No Bet",
     strongest_transition: strongest?.code || null,
     transition_probability: strongest?.probability ?? null,
@@ -416,7 +649,9 @@ function predictionRow(fixture, prediction) {
       defaultEngine: prediction.defaultEngine,
       venuePattern: prediction.venuePattern,
       profileAudit: prediction.profileAudit,
-      analysisFingerprint: prediction.analysisFingerprint
+      analysisFingerprint: prediction.analysisFingerprint,
+      papaSenseResolution: prediction.papaSenseResolution,
+      noBet: prediction.noBet
     },
     transition_matrix: prediction.transitionMatrix,
     reasons,
@@ -470,6 +705,10 @@ async function predictFixture(supabase, fixture, cached) {
     ...(homeHistory.goalRows || []),
     ...(awayHistory.goalRows || [])
   ];
+  const historyHalfGoalRows = [
+    ...(homeHistory.halfGoalRows || []),
+    ...(awayHistory.halfGoalRows || [])
+  ];
 
   const htftMap = aggregateHtftProfiles(
     historyHtftRows,
@@ -481,9 +720,14 @@ async function predictFixture(supabase, fixture, cached) {
     fixture.league_id,
     fixture.season
   );
+  const halfGoalMap = aggregateHalfGoalProfiles(
+    historyHalfGoalRows,
+    fixture.league_id,
+    fixture.season
+  );
 
-  const home = buildTeamInput(homeTeam, "home", htftMap, goalMap);
-  const away = buildTeamInput(awayTeam, "away", htftMap, goalMap);
+  const home = buildTeamInput(homeTeam, "home", htftMap, goalMap, halfGoalMap);
+  const away = buildTeamInput(awayTeam, "away", htftMap, goalMap, halfGoalMap);
 
   const profileAudit = buildProfileAudit({
     fixture,
@@ -504,6 +748,7 @@ async function predictFixture(supabase, fixture, cached) {
     profileAudit,
     analysisFingerprint: profileAudit.analysisFingerprint,
     odds: fixture.market_odds || fixture.odds || fixture.bookmaker_odds || null,
+    calibration: buildCalibrationMap(context.calibrationRows || []),
     league: {
       transitionBaseline: deriveLeagueBaseline(context.htftRows),
       goals: {

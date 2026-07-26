@@ -1,5 +1,12 @@
 import { predictMatch as predictWithOverhaul } from "./overhaulEngine.js";
 import { predictMatch as predictWithConsensusSupport } from "./consensusSupportEngine.js";
+import {
+  auditPapaSenseMarkets,
+  classifyPapaSenseMatch,
+  publicExplanation,
+  resolutionMetadata,
+  selectPapaSenseV2
+} from "./papaSenseResolutionV2.js";
 
 const SPECIAL_COMMON_SENSE_KEYS = new Set([
   "home-win-either-half",
@@ -316,7 +323,7 @@ function selectAuthoritativePrimary(markets, input, overhaul) {
   if (selected) {
     selected.marketPolicy = {
       ...(selected.marketPolicy || {}),
-      version: "papa-htft-first-v1.18.1",
+      version: "papasense-v2.0.0",
       topTransition,
       directTranslationApplied: directKeys.includes(selected.key),
       directPreference: directKeys[0] || null,
@@ -359,7 +366,7 @@ function selectAuthoritativePrimary(markets, input, overhaul) {
   if (selected) {
     selected.marketPolicy = {
       ...(selected.marketPolicy || {}),
-      version: "papa-htft-first-v1.18.1",
+      version: "papasense-v2.0.0",
       topTransition,
       directTranslationApplied: directKeys.includes(selected.key),
       directPreference: directKeys[0] || null,
@@ -693,62 +700,110 @@ function buildEnginePick({
   market,
   overhaul,
   support,
-  selectionReason,
-  independent,
+  input,
+  classification,
+  purpose,
+  parentKey = null,
+  independent = true,
   venueRoute = null
 }) {
-  const confidence = rounded(Number(market.safetyAdjustedScore || 0) * 100, 2);
-  const explanation = marketSpecificExplanation(
-    engineName === "Papa's Pick" ? "Papa" : engineName,
-    market,
-    overhaul,
-    support,
-    selectionReason
+  if (!market || market.available === false || market.key === "no-pick") {
+    return market || {
+      engineKey,
+      engineName,
+      available: false,
+      key: "no-pick",
+      market: "No Pick",
+      selection: "NO PICK",
+      confidence: 0,
+      qualified: false,
+      reasons: ["No market passed this engine's rules."],
+      cautions: classification?.reasons || [],
+      consensusEligible: false,
+      independentConsensusVote: false
+    };
+  }
+
+  const engineCalibration = market.calibrationByEngine?.[engineKey] || null;
+  const confidenceValue = Number(
+    engineCalibration?.value ?? market.calibratedConfidence ?? market.safetyAdjustedScore ?? 0
   );
+  const calibrationSource = engineCalibration?.source || market.calibrationSource || "conservative-fallback";
+  const calibrationSampleCount = Number(engineCalibration?.sampleCount ?? market.calibrationSampleCount ?? 0);
+  const confidence = rounded(confidenceValue * 100, 2);
+  const explanation = publicExplanation({
+    engineKey,
+    engineName: engineName === "Papa's Pick" ? "Papa" : engineName,
+    market,
+    classification,
+    purpose,
+    parentKey,
+    input
+  });
 
   const descriptions = {
-    primary: "Authoritative HT/FT-first market intelligence with market-specific confirmations.",
-    aggressive: "Higher-specificity qualified market selected from the same audited overhaul catalogue.",
-    safer: "Lower-risk qualified market selected only after its own threshold and blocker checks.",
-    venue: "Venue-led route mapped back into the audited overhaul market catalogue."
+    primary: "Papa's balanced pick after story, sample, conflict and market checks.",
+    aggressive: "A higher-condition version of Papa's same match story.",
+    safer: "A broader, lower-condition version of Papa's same match story.",
+    venue: "An independent home-record versus away-record selection."
   };
 
   const legacyEvidence = support?.enginePicks?.[engineKey]?.explanationEvidence ||
     support?.enginePicks?.primary?.explanationEvidence || {};
   const top = overhaul?.story?.topTransitions?.[0] || null;
   const second = overhaul?.story?.topTransitions?.[1] || null;
+  const sample = market.sampleGate?.samples || {};
 
   return {
     engineKey,
     engineName,
+    available: true,
     key: market.key,
     family: market.family || market.market,
     market: market.market,
     selection: market.selection,
-    score: Number(market.safetyAdjustedScore || 0),
+    score: confidenceValue,
     confidence,
     modelScore: Number(market.modelScore || 0),
     threshold: Number(market.threshold || 0),
-    comparisonScore: Number(market.comparisonScore || market.directionalRankScore || 0),
+    comparisonScore: Number(market.resolutionScore || market.comparisonScore || 0),
     qualified: Boolean(market.qualified),
     mode: market.qualified ? "qualified" : "directional",
-    tier: market.tier,
+    tier: market.tier || (confidence >= 80 ? "Qualified" : "Directional"),
     reasons: [
-      `This ${engineName} selection came from the audited full-market catalogue.`,
-      selectionReason,
+      classification?.reasons?.[0] || "The HT/FT and goal story supports this market.",
+      purpose === "containment"
+        ? "This market is a true broader version of Papa's pick and needs fewer conditions to land."
+        : purpose === "same-story-escalation"
+          ? "This market keeps Papa's original story but adds one extra condition."
+          : purpose === "independent-venue"
+            ? "This selection was produced independently from the home team's home record and the away team's away record."
+            : "This was the strongest balanced market compatible with the classified match story.",
       ...(market.reasons || [])
     ],
     cautions: [
       ...(market.blockers || []),
-      ...(!market.qualified
-        ? ["Directional only — this selection did not pass its full market threshold."]
-        : []),
-      ...(!independent
-        ? ["This engine repeated Papa's Pick because no independent alternative passed; it is not a separate consensus vote."]
+      ...(calibrationSource === "conservative-fallback"
+        ? ["Historical calibration is not yet deep enough for this exact engine and market, so displayed strength is reduced conservatively."]
         : [])
     ],
     description: descriptions[engineKey],
     explanationParagraph: explanation,
+    publicExplanation: explanation,
+    internalAudit: {
+      classification: resolutionMetadata(classification),
+      sampleGate: market.sampleGate || null,
+      modelScore: market.modelScore,
+      safetyAdjustedScore: market.safetyAdjustedScore,
+      resolutionScore: market.resolutionScore,
+      calibratedConfidence: confidenceValue,
+      calibrationSource,
+      calibrationSampleCount,
+      parentKey,
+      purpose,
+      marketEvidence: market.evidence || {},
+      htftGate: market.htftGate || null
+    },
     explanationEvidence: {
       strongestRoute: top?.code || legacyEvidence.strongestRoute || null,
       strongestRouteMeaning: legacyEvidence.strongestRouteMeaning ||
@@ -757,84 +812,89 @@ function buildEnginePick({
       secondRouteMeaning: legacyEvidence.secondRouteMeaning ||
         (second ? `${second.code} carries ${percent(second.probability)} of the compatible matrix` : null),
       homeSupport: legacyEvidence.homeSupport || {
-        count: 0, total: 0, percent: 0, approximate: true, text: "profile evidence reviewed"
+        count: Math.round(sample.home?.overall || 0),
+        total: Math.round(sample.home?.overall || 0),
+        percent: 100,
+        approximate: false,
+        text: `${Math.round(sample.home?.overall || 0)} overall and ${Math.round(sample.home?.venue || 0)} home matches reviewed`
       },
       awaySupport: legacyEvidence.awaySupport || {
-        count: 0, total: 0, percent: 0, approximate: true, text: "profile evidence reviewed"
+        count: Math.round(sample.away?.overall || 0),
+        total: Math.round(sample.away?.overall || 0),
+        percent: 100,
+        approximate: false,
+        text: `${Math.round(sample.away?.overall || 0)} overall and ${Math.round(sample.away?.venue || 0)} away matches reviewed`
       },
-      selectionBasis: GOAL_MARKET_KEYS.has(market.key)
-        ? "market-specific goal evidence"
-        : RESULT_MARKET_KEYS.has(market.key)
-          ? "market-specific result and HT/FT evidence"
-          : "market-specific overhaul evidence",
+      selectionBasis: purpose === "independent-venue"
+        ? "independent home-versus-away venue evidence"
+        : purpose === "containment"
+          ? "same-story safer containment"
+          : purpose === "same-story-escalation"
+            ? "same-story aggressive escalation"
+            : GOAL_MARKET_KEYS.has(market.key)
+              ? "match-classified goal evidence"
+              : "match-classified result and HT/FT evidence",
       marketEvidence: market.evidence || {},
       htftGate: market.htftGate || null,
       goalMetrics: overhaul?.goalIntelligence?.metrics || {},
       goalScores: overhaul?.goalIntelligence?.scores || {},
       resultStructure: overhaul?.resultStructure || {},
       topTransitions: overhaul?.story?.topTransitions || [],
-      decision: selectionReason
+      decision: explanation
     },
     venueRoute,
+    classification: classification?.classification || null,
     independentConsensusVote: Boolean(independent),
-    consensusEligible: Boolean(independent),
-    engineSource: market.engineSource || "full-market-overhaul",
+    consensusEligible: Boolean(independent && market.qualified),
+    engineSource: "papasense-v2-resolution",
     htftGate: market.htftGate || null,
     marketPolicy: {
       ...(market.marketPolicy || {}),
-      version: "papa-htft-first-v1.18.1",
+      version: "papasense-v2.0.0",
       authoritativeCore: true,
       allEnginesUseOverhaulCatalogue: true,
-      independentConsensusVote: Boolean(independent)
+      independentConsensusVote: Boolean(independent),
+      purpose,
+      parentKey,
+      sameStoryRequired: engineKey === "safer" || engineKey === "aggressive",
+      venueIndependent: engineKey === "venue"
     }
   };
 }
 
-function buildEngineSuite(primary, markets, overhaul, support, input, resultVsGoalPolicy = null) {
-  const safer = chooseSaferMarket(markets, primary, input, overhaul);
-  const aggressive = chooseAggressiveMarket(markets, primary, input, overhaul);
-  const venue = chooseVenueMarket(markets, primary, support);
+function buildEngineSuite(markets, overhaul, support, input, classification) {
+  const selections = selectPapaSenseV2(markets, input, classification);
+
+  const build = (engineKey, engineName, descriptor) => {
+    if (descriptor?.available === false || descriptor?.key === "no-pick") {
+      return descriptor;
+    }
+    return buildEnginePick({
+      engineKey,
+      engineName,
+      market: descriptor?.market,
+      overhaul,
+      support,
+      input,
+      classification: descriptor?.classification || classification,
+      purpose: descriptor?.purpose,
+      parentKey: descriptor?.parentKey || null,
+      independent: true,
+      venueRoute: descriptor?.venueClassification
+        ? {
+            classification: descriptor.venueClassification,
+            strength: descriptor.venueStrength,
+            margin: descriptor.venueMargin
+          }
+        : null
+    });
+  };
 
   return {
-    primary: buildEnginePick({
-      engineKey: "primary",
-      engineName: "Papa's Pick",
-      market: primary,
-      overhaul,
-      support,
-      selectionReason: resultVsGoalPolicy?.applied
-        ? resultVsGoalPolicy.reason
-        : "This market passed its HT/FT firing gate, survived its own statistical confirmations and blockers, then ranked highest by threshold-relative strength.",
-      independent: true
-    }),
-    aggressive: buildEnginePick({
-      engineKey: "aggressive",
-      engineName: "Aggressive",
-      market: aggressive.market,
-      overhaul,
-      support,
-      selectionReason: aggressive.reason,
-      independent: aggressive.independent
-    }),
-    safer: buildEnginePick({
-      engineKey: "safer",
-      engineName: "Safer",
-      market: safer.market,
-      overhaul,
-      support,
-      selectionReason: safer.reason,
-      independent: safer.independent
-    }),
-    venue: buildEnginePick({
-      engineKey: "venue",
-      engineName: "Venue Pattern",
-      market: venue.market,
-      overhaul,
-      support,
-      selectionReason: venue.reason,
-      independent: venue.independent,
-      venueRoute: venue.venueRoute
-    })
+    primary: build("primary", "Papa's Pick", selections.primary),
+    aggressive: build("aggressive", "Aggressive", selections.aggressive),
+    safer: build("safer", "Safer", selections.safer),
+    venue: build("venue", "Venue Pattern", selections.venue)
   };
 }
 
@@ -913,7 +973,7 @@ function buildDecisionTrace(primary, markets, overhaul, support, enginePicks) {
     enginePicks,
     venuePatternReview: support?.decisionTrace?.venuePatternReview || null,
     marketPolicy: {
-      version: "papa-htft-first-v1.18.1",
+      version: "papasense-v2.0.0",
       authoritativeCore: true,
       allEnginesUseOverhaulCatalogue: true,
       specialCommonSenseCompatibility: SPECIAL_COMMON_SENSE_KEYS.has(primary.key)
@@ -922,21 +982,54 @@ function buildDecisionTrace(primary, markets, overhaul, support, enginePicks) {
 }
 
 export function predictMatch(input) {
-  // The support engine still supplies anti-zombie evidence, venue context and
-  // later special rules, but it no longer owns Safer/Aggressive goal logic.
   const support = predictWithConsensusSupport(input);
   const overhaul = predictWithOverhaul(input);
 
-  const markets = mergeMarkets(overhaul.markets, support.markets);
-  const { selected: primary, oddsPolicy, resultVsGoalPolicy } = selectAuthoritativePrimary(markets, input, overhaul);
-  const enginePicks = buildEngineSuite(primary, markets, overhaul, support, input, resultVsGoalPolicy);
+  const mergedMarkets = mergeMarkets(overhaul.markets, support.markets);
+  const classification = classifyPapaSenseMatch(input, overhaul);
+  const markets = auditPapaSenseMarkets(mergedMarkets, input, classification);
+  const enginePicks = buildEngineSuite(markets, overhaul, support, input, classification);
+  const primaryPick = enginePicks.primary;
+  const primary = primaryPick?.available === false
+    ? {
+        key: "no-pick",
+        market: "No Pick",
+        selection: "NO PICK",
+        qualified: false,
+        modelScore: 0,
+        safetyAdjustedScore: 0,
+        calibratedConfidence: 0,
+        comparisonScore: 0,
+        threshold: 1,
+        tier: "NO PICK",
+        blockers: primaryPick.cautions || [],
+        reasons: primaryPick.reasons || [],
+        htftGate: null,
+        sampleGate: null,
+        marketPolicy: primaryPick.marketPolicy || { version: "papasense-v2.0.0", noPick: true }
+      }
+    : markets.find((market) => market.key === primaryPick.key) || {
+        ...primaryPick,
+        safetyAdjustedScore: Number(primaryPick.score || 0),
+        calibratedConfidence: Number(primaryPick.confidence || 0) / 100
+      };
 
-  const supportingPrediction = markets.find(
-    (market) =>
-      marketIdentity(market) !== marketIdentity(primary) &&
-      market.family !== primary.family &&
-      (market.qualified || Number(market.directionalRankScore || 0) >= 0.58)
-  ) || overhaul.supportingPrediction || support.supportingPrediction || null;
+  primary.marketPolicy = {
+    ...(primary.marketPolicy || {}),
+    version: "papasense-v2.0.0",
+    classification: classification.classification,
+    topTransition: overhaul?.story?.topTransitions?.[0]?.code || null,
+    noPick: primary.key === "no-pick"
+  };
+
+  const supportingPrediction = primary.key === "no-pick"
+    ? null
+    : markets.find(
+        (market) =>
+          marketIdentity(market) !== marketIdentity(primary) &&
+          market.family !== primary.family &&
+          market.qualified
+      ) || null;
 
   const decisionTrace = buildDecisionTrace(
     primary,
@@ -945,8 +1038,23 @@ export function predictMatch(input) {
     support,
     enginePicks
   );
-  decisionTrace.oddsPolicy = oddsPolicy;
-  decisionTrace.resultVsGoalPolicy = resultVsGoalPolicy;
+  decisionTrace.papaSenseResolution = resolutionMetadata(classification);
+  decisionTrace.oddsPolicy = primaryPick?.marketPolicy?.oddsPolicy || {
+    applied: false,
+    reason: null,
+    observedPrice: null
+  };
+  decisionTrace.publicExplanation = primaryPick?.explanationParagraph || primaryPick?.description || null;
+  decisionTrace.internalAudit = {
+    classification: resolutionMetadata(classification),
+    enginePicks: Object.fromEntries(Object.entries(enginePicks).map(([key, pick]) => [key, pick?.internalAudit || {
+      available: pick?.available !== false,
+      reasons: pick?.reasons || [],
+      cautions: pick?.cautions || []
+    }]))
+  };
+
+  const noBet = primary.key === "no-pick";
 
   return {
     ...support,
@@ -958,31 +1066,36 @@ export function predictMatch(input) {
     markets,
     enginePicks,
     defaultEngine: "primary",
-    noBet: false,
-    qualified: Boolean(primary.qualified),
-    directionMode: primary.qualified ? "qualified" : "directional",
+    noBet,
+    qualified: !noBet && Boolean(primary.qualified),
+    directionMode: noBet ? "no-pick" : primary.qualified ? "qualified" : "directional",
     decisionTrace,
-    venuePattern: support.venuePattern || null,
+    venuePattern: {
+      ...(support.venuePattern || {}),
+      resolution: classification.venue
+    },
     resultStructure: overhaul.resultStructure || null,
+    papaSenseResolution: resolutionMetadata(classification),
     engineArchitecture: {
-      version: "1.18.1",
-      authoritativeCore: "Papa HT/FT-first full-market overhaul",
-      supportLayer: "anti-zombie, resilience and venue audit only; never owns primary selection",
+      version: "2.0.0",
+      serviceVersion: "1.21.0",
+      authoritativeCore: "PapaSense v2 Four-Engine Resolution System",
+      sharedEvidence: "HT/FT, venue, recent, goal, half-goal and event-aware profiles",
       policy:
-        "Every market must pass its own HT/FT trigger before statistics may qualify it. All engines select from the post-blocker gated catalogue."
+        "Papa may return NO PICK. Safer must be a true containment market, Aggressive must be a same-story escalation, and Venue Pattern must qualify independently from home-versus-away evidence."
     },
     safeguards: [
       ...(overhaul.safeguards || []),
-      "The prior-only anti-zombie gate remains active.",
-      "Primary selection occurs after all duplicate blockers are merged.",
-      "Low Team Over 0.5 odds affect selection only when the observed price is below 1.20.",
-      "Safer and Aggressive compare every preferred qualified option instead of taking the first fixed-list item.",
-      "Venue Pattern requires explicit venue-rate evidence.",
-      "Safer cannot choose a blocked or sub-threshold Over 1.5 merely because it is a lower line.",
-      "Goal-market explanations cite goal evidence instead of treating the strongest exact HT/FT route as proof.",
-      "Repeated fallback picks are marked ineligible as independent consensus votes.",
-      "Consensus Bankers remain separate and require strict multi-engine agreement.",
-      "Either Team to Win is diverted to GG or Over 1.5 when an open high-scoring HT/FT structure explains the fixture better."
+      "Normal 90-minute profiles use FT results only.",
+      "Market-specific sample gates are enforced after the original HT/FT gate.",
+      "Papa returns NO PICK when no story-compatible market clears the evidence and confidence gates.",
+      "Safer can only choose a mathematically broader market from Papa's same story.",
+      "Aggressive can only choose a sharper market from Papa's same story.",
+      "Venue Pattern is independent and requires a minimum home-versus-away sample and route margin.",
+      "Directional conflict blocks team-result markets and redirects only to compatible neutral markets.",
+      "Displayed confidence uses settled-history calibration when available; otherwise it is reduced conservatively.",
+      "Public explanations are separated from the technical internal audit.",
+      "Repeated and unavailable engine views are never counted as independent consensus votes."
     ]
   };
 }

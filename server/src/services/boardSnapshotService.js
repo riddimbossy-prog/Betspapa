@@ -33,19 +33,23 @@ function compactBoardItem(item) {
 }
 
 function processingSummary(items) {
-  const ready = items.filter((item) => Boolean(item.pick)).length;
-  const pending = Math.max(0, items.length - ready);
+  const completed = items.filter((item) => Boolean(item.pick)).length;
+  const ready = items.filter((item) => Boolean(item.pick) && item.pick?.available !== false && item.pick?.key !== "no-pick").length;
+  const noPicks = Math.max(0, completed - ready);
+  const pending = Math.max(0, items.length - completed);
   return {
     state: pending ? "scheduled" : "complete",
     totalFixtures: items.length,
     readyPredictions: ready,
     pending,
-    withheld: 0,
+    withheld: noPicks,
     startedAt: null,
     completedAt: pending ? null : new Date().toISOString(),
     message: pending
       ? "This fixture is waiting for the scheduled board-preparation workflow. Public visitors do not trigger prediction generation."
-      : "The prepared board is ready."
+      : noPicks
+        ? `${noPicks} fixture${noPicks === 1 ? "" : "s"} returned NO PICK after the safety gates.`
+        : "The prepared board is ready."
   };
 }
 

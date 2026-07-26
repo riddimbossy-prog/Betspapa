@@ -108,7 +108,7 @@ test("Boss Picks UI is replaced by Athena while old bookmarks redirect", async (
   const projectRoot = resolve(new URL("../../", import.meta.url).pathname);
   const athenaHtml = await readFile(resolve(projectRoot, "athena.html"), "utf8");
   const bossRedirect = await readFile(resolve(projectRoot, "boss-picks.html"), "utf8");
-  const portal = await readFile(resolve(projectRoot, "assets/js/portal.v1200.js"), "utf8");
+  const portal = await readFile(resolve(projectRoot, "assets/js/portal.v1210.js"), "utf8");
   assert.match(athenaHtml, /data-page="athena-picks"/);
   assert.match(athenaHtml, /Athena Transition Picks/);
   assert.match(athenaHtml, /id="athenaMarketFilter"/);

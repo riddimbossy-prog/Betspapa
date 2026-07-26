@@ -1,5 +1,19 @@
 # BetsPapa Changelog
 
+## v1.21.0 — PapaSense v2 Four-Engine Resolution
+- Added match classification before market selection.
+- Added hard market-specific sample gates and normal-FT-only profiles.
+- Papa’s Pick can now return NO PICK instead of forcing a direction.
+- Rebuilt Safer as a true same-story containment engine.
+- Rebuilt Aggressive as a same-story escalation engine.
+- Rebuilt Venue Pattern as an independent home-versus-away engine.
+- Connected Athena v3 half-goal and event-aware evidence to all four PapaSense engines.
+- Added separate per-engine calibration, Wilson lower-bound confidence and Brier-score storage.
+- Added plain-English public explanations and protected technical audits.
+- Added NO PICK cards, filters and consensus/settlement exclusion.
+- Updated PWA cache to v1210 and preserved mobile, tablet and Z Fold layouts.
+- Added the v1.21 Supabase migration and 115 passing automated tests.
+
 ## v1.20.0 — Athena v3 Swing Resolution & Half-Goals
 - Replaced the single swing bucket with full reversal, lead surrender, late separation, two-way instability and false-swing classifications.
 - Added first-half and second-half scoring/conceding profiles.

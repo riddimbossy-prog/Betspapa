@@ -70,7 +70,11 @@ export const MARKET_THRESHOLDS = {
   cleanSheet: 0.64,
   firstHalfOver05: 0.67,
   firstHalfOver15: 0.7,
-  secondHalfOver05: 0.69
+  secondHalfOver05: 0.69,
+  secondHalfOver15: 0.66,
+  goalsBothHalves: 0.67,
+  teamSecondHalfOver05: 0.64,
+  teamSecondHalfDnb: 0.6
 };
 
 export const FALLBACK_FAMILIES = new Set([

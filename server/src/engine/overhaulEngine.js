@@ -147,6 +147,93 @@ function goalProfile(team) {
   };
 }
 
+function halfMetricBlock(team, scope) {
+  return team.halfGoals?.[scope] || {};
+}
+
+function blendHalfMetric(team, metric, fallback = 0) {
+  const rows = normalizedWeights([
+    {
+      value: safeRate(halfMetricBlock(team, "venue")[metric], fallback),
+      weight: 0.5,
+      enabled: Number(halfMetricBlock(team, "venue").matches) > 0
+    },
+    {
+      value: safeRate(halfMetricBlock(team, "recent")[metric], fallback),
+      weight: 0.3,
+      enabled: Number(halfMetricBlock(team, "recent").matches) > 0
+    },
+    {
+      value: safeRate(halfMetricBlock(team, "overall")[metric], fallback),
+      weight: 0.2,
+      enabled: Number(halfMetricBlock(team, "overall").matches) > 0
+    }
+  ]);
+  if (!rows.length) return fallback;
+  return clamp(sum(rows.map((row) => row.value * row.normalizedWeight)));
+}
+
+function blendHalfCountRate(team, metric) {
+  const rows = normalizedWeights([
+    {
+      value: Number(halfMetricBlock(team, "venue")[metric] || 0) /
+        Math.max(1, Number(halfMetricBlock(team, "venue").matches || 0)),
+      weight: 0.5,
+      enabled: Number(halfMetricBlock(team, "venue").matches) > 0
+    },
+    {
+      value: Number(halfMetricBlock(team, "recent")[metric] || 0) /
+        Math.max(1, Number(halfMetricBlock(team, "recent").matches || 0)),
+      weight: 0.3,
+      enabled: Number(halfMetricBlock(team, "recent").matches) > 0
+    },
+    {
+      value: Number(halfMetricBlock(team, "overall")[metric] || 0) /
+        Math.max(1, Number(halfMetricBlock(team, "overall").matches || 0)),
+      weight: 0.2,
+      enabled: Number(halfMetricBlock(team, "overall").matches) > 0
+    }
+  ]);
+  if (!rows.length) return 0;
+  return clamp(sum(rows.map((row) => row.value * row.normalizedWeight)));
+}
+
+function halfGoalProfile(team, fallbackGoals = {}) {
+  const venueMatches = Number(team.halfGoals?.venue?.matches || 0);
+  const overallMatches = Number(team.halfGoals?.overall?.matches || 0);
+  const recentMatches = Number(team.halfGoals?.recent?.matches || 0);
+  const hasHalfData = Math.max(venueMatches, overallMatches, recentMatches) > 0;
+  return {
+    hasHalfData,
+    samples: { venue: venueMatches, overall: overallMatches, recent: recentMatches },
+    firstHalfScoringRate: blendHalfMetric(team, "firstHalfScoringRate", fallbackGoals.firstHalfScoringRate || 0),
+    firstHalfConcedingRate: blendHalfMetric(team, "firstHalfConcedingRate", 0),
+    secondHalfScoringRate: blendHalfMetric(team, "secondHalfScoringRate", fallbackGoals.secondHalfScoringRate || 0),
+    secondHalfConcedingRate: blendHalfMetric(team, "secondHalfConcedingRate", 0),
+    firstHalfOver05Rate: blendHalfMetric(team, "firstHalfOver05Rate", 0),
+    firstHalfOver15Rate: blendHalfMetric(team, "firstHalfOver15Rate", 0),
+    secondHalfOver05Rate: blendHalfMetric(team, "secondHalfOver05Rate", 0),
+    secondHalfOver15Rate: blendHalfMetric(team, "secondHalfOver15Rate", 0),
+    scoredBothHalvesRate: blendHalfMetric(team, "scoredBothHalvesRate", 0),
+    goalsBothHalvesRate: blendHalfMetric(team, "goalsBothHalvesRate", 0),
+    secondHalfWinRate: blendHalfMetric(team, "secondHalfWinRate", 0),
+    secondHalfDrawRate: blendHalfMetric(team, "secondHalfDrawRate", 0),
+    eventCoverageRate: blendHalfMetric(team, "eventCoverageRate", 0),
+    goalsWhileTrailingRate: blendHalfCountRate(team, "goalsWhileTrailing"),
+    equalisersRate: blendHalfCountRate(team, "equalisersScored"),
+    winningGoalsAfterEqualisingRate: blendHalfCountRate(team, "winningGoalsAfterEqualising"),
+    leadsSurrenderedRate: blendHalfCountRate(team, "leadsSurrendered"),
+    lateGoalForRate: clamp(
+      blendHalfCountRate(team, "minute61To75For") * 0.42 +
+      blendHalfCountRate(team, "minute76To90For") * 0.58
+    ),
+    lateGoalAgainstRate: clamp(
+      blendHalfCountRate(team, "minute61To75Against") * 0.42 +
+      blendHalfCountRate(team, "minute76To90Against") * 0.58
+    )
+  };
+}
+
 function routeMass(p, routes) {
   return sum(routes.map((route) => p[route]));
 }
@@ -271,6 +358,8 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality, dir
   const p = matrix.normalized;
   const homeGoals = goalProfile(input.home);
   const awayGoals = goalProfile(input.away);
+  const homeHalfGoals = halfGoalProfile(input.home, homeGoals);
+  const awayHalfGoals = halfGoalProfile(input.away, awayGoals);
   const leagueGoals = input.league?.goals || {};
   const leagueBttsRate = safeRate(leagueGoals.bttsRate, 0.5);
   const leagueOver15Rate = safeRate(leagueGoals.over15Rate, 0.7);
@@ -508,21 +597,86 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality, dir
       goalBalance * 0.08
   );
 
+  const firstHalfAttack = 1 -
+    (1 - homeHalfGoals.firstHalfScoringRate) *
+    (1 - awayHalfGoals.firstHalfScoringRate);
+  const firstHalfVenueRate = geometricMean(
+    safeRate(input.home.halfGoals?.venue?.firstHalfOver05Rate, homeHalfGoals.firstHalfOver05Rate),
+    safeRate(input.away.halfGoals?.venue?.firstHalfOver05Rate, awayHalfGoals.firstHalfOver05Rate)
+  );
   const firstHalfOver05 = clamp(
-    (1 - direct.ht.draw) * 0.52 +
-      (1 - (1 - homeGoals.firstHalfScoringRate) * (1 - awayGoals.firstHalfScoringRate)) * 0.32 +
-      strongestGoalRoute * 0.16
+    (1 - direct.ht.draw) * 0.42 +
+      firstHalfAttack * 0.28 +
+      firstHalfVenueRate * 0.2 +
+      strongestGoalRoute * 0.1
   );
   const firstHalfOver15 = clamp(
-    (1 - direct.ht.draw) * 0.42 +
-      geometricMean(homeGoals.firstHalfScoringRate, awayGoals.firstHalfScoringRate) * 0.28 +
-      geometricMean(homeGoals.concedeRate, awayGoals.concedeRate) * 0.16 +
-      geometricMean(homeGoals.conceded2PlusRate, awayGoals.conceded2PlusRate) * 0.14
+    (1 - direct.ht.draw) * 0.3 +
+      geometricMean(homeHalfGoals.firstHalfScoringRate, awayHalfGoals.firstHalfScoringRate) * 0.2 +
+      geometricMean(homeHalfGoals.firstHalfConcedingRate, awayHalfGoals.firstHalfConcedingRate) * 0.14 +
+      geometricMean(homeHalfGoals.firstHalfOver15Rate, awayHalfGoals.firstHalfOver15Rate) * 0.36
+  );
+
+  const secondHalfChangeMass = clamp(
+    structure.leadToDrawMass + structure.drawToWinnerMass + structure.fullReversalMass
+  );
+  const secondHalfAttack = 1 -
+    (1 - homeHalfGoals.secondHalfScoringRate) *
+    (1 - awayHalfGoals.secondHalfScoringRate);
+  const secondHalfVenueRate = geometricMean(
+    safeRate(input.home.halfGoals?.venue?.secondHalfOver05Rate, homeHalfGoals.secondHalfOver05Rate),
+    safeRate(input.away.halfGoals?.venue?.secondHalfOver05Rate, awayHalfGoals.secondHalfOver05Rate)
   );
   const secondHalfOver05 = clamp(
-    (1 - (1 - homeGoals.secondHalfScoringRate) * (1 - awayGoals.secondHalfScoringRate)) * 0.6 +
-      (structure.leadToDrawMass + structure.drawToWinnerMass + structure.fullReversalMass) * 0.22 +
-      strongestGoalRoute * 0.18
+    secondHalfAttack * 0.34 +
+      secondHalfVenueRate * 0.32 +
+      secondHalfChangeMass * 0.22 +
+      strongestGoalRoute * 0.12
+  );
+  const secondHalfOver15 = clamp(
+    geometricMean(homeHalfGoals.secondHalfOver15Rate, awayHalfGoals.secondHalfOver15Rate) * 0.42 +
+      geometricMean(
+        Math.max(homeHalfGoals.secondHalfScoringRate, awayHalfGoals.secondHalfConcedingRate),
+        Math.max(awayHalfGoals.secondHalfScoringRate, homeHalfGoals.secondHalfConcedingRate)
+      ) * 0.28 +
+      secondHalfChangeMass * 0.2 +
+      Math.min(homeHalfGoals.lateGoalForRate + awayHalfGoals.lateGoalForRate, 1) * 0.1
+  );
+
+  const goalsBothHalves = clamp(
+    geometricMean(homeHalfGoals.goalsBothHalvesRate, awayHalfGoals.goalsBothHalvesRate) * 0.48 +
+      geometricMean(firstHalfOver05, secondHalfOver05) * 0.34 +
+      geometricMean(homeHalfGoals.scoredBothHalvesRate, awayHalfGoals.scoredBothHalvesRate) * 0.18
+  );
+
+  const homeSecondHalfGoalSupport = clamp(
+    geometricMean(homeHalfGoals.secondHalfScoringRate, awayHalfGoals.secondHalfConcedingRate) * 0.55 +
+      (p.DW + p.LW + p.LD) * 0.25 +
+      Math.min(1, homeHalfGoals.goalsWhileTrailingRate + homeHalfGoals.equalisersRate) * 0.12 +
+      awayHalfGoals.lateGoalAgainstRate * 0.08
+  );
+  const awaySecondHalfGoalSupport = clamp(
+    geometricMean(awayHalfGoals.secondHalfScoringRate, homeHalfGoals.secondHalfConcedingRate) * 0.55 +
+      (p.DL + p.WL + p.WD) * 0.25 +
+      Math.min(1, awayHalfGoals.goalsWhileTrailingRate + awayHalfGoals.equalisersRate) * 0.12 +
+      homeHalfGoals.lateGoalAgainstRate * 0.08
+  );
+
+  const homeSecondHalfDnb = clamp(
+    geometricMean(
+      homeHalfGoals.secondHalfWinRate,
+      Math.max(0, 1 - awayHalfGoals.secondHalfWinRate - awayHalfGoals.secondHalfDrawRate)
+    ) * 0.52 +
+      (p.DW + p.LW + p.LD) * 0.3 +
+      homeSecondHalfGoalSupport * 0.18
+  );
+  const awaySecondHalfDnb = clamp(
+    geometricMean(
+      awayHalfGoals.secondHalfWinRate,
+      Math.max(0, 1 - homeHalfGoals.secondHalfWinRate - homeHalfGoals.secondHalfDrawRate)
+    ) * 0.52 +
+      (p.DL + p.WL + p.WD) * 0.3 +
+      awaySecondHalfGoalSupport * 0.18
   );
 
   const homeCleanSheet = clamp(
@@ -548,6 +702,8 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality, dir
   return {
     homeGoals,
     awayGoals,
+    homeHalfGoals,
+    awayHalfGoals,
     favouriteSide,
     metrics: {
       homeGoalSupport,
@@ -579,6 +735,14 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality, dir
       away2PlusSupport,
       goalBreakingSupport,
       oneSideTwoGoalHtft,
+      secondHalfChangeMass,
+      homeSecondHalfGoalSupport,
+      awaySecondHalfGoalSupport,
+      halfGoalCoverage: Math.min(
+        Number(homeHalfGoals.samples.venue || 0),
+        Number(awayHalfGoals.samples.venue || 0)
+      ),
+      eventCoverageRate: Math.min(homeHalfGoals.eventCoverageRate, awayHalfGoals.eventCoverageRate),
       dataQuality: quality.score
     },
     scores: {
@@ -600,6 +764,12 @@ function goalLogic(input, matrix, homeTeamProfile, awayTeamProfile, quality, dir
       firstHalfOver05,
       firstHalfOver15,
       secondHalfOver05,
+      secondHalfOver15,
+      goalsBothHalves,
+      homeSecondHalfOver05: homeSecondHalfGoalSupport,
+      awaySecondHalfOver05: awaySecondHalfGoalSupport,
+      homeSecondHalfDnb,
+      awaySecondHalfDnb,
       homeCleanSheet,
       awayCleanSheet
     }
@@ -1343,7 +1513,7 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
       threshold: MARKET_THRESHOLDS.firstHalfOver05,
       risk: precisionPenalty,
       blockers: [
-        ...(goals.homeGoals.firstHalfScoringRate < 0.35 && goals.awayGoals.firstHalfScoringRate < 0.35
+        ...(goals.homeHalfGoals.firstHalfScoringRate < 0.35 && goals.awayHalfGoals.firstHalfScoringRate < 0.35
           ? ["Both first-half scoring rates are weak"]
           : [])
       ],
@@ -1352,8 +1522,8 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
         `First-half goal score is ${percentText(goals.scores.firstHalfOver05)}`
       ],
       evidence: {
-        homeFirstHalfScoring: goals.homeGoals.firstHalfScoringRate,
-        awayFirstHalfScoring: goals.awayGoals.firstHalfScoringRate
+        homeFirstHalfScoring: goals.homeHalfGoals.firstHalfScoringRate,
+        awayFirstHalfScoring: goals.awayHalfGoals.firstHalfScoringRate
       }
     }),
     makeMarket({
@@ -1366,7 +1536,7 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
       risk: precisionPenalty + 0.015,
       fallbackEligible: false,
       blockers: [
-        ...(goals.homeGoals.firstHalfScoringRate < 0.46 || goals.awayGoals.firstHalfScoringRate < 0.46
+        ...(goals.homeHalfGoals.firstHalfScoringRate < 0.46 || goals.awayHalfGoals.firstHalfScoringRate < 0.46
           ? ["Both teams do not have enough first-half scoring support"]
           : [])
       ],
@@ -1375,8 +1545,8 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
         `First-half two-goal score is ${percentText(goals.scores.firstHalfOver15)}`
       ],
       evidence: {
-        homeFirstHalfScoring: goals.homeGoals.firstHalfScoringRate,
-        awayFirstHalfScoring: goals.awayGoals.firstHalfScoringRate,
+        homeFirstHalfScoring: goals.homeHalfGoals.firstHalfScoringRate,
+        awayFirstHalfScoring: goals.awayHalfGoals.firstHalfScoringRate,
         halfTimeNonDrawMass: 1 - direct.ht.draw
       }
     }),
@@ -1389,17 +1559,185 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
       threshold: MARKET_THRESHOLDS.secondHalfOver05,
       risk: generalPenalty,
       blockers: [
-        ...(goals.homeGoals.secondHalfScoringRate < 0.42 && goals.awayGoals.secondHalfScoringRate < 0.42
+        ...(!goals.homeHalfGoals.hasHalfData || !goals.awayHalfGoals.hasHalfData
+          ? ["Complete half-goal profiles are required"]
+          : []),
+        ...(goals.homeHalfGoals.secondHalfScoringRate < 0.42 && goals.awayHalfGoals.secondHalfScoringRate < 0.42
           ? ["Both second-half scoring rates are weak"]
           : [])
       ],
       reasons: [
-        "Second-half scoring rates agree with comeback and lead-change routes",
+        "Second-half scoring and conceding rates agree with comeback and lead-change routes",
         `Second-half goal score is ${percentText(goals.scores.secondHalfOver05)}`
       ],
       evidence: {
-        homeSecondHalfScoring: goals.homeGoals.secondHalfScoringRate,
-        awaySecondHalfScoring: goals.awayGoals.secondHalfScoringRate
+        homeSecondHalfScoring: goals.homeHalfGoals.secondHalfScoringRate,
+        awaySecondHalfScoring: goals.awayHalfGoals.secondHalfScoringRate,
+        homeSecondHalfConceding: goals.homeHalfGoals.secondHalfConcedingRate,
+        awaySecondHalfConceding: goals.awayHalfGoals.secondHalfConcedingRate
+      }
+    }),
+    makeMarket({
+      key: "second-half-over-15",
+      family: "Half Goals",
+      market: "Second-Half Goals",
+      selection: "Second Half Over 1.5",
+      score: goals.scores.secondHalfOver15,
+      threshold: MARKET_THRESHOLDS.secondHalfOver15,
+      risk: precisionPenalty + 0.015,
+      fallbackEligible: false,
+      blockers: [
+        ...(!goals.homeHalfGoals.hasHalfData || !goals.awayHalfGoals.hasHalfData
+          ? ["Complete half-goal profiles are required"]
+          : []),
+        ...(Math.min(goals.homeHalfGoals.secondHalfOver15Rate, goals.awayHalfGoals.secondHalfOver15Rate) < 0.28
+          ? ["The two-goal second-half pattern is not repeated by both teams"]
+          : [])
+      ],
+      reasons: [
+        "Both venue profiles show repeatable two-goal second halves",
+        `Second-half two-goal score is ${percentText(goals.scores.secondHalfOver15)}`
+      ],
+      evidence: {
+        homeSecondHalfOver15: goals.homeHalfGoals.secondHalfOver15Rate,
+        awaySecondHalfOver15: goals.awayHalfGoals.secondHalfOver15Rate,
+        secondHalfChangeMass: goals.metrics.secondHalfChangeMass
+      }
+    }),
+    makeMarket({
+      key: "goals-both-halves",
+      family: "Half Goals",
+      market: "Goals in Both Halves",
+      selection: "Goals in Both Halves",
+      score: goals.scores.goalsBothHalves,
+      threshold: MARKET_THRESHOLDS.goalsBothHalves,
+      risk: precisionPenalty + 0.01,
+      fallbackEligible: false,
+      blockers: [
+        ...(!goals.homeHalfGoals.hasHalfData || !goals.awayHalfGoals.hasHalfData
+          ? ["Complete half-goal profiles are required"]
+          : []),
+        ...(Math.min(goals.homeHalfGoals.goalsBothHalvesRate, goals.awayHalfGoals.goalsBothHalvesRate) < 0.34
+          ? ["Both teams do not repeat goals in each half often enough"]
+          : [])
+      ],
+      reasons: [
+        "First-half and second-half goal routes are independently present",
+        `Both-halves goal score is ${percentText(goals.scores.goalsBothHalves)}`
+      ],
+      evidence: {
+        homeGoalsBothHalves: goals.homeHalfGoals.goalsBothHalvesRate,
+        awayGoalsBothHalves: goals.awayHalfGoals.goalsBothHalvesRate,
+        firstHalfOver05: goals.scores.firstHalfOver05,
+        secondHalfOver05: goals.scores.secondHalfOver05
+      }
+    }),
+    makeMarket({
+      key: "home-second-half-over-05",
+      family: "Team Half Goals",
+      market: "Team to Score in Second Half",
+      selection: `${input.home.name} to Score in the Second Half`,
+      score: goals.scores.homeSecondHalfOver05,
+      threshold: MARKET_THRESHOLDS.teamSecondHalfOver05,
+      risk: generalPenalty,
+      blockers: [
+        ...(!goals.homeHalfGoals.hasHalfData || !goals.awayHalfGoals.hasHalfData
+          ? ["Complete half-goal profiles are required"]
+          : []),
+        ...(goals.homeHalfGoals.secondHalfScoringRate < 0.5 || goals.awayHalfGoals.secondHalfConcedingRate < 0.4
+          ? ["Home second-half scoring and away second-half conceding do not both confirm"]
+          : [])
+      ],
+      reasons: [
+        `${input.home.name}'s second-half scoring matches ${input.away.name}'s second-half conceding`,
+        `Home second-half goal score is ${percentText(goals.scores.homeSecondHalfOver05)}`
+      ],
+      evidence: {
+        teamSecondHalfScoring: goals.homeHalfGoals.secondHalfScoringRate,
+        opponentSecondHalfConceding: goals.awayHalfGoals.secondHalfConcedingRate,
+        goalsWhileTrailingRate: goals.homeHalfGoals.goalsWhileTrailingRate,
+        eventCoverageRate: goals.metrics.eventCoverageRate
+      }
+    }),
+    makeMarket({
+      key: "away-second-half-over-05",
+      family: "Team Half Goals",
+      market: "Team to Score in Second Half",
+      selection: `${input.away.name} to Score in the Second Half`,
+      score: goals.scores.awaySecondHalfOver05,
+      threshold: MARKET_THRESHOLDS.teamSecondHalfOver05,
+      risk: generalPenalty,
+      blockers: [
+        ...(!goals.homeHalfGoals.hasHalfData || !goals.awayHalfGoals.hasHalfData
+          ? ["Complete half-goal profiles are required"]
+          : []),
+        ...(goals.awayHalfGoals.secondHalfScoringRate < 0.5 || goals.homeHalfGoals.secondHalfConcedingRate < 0.4
+          ? ["Away second-half scoring and home second-half conceding do not both confirm"]
+          : [])
+      ],
+      reasons: [
+        `${input.away.name}'s second-half scoring matches ${input.home.name}'s second-half conceding`,
+        `Away second-half goal score is ${percentText(goals.scores.awaySecondHalfOver05)}`
+      ],
+      evidence: {
+        teamSecondHalfScoring: goals.awayHalfGoals.secondHalfScoringRate,
+        opponentSecondHalfConceding: goals.homeHalfGoals.secondHalfConcedingRate,
+        goalsWhileTrailingRate: goals.awayHalfGoals.goalsWhileTrailingRate,
+        eventCoverageRate: goals.metrics.eventCoverageRate
+      }
+    }),
+    makeMarket({
+      key: "home-second-half-dnb",
+      family: "Second-Half Result",
+      market: "Second-Half Draw No Bet",
+      selection: `${input.home.name} Second Half Draw No Bet`,
+      score: goals.scores.homeSecondHalfDnb,
+      threshold: MARKET_THRESHOLDS.teamSecondHalfDnb,
+      risk: precisionPenalty + 0.01,
+      fallbackEligible: false,
+      blockers: [
+        ...(!goals.homeHalfGoals.hasHalfData || !goals.awayHalfGoals.hasHalfData
+          ? ["Complete half-goal profiles are required"]
+          : []),
+        ...(goals.homeHalfGoals.secondHalfWinRate < 0.38
+          ? ["Home second-half win rate is too weak"]
+          : [])
+      ],
+      reasons: [
+        `${input.home.name} has the stronger post-break result route`,
+        `Home second-half DNB score is ${percentText(goals.scores.homeSecondHalfDnb)}`
+      ],
+      evidence: {
+        teamSecondHalfWinRate: goals.homeHalfGoals.secondHalfWinRate,
+        opponentSecondHalfWinRate: goals.awayHalfGoals.secondHalfWinRate,
+        secondHalfGoalSupport: goals.metrics.homeSecondHalfGoalSupport
+      }
+    }),
+    makeMarket({
+      key: "away-second-half-dnb",
+      family: "Second-Half Result",
+      market: "Second-Half Draw No Bet",
+      selection: `${input.away.name} Second Half Draw No Bet`,
+      score: goals.scores.awaySecondHalfDnb,
+      threshold: MARKET_THRESHOLDS.teamSecondHalfDnb,
+      risk: precisionPenalty + 0.01,
+      fallbackEligible: false,
+      blockers: [
+        ...(!goals.homeHalfGoals.hasHalfData || !goals.awayHalfGoals.hasHalfData
+          ? ["Complete half-goal profiles are required"]
+          : []),
+        ...(goals.awayHalfGoals.secondHalfWinRate < 0.38
+          ? ["Away second-half win rate is too weak"]
+          : [])
+      ],
+      reasons: [
+        `${input.away.name} has the stronger post-break result route`,
+        `Away second-half DNB score is ${percentText(goals.scores.awaySecondHalfDnb)}`
+      ],
+      evidence: {
+        teamSecondHalfWinRate: goals.awayHalfGoals.secondHalfWinRate,
+        opponentSecondHalfWinRate: goals.homeHalfGoals.secondHalfWinRate,
+        secondHalfGoalSupport: goals.metrics.awaySecondHalfGoalSupport
       }
     })
   );

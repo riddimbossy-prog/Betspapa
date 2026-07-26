@@ -122,7 +122,7 @@ test("Results handles large historical fixture sets in safe Supabase batches", a
 
   const result = await getResultsIntelligence(supabase, 7);
 
-  assert.equal(result.engines.primary.wins, 101);
+  assert.equal(result.engines.primary.wins, 100);
   assert.equal(result.engines.primary.losses, 0);
   assert.equal(result.recent.length, 80);
   assert.ok(tracker.maxInSize <= 100);

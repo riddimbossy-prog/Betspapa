@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.20.0",
+  "version": "1.21.0",
   "private": true,
-  "description": "BetsPapa v1.20.0 adds Athena v3 swing resolution, goals by half and plain-English pick explanations.",
+  "description": "BetsPapa v1.21.0 adds PapaSense v2: robust Papa, Safer, Aggressive and independent Venue Pattern resolution.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

@@ -275,7 +275,7 @@ test("Athena v3 does not mix extra-time results into 90-minute half-goal decisio
 
   const legacy = profiles.htftRows.find((row) => row.team_id === 10 && row.scope === "overall");
   const athena = profiles.halfGoalRows.find((row) => row.team_id === 10 && row.scope === "overall");
-  assert.equal(legacy.matches_played, 2);
+  assert.equal(legacy.matches_played, 1);
   assert.equal(athena.matches_played, 1);
   assert.equal(athena.second_half_goals_for, 1);
 
@@ -285,7 +285,7 @@ test("Athena v3 does not mix extra-time results into 90-minute half-goal decisio
     halftime_away: 0,
     fulltime_home: 3,
     fulltime_away: 2
-  }, MARKETS.SECOND_HALF_OVER_1_5).outcome, "REVIEW");
+  }, MARKETS.SECOND_HALF_OVER_1_5), null);
 });
 
 test("new Athena market labels are plain English", () => {
@@ -300,7 +300,7 @@ test("new Athena market labels are plain English", () => {
 });
 
 test("Athena public UI explains the pick without exposing technical arbitration", async () => {
-  const portal = await readFile(resolve(root, "assets/js/portal.v1200.js"), "utf8");
+  const portal = await readFile(resolve(root, "assets/js/portal.v1210.js"), "utf8");
   const routes = await readFile(resolve(root, "server/src/routes/publicRoutes.js"), "utf8");
   assert.match(portal, /Why Athena picked this/);
   assert.match(portal, /Goals by half/);

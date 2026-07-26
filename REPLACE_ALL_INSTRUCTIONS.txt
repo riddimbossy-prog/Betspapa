@@ -1,13 +1,24 @@
-BetsPapa v1.20.0 — FULL REPLACE
+BetsPapa v1.21.0 — FULL REPLACE
+PapaSense v2.0 Four-Engine Resolution System + Athena v3
 
-1. In Supabase SQL Editor, run: supabase/BETSPAPA_V1_20_0_ATHENA_V3.sql
-2. Replace all repository files with this package.
-3. Commit: BetsPapa v1.20.0 Athena v3 Swing Resolution and Half Goals
-4. Wait for GitHub Pages and Render deployments to finish.
-5. Check /api/health for service 1.20.0 and athena-v3.0.0-swing-half-goals.
-6. Open /reset.html once to clear the old PWA cache.
-7. Run the protected Prepare Tomorrow Board workflow.
-8. Use POST /api/admin/hydrate-events or the normal history hydration job to backfill goal events gradually.
+1. BACK UP the current repository and Supabase project.
+2. If not already completed, run in Supabase SQL Editor:
+   supabase/BETSPAPA_V1_20_0_ATHENA_V3.sql
+3. Run in Supabase SQL Editor:
+   supabase/BETSPAPA_V1_21_0_PAPASENSE_V2.sql
+4. Replace all repository files with this package.
+5. Commit and push:
+   BetsPapa v1.21.0 PapaSense v2 Four-Engine Resolution
+6. Let Render deploy the backend.
+7. Check /api/health. Expected service version: 1.21.0.
+   Expected PapaSense version: papasense-v2.0.0-four-engine-resolution.
+   Expected Athena version: athena-v3.0.0-swing-half-goals.
+8. Open https://betspapa.com/reset.html once on each test device.
+9. Rebuild history profiles and prepare the public boards.
+10. Verify Papa, Safer, Aggressive, Venue Pattern, Athena, Live, Results and Bankers on desktop, phone and Z Fold.
 
-Important: Athena never treats missing event timing as zero. Half-time/full-time scores remain usable, while event-dependent comeback claims stay disabled until coverage is complete.
-Athena also verifies that saved events reproduce the final score and uses only normal 90-minute FT history. Extra-time, shootout, awarded and walkover results do not enter Athena's half-goal model.
+Important:
+- NO PICK is intentional when the evidence is insufficient or conflicted.
+- Safer and Aggressive may be blank even when Papa has a pick.
+- Venue Pattern may disagree with Papa because it is now independent.
+- Standard profiles use normal 90-minute FT results only.
