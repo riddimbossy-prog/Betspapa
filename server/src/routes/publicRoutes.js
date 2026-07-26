@@ -268,6 +268,152 @@ async function preparedBoardHandler(req, res, next) {
   }
 }
 
+
+function mainBoardRow(map, item) {
+  const key = String(item.fixtureId ?? item.internalFixtureId ?? item.id ?? "");
+  if (!map.has(key)) {
+    map.set(key, {
+      id: item.id ?? null,
+      fixtureId: item.fixtureId ?? null,
+      internalFixtureId: item.internalFixtureId ?? item.id ?? null,
+      kickoff: item.kickoff ?? null,
+      status: item.status ?? null,
+      matchState: item.matchState ?? null,
+      settlement: item.settlement ?? null,
+      engineOutcomes: item.engineOutcomes || {},
+      venue: item.venue ?? null,
+      league: item.league ?? null,
+      home: item.home ?? null,
+      away: item.away ?? null,
+      engines: {},
+      processing: {},
+      athena: null
+    });
+  }
+  const row = map.get(key);
+  for (const field of ["id", "fixtureId", "internalFixtureId", "kickoff", "status", "matchState", "settlement", "venue", "league", "home", "away"]) {
+    if (row[field] == null && item[field] != null) row[field] = item[field];
+  }
+  row.engineOutcomes = { ...row.engineOutcomes, ...(item.engineOutcomes || {}) };
+  return row;
+}
+
+function normalizedAthenaForMainBoard(pick) {
+  return {
+    key: pick.marketId || "athena-pick",
+    market: pick.market || "Athena",
+    selection: pick.selection,
+    confidence: Number(pick.score || 0),
+    score: Number(pick.score || 0),
+    qualified: true,
+    available: true,
+    grade: pick.grade || "QUALIFIED",
+    engineName: "Athena",
+    explanationParagraph: pick.explanation?.summary || pick.story || "Athena found a supported HT/FT and half-goal route.",
+    reasons: pick.explanation?.whyPick || pick.explanation?.reasons || [],
+    cautions: pick.explanation?.cautions || [],
+    outcome: pick.settlement?.outcome || null
+  };
+}
+
+publicRouter.get("/main-board/today", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.query.date || todayUtc());
+    const force = ["1", "true", "force", "reload"].includes(String(req.query.force || "").toLowerCase());
+    const supabase = getSupabaseAdmin();
+
+    // Load primary first. A primary refresh warms all four PapaSense snapshots,
+    // avoiding four duplicate database refreshes on the all-engine board.
+    const primary = await getPreparedEngineBoard(supabase, date, "primary", { force });
+    const [safer, aggressive, venue, athenaResult] = await Promise.all([
+      getPreparedEngineBoard(supabase, date, "safer", { force: false }),
+      getPreparedEngineBoard(supabase, date, "aggressive", { force: false }),
+      getPreparedEngineBoard(supabase, date, "venue", { force: false }),
+      getAthenaPicks(supabase, date, { force })
+    ]);
+
+    const boards = { primary, safer, aggressive, venue };
+    const rows = new Map();
+    for (const [engineKey, board] of Object.entries(boards)) {
+      for (const item of board.items || []) {
+        const row = mainBoardRow(rows, item);
+        row.engines[engineKey] = item.pick || null;
+        row.processing[engineKey] = item.pick ? null : {
+          state: item.processingState || board.processing?.state || "scheduled",
+          message: item.processingMessage || board.processing?.message || "Waiting for the prepared board."
+        };
+      }
+    }
+
+    const publicAthena = (athenaResult.picks || []).map(publicAthenaPick);
+    for (const pick of publicAthena) {
+      const row = mainBoardRow(rows, pick);
+      row.athena = pick;
+      row.engines.athena = normalizedAthenaForMainBoard(pick);
+      if (pick.settlement?.outcome) row.engineOutcomes.athena = pick.settlement.outcome;
+    }
+
+    const athenaReviewed = Number(athenaResult.reviewedFixtures || 0) > 0;
+    const items = [...rows.values()].map((row) => {
+      if (!("athena" in row.engines)) {
+        row.engines.athena = athenaReviewed ? {
+          key: "no-pick",
+          market: "Athena",
+          selection: "No Athena pick",
+          confidence: 0,
+          score: 0,
+          qualified: false,
+          available: false,
+          engineName: "Athena",
+          explanationParagraph: "Athena did not find a safe shared HT/FT, swing and goals-by-half route for this fixture.",
+          reasons: ["No Athena market cleared every swing, half-goal and safety gate."],
+          cautions: []
+        } : null;
+        row.processing.athena = athenaReviewed ? null : {
+          state: "scheduled",
+          message: "Athena is waiting for a complete prepared review."
+        };
+      }
+      return row;
+    }).sort((a, b) => new Date(a.kickoff || 0) - new Date(b.kickoff || 0));
+
+    const picks = items.flatMap((item) => Object.values(item.engines || {}));
+    const readySelections = picks.filter((pick) => pick && pick.available !== false && pick.key !== "no-pick").length;
+    const withheldSelections = picks.filter((pick) => pick && (pick.available === false || pick.key === "no-pick")).length;
+    const strongSelections = picks.filter((pick) => pick && pick.available !== false && pick.key !== "no-pick" && pick.qualified !== false).length;
+    const preparingSelections = items.length * 5 - picks.filter(Boolean).length;
+    const engineCounts = Object.fromEntries(["primary", "safer", "aggressive", "venue", "athena"].map((key) => [key, {
+      ready: items.filter((item) => item.engines?.[key] && item.engines[key].available !== false && item.engines[key].key !== "no-pick").length,
+      withheld: items.filter((item) => item.engines?.[key] && (item.engines[key].available === false || item.engines[key].key === "no-pick")).length,
+      preparing: items.filter((item) => !item.engines?.[key]).length
+    }]));
+
+    setPublicCache(res, 30, 300);
+    res.set("Vary", "Origin, Accept-Encoding");
+    return res.json({
+      date,
+      generatedAt: new Date().toISOString(),
+      engineVersion: primary.engineVersion,
+      athenaEngineVersion: athenaResult.engineVersion,
+      engines: ["primary", "safer", "aggressive", "venue", "athena"],
+      summary: {
+        fixtures: items.length,
+        readySelections,
+        strongSelections,
+        withheldSelections,
+        preparingSelections
+      },
+      engineCounts,
+      matchStates: summarizeMatchStates(items),
+      athenaStatus: athenaResult.status,
+      athenaRejections: athenaResult.rejections || [],
+      items
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // v1.18.2 fast prepared-board endpoint. It never refreshes providers,
 // downloads history, grades results or generates predictions.
 publicRouter.get("/boards/:engineKey", preparedBoardHandler);

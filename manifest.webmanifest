@@ -1,9 +1,9 @@
 {
   "id": "/",
-  "name": "BetsPapa — Football Intelligence",
+  "name": "BetsPapa \u2014 Football Intelligence",
   "short_name": "BetsPapa",
-  "description": "BetsPapa opens on Papa's Pick with PapaSense v2 four-engine resolution and Athena v3 half-goal analysis, consensus Bankers, live match states and verified results.",
-  "start_url": "/?source=pwa&v=1210",
+  "description": "BetsPapa opens on one all-engine board with Papa's Pick, Safer, Aggressive, Venue Pattern and Athena, plus live match states and verified results.",
+  "start_url": "/?source=pwa&v=1220",
   "scope": "/",
   "display": "standalone",
   "display_override": [
@@ -51,7 +51,7 @@
     {
       "name": "Papa's Pick",
       "short_name": "Papa's Pick",
-      "description": "Open Papa's default picks",
+      "description": "Open the main all-engine match board",
       "url": "/?source=shortcut",
       "icons": [
         {
@@ -130,5 +130,5 @@
       "label": "BetsPapa football intelligence dashboard"
     }
   ],
-  "version": "1.21.0"
+  "version": "1.22.0"
 }

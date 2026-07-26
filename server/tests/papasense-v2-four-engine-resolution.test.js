@@ -84,8 +84,8 @@ const stableHome = robustFixture({
   awayTransitions: { WW: 1, WD: 0, WL: 1, DW: 1, DD: 1, DL: 3, LW: 0, LD: 1, LL: 17 }
 });
 
-test("v1.21.0 exposes PapaSense v2 and uses only normal FT history", () => {
-  assert.equal(SERVICE_VERSION, "1.21.0");
+test("v1.22.0 retains PapaSense v2 and uses only normal FT history", () => {
+  assert.equal(SERVICE_VERSION, "1.22.0");
   assert.equal(ENGINE_VERSION, "papasense-v2.0.0-four-engine-resolution");
   assert.deepEqual([...FINISHED_PROFILE_STATUSES], ["FT"]);
 });

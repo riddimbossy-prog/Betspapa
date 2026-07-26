@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta content="Papa’s Pick opens first with HT/FT-led football match analysis, prepared boards and live status." name="description"/><meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+<meta content="Papa’s Pick is the all-engine football board for Papa, Safer, Aggressive, Venue Pattern and Athena, with prepared picks and live status." name="description"/><meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
 <meta content="#070b16" name="theme-color"/>
 <title>Papa’s Pick — BetsPapa</title>
 <link href="assets/images/favicon-64.png" rel="icon" type="image/png"/>
@@ -10,14 +10,14 @@
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Space+Grotesk:wght@600;700&amp;display=swap" rel="stylesheet"/>
 <link href="assets/css/country-flags.v1175.css" rel="stylesheet"/>
-<link href="assets/css/portal.v1210.css" rel="stylesheet"/>
+<link href="assets/css/portal.v1220.css" rel="stylesheet"/>
 <script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
 <link href="assets/css/mobile-nav.v111.css" rel="stylesheet"/>
 <meta content="yes" name="mobile-web-app-capable"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="BetsPapa" name="apple-mobile-web-app-title"/>
-<link href="/manifest.webmanifest?v=1186" rel="manifest"/>
+<link href="/manifest.webmanifest?v=1220" rel="manifest"/>
 <link href="/assets/images/pwa-brand-apple-180.png" rel="apple-touch-icon" sizes="180x180"/>
 <link href="/assets/images/pwa-splash-1290x2796.jpg" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" rel="apple-touch-startup-image"/>
 <link href="/assets/images/pwa-splash-2796x1290.jpg" media="(device-width: 932px) and (device-height: 430px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)" rel="apple-touch-startup-image"/>
@@ -43,7 +43,7 @@
     })();
   </script>
 <link href="https://betspapa.com/" rel="canonical"/></head>
-<body data-engine="primary" data-page="engine" data-start-page="papas-pick">
+<body data-engine="primary" data-page="papa-hub" data-start-page="papas-pick">
 <div aria-live="polite" class="pwa-launch-splash" id="pwaSplash" role="status">
 <span class="pwa-splash-accessible">Launching BetsPapa — Papa Knows the Game</span>
 </div>
@@ -57,9 +57,9 @@
 </header>
 <main class="portal-main">
 <section class="portal-hero">
-<span class="eyebrow">BetsPapa v1.21.0 · Papa starts here</span>
+<span class="eyebrow">BetsPapa v1.22.0 · All engines in one place</span>
 <h1 id="portalTitle">Papa’s Pick</h1>
-<p id="portalDescription">Papa classifies the match, checks HT/FT, half-goal, sample, venue and conflict evidence, then publishes one balanced market or NO PICK.</p>
+<p id="portalDescription">Every fixture now shows Papa’s Pick, Safer, Aggressive, Venue Pattern and Athena together, so you can compare the full decision picture without leaving the main page.</p>
 </section>
 <div class="status-strip" id="portalStatus"><span>Connecting to live data…</span><small></small></div>
 <div aria-label="Match status legend" class="match-state-legend">
@@ -68,18 +68,27 @@
 <span><i class="finished"></i> Settling</span>
 <span><i class="settled"></i> Settled</span>
 </div>
-<div class="portal-toolbar">
+<div class="portal-toolbar papa-hub-toolbar">
 <label><span>Date</span><input id="dateFilter" type="date"/></label>
+<label><span>Engine</span><select id="engineFilter"><option value="">All engines</option><option value="primary">Papa’s Pick</option><option value="safer">Safer</option><option value="aggressive">Aggressive</option><option value="venue">Venue Pattern</option><option value="athena">Athena</option></select></label>
 <label><span>League</span><select id="leagueFilter"><option value="">All leagues</option></select></label>
 <label><span>Market</span><select id="marketFilter"><option value="">All markets</option></select></label>
-<label><span>Strength</span><select id="strengthFilter"><option value="">All strengths</option><option value="qualified">Strong — Qualified</option><option value="directional">Directional — Not a banker</option><option value="no-pick">No Pick — Withheld</option></select></label>
+<label><span>Strength</span><select id="strengthFilter"><option value="">All strengths</option><option value="qualified">Strong — Qualified</option><option value="directional">Directional — Not a banker</option><option value="no-pick">No Pick — Withheld</option><option value="preparing">Preparing</option></select></label>
 <label><span>Match state</span><select id="matchStateFilter"><option value="">All states</option><option value="pending">Pending</option><option value="live">Live</option><option value="finished">Settling</option><option value="settled">Settled</option></select></label>
-<label><span>Search</span><input id="searchFilter" placeholder="Team, league or market" type="search"/></label>
+<label><span>Search</span><input id="searchFilter" placeholder="Team, league, engine or market" type="search"/></label>
 <button id="clearFilters" type="button">Clear</button>
 <button id="refreshButton" type="button">Refresh</button>
 </div>
+<div class="hub-engine-tabs" id="hubEngineTabs" aria-label="Choose engine">
+<button class="active" data-engine-tab="" type="button">All engines</button>
+<button data-engine-tab="primary" type="button">Papa’s Pick</button>
+<button data-engine-tab="safer" type="button">Safer</button>
+<button data-engine-tab="aggressive" type="button">Aggressive</button>
+<button data-engine-tab="venue" type="button">Venue Pattern</button>
+<button data-engine-tab="athena" type="button">Athena</button>
+</div>
 <section class="metric-row" id="portalMetrics"></section>
-<div class="section-title"><h2>Selections and match status</h2><p><span id="marketCount">0</span> market families</p></div><section class="portal-grid" id="portalContent"></section>
+<div class="section-title"><h2>All-engine match board</h2><p><span id="marketCount">0</span> market families · tap any engine row for the plain-English reason</p></div><section class="papa-hub-grid" id="portalContent"></section>
 <footer class="portal-footer">
 <span>Sports analytics only. Predictions are not guarantees. 18+.</span>
 <div>
@@ -96,7 +105,7 @@
 </div>
 </dialog>
 <script src="assets/js/country-flags.v1175.js"></script>
-<script src="assets/js/portal.v1210.js"></script>
+<script src="assets/js/portal.v1220.js"></script>
 <script src="assets/js/mobile-nav.v1184.js"></script>
 <script src="/assets/js/pwa.v1160.js"></script>
 <script src="/assets/js/ui.v1170.js"></script>

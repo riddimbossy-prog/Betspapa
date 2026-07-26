@@ -1,5 +1,14 @@
 # BetsPapa Changelog
 
+## v1.22.0 — Papa’s Pick All-Engine Main Board
+
+- Papa’s Pick now shows Papa, Safer, Aggressive, Venue Pattern and Athena on one fixture card.
+- Added one fast `/api/main-board/today` response that merges all prepared engines.
+- Added engine tabs and engine, league, market, strength, state and search filters.
+- Each engine row opens its own plain-English explanation.
+- Separate engine pages remain available and unchanged.
+- Updated the PWA cache and launch version to v1.22.0.
+
 ## v1.21.0 — PapaSense v2 Four-Engine Resolution
 - Added match classification before market selection.
 - Added hard market-specific sample gates and normal-FT-only profiles.

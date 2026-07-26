@@ -1078,7 +1078,7 @@ export function predictMatch(input) {
     papaSenseResolution: resolutionMetadata(classification),
     engineArchitecture: {
       version: "2.0.0",
-      serviceVersion: "1.21.0",
+      serviceVersion: "1.22.0",
       authoritativeCore: "PapaSense v2 Four-Engine Resolution System",
       sharedEvidence: "HT/FT, venue, recent, goal, half-goal and event-aware profiles",
       policy:

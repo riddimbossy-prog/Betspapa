@@ -1,4 +1,4 @@
-## v1.21.0 PapaSense v2 Four-Engine Resolution
+## v1.22.0 PapaSense v2 Four-Engine Resolution
 
 Papa’s Pick, Safer, Aggressive and Venue Pattern now use separate decision contracts on top of the shared HT/FT, venue, half-goal and event-aware evidence layer. Papa can return NO PICK; Safer must be a true broader containment market; Aggressive must be a same-story escalation; and Venue Pattern is independently generated from home-versus-away evidence. Per-engine settled results feed conservative confidence calibration. Run `supabase/BETSPAPA_V1_21_0_PAPASENSE_V2.sql` after the Athena v3 migration. See `PAPASENSE_V2_FOUR_ENGINE_RESOLUTION.md`.
 
@@ -140,3 +140,8 @@ Athena is free and public. Run `supabase/BETSPAPA_V1_20_0_ATHENA_V3.sql` before 
 ## Live & Fixtures
 
 The dedicated `/live-fixtures.html` page provides responsive pending, live, settling, settled and delayed match views, including mobile and Samsung Z Fold 6 layouts.
+
+
+## v1.22.0 main board
+
+Papa’s Pick now displays Papa, Safer, Aggressive, Venue Pattern and Athena together on one fixture-centred board.

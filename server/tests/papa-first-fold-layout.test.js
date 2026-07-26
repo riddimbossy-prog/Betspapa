@@ -13,7 +13,7 @@ async function source(path) {
 
 test("the site root is Papa's Pick rather than the retired home dashboard", async () => {
   const html = await source("index.html");
-  assert.match(html, /data-page="engine"/);
+  assert.match(html, /data-page="papa-hub"/);
   assert.match(html, /data-engine="primary"/);
   assert.match(html, /data-start-page="papas-pick"/);
   assert.match(html, /Papa’s Pick/);
@@ -36,7 +36,7 @@ test("mobile navigation starts with Papa and has no Home tab", async () => {
 });
 
 test("Fold and tablet responsive layer keeps multi-column boards", async () => {
-  const css = await source("assets/css/portal.v1210.css");
+  const css = await source("assets/css/portal.v1220.css");
   assert.match(css, /max-width:1080px/);
   assert.match(css, /min-width:520px/);
   assert.match(css, /repeat\(auto-fit,minmax\(260px,1fr\)\)/);
@@ -45,8 +45,8 @@ test("Fold and tablet responsive layer keeps multi-column boards", async () => {
 
 test("PWA launches at the Papa's Pick root", async () => {
   const manifest = JSON.parse(await source("manifest.webmanifest"));
-  assert.equal(manifest.start_url, "/?source=pwa&v=1210");
-  assert.equal(manifest.version, "1.21.0");
+  assert.equal(manifest.start_url, "/?source=pwa&v=1220");
+  assert.equal(manifest.version, "1.22.0");
   const papa = manifest.shortcuts.find((item) => item.name === "Papa's Pick");
   assert.equal(papa.url, "/?source=shortcut");
 });

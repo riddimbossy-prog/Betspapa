@@ -1,4 +1,4 @@
-BetsPapa v1.21.0 — FULL REPLACE
+BetsPapa v1.22.0 — FULL REPLACE
 PapaSense v2.0 Four-Engine Resolution System + Athena v3
 
 1. BACK UP the current repository and Supabase project.
@@ -8,7 +8,7 @@ PapaSense v2.0 Four-Engine Resolution System + Athena v3
    supabase/BETSPAPA_V1_21_0_PAPASENSE_V2.sql
 4. Replace all repository files with this package.
 5. Commit and push:
-   BetsPapa v1.21.0 PapaSense v2 Four-Engine Resolution
+   BetsPapa v1.22.0 PapaSense v2 Four-Engine Resolution
 6. Let Render deploy the backend.
 7. Check /api/health. Expected service version: 1.21.0.
    Expected PapaSense version: papasense-v2.0.0-four-engine-resolution.
@@ -22,3 +22,5 @@ Important:
 - Safer and Aggressive may be blank even when Papa has a pick.
 - Venue Pattern may disagree with Papa because it is now independent.
 - Standard profiles use normal 90-minute FT results only.
+
+MAIN PAGE: Papa’s Pick now contains all five engines in one fixture-centred board. No new v1.22.0 SQL migration is required.

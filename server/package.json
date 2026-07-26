@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.21.0",
+  "version": "1.22.0",
   "private": true,
-  "description": "BetsPapa v1.21.0 adds PapaSense v2: robust Papa, Safer, Aggressive and independent Venue Pattern resolution.",
+  "description": "BetsPapa v1.22.0 puts Papa's Pick, Safer, Aggressive, Venue Pattern and Athena on one main fixture board.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
