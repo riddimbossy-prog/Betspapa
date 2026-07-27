@@ -4,6 +4,7 @@ import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 import { hydrateProfilesForFixtures } from "./historyHydrationService.js";
 import { detectSuspiciousPredictionCandidates } from "./intelligenceService.js";
+import { competitionPolicy } from "../engine/competitionPolicy.js";
 
 const TRANSITIONS = ["WW", "WD", "WL", "DW", "DD", "DL", "LW", "LD", "LL"];
 
@@ -480,13 +481,27 @@ async function loadTeams(supabase, teamIds) {
 async function loadLeague(supabase, leagueId) {
   const { data, error } = await supabase
     .from("leagues")
-    .select("id,external_league_id,name,country,season,logo_url")
+    .select("id,external_league_id,name,country,season,logo_url,competition_type,prediction_enabled,prediction_exclusion_reason")
     .eq("id", leagueId)
     .single();
   throwIfSupabaseError(error, "Unable to load league");
   return data;
 }
 
+
+
+async function loadCompetitionMap(supabase, leagueIds) {
+  if (!leagueIds.length) return new Map();
+  const { data, error } = await supabase
+    .from("leagues")
+    .select("id,external_league_id,name,country,season,logo_url,competition_type,prediction_enabled,prediction_exclusion_reason")
+    .in("id", leagueIds);
+  throwIfSupabaseError(error, "Unable to load competition policy");
+  return new Map((data || []).map((league) => [Number(league.id), {
+    league,
+    policy: competitionPolicy(league)
+  }]));
+}
 
 function optionalTableMissing(error, tableName) {
   const message = String(error?.message || error || "");
@@ -683,6 +698,14 @@ async function predictFixture(supabase, fixture, cached) {
     cached.set(cacheKey, context);
   }
 
+  const policy = competitionPolicy(context.league);
+  if (!policy.eligible) {
+    const error = new Error(policy.reason);
+    error.code = "COMPETITION_EXCLUDED";
+    error.competitionType = policy.type;
+    throw error;
+  }
+
   const allTeams = cached.get("__teams");
   const teams = allTeams || await loadTeams(
     supabase,
@@ -697,18 +720,21 @@ async function predictFixture(supabase, fixture, cached) {
     loadTeamHistoryProfiles(supabase, fixture.away_team_id, cached)
   ]);
 
+  const sameCompetitionSeason = (row) =>
+    Number(row.league_id) === Number(fixture.league_id) &&
+    Number(row.season) === Number(fixture.season);
   const historyHtftRows = [
     ...(homeHistory.htftRows || []),
     ...(awayHistory.htftRows || [])
-  ];
+  ].filter(sameCompetitionSeason);
   const historyGoalRows = [
     ...(homeHistory.goalRows || []),
     ...(awayHistory.goalRows || [])
-  ];
+  ].filter(sameCompetitionSeason);
   const historyHalfGoalRows = [
     ...(homeHistory.halfGoalRows || []),
     ...(awayHistory.halfGoalRows || [])
-  ];
+  ].filter(sameCompetitionSeason);
 
   const htftMap = aggregateHtftProfiles(
     historyHtftRows,
@@ -773,12 +799,29 @@ export async function generatePredictionsForDate(supabase, date) {
       .order("fixture_date", { ascending: true })
   );
 
-  const predictable = fixtures.filter((fixture) =>
+  const statusPredictable = fixtures.filter((fixture) =>
     PREDICTABLE_STATUSES.has(fixture.status)
   );
+  const competitionMap = await loadCompetitionMap(
+    supabase,
+    [...new Set(statusPredictable.map((fixture) => Number(fixture.league_id)).filter(Boolean))]
+  );
+  const skipped = [];
+  const predictable = statusPredictable.filter((fixture) => {
+    const entry = competitionMap.get(Number(fixture.league_id));
+    const policy = entry?.policy || { eligible: false, type: "UNKNOWN", reason: "Competition policy is unresolved" };
+    if (policy.eligible) return true;
+    skipped.push({
+      fixtureId: fixture.id,
+      externalFixtureId: fixture.external_fixture_id,
+      code: "COMPETITION_EXCLUDED",
+      competitionType: policy.type,
+      message: policy.reason
+    });
+    return false;
+  });
   const cached = new Map();
   const saved = [];
-  const skipped = [];
   const prepared = [];
 
   const teamIds = [...new Set(
@@ -880,6 +923,7 @@ export async function generatePredictionsForDate(supabase, date) {
     date,
     fixturesFound: fixtures.length,
     predictableFixtures: predictable.length,
+    excludedCompetitions: skipped.filter((item) => item.code === "COMPETITION_EXCLUDED").length,
     generated: saved.length,
     published: saved.filter((item) => item.published).length,
     withheldBySimilarity: similarityAudit.withheld,

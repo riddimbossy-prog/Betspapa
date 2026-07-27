@@ -323,7 +323,7 @@ function selectAuthoritativePrimary(markets, input, overhaul) {
   if (selected) {
     selected.marketPolicy = {
       ...(selected.marketPolicy || {}),
-      version: "papasense-v2.0.0",
+      version: "papasense-v2.1.0",
       topTransition,
       directTranslationApplied: directKeys.includes(selected.key),
       directPreference: directKeys[0] || null,
@@ -366,7 +366,7 @@ function selectAuthoritativePrimary(markets, input, overhaul) {
   if (selected) {
     selected.marketPolicy = {
       ...(selected.marketPolicy || {}),
-      version: "papasense-v2.0.0",
+      version: "papasense-v2.1.0",
       topTransition,
       directTranslationApplied: directKeys.includes(selected.key),
       directPreference: directKeys[0] || null,
@@ -850,7 +850,7 @@ function buildEnginePick({
     htftGate: market.htftGate || null,
     marketPolicy: {
       ...(market.marketPolicy || {}),
-      version: "papasense-v2.0.0",
+      version: "papasense-v2.1.0",
       authoritativeCore: true,
       allEnginesUseOverhaulCatalogue: true,
       independentConsensusVote: Boolean(independent),
@@ -973,7 +973,7 @@ function buildDecisionTrace(primary, markets, overhaul, support, enginePicks) {
     enginePicks,
     venuePatternReview: support?.decisionTrace?.venuePatternReview || null,
     marketPolicy: {
-      version: "papasense-v2.0.0",
+      version: "papasense-v2.1.0",
       authoritativeCore: true,
       allEnginesUseOverhaulCatalogue: true,
       specialCommonSenseCompatibility: SPECIAL_COMMON_SENSE_KEYS.has(primary.key)
@@ -1006,7 +1006,7 @@ export function predictMatch(input) {
         reasons: primaryPick.reasons || [],
         htftGate: null,
         sampleGate: null,
-        marketPolicy: primaryPick.marketPolicy || { version: "papasense-v2.0.0", noPick: true }
+        marketPolicy: primaryPick.marketPolicy || { version: "papasense-v2.1.0", noPick: true }
       }
     : markets.find((market) => market.key === primaryPick.key) || {
         ...primaryPick,
@@ -1016,7 +1016,7 @@ export function predictMatch(input) {
 
   primary.marketPolicy = {
     ...(primary.marketPolicy || {}),
-    version: "papasense-v2.0.0",
+    version: "papasense-v2.1.0",
     classification: classification.classification,
     topTransition: overhaul?.story?.topTransitions?.[0]?.code || null,
     noPick: primary.key === "no-pick"
@@ -1077,9 +1077,9 @@ export function predictMatch(input) {
     resultStructure: overhaul.resultStructure || null,
     papaSenseResolution: resolutionMetadata(classification),
     engineArchitecture: {
-      version: "2.0.0",
-      serviceVersion: "1.22.0",
-      authoritativeCore: "PapaSense v2 Four-Engine Resolution System",
+      version: "2.1.0",
+      serviceVersion: "1.23.0",
+      authoritativeCore: "PapaSense v2.1 League-Only Specialist Market Guard System",
       sharedEvidence: "HT/FT, venue, recent, goal, half-goal and event-aware profiles",
       policy:
         "Papa may return NO PICK. Safer must be a true containment market, Aggressive must be a same-story escalation, and Venue Pattern must qualify independently from home-versus-away evidence."
@@ -1093,6 +1093,8 @@ export function predictMatch(input) {
       "Aggressive can only choose a sharper market from Papa's same story.",
       "Venue Pattern is independent and requires a minimum home-versus-away sample and route margin.",
       "Directional conflict blocks team-result markets and redirects only to compatible neutral markets.",
+      "Cup, friendly and unverified competitions are blocked before every engine runs.",
+      "Specialist half markets require overall, correct venue and recent evidence." ,
       "Displayed confidence uses settled-history calibration when available; otherwise it is reduced conservatively.",
       "Public explanations are separated from the technical internal audit.",
       "Repeated and unavailable engine views are never counted as independent consensus votes."

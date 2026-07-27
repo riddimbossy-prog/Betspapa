@@ -136,3 +136,10 @@ export async function fetchFixtureEvents(fixtureId) {
     fixture: Number(fixtureId)
   });
 }
+
+export async function fetchLeagueMetadata({ leagueId, season }) {
+  return apiFootballRequest("/leagues", {
+    id: Number(leagueId),
+    season: Number(season)
+  });
+}

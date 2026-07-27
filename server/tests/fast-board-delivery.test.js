@@ -68,7 +68,7 @@ test("portal shows a local prepared board before the network refresh", async () 
   assert.match(source, /setTimeout\(\(\) => load\(\{ silent: true \}\), 60000\)/);
 });
 
-test("v1.22.0 exposes the all-engine board while retaining PapaSense v2 and Athena v3", () => {
-  assert.equal(SERVICE_VERSION, "1.22.0");
-  assert.equal(ENGINE_VERSION, "papasense-v2.0.0-four-engine-resolution");
+test("v1.23.0 keeps the all-engine board with league-only specialist guards", () => {
+  assert.equal(SERVICE_VERSION, "1.23.0");
+  assert.equal(ENGINE_VERSION, "papasense-v2.1.0-league-only-specialist-guards");
 });

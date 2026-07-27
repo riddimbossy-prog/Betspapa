@@ -164,3 +164,14 @@ When no live predictions have been published yet, it falls back to demonstration
 ## Important limitation
 
 This package was tested offline with automated unit tests, but live API-Football imports could not be executed in the build environment because internet access and your private keys are unavailable here. Start with one league, inspect the imported rows, and then expand coverage.
+
+
+## v1.23 competition verification
+
+After the v1.23 SQL migration, call the protected endpoint:
+
+```text
+POST /api/admin/competition-metadata/refresh
+```
+
+Optional JSON body: `{ "limit": 100 }`. Only competitions verified as `LEAGUE` are enabled. Cups, friendlies and unresolved types remain blocked.

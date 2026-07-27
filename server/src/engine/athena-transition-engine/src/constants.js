@@ -1,5 +1,5 @@
 export const ENGINE_NAME = 'Athena Swing Resolution & Half-Goals Engine';
-export const ENGINE_VERSION = '3.0.0';
+export const ENGINE_VERSION = '3.1.0';
 
 export const CLASSIFICATIONS = Object.freeze({
   STABLE_LEADER: 'STABLE_LEADER',
@@ -62,11 +62,21 @@ export const DEFAULT_CONFIG = Object.freeze({
   meaningfulStateSample: 3,
   matchedReversalCountStrong: 2,
   matchedSwingCountMinimum: 1,
-  secondHalfActivityStrong: 0.66,
-  secondHalfScoringStrong: 0.58,
-  secondHalfConcedingStrong: 0.58,
-  secondHalfOver15Strong: 0.42,
-  goalsBothHalvesStrong: 0.52,
+  secondHalfActivityStrong: 0.70,
+  secondHalfScoringStrong: 0.65,
+  secondHalfConcedingStrong: 0.65,
+  venueSecondHalfScoringStrong: 0.70,
+  venueSecondHalfConcedingStrong: 0.68,
+  recentSecondHalfStrong: 0.66,
+  secondHalfGoalsForPerMatchStrong: 0.75,
+  teamSecondHalfPrimaryScore: 88,
+  teamSecondHalfSpecificityMargin: 8,
+  secondHalfOver15Strong: 0.48,
+  goalsBothHalvesStrong: 0.55,
+  firstHalfOver05Strong: 0.72,
+  secondHalfOver05Strong: 0.70,
+  secondHalfDnbWinRateStrong: 0.45,
+  secondHalfDnbVenueWinRateStrong: 0.50,
   eventCoverageRequired: 0.70,
   eventCoverageSampleTarget: 20,
   marketOddsConflictRatio: 1.35,

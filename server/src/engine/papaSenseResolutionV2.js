@@ -593,7 +593,7 @@ function noPick(engineKey, engineName, reason, classification) {
     consensusEligible: false,
     classification: classification?.classification || "INSUFFICIENT_DATA",
     marketPolicy: {
-      version: "papasense-v2.0.0",
+      version: "papasense-v2.1.0",
       purpose: engineKey,
       noPick: true,
       allEnginesUseOverhaulCatalogue: true
@@ -1145,7 +1145,7 @@ export function publicExplanation({ engineKey = "primary", engineName, market, c
 
 export function resolutionMetadata(classification) {
   return {
-    version: "papasense-v2.0.0",
+    version: "papasense-v2.1.0",
     classification: classification.classification,
     rawClassification: classification.rawClassification,
     strength: classification.strength,

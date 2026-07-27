@@ -19,12 +19,14 @@ import {
 import { ATHENA_SEPARATION_VERSION, evaluateAthenaSeparationV2 } from "../engine/athenaSeparationEngineV2.js";
 import { dateRangeUtc } from "../utils/date.js";
 import { fixtureMatchState } from "./matchStateService.js";
+import { competitionPolicy } from "../engine/competitionPolicy.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 
 const MIN_OVERALL_MATCHES = 8;
 const MIN_VENUE_MATCHES = 5;
 const MAX_OVERALL_MATCHES = 40;
 const MAX_VENUE_MATCHES = 20;
+const RECENT_MATCHES = 6;
 const CACHE_TTL_MS = 15 * 60 * 1000;
 const cache = new Map();
 
@@ -338,15 +340,20 @@ export function buildAthenaTeamInput(name, rows, teamId, venueType = null) {
   };
 }
 
-function withVenueSnapshot(team, venueTeam) {
+function snapshot(team, type = null) {
+  return {
+    type,
+    matchesPlayed: team?.matchesPlayed || 0,
+    htft: team?.htft || emptyTransitions(),
+    goals: team?.goals || null
+  };
+}
+
+function withEvidenceSnapshots(team, venueTeam, recentTeam) {
   return {
     ...team,
-    venue: {
-      type: venueTeam?.venue?.type || null,
-      matchesPlayed: venueTeam?.matchesPlayed || 0,
-      htft: venueTeam?.htft || emptyTransitions(),
-      goals: venueTeam?.goals || null
-    }
+    venue: snapshot(venueTeam, venueTeam?.venue?.type || null),
+    recent: snapshot(recentTeam, "RECENT6")
   };
 }
 
@@ -604,7 +611,7 @@ async function loadEntities(supabase, fixtures) {
       : Promise.resolve({ data: [], error: null }),
     leagueIds.length
       ? supabase.from("leagues")
-          .select("id,external_league_id,name,country,season,logo_url")
+          .select("id,external_league_id,name,country,season,logo_url,competition_type,prediction_enabled,prediction_exclusion_reason")
           .in("id", leagueIds)
       : Promise.resolve({ data: [], error: null })
   ]);
@@ -1017,12 +1024,27 @@ async function buildAthenaPicks(supabase, date) {
       continue;
     }
 
+    const policy = competitionPolicy(league);
+    if (!policy.eligible) {
+      rejected.push({
+        fixtureId: fixture.external_fixture_id,
+        reason: policy.reason,
+        failures: ["COMPETITION_EXCLUDED", policy.type]
+      });
+      continue;
+    }
+
     const kickoffTime = new Date(fixture.fixture_date).getTime();
+    const sameCompetitionSeason = (row) =>
+      Number(row.league_id) === Number(fixture.league_id) &&
+      Number(row.season) === Number(fixture.season);
     const homeRows = newestFirst(historyByTeam.get(Number(fixture.home_team_id)) || [])
       .filter((row) => new Date(row.fixture_date).getTime() < kickoffTime)
+      .filter(sameCompetitionSeason)
       .slice(0, MAX_OVERALL_MATCHES);
     const awayRows = newestFirst(historyByTeam.get(Number(fixture.away_team_id)) || [])
       .filter((row) => new Date(row.fixture_date).getTime() < kickoffTime)
+      .filter(sameCompetitionSeason)
       .slice(0, MAX_OVERALL_MATCHES);
 
     const homeVenueRows = homeRows
@@ -1031,12 +1053,16 @@ async function buildAthenaPicks(supabase, date) {
     const awayVenueRows = awayRows
       .filter((row) => Number(row.away_team_id) === Number(fixture.away_team_id))
       .slice(0, MAX_VENUE_MATCHES);
+    const homeRecentRows = homeRows.slice(0, RECENT_MATCHES);
+    const awayRecentRows = awayRows.slice(0, RECENT_MATCHES);
 
     const samples = {
       homeOverall: homeRows.length,
       homeVenue: homeVenueRows.length,
+      homeRecent: homeRecentRows.length,
       awayOverall: awayRows.length,
-      awayVenue: awayVenueRows.length
+      awayVenue: awayVenueRows.length,
+      awayRecent: awayRecentRows.length
     };
 
     const sampleFailures = [];
@@ -1059,22 +1085,24 @@ async function buildAthenaPicks(supabase, date) {
       const overallAway = buildAthenaTeamInput(away.name, awayRows, fixture.away_team_id);
       const venueHome = buildAthenaTeamInput(home.name, homeVenueRows, fixture.home_team_id, "home");
       const venueAway = buildAthenaTeamInput(away.name, awayVenueRows, fixture.away_team_id, "away");
+      const recentHome = buildAthenaTeamInput(home.name, homeRecentRows, fixture.home_team_id);
+      const recentAway = buildAthenaTeamInput(away.name, awayRecentRows, fixture.away_team_id);
       const odds = extractAthenaOdds(fixture);
 
       const baseInput = {
         id: String(fixture.external_fixture_id),
         league: `${league.country || ""} · ${league.name || ""}`.replace(/^ · /, ""),
         kickoff: fixture.fixture_date,
-        home: withVenueSnapshot(overallHome, venueHome),
-        away: withVenueSnapshot(overallAway, venueAway),
+        home: withEvidenceSnapshots(overallHome, venueHome, recentHome),
+        away: withEvidenceSnapshots(overallAway, venueAway, recentAway),
         ...(odds ? { odds } : {})
       };
 
       const result = analyseFixture(baseInput);
       const venueResult = analyseFixture({
         ...baseInput,
-        home: venueHome,
-        away: venueAway
+        home: withEvidenceSnapshots(venueHome, venueHome, recentHome),
+        away: withEvidenceSnapshots(venueAway, venueAway, recentAway)
       });
       const separation = evaluateAthenaSeparationV2(result);
       const arbitration = arbitrateAthenaV11({ result, venueResult, samples, separation });

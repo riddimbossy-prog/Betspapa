@@ -1,3 +1,7 @@
+## v1.23.0 League-Only Specialist Market Guards
+
+All five engines now reject friendlies, cups, knockout tournaments and unverified competition types before prediction generation. Team histories are restricted to the exact league and season. Athena and PapaSense now apply stricter overall, venue and recent evidence to named-team goals, second-half totals, second-half DNB, goals in both halves and first-half specialist markets. Run `supabase/BETSPAPA_V1_23_0_COMPETITION_AND_HALF_MARKET_GUARDS.sql`, then refresh competition metadata. See `BETSPAPA_V1_23_0_EXPECTATIONS.md` and `SPECIALIST_MARKET_REVIEW_V1_23_0.md`.
+
 ## v1.22.0 PapaSense v2 Four-Engine Resolution
 
 Papa’s Pick, Safer, Aggressive and Venue Pattern now use separate decision contracts on top of the shared HT/FT, venue, half-goal and event-aware evidence layer. Papa can return NO PICK; Safer must be a true broader containment market; Aggressive must be a same-story escalation; and Venue Pattern is independently generated from home-versus-away evidence. Per-engine settled results feed conservative confidence calibration. Run `supabase/BETSPAPA_V1_21_0_PAPASENSE_V2.sql` after the Athena v3 migration. See `PAPASENSE_V2_FOUR_ENGINE_RESOLUTION.md`.

@@ -14,6 +14,24 @@ function goalRate(goals, countKey, rateKey, matches) {
   return count === null ? null : safeRate(count, matches);
 }
 
+function snapshotMatches(snapshot) {
+  return finiteOrNull(snapshot?.matchesPlayed) ?? 0;
+}
+
+function snapshotGoalRate(snapshot, countKey, rateKey) {
+  return goalRate(snapshot?.goals || {}, countKey, rateKey, snapshotMatches(snapshot));
+}
+
+function snapshotGoalPerMatch(snapshot, key) {
+  const matches = snapshotMatches(snapshot);
+  const goals = finiteOrNull(snapshot?.goals?.[key]);
+  return goals === null || matches <= 0 ? null : safeRate(goals, matches);
+}
+
+function routeCount(htft = {}, keys = []) {
+  return keys.reduce((sum, key) => sum + (finiteOrNull(htft?.[key]) ?? 0), 0);
+}
+
 export function deriveTeamMetrics(team, config) {
   const h = team.htft;
   const htLead = h.ww + h.wd + h.wl;
@@ -22,6 +40,10 @@ export function deriveTeamMetrics(team, config) {
   const sampleFactor = Math.min(1, team.matchesPlayed / config.minMatchesForFullReliability);
   const goals = team.goals ?? {};
   const matches = team.matchesPlayed;
+  const venue = team.venue || null;
+  const recent = team.recent || null;
+  const venueMatches = snapshotMatches(venue);
+  const recentMatches = snapshotMatches(recent);
 
   const firstHalfGoalsFor = finiteOrNull(goals.firstHalfGoalsFor);
   const firstHalfGoalsAgainst = finiteOrNull(goals.firstHalfGoalsAgainst);
@@ -111,7 +133,43 @@ export function deriveTeamMetrics(team, config) {
     minute61To75For: finiteOrNull(goals.minute61To75For) ?? 0,
     minute76To90For: finiteOrNull(goals.minute76To90For) ?? 0,
 
+    venueMatches,
+    recentMatches,
+    venueScoringRate: snapshotGoalRate(venue, "scoredMatches", "scoringRate"),
+    venueConcedingRate: snapshotGoalRate(venue, "concededMatches", "concedingRate"),
+    recentScoringRate: snapshotGoalRate(recent, "scoredMatches", "scoringRate"),
+    recentConcedingRate: snapshotGoalRate(recent, "concededMatches", "concedingRate"),
+    venueFirstHalfOver05Rate: snapshotGoalRate(venue, "firstHalfOver05", "firstHalfOver05Rate"),
+    recentFirstHalfOver05Rate: snapshotGoalRate(recent, "firstHalfOver05", "firstHalfOver05Rate"),
+    venueFirstHalfOver15Rate: snapshotGoalRate(venue, "firstHalfOver15", "firstHalfOver15Rate"),
+    recentFirstHalfOver15Rate: snapshotGoalRate(recent, "firstHalfOver15", "firstHalfOver15Rate"),
+    venueSecondHalfScoringRate: snapshotGoalRate(venue, "secondHalfScoringMatches", "secondHalfScoringRate"),
+    venueSecondHalfConcedingRate: snapshotGoalRate(venue, "secondHalfConcedingMatches", "secondHalfConcedingRate"),
+    recentSecondHalfScoringRate: snapshotGoalRate(recent, "secondHalfScoringMatches", "secondHalfScoringRate"),
+    recentSecondHalfConcedingRate: snapshotGoalRate(recent, "secondHalfConcedingMatches", "secondHalfConcedingRate"),
+    venueSecondHalfOver05Rate: snapshotGoalRate(venue, "secondHalfOver05", "secondHalfOver05Rate"),
+    recentSecondHalfOver05Rate: snapshotGoalRate(recent, "secondHalfOver05", "secondHalfOver05Rate"),
+    venueSecondHalfOver15Rate: snapshotGoalRate(venue, "secondHalfOver15", "secondHalfOver15Rate"),
+    recentSecondHalfOver15Rate: snapshotGoalRate(recent, "secondHalfOver15", "secondHalfOver15Rate"),
+    venueGoalsBothHalvesRate: snapshotGoalRate(venue, "goalsBothHalves", "goalsBothHalvesRate"),
+    recentGoalsBothHalvesRate: snapshotGoalRate(recent, "goalsBothHalves", "goalsBothHalvesRate"),
+    venueSecondHalfWinRate: snapshotGoalRate(venue, "secondHalfWins", "secondHalfWinRate"),
+    recentSecondHalfWinRate: snapshotGoalRate(recent, "secondHalfWins", "secondHalfWinRate"),
+    venueSecondHalfDrawRate: snapshotGoalRate(venue, "secondHalfDraws", "secondHalfDrawRate"),
+    recentSecondHalfDrawRate: snapshotGoalRate(recent, "secondHalfDraws", "secondHalfDrawRate"),
+    venueSecondHalfGoalsForPerMatch: snapshotGoalPerMatch(venue, "secondHalfGoalsFor"),
+    venueSecondHalfGoalsAgainstPerMatch: snapshotGoalPerMatch(venue, "secondHalfGoalsAgainst"),
+    recentSecondHalfGoalsForPerMatch: snapshotGoalPerMatch(recent, "secondHalfGoalsFor"),
+    recentSecondHalfGoalsAgainstPerMatch: snapshotGoalPerMatch(recent, "secondHalfGoalsAgainst"),
+    secondHalfScoreRouteCount: routeCount(h, ["dw", "lw", "ld"]),
+    secondHalfConcedeStateRouteCount: routeCount(h, ["dl", "wl", "wd"]),
+    secondHalfScoreRouteRate: safeRate(routeCount(h, ["dw", "lw", "ld"]), matches),
+    secondHalfConcedeStateRouteRate: safeRate(routeCount(h, ["dl", "wl", "wd"]), matches),
+    venueSecondHalfScoreRouteCount: routeCount(venue?.htft, ["dw", "lw", "ld"]),
+    venueSecondHalfConcedeStateRouteCount: routeCount(venue?.htft, ["dl", "wl", "wd"]),
+
     venue: team.venue ?? null,
+    recent: team.recent ?? null,
     raw: team
   };
 }

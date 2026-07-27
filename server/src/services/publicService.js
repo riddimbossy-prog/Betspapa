@@ -7,6 +7,7 @@ import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 import { gradeEnginePick } from "./gradingService.js";
 import { fixtureMatchState, summarizeMatchStates } from "./matchStateService.js";
+import { competitionPolicy } from "../engine/competitionPolicy.js";
 
 
 export function getBackgroundProcessingStatus(date) {
@@ -127,7 +128,7 @@ async function loadEntityMaps(supabase, fixtures) {
   const leagueQuery = leagueIds.length
     ? supabase
         .from("leagues")
-        .select("id,external_league_id,name,country,season,logo_url")
+        .select("id,external_league_id,name,country,season,logo_url,competition_type,prediction_enabled,prediction_exclusion_reason")
         .in("id", leagueIds)
     : Promise.resolve({ data: [], error: null });
 
@@ -338,13 +339,22 @@ function mapPublicPredictions({
 
 export async function loadPreparedBoardData(supabase, date) {
   const { start, end } = dateRangeUtc(date);
-  const fixtures = await fetchAllRows(() =>
+  const allFixtures = await fetchAllRows(() =>
     supabase
       .from("fixtures")
       .select("*")
       .gte("fixture_date", start)
       .lt("fixture_date", end)
       .order("fixture_date", { ascending: true })
+  );
+
+  if (!allFixtures.length) {
+    return { fixtures: [], predictions: [] };
+  }
+
+  const entityMaps = await loadEntityMaps(supabase, allFixtures);
+  const fixtures = allFixtures.filter((fixture) =>
+    competitionPolicy(entityMaps.leagueMap.get(fixture.league_id) || {}).eligible
   );
 
   if (!fixtures.length) {
@@ -360,10 +370,7 @@ export async function loadPreparedBoardData(supabase, date) {
     .eq("published", true)
     .order("confidence", { ascending: false });
 
-  const [{ data: predictions, error: predictionError }, entityMaps] = await Promise.all([
-    predictionQuery,
-    loadEntityMaps(supabase, fixtures)
-  ]);
+  const { data: predictions, error: predictionError } = await predictionQuery;
   throwIfSupabaseError(predictionError, "Unable to load prepared board predictions");
 
   const predictionIds = (predictions || []).map((prediction) => prediction.id);

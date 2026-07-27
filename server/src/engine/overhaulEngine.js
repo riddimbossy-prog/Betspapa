@@ -834,6 +834,20 @@ function percentText(value) {
   return `${round(value * 100, 1)}%`;
 }
 
+function finiteMetric(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function scopeMetric(team, branch, scope, metric) {
+  return finiteMetric(team?.[branch]?.[scope]?.[metric]);
+}
+
+function strictFloor(values) {
+  const numbers = values.map(finiteMetric);
+  return numbers.every((value) => value !== null) ? Math.min(...numbers) : null;
+}
+
 function marketCandidates(input, matrix, direct, structure, goals, quality) {
   const p = matrix.normalized;
   const candidates = [];
@@ -841,6 +855,73 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
   const precisionPenalty = qualityPenalty(quality, 1.25);
   const homeGoalEdge = clamp((goals.metrics.homeGoalSupport - goals.metrics.awayGoalSupport + 1) / 2);
   const awayGoalEdge = clamp((goals.metrics.awayGoalSupport - goals.metrics.homeGoalSupport + 1) / 2);
+
+  const halfFloors = {
+    firstHalfOver05: strictFloor([
+      scopeMetric(input.home, "halfGoals", "overall", "firstHalfOver05Rate"),
+      scopeMetric(input.away, "halfGoals", "overall", "firstHalfOver05Rate"),
+      scopeMetric(input.home, "halfGoals", "venue", "firstHalfOver05Rate"),
+      scopeMetric(input.away, "halfGoals", "venue", "firstHalfOver05Rate"),
+      scopeMetric(input.home, "halfGoals", "recent", "firstHalfOver05Rate"),
+      scopeMetric(input.away, "halfGoals", "recent", "firstHalfOver05Rate")
+    ]),
+    secondHalfOver05: strictFloor([
+      scopeMetric(input.home, "halfGoals", "overall", "secondHalfOver05Rate"),
+      scopeMetric(input.away, "halfGoals", "overall", "secondHalfOver05Rate"),
+      scopeMetric(input.home, "halfGoals", "venue", "secondHalfOver05Rate"),
+      scopeMetric(input.away, "halfGoals", "venue", "secondHalfOver05Rate"),
+      scopeMetric(input.home, "halfGoals", "recent", "secondHalfOver05Rate"),
+      scopeMetric(input.away, "halfGoals", "recent", "secondHalfOver05Rate")
+    ]),
+    secondHalfOver15: strictFloor([
+      scopeMetric(input.home, "halfGoals", "overall", "secondHalfOver15Rate"),
+      scopeMetric(input.away, "halfGoals", "overall", "secondHalfOver15Rate"),
+      scopeMetric(input.home, "halfGoals", "venue", "secondHalfOver15Rate"),
+      scopeMetric(input.away, "halfGoals", "venue", "secondHalfOver15Rate"),
+      scopeMetric(input.home, "halfGoals", "recent", "secondHalfOver15Rate"),
+      scopeMetric(input.away, "halfGoals", "recent", "secondHalfOver15Rate")
+    ]),
+    goalsBothHalves: strictFloor([
+      scopeMetric(input.home, "halfGoals", "overall", "goalsBothHalvesRate"),
+      scopeMetric(input.away, "halfGoals", "overall", "goalsBothHalvesRate"),
+      scopeMetric(input.home, "halfGoals", "venue", "goalsBothHalvesRate"),
+      scopeMetric(input.away, "halfGoals", "venue", "goalsBothHalvesRate"),
+      scopeMetric(input.home, "halfGoals", "recent", "goalsBothHalvesRate"),
+      scopeMetric(input.away, "halfGoals", "recent", "goalsBothHalvesRate")
+    ])
+  };
+
+  const teamSecondHalfFloor = {
+    home: strictFloor([
+      scopeMetric(input.home, "halfGoals", "overall", "secondHalfScoringRate"),
+      scopeMetric(input.home, "halfGoals", "venue", "secondHalfScoringRate"),
+      scopeMetric(input.home, "halfGoals", "recent", "secondHalfScoringRate"),
+      scopeMetric(input.away, "halfGoals", "overall", "secondHalfConcedingRate"),
+      scopeMetric(input.away, "halfGoals", "venue", "secondHalfConcedingRate"),
+      scopeMetric(input.away, "halfGoals", "recent", "secondHalfConcedingRate")
+    ]),
+    away: strictFloor([
+      scopeMetric(input.away, "halfGoals", "overall", "secondHalfScoringRate"),
+      scopeMetric(input.away, "halfGoals", "venue", "secondHalfScoringRate"),
+      scopeMetric(input.away, "halfGoals", "recent", "secondHalfScoringRate"),
+      scopeMetric(input.home, "halfGoals", "overall", "secondHalfConcedingRate"),
+      scopeMetric(input.home, "halfGoals", "venue", "secondHalfConcedingRate"),
+      scopeMetric(input.home, "halfGoals", "recent", "secondHalfConcedingRate")
+    ])
+  };
+
+  const teamSecondHalfWinFloor = {
+    home: strictFloor([
+      scopeMetric(input.home, "halfGoals", "overall", "secondHalfWinRate"),
+      scopeMetric(input.home, "halfGoals", "venue", "secondHalfWinRate"),
+      scopeMetric(input.home, "halfGoals", "recent", "secondHalfWinRate")
+    ]),
+    away: strictFloor([
+      scopeMetric(input.away, "halfGoals", "overall", "secondHalfWinRate"),
+      scopeMetric(input.away, "halfGoals", "venue", "secondHalfWinRate"),
+      scopeMetric(input.away, "halfGoals", "recent", "secondHalfWinRate")
+    ])
+  };
 
   const home1xScore = clamp(
     direct.doubleChance.homeOrDraw * 0.68 +
@@ -1427,6 +1508,14 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
     const failed = side === "home" ? goals.homeGoals.failedToScoreRate : goals.awayGoals.failedToScoreRate;
     const opponentGoalSupport = side === "home" ? goals.metrics.awayGoalSupport : goals.metrics.homeGoalSupport;
     const cleanSheet = side === "home" ? goals.scores.homeCleanSheet : goals.scores.awayCleanSheet;
+    const teamGoalFloor = strictFloor([
+      scopeMetric(input[side], "goals", "overall", "scoreRate"),
+      scopeMetric(input[side], "goals", "venue", "scoreRate"),
+      scopeMetric(input[side], "goals", "recent", "scoreRate"),
+      scopeMetric(input[opponent], "goals", "overall", "concedeRate"),
+      scopeMetric(input[opponent], "goals", "venue", "concedeRate"),
+      scopeMetric(input[opponent], "goals", "recent", "concedeRate")
+    ]);
 
     candidates.push(
       makeMarket({
@@ -1439,7 +1528,15 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
         risk: generalPenalty,
         blockers: [
           ...(failed > 0.44 ? [`${name} fails to score too often`] : []),
-          ...(cleanSheetAgainst > 0.42 ? ["Opponent clean-sheet rate is too high"] : [])
+          ...(cleanSheetAgainst > 0.42 ? ["Opponent clean-sheet rate is too high"] : []),
+          ...(teamGoalFloor === null
+            ? ["Overall, venue and recent team-scoring data are all required"]
+            : teamGoalFloor < 0.70
+              ? ["The conservative team-goal floor is below 70%"]
+              : []),
+          ...(scopeMetric(input[side], "goals", "venue", "scoreRate") < 0.75
+            ? [`${name}'s venue scoring rate is below 75%`]
+            : [])
         ],
         reasons: [
           `${name} scoring rate is matched against the opponent conceding rate`,
@@ -1515,7 +1612,12 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
       blockers: [
         ...(goals.homeHalfGoals.firstHalfScoringRate < 0.35 && goals.awayHalfGoals.firstHalfScoringRate < 0.35
           ? ["Both first-half scoring rates are weak"]
-          : [])
+          : []),
+        ...(halfFloors.firstHalfOver05 === null
+          ? ["Overall, venue and recent first-half data are all required"]
+          : halfFloors.firstHalfOver05 < 0.72
+            ? ["The opening-half goal pattern is below 72% in at least one required sample"]
+            : [])
       ],
       reasons: [
         "At least one team has a repeatable first-half scoring route",
@@ -1564,7 +1666,12 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
           : []),
         ...(goals.homeHalfGoals.secondHalfScoringRate < 0.42 && goals.awayHalfGoals.secondHalfScoringRate < 0.42
           ? ["Both second-half scoring rates are weak"]
-          : [])
+          : []),
+        ...(halfFloors.secondHalfOver05 === null
+          ? ["Overall, venue and recent second-half data are all required"]
+          : halfFloors.secondHalfOver05 < 0.70
+            ? ["At least one required sample is below 70% for a second-half goal"]
+            : [])
       ],
       reasons: [
         "Second-half scoring and conceding rates agree with comeback and lead-change routes",
@@ -1592,7 +1699,12 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
           : []),
         ...(Math.min(goals.homeHalfGoals.secondHalfOver15Rate, goals.awayHalfGoals.secondHalfOver15Rate) < 0.28
           ? ["The two-goal second-half pattern is not repeated by both teams"]
-          : [])
+          : []),
+        ...(halfFloors.secondHalfOver15 === null
+          ? ["Overall, venue and recent two-goal second-half data are all required"]
+          : halfFloors.secondHalfOver15 < 0.48
+            ? ["The two-goal second-half rate is below 48% in at least one required sample"]
+            : [])
       ],
       reasons: [
         "Both venue profiles show repeatable two-goal second halves",
@@ -1619,6 +1731,15 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
           : []),
         ...(Math.min(goals.homeHalfGoals.goalsBothHalvesRate, goals.awayHalfGoals.goalsBothHalvesRate) < 0.34
           ? ["Both teams do not repeat goals in each half often enough"]
+          : []),
+        ...(halfFloors.goalsBothHalves === null
+          ? ["Overall, venue and recent both-halves data are all required"]
+          : halfFloors.goalsBothHalves < 0.55
+            ? ["Goals in both halves is below 55% in at least one required sample"]
+            : []),
+        ...(halfFloors.firstHalfOver05 !== null && halfFloors.secondHalfOver05 !== null &&
+          Math.min(halfFloors.firstHalfOver05, halfFloors.secondHalfOver05) < 0.70
+          ? ["The first-half and second-half goal legs are not independently secure"]
           : [])
       ],
       reasons: [
@@ -1646,6 +1767,18 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
           : []),
         ...(goals.homeHalfGoals.secondHalfScoringRate < 0.5 || goals.awayHalfGoals.secondHalfConcedingRate < 0.4
           ? ["Home second-half scoring and away second-half conceding do not both confirm"]
+          : []),
+        ...(teamSecondHalfFloor.home === null
+          ? ["Overall, home-venue and recent team-specific half data are all required"]
+          : teamSecondHalfFloor.home < 0.65
+            ? ["The conservative team-specific second-half floor is below 65%"]
+            : []),
+        ...(scopeMetric(input.home, "halfGoals", "venue", "secondHalfScoringRate") < 0.70 ||
+          scopeMetric(input.away, "halfGoals", "venue", "secondHalfConcedingRate") < 0.68
+          ? ["Home scoring and away conceding do not pass the stricter venue gate"]
+          : []),
+        ...(goals.scores.homeSecondHalfOver05 < goals.scores.secondHalfOver05 + 0.08
+          ? ["The named-team route is not eight points stronger than the neutral second-half goal"]
           : [])
       ],
       reasons: [
@@ -1673,6 +1806,18 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
           : []),
         ...(goals.awayHalfGoals.secondHalfScoringRate < 0.5 || goals.homeHalfGoals.secondHalfConcedingRate < 0.4
           ? ["Away second-half scoring and home second-half conceding do not both confirm"]
+          : []),
+        ...(teamSecondHalfFloor.away === null
+          ? ["Overall, away-venue and recent team-specific half data are all required"]
+          : teamSecondHalfFloor.away < 0.65
+            ? ["The conservative team-specific second-half floor is below 65%"]
+            : []),
+        ...(scopeMetric(input.away, "halfGoals", "venue", "secondHalfScoringRate") < 0.70 ||
+          scopeMetric(input.home, "halfGoals", "venue", "secondHalfConcedingRate") < 0.68
+          ? ["Away scoring and home conceding do not pass the stricter venue gate"]
+          : []),
+        ...(goals.scores.awaySecondHalfOver05 < goals.scores.secondHalfOver05 + 0.08
+          ? ["The named-team route is not eight points stronger than the neutral second-half goal"]
           : [])
       ],
       reasons: [
@@ -1701,6 +1846,12 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
           : []),
         ...(goals.homeHalfGoals.secondHalfWinRate < 0.38
           ? ["Home second-half win rate is too weak"]
+          : []),
+        ...(teamSecondHalfWinFloor.home === null || teamSecondHalfWinFloor.home < 0.45
+          ? ["Overall, venue and recent second-half win rates do not clear 45%"]
+          : []),
+        ...(scopeMetric(input.home, "halfGoals", "venue", "secondHalfWinRate") < 0.50
+          ? ["Home venue second-half win rate is below 50%"]
           : [])
       ],
       reasons: [
@@ -1728,6 +1879,12 @@ function marketCandidates(input, matrix, direct, structure, goals, quality) {
           : []),
         ...(goals.awayHalfGoals.secondHalfWinRate < 0.38
           ? ["Away second-half win rate is too weak"]
+          : []),
+        ...(teamSecondHalfWinFloor.away === null || teamSecondHalfWinFloor.away < 0.45
+          ? ["Overall, venue and recent second-half win rates do not clear 45%"]
+          : []),
+        ...(scopeMetric(input.away, "halfGoals", "venue", "secondHalfWinRate") < 0.50
+          ? ["Away venue second-half win rate is below 50%"]
           : [])
       ],
       reasons: [

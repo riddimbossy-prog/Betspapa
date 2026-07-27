@@ -68,7 +68,7 @@ test("Athena v3 preserves the high-event Aktobe 2 vs Kairat Almaty 2 route to Ov
     samples: { homeVenue: 15, awayVenue: 15 }
   });
 
-  assert.equal(ATHENA_ARBITRATION_VERSION, "3.0.0");
+  assert.equal(ATHENA_ARBITRATION_VERSION, "3.1.0");
   assert.equal(rc1.banker.market, MARKETS.AWAY_WIN_EITHER_HALF);
   assert.equal(arbitration.primary.market, MARKETS.OVER_2_5);
   assert.equal(arbitration.primary.score, 100);

@@ -1,4 +1,5 @@
 import { fetchFixturesByDate, fetchLeagueFixtures } from "../providers/apiFootball.js";
+import { resolveProviderCompetitionTypes } from "./competitionMetadataService.js";
 import { throwIfSupabaseError } from "./supabaseHelpers.js";
 
 function uniqueBy(items, keyFn) {
@@ -37,7 +38,8 @@ function normalizeProviderFixture(item) {
       name: league.name || "Unknown League",
       country: league.country || null,
       season: Number(league.season),
-      logoUrl: league.logo || null
+      logoUrl: league.logo || null,
+      providerType: league.type || null
     },
     home: {
       providerTeamId: Number(teams.home.id),
@@ -58,16 +60,24 @@ function normalizeProviderFixture(item) {
   };
 }
 
-async function upsertReferenceData(supabase, fixtures) {
+async function upsertReferenceData(supabase, fixtures, competitionMetadata = new Map()) {
   const leagueRows = uniqueBy(
-    fixtures.map((f) => ({
-      external_league_id: f.league.providerLeagueId,
-      name: f.league.name,
-      country: f.league.country,
-      season: f.league.season,
-      logo_url: f.league.logoUrl,
-      updated_at: new Date().toISOString()
-    })),
+    fixtures.map((f) => {
+      const competition = competitionMetadata.get(`${f.league.providerLeagueId}:${f.league.season}`) || {
+        competition_type: "UNKNOWN",
+        prediction_enabled: false,
+        prediction_exclusion_reason: "Competition type awaiting verification"
+      };
+      return {
+        external_league_id: f.league.providerLeagueId,
+        name: f.league.name,
+        country: f.league.country,
+        season: f.league.season,
+        logo_url: f.league.logoUrl,
+        ...competition,
+        updated_at: new Date().toISOString()
+      };
+    }),
     (row) => `${row.external_league_id}:${row.season}`
   );
 
@@ -108,7 +118,8 @@ export async function persistProviderFixtures(supabase, providerItems) {
     return { imported: 0, leagues: [], seasons: [], providerFixtureIds: [] };
   }
 
-  const { leagueMap, teamMap } = await upsertReferenceData(supabase, fixtures);
+  const competitionMetadata = await resolveProviderCompetitionTypes(supabase, providerItems);
+  const { leagueMap, teamMap } = await upsertReferenceData(supabase, fixtures, competitionMetadata);
   const now = new Date().toISOString();
 
   const fixtureRows = fixtures.map((f) => ({

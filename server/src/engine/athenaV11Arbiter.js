@@ -1,7 +1,7 @@
 import { CLASSIFICATIONS, MARKETS } from "./athena-transition-engine/src/index.js";
 
 // File name retained so deployed imports and older clients keep working.
-export const ATHENA_ARBITRATION_VERSION = "3.0.0";
+export const ATHENA_ARBITRATION_VERSION = "3.1.0";
 export const ATHENA_PRIMARY_SCORE = 80;
 export const ATHENA_PRIME_SCORE = 88;
 
@@ -93,7 +93,14 @@ const PRIMARY_BLOCKING_WARNINGS = new Set([
   "INSUFFICIENT_SECOND_HALF_GOAL_EVIDENCE",
   "INSUFFICIENT_BOTH_HALVES_EVIDENCE",
   "INSUFFICIENT_OVER15_EVIDENCE",
-  "INSUFFICIENT_TEAM_SCORING_EVIDENCE"
+  "INSUFFICIENT_TEAM_SCORING_EVIDENCE",
+  "DIRECT_TEAM_GOAL_DATA_REQUIRED",
+  "INSUFFICIENT_DIRECT_SECOND_HALF_ROUTE",
+  "OPPONENT_SECOND_HALF_CLEAN_SHEET_RISK",
+  "TEAM_SECOND_HALF_SPECIALIST_SCORE_TOO_LOW",
+  "INSUFFICIENT_SECOND_HALF_RESULT_EVIDENCE",
+  "INSUFFICIENT_FIRST_HALF_GOAL_EVIDENCE",
+  "INSUFFICIENT_FIRST_HALF_UNDER_EVIDENCE"
 ]);
 
 function finite(value, fallback = 0) {
@@ -175,10 +182,18 @@ function directionalSafety(result, venueResult, candidate, samples = {}) {
   if (warnings.includes("ODDS_DIRECTION_CONFLICT")) reasons.push("Candidate carries an odds-direction warning");
 
   const halfGoalReady = !secondHalfGoalMarket || (
-    finite(selected?.secondHalfScoringRate) >= 0.58 &&
-    finite(opponent?.secondHalfConcedingRate) >= 0.58
+    finite(selected?.secondHalfScoringRate) >= 0.65 &&
+    finite(selected?.venueSecondHalfScoringRate) >= 0.70 &&
+    finite(selected?.recentSecondHalfScoringRate) >= 0.66 &&
+    finite(opponent?.secondHalfConcedingRate) >= 0.65 &&
+    finite(opponent?.venueSecondHalfConcedingRate) >= 0.68 &&
+    finite(opponent?.recentSecondHalfConcedingRate) >= 0.66
   );
-  const halfResultReady = !secondHalfResultMarket || finite(selected?.secondHalfWinRate) >= 0.35;
+  const halfResultReady = !secondHalfResultMarket || (
+    finite(selected?.secondHalfWinRate) >= 0.45 &&
+    finite(selected?.venueSecondHalfWinRate) >= 0.50 &&
+    finite(selected?.recentSecondHalfWinRate) >= 0.50
+  );
 
   return {
     directional: true,
@@ -205,7 +220,7 @@ function directionalSafety(result, venueResult, candidate, samples = {}) {
 }
 
 function eligibleCandidates(result, venueResult, samples) {
-  return uniqueMarkets(result)
+  const eligible = uniqueMarkets(result)
     .filter((candidate) => !candidateBlocked(candidate))
     .map((candidate) => ({
       ...candidate,
@@ -219,6 +234,13 @@ function eligibleCandidates(result, venueResult, samples) {
       safety: directionalSafety(result, venueResult, candidate, samples)
     }))
     .filter((candidate) => !candidate.safety.directional || candidate.safety.eligible);
+
+  const neutralSecondHalf = eligible.find((candidate) => candidate.market === MARKETS.SECOND_HALF_OVER_0_5);
+  return eligible.filter((candidate) => {
+    if (![MARKETS.HOME_SECOND_HALF_OVER_0_5, MARKETS.AWAY_SECOND_HALF_OVER_0_5].includes(candidate.market)) return true;
+    if (!neutralSecondHalf) return candidate.score >= 88;
+    return candidate.score >= 88 && candidate.score >= neutralSecondHalf.score + 8;
+  });
 }
 
 function strongest(candidates, predicate = () => true) {
@@ -271,8 +293,8 @@ function chooseByClassification({ result, separation, candidates, bestOverall, b
 
   if (type === CLASSIFICATIONS.SWING_FULL_REVERSAL) {
     const primary = chooseFirst(candidates, [
-      teamMarket(side, MARKETS.HOME_SECOND_HALF_OVER_0_5, MARKETS.AWAY_SECOND_HALF_OVER_0_5),
       MARKETS.SECOND_HALF_OVER_0_5,
+      teamMarket(side, MARKETS.HOME_SECOND_HALF_OVER_0_5, MARKETS.AWAY_SECOND_HALF_OVER_0_5),
       teamMarket(side, MARKETS.HOME_WIN_EITHER_HALF, MARKETS.AWAY_WIN_EITHER_HALF),
       MARKETS.OVER_1_5,
       MARKETS.BTTS_YES,
@@ -301,14 +323,14 @@ function chooseByClassification({ result, separation, candidates, bestOverall, b
 
   if (type === CLASSIFICATIONS.SWING_LATE_SEPARATION) {
     const primary = chooseFirst(candidates, [
-      teamMarket(side, MARKETS.HOME_SECOND_HALF_OVER_0_5, MARKETS.AWAY_SECOND_HALF_OVER_0_5),
       MARKETS.SECOND_HALF_OVER_0_5,
+      teamMarket(side, MARKETS.HOME_SECOND_HALF_OVER_0_5, MARKETS.AWAY_SECOND_HALF_OVER_0_5),
       teamMarket(side, MARKETS.HOME_WIN_EITHER_HALF, MARKETS.AWAY_WIN_EITHER_HALF),
       teamMarket(side, MARKETS.HOME_SECOND_HALF_DNB, MARKETS.AWAY_SECOND_HALF_DNB),
       MARKETS.OVER_1_5
     ]);
     if (primary) {
-      rationale.push("The match is likely to separate after the break, and the team-specific second-half goal data identifies the safest expression.");
+      rationale.push("The match is likely to separate after the break. Athena uses the neutral second-half goal first and names a team only when its specialist evidence is clearly stronger.");
       return { primary, rationale, rule: "V3_LATE_SEPARATION_ROUTE" };
     }
   }

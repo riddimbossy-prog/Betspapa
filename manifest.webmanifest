@@ -1,9 +1,9 @@
 {
   "id": "/",
-  "name": "BetsPapa \u2014 Football Intelligence",
+  "name": "BetsPapa — Football Intelligence",
   "short_name": "BetsPapa",
   "description": "BetsPapa opens on one all-engine board with Papa's Pick, Safer, Aggressive, Venue Pattern and Athena, plus live match states and verified results.",
-  "start_url": "/?source=pwa&v=1220",
+  "start_url": "/?source=pwa&v=1230",
   "scope": "/",
   "display": "standalone",
   "display_override": [
@@ -130,5 +130,5 @@
       "label": "BetsPapa football intelligence dashboard"
     }
   ],
-  "version": "1.22.0"
+  "version": "1.23.0"
 }

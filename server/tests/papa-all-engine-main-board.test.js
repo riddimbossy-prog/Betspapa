@@ -33,9 +33,9 @@ test("public API merges all engines for the main board", async () => {
   assert.match(routes, /engines: \["primary", "safer", "aggressive", "venue", "athena"\]/);
 });
 
-test("v1.22 PWA caches the all-engine assets", async () => {
+test("v1.23 PWA refreshes the all-engine assets", async () => {
   const sw = await source("sw.js");
-  assert.match(sw, /betspapa-pwa-v1220/);
+  assert.match(sw, /betspapa-pwa-v1230/);
   assert.match(sw, /portal\.v1220\.css/);
   assert.match(sw, /portal\.v1220\.js/);
 });

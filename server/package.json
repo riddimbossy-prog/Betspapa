@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.22.0",
+  "version": "1.23.0",
   "private": true,
-  "description": "BetsPapa v1.22.0 puts Papa's Pick, Safer, Aggressive, Venue Pattern and Athena on one main fixture board.",
+  "description": "BetsPapa v1.23.0 runs league-only predictions and hardens Athena/PapaSense specialist half markets.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

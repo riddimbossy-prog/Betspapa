@@ -18,6 +18,7 @@ import { getBackgroundProcessingStatus } from "../services/publicService.js";
 import { invalidatePreparedBoards, warmPreparedBoards } from "../services/boardSnapshotService.js";
 import { getAthenaPicks, invalidateAthenaPickCache } from "../services/athenaPickService.js";
 import { hydrateFixtureGoalEvents } from "../services/goalEventService.js";
+import { refreshCompetitionMetadata } from "../services/competitionMetadataService.js";
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
@@ -112,6 +113,19 @@ adminRouter.get("/provider-status", async (_req, res, next) => {
   try {
     const status = await fetchProviderStatus();
     res.json(status);
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+adminRouter.post("/competition-metadata/refresh", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const result = await refreshCompetitionMetadata(supabase, { limit: req.body?.limit || 100 });
+    invalidatePreparedBoards();
+    invalidateAthenaPickCache();
+    res.json({ status: "ok", action: "competition-metadata-refresh", result });
   } catch (error) {
     next(error);
   }

@@ -1,26 +1,30 @@
-BetsPapa v1.22.0 — FULL REPLACE
-PapaSense v2.0 Four-Engine Resolution System + Athena v3
+BetsPapa v1.23.0 — FULL REPLACE
+PapaSense v2.1 + Athena v3.1 League-Only Specialist Market Guards
 
 1. BACK UP the current repository and Supabase project.
-2. If not already completed, run in Supabase SQL Editor:
+2. If not already installed, run in Supabase SQL Editor:
    supabase/BETSPAPA_V1_20_0_ATHENA_V3.sql
-3. Run in Supabase SQL Editor:
+3. If not already installed, run:
    supabase/BETSPAPA_V1_21_0_PAPASENSE_V2.sql
-4. Replace all repository files with this package.
-5. Commit and push:
-   BetsPapa v1.22.0 PapaSense v2 Four-Engine Resolution
-6. Let Render deploy the backend.
-7. Check /api/health. Expected service version: 1.21.0.
-   Expected PapaSense version: papasense-v2.0.0-four-engine-resolution.
-   Expected Athena version: athena-v3.0.0-swing-half-goals.
-8. Open https://betspapa.com/reset.html once on each test device.
-9. Rebuild history profiles and prepare the public boards.
-10. Verify Papa, Safer, Aggressive, Venue Pattern, Athena, Live, Results and Bankers on desktop, phone and Z Fold.
+4. Run the new migration:
+   supabase/BETSPAPA_V1_23_0_COMPETITION_AND_HALF_MARKET_GUARDS.sql
+5. Replace all repository files with this package.
+6. Commit and push:
+   BetsPapa v1.23.0 League-Only Specialist Market Guards
+7. Let Render deploy the backend.
+8. Check /api/health:
+   Service version: 1.23.0
+   PapaSense: papasense-v2.1.0-league-only-specialist-guards
+   Athena: athena-v3.1.0-specialist-half-market-guards
+9. In the protected admin API, run POST /api/admin/competition-metadata/refresh.
+   Repeat with a larger limit when more than 100 UNKNOWN competitions remain.
+10. Run fixture sync, history hydration and board preparation.
+11. Open https://betspapa.com/reset.html once on each test device.
+12. Verify Papa, Safer, Aggressive, Venue Pattern, Athena, Live, Results and Bankers.
 
 Important:
-- NO PICK is intentional when the evidence is insufficient or conflicted.
-- Safer and Aggressive may be blank even when Papa has a pick.
-- Venue Pattern may disagree with Papa because it is now independent.
+- Only verified LEAGUE competitions are predicted.
+- Cups, friendlies and UNKNOWN competitions are intentionally blocked.
+- NO PICK is intentional when evidence is insufficient or conflicted.
+- A neutral second-half goal may qualify while the named-team version is withheld.
 - Standard profiles use normal 90-minute FT results only.
-
-MAIN PAGE: Papa’s Pick now contains all five engines in one fixture-centred board. No new v1.22.0 SQL migration is required.

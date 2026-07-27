@@ -41,7 +41,7 @@ function fixture({
 }
 
 test("Athena v3 swing and half-goal engine is active", () => {
-  assert.equal(ENGINE_VERSION, "3.0.0");
+  assert.equal(ENGINE_VERSION, "3.1.0");
 });
 
 test("Athena adapter creates team-perspective HT/FT counts", () => {

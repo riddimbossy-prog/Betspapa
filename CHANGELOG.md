@@ -1,5 +1,18 @@
 # BetsPapa Changelog
 
+## v1.23.0 — League-Only Specialist Market Guards
+
+- Added one competition policy shared by Papa, Safer, Aggressive, Venue Pattern and Athena.
+- Blocked friendlies, cups, knockout tournaments and UNKNOWN competition types before prediction generation.
+- Restricted all profile evidence to the exact league and season of the fixture.
+- Hid excluded fixtures from the public Papa board instead of leaving them as “preparing”.
+- Hardened team-to-score-in-second-half, second-half DNB, second-half totals, goals in both halves, first-half goal and team-goal markets.
+- Made neutral Second Half Over 0.5 outrank a named-team second-half goal unless the named team is at least eight points stronger and clears every specialist gate.
+- Added API-Football competition metadata hydration and a protected admin refresh endpoint.
+- Added the v1.23 Supabase competition-policy migration.
+- Updated Athena to v3.1.0 and PapaSense to v2.1.0.
+- Added regression coverage for competition exclusion and related specialist markets; 125 automated tests pass.
+
 ## v1.22.0 — Papa’s Pick All-Engine Main Board
 
 - Papa’s Pick now shows Papa, Safer, Aggressive, Venue Pattern and Athena on one fixture card.
