@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.23.0",
+  "version": "1.24.0",
   "private": true,
-  "description": "BetsPapa v1.23.0 runs league-only predictions and hardens Athena/PapaSense specialist half markets.",
+  "description": "BetsPapa v1.24.0 keeps public boards picks-only and adds direct Papa, Safer, Aggressive and Athena navigation for phones, tablets and Z Fold.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

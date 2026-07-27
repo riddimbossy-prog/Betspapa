@@ -84,9 +84,9 @@ const stableHome = robustFixture({
   awayTransitions: { WW: 1, WD: 0, WL: 1, DW: 1, DD: 1, DL: 3, LW: 0, LD: 1, LL: 17 }
 });
 
-test("v1.23.0 retains PapaSense v2.1 and uses only normal FT league history", () => {
-  assert.equal(SERVICE_VERSION, "1.23.0");
-  assert.equal(ENGINE_VERSION, "papasense-v2.1.0-league-only-specialist-guards");
+test("v1.24.0 retains PapaSense v2.1 and uses only normal FT league history", () => {
+  assert.equal(SERVICE_VERSION, "1.24.0");
+  assert.equal(ENGINE_VERSION, "papasense-v2.1.1-picks-only-board");
   assert.deepEqual([...FINISHED_PROFILE_STATUSES], ["FT"]);
 });
 

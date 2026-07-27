@@ -32,9 +32,14 @@ function compactBoardItem(item) {
   };
 }
 
+
+export function isVisibleBoardPick(pick) {
+  return Boolean(pick) && pick.available !== false && pick.key !== "no-pick";
+}
+
 function processingSummary(items) {
   const completed = items.filter((item) => Boolean(item.pick)).length;
-  const ready = items.filter((item) => Boolean(item.pick) && item.pick?.available !== false && item.pick?.key !== "no-pick").length;
+  const ready = items.filter((item) => isVisibleBoardPick(item.pick)).length;
   const noPicks = Math.max(0, completed - ready);
   const pending = Math.max(0, items.length - completed);
   return {
@@ -64,7 +69,7 @@ export function createEngineBoardSnapshot({
     PREDICTABLE_STATUSES.has(fixture.status) ||
     predictions.some((prediction) => Number(prediction.internalFixtureId) === Number(fixture.id))
   );
-  const items = buildEngineBoardItems({
+  const allItems = buildEngineBoardItems({
     fixtures: predictable,
     predictions,
     engineKey,
@@ -73,7 +78,8 @@ export function createEngineBoardSnapshot({
       message: "Waiting for the scheduled board-preparation workflow."
     }
   }).map(compactBoardItem);
-  const processing = processingSummary(items);
+  const items = allItems.filter((item) => isVisibleBoardPick(item.pick));
+  const processing = processingSummary(allItems);
   return {
     date,
     engineKey,
@@ -81,7 +87,9 @@ export function createEngineBoardSnapshot({
     generatedAt,
     snapshot: true,
     count: processing.readyPredictions,
-    fixturesFound: items.length,
+    fixturesFound: allItems.length,
+    visibleFixtures: items.length,
+    hiddenFixtures: Math.max(0, allItems.length - items.length),
     ready: processing.readyPredictions,
     pending: processing.pending,
     processing,

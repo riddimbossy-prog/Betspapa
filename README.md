@@ -1,6 +1,6 @@
-## v1.23.0 League-Only Specialist Market Guards
+## v1.24.0 Picks-Only Boards and Direct Mobile Navigation
 
-All five engines now reject friendlies, cups, knockout tournaments and unverified competition types before prediction generation. Team histories are restricted to the exact league and season. Athena and PapaSense now apply stricter overall, venue and recent evidence to named-team goals, second-half totals, second-half DNB, goals in both halves and first-half specialist markets. Run `supabase/BETSPAPA_V1_23_0_COMPETITION_AND_HALF_MARKET_GUARDS.sql`, then refresh competition metadata. See `BETSPAPA_V1_23_0_EXPECTATIONS.md` and `SPECIALIST_MARKET_REVIEW_V1_23_0.md`.
+Public boards now show only fixtures with real engine selections. The main Papa’s Pick board keeps a fixture when at least one of Papa, Safer, Aggressive, Venue Pattern or Athena has a pick, and displays only the engines that selected a market. Phones, tablets and Samsung Z Fold screens now use Papa’s Pick, Safer, Aggressive, Athena and More as the direct bottom navigation. No new Supabase migration is required. See `BETSPAPA_V1_24_0_EXPECTATIONS.md`.
 
 ## v1.22.0 PapaSense v2 Four-Engine Resolution
 

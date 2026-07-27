@@ -1,5 +1,19 @@
 # BetsPapa Changelog
 
+## v1.24.0 — Picks-Only Boards and Direct Mobile Engine Navigation
+
+- Hid fixtures with no real selections from the main Papa’s Pick board.
+- Hid NO PICK and unprepared fixtures from each separate public engine board.
+- Kept withheld and preparation counts available internally for diagnostics and scheduled workflows.
+- Displayed only engines that actually selected a market inside each visible main-board fixture.
+- Made individual engine filters exclude fixtures where that selected engine has no pick.
+- Rebuilt the phone, tablet and Z Fold bottom rail as Papa’s Pick, Safer, Aggressive, Athena and More.
+- Moved Bankers, Results, Live & Fixtures and Venue Pattern into the More sheet.
+- Removed the duplicate cramped header menu at widths up to 1100px.
+- Updated PWA cache and launch assets to v1240.
+- Added regression coverage; 126 automated tests pass.
+- No new Supabase migration is required.
+
 ## v1.23.0 — League-Only Specialist Market Guards
 
 - Added one competition policy shared by Papa, Safer, Aggressive, Venue Pattern and Athena.
@@ -103,6 +117,20 @@
 ## v1.18.4 — Papa-First Z Fold and Tablet Shell
 
 # BetsPapa Changelog
+
+## v1.24.0 — Picks-Only Boards and Direct Mobile Engine Navigation
+
+- Hid fixtures with no real selections from the main Papa’s Pick board.
+- Hid NO PICK and unprepared fixtures from each separate public engine board.
+- Kept withheld and preparation counts available internally for diagnostics and scheduled workflows.
+- Displayed only engines that actually selected a market inside each visible main-board fixture.
+- Made individual engine filters exclude fixtures where that selected engine has no pick.
+- Rebuilt the phone, tablet and Z Fold bottom rail as Papa’s Pick, Safer, Aggressive, Athena and More.
+- Moved Bankers, Results, Live & Fixtures and Venue Pattern into the More sheet.
+- Removed the duplicate cramped header menu at widths up to 1100px.
+- Updated PWA cache and launch assets to v1240.
+- Added regression coverage; 126 automated tests pass.
+- No new Supabase migration is required.
 
 ## v1.18.2 — Fast Prepared-Board Delivery
 

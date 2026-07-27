@@ -1,30 +1,30 @@
-BetsPapa v1.23.0 — FULL REPLACE
-PapaSense v2.1 + Athena v3.1 League-Only Specialist Market Guards
+BetsPapa v1.24.0 — FULL REPLACE
+Picks-Only Boards + Direct Mobile/Z Fold Engine Navigation
 
 1. BACK UP the current repository and Supabase project.
-2. If not already installed, run in Supabase SQL Editor:
+2. For a fresh database only, install the existing migrations in order:
    supabase/BETSPAPA_V1_20_0_ATHENA_V3.sql
-3. If not already installed, run:
    supabase/BETSPAPA_V1_21_0_PAPASENSE_V2.sql
-4. Run the new migration:
    supabase/BETSPAPA_V1_23_0_COMPETITION_AND_HALF_MARKET_GUARDS.sql
-5. Replace all repository files with this package.
-6. Commit and push:
-   BetsPapa v1.23.0 League-Only Specialist Market Guards
-7. Let Render deploy the backend.
-8. Check /api/health:
-   Service version: 1.23.0
-   PapaSense: papasense-v2.1.0-league-only-specialist-guards
+3. No new Supabase SQL is required for v1.24.0.
+4. Replace all repository files with this package.
+5. Commit and push:
+   BetsPapa v1.24.0 Picks-Only Boards and Mobile Engine Navigation
+6. Let Render deploy the backend.
+7. Check /api/health:
+   Service version: 1.24.0
+   PapaSense: papasense-v2.1.1-picks-only-board
    Athena: athena-v3.1.0-specialist-half-market-guards
-9. In the protected admin API, run POST /api/admin/competition-metadata/refresh.
-   Repeat with a larger limit when more than 100 UNKNOWN competitions remain.
-10. Run fixture sync, history hydration and board preparation.
-11. Open https://betspapa.com/reset.html once on each test device.
-12. Verify Papa, Safer, Aggressive, Venue Pattern, Athena, Live, Results and Bankers.
+8. Run fixture sync, history hydration and board preparation.
+9. Open https://betspapa.com/reset.html once on every test phone, tablet and Z Fold.
+10. Verify the bottom rail shows:
+    Papa’s Pick | Safer | Aggressive | Athena | More
+11. Open More and verify:
+    Bankers, Results, Live & Fixtures, Venue Pattern, Responsible Use, Privacy and Terms.
+12. Confirm fixtures with no real picks are absent from the public boards.
 
 Important:
-- Only verified LEAGUE competitions are predicted.
-- Cups, friendlies and UNKNOWN competitions are intentionally blocked.
-- NO PICK is intentional when evidence is insufficient or conflicted.
-- A neutral second-half goal may qualify while the named-team version is withheld.
-- Standard profiles use normal 90-minute FT results only.
+- A fixture remains visible on the main board when at least one engine has a real pick.
+- Only the engines with picks are displayed inside that fixture card.
+- NO PICK and preparing fixtures remain available to internal diagnostics but stay off public boards.
+- League-only and specialist-market guards from v1.23.0 remain active.

@@ -23,7 +23,7 @@ import {
   refreshCurrentMatchData,
   summarizeMatchStates
 } from "../services/matchStateService.js";
-import { getPreparedEngineBoard } from "../services/boardSnapshotService.js";
+import { getPreparedEngineBoard, isVisibleBoardPick } from "../services/boardSnapshotService.js";
 
 export const publicRouter = Router();
 
@@ -354,7 +354,7 @@ publicRouter.get("/main-board/today", async (req, res, next) => {
     }
 
     const athenaReviewed = Number(athenaResult.reviewedFixtures || 0) > 0;
-    const items = [...rows.values()].map((row) => {
+    const mergedItems = [...rows.values()].map((row) => {
       if (!("athena" in row.engines)) {
         row.engines.athena = athenaReviewed ? {
           key: "no-pick",
@@ -377,6 +377,14 @@ publicRouter.get("/main-board/today", async (req, res, next) => {
       return row;
     }).sort((a, b) => new Date(a.kickoff || 0) - new Date(b.kickoff || 0));
 
+    // Public boards are picks-only. A fixture remains visible when at least one
+    // engine has a real selection; all-withheld and all-preparing fixtures stay
+    // in diagnostics and preparation counts but are not sent to the public board.
+    const items = mergedItems.filter((row) =>
+      Object.values(row.engines || {}).some((pick) => isVisibleBoardPick(pick))
+    );
+    const hiddenFixtures = Math.max(0, mergedItems.length - items.length);
+
     const picks = items.flatMap((item) => Object.values(item.engines || {}));
     const readySelections = picks.filter((pick) => pick && pick.available !== false && pick.key !== "no-pick").length;
     const withheldSelections = picks.filter((pick) => pick && (pick.available === false || pick.key === "no-pick")).length;
@@ -398,6 +406,7 @@ publicRouter.get("/main-board/today", async (req, res, next) => {
       engines: ["primary", "safer", "aggressive", "venue", "athena"],
       summary: {
         fixtures: items.length,
+        hiddenFixtures,
         readySelections,
         strongSelections,
         withheldSelections,

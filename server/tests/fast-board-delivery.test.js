@@ -61,14 +61,42 @@ test("public board route is a read-only prepared-board endpoint", async () => {
 });
 
 test("portal shows a local prepared board before the network refresh", async () => {
-  const source = await readFile(resolve(root, "assets/js/portal.v1210.js"), "utf8");
+  const source = await readFile(resolve(root, "assets/js/portal.v1240.js"), "utf8");
   assert.match(source, /readCachedEngineBoard/);
   assert.match(source, /\/api\/boards\/\$\{engineKey\}/);
   assert.doesNotMatch(source, /\/api\/engines\/\$\{engineKey\}.*refresh=1/);
   assert.match(source, /setTimeout\(\(\) => load\(\{ silent: true \}\), 60000\)/);
 });
 
-test("v1.23.0 keeps the all-engine board with league-only specialist guards", () => {
-  assert.equal(SERVICE_VERSION, "1.23.0");
-  assert.equal(ENGINE_VERSION, "papasense-v2.1.0-league-only-specialist-guards");
+test("v1.24.0 keeps the all-engine board with league-only specialist guards", () => {
+  assert.equal(SERVICE_VERSION, "1.24.0");
+  assert.equal(ENGINE_VERSION, "papasense-v2.1.1-picks-only-board");
+});
+
+test("public engine boards hide withheld and unprepared fixtures", () => {
+  const snapshot = createEngineBoardSnapshot({
+    date: "2026-07-25",
+    engineKey: "primary",
+    fixtures: [fixture(1), fixture(2)],
+    predictions: [{
+      internalFixtureId: 1,
+      fixtureId: 9001,
+      kickoff: "2026-07-25T11:00:00.000Z",
+      engines: {
+        primary: {
+          key: "no-pick",
+          market: "No Pick",
+          selection: "No market passed",
+          available: false,
+          qualified: false
+        }
+      }
+    }]
+  });
+
+  assert.equal(snapshot.items.length, 0);
+  assert.equal(snapshot.visibleFixtures, 0);
+  assert.equal(snapshot.hiddenFixtures, 2);
+  assert.equal(snapshot.processing.withheld, 1);
+  assert.equal(snapshot.pending, 1);
 });
