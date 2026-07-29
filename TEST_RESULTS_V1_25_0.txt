@@ -1,0 +1,830 @@
+
+> betspapa-api@1.25.0 test
+> node --test
+
+TAP version 13
+# Subtest: Athena v3 swing and half-goal engine is active
+ok 1 - Athena v3 swing and half-goal engine is active
+  ---
+  duration_ms: 0.628752
+  type: 'test'
+  ...
+# Subtest: Athena adapter creates team-perspective HT/FT counts
+ok 2 - Athena adapter creates team-perspective HT/FT counts
+  ---
+  duration_ms: 0.800025
+  type: 'test'
+  ...
+# Subtest: Athena stable leader sample returns Home Win Either Half
+ok 3 - Athena stable leader sample returns Home Win Either Half
+  ---
+  duration_ms: 3.686715
+  type: 'test'
+  ...
+# Subtest: Athena labels and rankings are user-facing and deterministic
+ok 4 - Athena labels and rankings are user-facing and deterministic
+  ---
+  duration_ms: 0.207537
+  type: 'test'
+  ...
+# Subtest: Athena odds adapter reads standard 1X2 keys
+ok 5 - Athena odds adapter reads standard 1X2 keys
+  ---
+  duration_ms: 0.673459
+  type: 'test'
+  ...
+# Subtest: Athena markets settle automatically from HT and FT scores
+ok 6 - Athena markets settle automatically from HT and FT scores
+  ---
+  duration_ms: 0.26303
+  type: 'test'
+  ...
+# Subtest: Boss Picks UI is replaced by Athena while old bookmarks redirect
+ok 7 - Boss Picks UI is replaced by Athena while old bookmarks redirect
+  ---
+  duration_ms: 4.366353
+  type: 'test'
+  ...
+# Subtest: current navigation points to Athena instead of Boss Picks
+ok 8 - current navigation points to Athena instead of Boss Picks
+  ---
+  duration_ms: 1.948348
+  type: 'test'
+  ...
+# Subtest: public API exposes Athena and keeps only a compatibility Boss alias
+ok 9 - public API exposes Athena and keeps only a compatibility Boss alias
+  ---
+  duration_ms: 0.816921
+  type: 'test'
+  ...
+# Subtest: early separation
+ok 10 - early separation
+  ---
+  duration_ms: 0.745525
+  type: 'test'
+  ...
+# Subtest: late separation
+ok 11 - late separation
+  ---
+  duration_ms: 0.127489
+  type: 'test'
+  ...
+# Subtest: mixed separation
+ok 12 - mixed separation
+  ---
+  duration_ms: 0.9987
+  type: 'test'
+  ...
+# Subtest: goal-only high event
+ok 13 - goal-only high event
+  ---
+  duration_ms: 0.132186
+  type: 'test'
+  ...
+# Subtest: Athena v3 preserves the high-event Aktobe 2 vs Kairat Almaty 2 route to Over 2.5
+ok 14 - Athena v3 preserves the high-event Aktobe 2 vs Kairat Almaty 2 route to Over 2.5
+  ---
+  duration_ms: 5.490219
+  type: 'test'
+  ...
+# Subtest: high-event Win Either Half may replace the goal market only within five points
+ok 15 - high-event Win Either Half may replace the goal market only within five points
+  ---
+  duration_ms: 0.332764
+  type: 'test'
+  ...
+# Subtest: directional odds conflict prevents Win Either Half from replacing a high-event goal market
+ok 16 - directional odds conflict prevents Win Either Half from replacing a high-event goal market
+  ---
+  duration_ms: 0.231593
+  type: 'test'
+  ...
+# Subtest: stable-leader classification keeps a fully confirmed direction inside the six-point margin
+ok 17 - stable-leader classification keeps a fully confirmed direction inside the six-point margin
+  ---
+  duration_ms: 0.246475
+  type: 'test'
+  ...
+# Subtest: BTTS with insufficient scoring evidence cannot become the Athena v1.1 primary
+ok 18 - BTTS with insufficient scoring evidence cannot become the Athena v1.1 primary
+  ---
+  duration_ms: 0.157723
+  type: 'test'
+  ...
+# Subtest: CONFLICT_NO_PICK is a mandatory hard stop even when a goal score clears 80
+ok 19 - CONFLICT_NO_PICK is a mandatory hard stop even when a goal score clears 80
+  ---
+  duration_ms: 0.266324
+  type: 'test'
+  ...
+# Subtest: Kopavogur vs Njardvik returns NO PICK while preserving Over 1.5 as observation only
+ok 20 - Kopavogur vs Njardvik returns NO PICK while preserving Over 1.5 as observation only
+  ---
+  duration_ms: 0.657605
+  type: 'test'
+  ...
+# Subtest: a high-event directional conflict may still publish a qualified goal market
+ok 21 - a high-event directional conflict may still publish a qualified goal market
+  ---
+  duration_ms: 0.165365
+  type: 'test'
+  ...
+# Subtest: Athena v3 identifies a confirmed full-reversal swing
+ok 22 - Athena v3 identifies a confirmed full-reversal swing
+  ---
+  duration_ms: 4.592117
+  type: 'test'
+  ...
+# Subtest: Athena v3 separates a lead-surrender swing from a full reversal
+ok 23 - Athena v3 separates a lead-surrender swing from a full reversal
+  ---
+  duration_ms: 0.468845
+  type: 'test'
+  ...
+# Subtest: Athena v3 identifies late second-half separation
+ok 24 - Athena v3 identifies late second-half separation
+  ---
+  duration_ms: 0.374685
+  type: 'test'
+  ...
+# Subtest: Athena v3 keeps two-way instability on neutral markets
+ok 25 - Athena v3 keeps two-way instability on neutral markets
+  ---
+  duration_ms: 0.397158
+  type: 'test'
+  ...
+# Subtest: Athena v3 hard-stops a reversal route when half-goal data is missing
+ok 26 - Athena v3 hard-stops a reversal route when half-goal data is missing
+  ---
+  duration_ms: 0.47945
+  type: 'test'
+  ...
+# Subtest: Athena v3 measures event coverage against the recent 20-match sample
+ok 27 - Athena v3 measures event coverage against the recent 20-match sample
+  ---
+  duration_ms: 1.18038
+  type: 'test'
+  ...
+# Subtest: Athena v3 rejects an HT/FT swing that half-goal data does not confirm
+ok 28 - Athena v3 rejects an HT/FT swing that half-goal data does not confirm
+  ---
+  duration_ms: 0.303871
+  type: 'test'
+  ...
+# Subtest: profile builder stores goals scored and conceded in each half
+ok 29 - profile builder stores goals scored and conceded in each half
+  ---
+  duration_ms: 1.233318
+  type: 'test'
+  ...
+# Subtest: Athena v3 second-half and both-halves markets settle automatically
+ok 30 - Athena v3 second-half and both-halves markets settle automatically
+  ---
+  duration_ms: 0.571097
+  type: 'test'
+  ...
+# Subtest: Athena v3 does not mix extra-time results into 90-minute half-goal decisions
+ok 31 - Athena v3 does not mix extra-time results into 90-minute half-goal decisions
+  ---
+  duration_ms: 0.663824
+  type: 'test'
+  ...
+# Subtest: new Athena market labels are plain English
+ok 32 - new Athena market labels are plain English
+  ---
+  duration_ms: 0.198124
+  type: 'test'
+  ...
+# Subtest: Athena public UI explains the pick without exposing technical arbitration
+ok 33 - Athena public UI explains the pick without exposing technical arbitration
+  ---
+  duration_ms: 6.166902
+  type: 'test'
+  ...
+# Subtest: Athena v3 migration includes event coverage and half-goal profile tables
+ok 34 - Athena v3 migration includes event coverage and half-goal profile tables
+  ---
+  duration_ms: 0.711735
+  type: 'test'
+  ...
+# Subtest: publishes one unanimous banker when all four engines agree
+ok 35 - publishes one unanimous banker when all four engines agree
+  ---
+  duration_ms: 1.624718
+  type: 'test'
+  ...
+# Subtest: recognizes equivalent team Over 1.5 keys as the same selection
+ok 36 - recognizes equivalent team Over 1.5 keys as the same selection
+  ---
+  duration_ms: 0.393073
+  type: 'test'
+  ...
+# Subtest: uses an exceptional 86 percent qualified single-engine pick when no engines agree
+ok 37 - uses an exceptional 86 percent qualified single-engine pick when no engines agree
+  ---
+  duration_ms: 0.406943
+  type: 'test'
+  ...
+# Subtest: rejects thin samples even when engines agree
+ok 38 - rejects thin samples even when engines agree
+  ---
+  duration_ms: 0.953433
+  type: 'test'
+  ...
+# Subtest: withholds an almost-even split instead of forcing one selection
+ok 39 - withholds an almost-even split instead of forcing one selection
+  ---
+  duration_ms: 0.340865
+  type: 'test'
+  ...
+# Subtest: publishes only one strongest banker per fixture
+ok 40 - publishes only one strongest banker per fixture
+  ---
+  duration_ms: 0.192596
+  type: 'test'
+  ...
+# Subtest: day-ahead board reports ready when every predictable fixture has a pick
+ok 41 - day-ahead board reports ready when every predictable fixture has a pick
+  ---
+  duration_ms: 0.896378
+  type: 'test'
+  ...
+# Subtest: day-ahead board reports partial coverage while histories are still missing
+ok 42 - day-ahead board reports partial coverage while histories are still missing
+  ---
+  duration_ms: 0.844632
+  type: 'test'
+  ...
+# Subtest: finished fixtures do not count toward tomorrow board coverage
+ok 43 - finished fixtures do not count toward tomorrow board coverage
+  ---
+  duration_ms: 0.132737
+  type: 'test'
+  ...
+# Subtest: resolves standard football countries
+ok 44 - resolves standard football countries
+  ---
+  duration_ms: 0.842539
+  type: 'test'
+  ...
+# Subtest: handles football nations and international competitions
+ok 45 - handles football nations and international competitions
+  ---
+  duration_ms: 0.172707
+  type: 'test'
+  ...
+# Subtest: formats league labels with a flag
+ok 46 - formats league labels with a flag
+  ---
+  duration_ms: 0.164844
+  type: 'test'
+  ...
+# Subtest: engine board keeps imported fixtures visible while current picks are preparing
+ok 47 - engine board keeps imported fixtures visible while current picks are preparing
+  ---
+  duration_ms: 0.782
+  type: 'test'
+  ...
+# Subtest: engine board excludes finished fixtures without a current prediction
+ok 48 - engine board excludes finished fixtures without a current prediction
+  ---
+  duration_ms: 0.185976
+  type: 'test'
+  ...
+# Subtest: PapaSense v2 uses the HT/FT-first catalogue across all four engines
+ok 49 - PapaSense v2 uses the HT/FT-first catalogue across all four engines
+  ---
+  duration_ms: 22.196353
+  type: 'test'
+  ...
+# Subtest: overhaul exposes the expanded independent goal-market scores
+ok 50 - overhaul exposes the expanded independent goal-market scores
+  ---
+  duration_ms: 8.363678
+  type: 'test'
+  ...
+# Subtest: overhaul market catalogue includes result, goal, team and half markets
+ok 51 - overhaul market catalogue includes result, goal, team and half markets
+  ---
+  duration_ms: 3.619185
+  type: 'test'
+  ...
+# Subtest: duplicate markets retain later common-sense blockers
+ok 52 - duplicate markets retain later common-sense blockers
+  ---
+  duration_ms: 4.505249
+  type: 'test'
+  ...
+# Subtest: engine generates a normalized nine-cell HT/FT matrix
+ok 53 - engine generates a normalized nine-cell HT/FT matrix
+  ---
+  duration_ms: 23.183316
+  type: 'test'
+  ...
+# Subtest: venue orientation maps the away W/W vs home L/L story to 2/2
+ok 54 - venue orientation maps the away W/W vs home L/L story to 2/2
+  ---
+  duration_ms: 5.756463
+  type: 'test'
+  ...
+# Subtest: balanced volatile profiles produce goal intelligence without forcing an exact HT/FT pick
+ok 55 - balanced volatile profiles produce goal intelligence without forcing an exact HT/FT pick
+  ---
+  duration_ms: 3.497505
+  type: 'test'
+  ...
+# Subtest: small samples receive a data-quality downgrade
+ok 56 - small samples receive a data-quality downgrade
+  ---
+  duration_ms: 3.134016
+  type: 'test'
+  ...
+# Subtest: invalid input is rejected
+ok 57 - invalid input is rejected
+  ---
+  duration_ms: 0.319464
+  type: 'test'
+  ...
+# Subtest: valid fixtures receive either a qualified selection or an explicit NO PICK
+ok 58 - valid fixtures receive either a qualified selection or an explicit NO PICK
+  ---
+  duration_ms: 10.23369
+  type: 'test'
+  ...
+# Subtest: decision trace reviews all nine HT/FT indicators
+ok 59 - decision trace reviews all nine HT/FT indicators
+  ---
+  duration_ms: 4.04063
+  type: 'test'
+  ...
+# Subtest: market ranking uses threshold-relative comparison
+ok 60 - market ranking uses threshold-relative comparison
+  ---
+  duration_ms: 5.263082
+  type: 'test'
+  ...
+# Subtest: reason trace explains why the selected market beat Double Chance
+ok 61 - reason trace explains why the selected market beat Double Chance
+  ---
+  duration_ms: 2.687043
+  type: 'test'
+  ...
+# Subtest: PapaSense v2 returns all four engine decisions
+ok 62 - PapaSense v2 returns all four engine decisions
+  ---
+  duration_ms: 4.697904
+  type: 'test'
+  ...
+# Subtest: Venue Pattern publishes only when the independent venue route passes
+ok 63 - Venue Pattern publishes only when the independent venue route passes
+  ---
+  duration_ms: 2.615738
+  type: 'test'
+  ...
+# Subtest: Aggressive and safer engines use distinct selection policies
+ok 64 - Aggressive and safer engines use distinct selection policies
+  ---
+  duration_ms: 2.337044
+  type: 'test'
+  ...
+# Subtest: PapaSense blocks prior-only zombie predictions
+ok 65 - PapaSense blocks prior-only zombie predictions
+  ---
+  duration_ms: 0.166196
+  type: 'test'
+  ...
+# Subtest: Safer engine does not automatically force Double Chance
+ok 66 - Safer engine does not automatically force Double Chance
+  ---
+  duration_ms: 6.592112
+  type: 'test'
+  ...
+# Subtest: Prediction output carries an analysis fingerprint when supplied
+ok 67 - Prediction output carries an analysis fingerprint when supplied
+  ---
+  duration_ms: 3.496123
+  type: 'test'
+  ...
+# Subtest: default engine is named Papa's Pick
+ok 68 - default engine is named Papa's Pick
+  ---
+  duration_ms: 3.884849
+  type: 'test'
+  ...
+# Subtest: every engine pick contains a market-specific explanation paragraph
+ok 69 - every engine pick contains a market-specific explanation paragraph
+  ---
+  duration_ms: 2.385346
+  type: 'test'
+  ...
+# Subtest: Safer refuses to invent a cushion when no true containment market passes
+ok 70 - Safer refuses to invent a cushion when no true containment market passes
+  ---
+  duration_ms: 2.172811
+  type: 'test'
+  ...
+# Subtest: repeated fallback engines are not independent banker votes
+ok 71 - repeated fallback engines are not independent banker votes
+  ---
+  duration_ms: 2.308843
+  type: 'test'
+  ...
+# Subtest: explanations use simple rounded samples instead of floating counts
+ok 72 - explanations use simple rounded samples instead of floating counts
+  ---
+  duration_ms: 2.662627
+  type: 'test'
+  ...
+# Subtest: explanation evidence gives a plain-English market decision
+ok 73 - explanation evidence gives a plain-English market decision
+  ---
+  duration_ms: 1.631288
+  type: 'test'
+  ...
+# Subtest: 1/1 main story becomes home team to win either half
+ok 74 - 1/1 main story becomes home team to win either half
+  ---
+  duration_ms: 2.97556
+  type: 'test'
+  ...
+# Subtest: draw-lock family chooses a compatible draw market
+ok 75 - draw-lock family chooses a compatible draw market
+  ---
+  duration_ms: 2.991154
+  type: 'test'
+  ...
+# Subtest: comeback story follows a reversal-compatible goal road
+ok 76 - comeback story follows a reversal-compatible goal road
+  ---
+  duration_ms: 2.320109
+  type: 'test'
+  ...
+# Subtest: actual team Over 0.5 odds below 1.20 are not kept
+ok 77 - actual team Over 0.5 odds below 1.20 are not kept
+  ---
+  duration_ms: 3.28511
+  type: 'test'
+  ...
+# Subtest: straight-win candidates require comeback and lead-surrender evidence
+ok 78 - straight-win candidates require comeback and lead-surrender evidence
+  ---
+  duration_ms: 2.481037
+  type: 'test'
+  ...
+# Subtest: two early-leading teams create an unblocked First Half Over 1.5 candidate
+ok 79 - two early-leading teams create an unblocked First Half Over 1.5 candidate
+  ---
+  duration_ms: 2.229254
+  type: 'test'
+  ...
+# Subtest: prepared board snapshot never presents missing picks as visitor-triggered generation
+ok 80 - prepared board snapshot never presents missing picks as visitor-triggered generation
+  ---
+  duration_ms: 1.344263
+  type: 'test'
+  ...
+# Subtest: public board route is a read-only prepared-board endpoint
+ok 81 - public board route is a read-only prepared-board endpoint
+  ---
+  duration_ms: 3.65607
+  type: 'test'
+  ...
+# Subtest: portal shows a local prepared board before the network refresh
+ok 82 - portal shows a local prepared board before the network refresh
+  ---
+  duration_ms: 1.479282
+  type: 'test'
+  ...
+# Subtest: v1.25.0 keeps the all-engine board with league-only specialist guards
+ok 83 - v1.25.0 keeps the all-engine board with league-only specialist guards
+  ---
+  duration_ms: 0.158905
+  type: 'test'
+  ...
+# Subtest: public engine boards hide withheld and unprepared fixtures
+ok 84 - public engine boards hide withheld and unprepared fixtures
+  ---
+  duration_ms: 0.180537
+  type: 'test'
+  ...
+# Subtest: every selectable market has a registered HT/FT firing gate
+ok 85 - every selectable market has a registered HT/FT firing gate
+  ---
+  duration_ms: 26.915569
+  type: 'test'
+  ...
+# Subtest: X/X cannot create Over 1.5 without a separate two-goal HT/FT route
+ok 86 - X/X cannot create Over 1.5 without a separate two-goal HT/FT route
+  ---
+  duration_ms: 6.183677
+  type: 'test'
+  ...
+# Subtest: 1/2 or 2/1 reversal routes open GG and Over 2.5 gates
+ok 87 - 1/2 or 2/1 reversal routes open GG and Over 2.5 gates
+  ---
+  duration_ms: 5.121962
+  type: 'test'
+  ...
+# Subtest: full-time draw after a first-half lead does not falsely count as Draw in Either Half
+ok 88 - full-time draw after a first-half lead does not falsely count as Draw in Either Half
+  ---
+  duration_ms: 3.46777
+  type: 'test'
+  ...
+# Subtest: team Over 0.5 odds do not trigger an override unless price is below 1.20
+ok 89 - team Over 0.5 odds do not trigger an override unless price is below 1.20
+  ---
+  duration_ms: 4.387614
+  type: 'test'
+  ...
+# Subtest: targeted hydration accepts targetTeamIds without ReferenceError
+ok 90 - targeted hydration accepts targetTeamIds without ReferenceError
+  ---
+  duration_ms: 1.12039
+  type: 'test'
+  ...
+# Subtest: banker slate selects up to three strict picks per engine
+ok 91 - banker slate selects up to three strict picks per engine
+  ---
+  duration_ms: 1.349781
+  type: 'test'
+  ...
+# Subtest: banker slate rejects thin individual samples
+ok 92 - banker slate rejects thin individual samples
+  ---
+  duration_ms: 0.56017
+  type: 'test'
+  ...
+# Subtest: anti-zombie detector withholds three cloned evidence signatures
+ok 93 - anti-zombie detector withholds three cloned evidence signatures
+  ---
+  duration_ms: 0.534092
+  type: 'test'
+  ...
+# Subtest: pending, live and settled fixture states are classified
+ok 94 - pending, live and settled fixture states are classified
+  ---
+  duration_ms: 0.673429
+  type: 'test'
+  ...
+# Subtest: new PapaSense v1.13 markets settle automatically
+ok 95 - new PapaSense v1.13 markets settle automatically
+  ---
+  duration_ms: 0.306124
+  type: 'test'
+  ...
+# Subtest: match-state summary counts each public category
+ok 96 - match-state summary counts each public category
+  ---
+  duration_ms: 0.585949
+  type: 'test'
+  ...
+# Subtest: high-scoring open HT/FT structure diverts 12 to a goal market
+ok 97 - high-scoring open HT/FT structure diverts 12 to a goal market
+  ---
+  duration_ms: 24.691812
+  type: 'test'
+  ...
+# Subtest: clean decisive result structure can still qualify Either Team to Win
+ok 98 - clean decisive result structure can still qualify Either Team to Win
+  ---
+  duration_ms: 8.262218
+  type: 'test'
+  ...
+# Subtest: a high-scoring league label alone cannot open GG or O1.5 without HT/FT goal routes
+ok 99 - a high-scoring league label alone cannot open GG or O1.5 without HT/FT goal routes
+  ---
+  duration_ms: 5.152899
+  type: 'test'
+  ...
+# Subtest: No Draw explanation exposes clean decisive and goal-diversion diagnostics
+ok 100 - No Draw explanation exposes clean decisive and goal-diversion diagnostics
+  ---
+  duration_ms: 4.78944
+  type: 'test'
+  ...
+# Subtest: Papa's Pick main page exposes all five engines
+ok 101 - Papa's Pick main page exposes all five engines
+  ---
+  duration_ms: 3.635229
+  type: 'test'
+  ...
+# Subtest: main board client renders fixture-centred engine rows
+ok 102 - main board client renders fixture-centred engine rows
+  ---
+  duration_ms: 1.235902
+  type: 'test'
+  ...
+# Subtest: public API merges all engines for the main board
+ok 103 - public API merges all engines for the main board
+  ---
+  duration_ms: 0.981024
+  type: 'test'
+  ...
+# Subtest: v1.25 PWA refreshes the picks-only all-engine assets
+ok 104 - v1.25 PWA refreshes the picks-only all-engine assets
+  ---
+  duration_ms: 1.582416
+  type: 'test'
+  ...
+# Subtest: the site root is Papa's Pick rather than the retired home dashboard
+ok 105 - the site root is Papa's Pick rather than the retired home dashboard
+  ---
+  duration_ms: 3.51495
+  type: 'test'
+  ...
+# Subtest: old Papa's Pick bookmarks redirect to the new root
+ok 106 - old Papa's Pick bookmarks redirect to the new root
+  ---
+  duration_ms: 0.87681
+  type: 'test'
+  ...
+# Subtest: mobile and Z Fold navigation exposes the four core engines plus More
+ok 107 - mobile and Z Fold navigation exposes the four core engines plus More
+  ---
+  duration_ms: 0.808688
+  type: 'test'
+  ...
+# Subtest: Fold and tablet responsive layer keeps multi-column boards
+ok 108 - Fold and tablet responsive layer keeps multi-column boards
+  ---
+  duration_ms: 1.311464
+  type: 'test'
+  ...
+# Subtest: PWA launches at the Papa's Pick root
+ok 109 - PWA launches at the Papa's Pick root
+  ---
+  duration_ms: 0.743402
+  type: 'test'
+  ...
+# Subtest: PapaLock counts Papa, Safer and Aggressive as one family
+ok 110 - PapaLock counts Papa, Safer and Aggressive as one family
+  ---
+  duration_ms: 2.905006
+  type: 'test'
+  ...
+# Subtest: PapaLock chooses the safest common goal market from two independent families
+ok 111 - PapaLock chooses the safest common goal market from two independent families
+  ---
+  duration_ms: 1.051829
+  type: 'test'
+  ...
+# Subtest: PapaLock produces Elite when PapaSense, Venue and Athena support the same home-protection story
+ok 112 - PapaLock produces Elite when PapaSense, Venue and Athena support the same home-protection story
+  ---
+  duration_ms: 0.659788
+  type: 'test'
+  ...
+# Subtest: PapaLock blocks cup and friendly fixtures
+ok 113 - PapaLock blocks cup and friendly fixtures
+  ---
+  duration_ms: 0.193407
+  type: 'test'
+  ...
+# Subtest: PapaLock enforces 12 overall, eight venue and recent-six samples
+ok 114 - PapaLock enforces 12 overall, eight venue and recent-six samples
+  ---
+  duration_ms: 0.201589
+  type: 'test'
+  ...
+# Subtest: PapaLock publishes at most three daily and no more than two from one league
+ok 115 - PapaLock publishes at most three daily and no more than two from one league
+  ---
+  duration_ms: 2.591251
+  type: 'test'
+  ...
+# Subtest: v1.25 exposes PapaLock as the dedicated public Banker engine
+ok 116 - v1.25 exposes PapaLock as the dedicated public Banker engine
+  ---
+  duration_ms: 4.260776
+  type: 'test'
+  ...
+# Subtest: PapaLock admin prepare, audit and settlement routes are protected
+ok 117 - PapaLock admin prepare, audit and settlement routes are protected
+  ---
+  duration_ms: 3.416004
+  type: 'test'
+  ...
+# Subtest: PapaLock migration installs prediction, evidence, result and calibration tables
+ok 118 - PapaLock migration installs prediction, evidence, result and calibration tables
+  ---
+  duration_ms: 0.852464
+  type: 'test'
+  ...
+# Subtest: Banker page presents PapaLock grades and uses the v1.25 assets
+ok 119 - Banker page presents PapaLock grades and uses the v1.25 assets
+  ---
+  duration_ms: 1.422539
+  type: 'test'
+  ...
+# Subtest: v1.25.0 retains PapaSense v2.1 and uses only normal FT league history
+ok 120 - v1.25.0 retains PapaSense v2.1 and uses only normal FT league history
+  ---
+  duration_ms: 1.003888
+  type: 'test'
+  ...
+# Subtest: thin samples return a real NO PICK instead of a forced direction
+ok 121 - thin samples return a real NO PICK instead of a forced direction
+  ---
+  duration_ms: 27.999916
+  type: 'test'
+  ...
+# Subtest: Safer is a true same-story containment market
+ok 122 - Safer is a true same-story containment market
+  ---
+  duration_ms: 9.244654
+  type: 'test'
+  ...
+# Subtest: Aggressive only escalates Papa's existing story
+ok 123 - Aggressive only escalates Papa's existing story
+  ---
+  duration_ms: 5.718967
+  type: 'test'
+  ...
+# Subtest: Venue Pattern is independently generated from home-versus-away evidence
+ok 124 - Venue Pattern is independently generated from home-versus-away evidence
+  ---
+  duration_ms: 4.829529
+  type: 'test'
+  ...
+# Subtest: each engine keeps separate calibration metadata
+ok 125 - each engine keeps separate calibration metadata
+  ---
+  duration_ms: 6.681235
+  type: 'test'
+  ...
+# Subtest: public explanations are plain English while technical detail stays in internalAudit
+ok 126 - public explanations are plain English while technical detail stays in internalAudit
+  ---
+  duration_ms: 4.914455
+  type: 'test'
+  ...
+# Subtest: v1.21 migration installs result and calibration tables
+ok 127 - v1.21 migration installs result and calibration tables
+  ---
+  duration_ms: 10.424093
+  type: 'test'
+  ...
+# Subtest: profile builder creates correct team-perspective HT/FT transitions
+ok 128 - profile builder creates correct team-perspective HT/FT transitions
+  ---
+  duration_ms: 2.045181
+  type: 'test'
+  ...
+# Subtest: goal profile derives GG and totals from actual scores
+ok 129 - goal profile derives GG and totals from actual scores
+  ---
+  duration_ms: 0.590656
+  type: 'test'
+  ...
+# Subtest: Results handles large historical fixture sets in safe Supabase batches
+ok 130 - Results handles large historical fixture sets in safe Supabase batches
+  ---
+  duration_ms: 9.088012
+  type: 'test'
+  ...
+# Subtest: competition guard allows verified leagues only
+ok 131 - competition guard allows verified leagues only
+  ---
+  duration_ms: 1.237104
+  type: 'test'
+  ...
+# Subtest: competition names identify friendlies and cup tournaments
+ok 132 - competition names identify friendlies and cup tournaments
+  ---
+  duration_ms: 0.109633
+  type: 'test'
+  ...
+# Subtest: borderline team second-half scoring is blocked while neutral evidence remains available
+ok 133 - borderline team second-half scoring is blocked while neutral evidence remains available
+  ---
+  duration_ms: 4.34453
+  type: 'test'
+  ...
+# Subtest: Athena arbitration prefers neutral second-half goal unless named-team evidence is exceptional
+ok 134 - Athena arbitration prefers neutral second-half goal unless named-team evidence is exceptional
+  ---
+  duration_ms: 2.065151
+  type: 'test'
+  ...
+# Subtest: PapaSense blocks related specialist markets when venue or recent evidence is weak
+ok 135 - PapaSense blocks related specialist markets when venue or recent evidence is weak
+  ---
+  duration_ms: 28.091577
+  type: 'test'
+  ...
+# Subtest: v1.23 migration and services enforce league-only same-competition history
+ok 136 - v1.23 migration and services enforce league-only same-competition history
+  ---
+  duration_ms: 5.137115
+  type: 'test'
+  ...
+1..136
+# tests 136
+# suites 0
+# pass 136
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 549.606066

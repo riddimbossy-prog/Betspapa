@@ -4,8 +4,8 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
 <meta content="#070b16" name="theme-color"/>
-<meta content="BetsPapa consensus Bankers: one strongest pick per fixture when multiple engines agree or one exceptional qualified pick clears every safety gate." name="description"/>
-<title>Consensus Bankers — BetsPapa</title>
+<meta content="PapaLock Bankers: a dedicated supervisor independently validates the safest market supported by PapaSense, Venue Pattern and Athena." name="description"/>
+<title>PapaLock Bankers — BetsPapa</title>
 <link href="assets/images/favicon-64.png" rel="icon" type="image/png"/>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -15,13 +15,13 @@
 <link href="assets/css/mobile-nav.v1240.css" rel="stylesheet"/>
 <link href="/assets/css/pwa.v1160.css" rel="stylesheet"/>
 <link href="/assets/css/ui.v151.css" rel="stylesheet"/>
-<link href="assets/css/bankers.v1170.css" rel="stylesheet"/>
+<link href="assets/css/bankers.v1250.css" rel="stylesheet"/>
 <script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
 <meta content="yes" name="mobile-web-app-capable"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="BetsPapa" name="apple-mobile-web-app-title"/>
-<link href="/manifest.webmanifest?v=1240" rel="manifest"/>
+<link href="/manifest.webmanifest?v=1250" rel="manifest"/>
 <link href="/assets/images/pwa-brand-apple-180.png" rel="apple-touch-icon" sizes="180x180"/>
 <link href="/assets/images/pwa-splash-1290x2796.jpg" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" rel="apple-touch-startup-image"/>
 <link href="/assets/images/pwa-splash-2796x1290.jpg" media="(device-width: 932px) and (device-height: 430px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)" rel="apple-touch-startup-image"/>
@@ -43,7 +43,7 @@
 </head>
 <body data-page="bankers">
 <div aria-live="polite" class="pwa-launch-splash" id="pwaSplash" role="status">
-<span class="pwa-splash-accessible">Launching BetsPapa consensus Bankers</span>
+<span class="pwa-splash-accessible">Launching BetsPapa PapaLock Bankers</span>
 </div>
 <header class="portal-header">
 <a class="portal-brand" href="index.html">
@@ -55,11 +55,11 @@
 </header>
 <main class="portal-main">
 <section class="portal-hero">
-<span class="eyebrow">BetsPapa v1.24.0 · Consensus Intelligence</span>
+<span class="eyebrow">BetsPapa v1.25.0 · PapaLock Banker Engine</span>
 <h1>Today’s Bankers</h1>
-<p>The strongest consensus picks across Papa’s Pick, Aggressive, Safer and Venue Pattern. BetsPapa publishes one banker per fixture only when at least two qualified engines choose the exact same selection, or one exceptional pick reaches 86% and passes every sample-safety gate.</p>
+<p>PapaLock is the final banker supervisor. It treats Papa’s Pick, Safer and Aggressive as one PapaSense family, then checks Venue Pattern and Athena independently before selecting the safest market or withholding the match.</p>
 </section>
-<div class="status-strip" id="portalStatus"><span>Checking engine agreement…</span><small></small></div>
+<div class="status-strip" id="portalStatus"><span>Running the PapaLock audit…</span><small></small></div>
 <div aria-label="Match status legend" class="match-state-legend">
 <span><i class="pending"></i> Pending</span>
 <span><i class="live"></i> Live</span>
@@ -71,10 +71,8 @@
 <label><span>Banker level</span>
 <select id="bankerTierFilter">
 <option value="">All banker levels</option>
-<option value="unanimous">Unanimous 4/4</option>
-<option value="prime-consensus">Prime consensus 3/4</option>
-<option value="consensus">Consensus 2/4</option>
-<option value="high-confidence">High confidence 86%+</option>
+<option value="papalock-elite">PapaLock Elite</option>
+<option value="papalock-prime">PapaLock Prime</option>
 </select>
 </label>
 <label><span>Market</span><select id="bankerMarketFilter"><option value="">All markets</option></select></label>
@@ -83,8 +81,8 @@
 </div>
 <section class="metric-row" id="portalMetrics"></section>
 <div class="section-title">
-<h2>Consensus selections</h2>
-<p>Banker score is a rule score combining agreement, confidence consistency and sample strength—not a guarantee of a win.</p>
+<h2>PapaLock selections</h2>
+<p>PapaLock score combines independent family confirmation, market evidence, sample strength and conflict checks. It is not a guaranteed probability.</p>
 </div>
 <div id="portalContent"></div>
 <footer class="portal-footer">
@@ -103,7 +101,7 @@
 </div>
 </dialog>
 <script src="assets/js/country-flags.v1175.js"></script>
-<script src="assets/js/portal.v1240.js"></script>
+<script src="assets/js/portal.v1250.js"></script>
 <script src="assets/js/mobile-nav.v1240.js"></script>
 <script src="/assets/js/pwa.v1160.js"></script>
 <script src="/assets/js/ui.v1170.js"></script>

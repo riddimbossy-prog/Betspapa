@@ -1,3 +1,7 @@
+## v1.25.0 PapaLock Banker Engine
+
+The Banker section is now populated by PapaLock, a dedicated supervisor that counts Papa, Safer and Aggressive as one PapaSense family, then checks Venue Pattern and Athena independently. It requires two independent families, 12 overall matches, eight venue matches and recent-six evidence, chooses the safest common market, and publishes at most three Prime or Elite bankers per day. Run `supabase/BETSPAPA_V1_25_0_PAPALOCK_BANKER_ENGINE.sql` before enabling persistence and settlement. See `PAPALOCK_BANKER_ENGINE_V1.md`.
+
 ## v1.24.0 Picks-Only Boards and Direct Mobile Navigation
 
 Public boards now show only fixtures with real engine selections. The main Papa’s Pick board keeps a fixture when at least one of Papa, Safer, Aggressive, Venue Pattern or Athena has a pick, and displays only the engines that selected a market. Phones, tablets and Samsung Z Fold screens now use Papa’s Pick, Safer, Aggressive, Athena and More as the direct bottom navigation. No new Supabase migration is required. See `BETSPAPA_V1_24_0_EXPECTATIONS.md`.

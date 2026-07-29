@@ -7,8 +7,7 @@ import { assertIsoDate, todayUtc } from "../utils/date.js";
 import {
   ENGINE_KEYS,
   getResultsIntelligence,
-  selectBankerSlate,
-  selectConsensusBankers
+  selectBankerSlate
 } from "../services/intelligenceService.js";
 import {
   getBackgroundProcessingStatus,
@@ -24,6 +23,7 @@ import {
   summarizeMatchStates
 } from "../services/matchStateService.js";
 import { getPreparedEngineBoard, isVisibleBoardPick } from "../services/boardSnapshotService.js";
+import { getPapaLockHistory, getPapaLockPicks, invalidatePapaLockCache } from "../services/papaLockPickService.js";
 
 export const publicRouter = Router();
 
@@ -106,6 +106,7 @@ function invalidateDateCaches(date) {
     if (key.startsWith(`${date}:`)) bankersCache.delete(key);
   }
   invalidateAthenaPickCache(date);
+  invalidatePapaLockCache(date);
 }
 
 function queueMatchRefresh(date) {
@@ -162,22 +163,6 @@ function intelligenceForDays(days) {
   );
 }
 
-function consensusBankersForDate(date, limit) {
-  const key = `${date}:${limit}`;
-  return cachedValue(
-    bankersCache,
-    key,
-    async () => {
-      const predictions = await listPublicPredictions(getSupabaseAdmin(), date);
-      return {
-        predictionsReviewed: predictions.length,
-        matchStates: summarizeMatchStates(predictions),
-        ...selectConsensusBankers(predictions, { limit })
-      };
-    },
-    { ttlMs: 20_000, staleMs: 5 * 60_000 }
-  );
-}
 
 publicRouter.get("/demo", (_req, res, next) => {
   try {
@@ -458,17 +443,31 @@ publicRouter.get("/boss-picks/today", athenaPicksHandler);
 publicRouter.get("/bankers/today", async (req, res, next) => {
   try {
     const date = assertIsoDate(req.query.date || todayUtc());
-    const limit = Math.max(1, Math.min(Number(req.query.limit) || 12, 20));
-    const refresh = { refreshed: false, skipped: true, reason: "Prepared pick reader" };
-    const slate = await consensusBankersForDate(date, limit);
+    const limit = Math.max(1, Math.min(Number(req.query.limit) || 3, 3));
+    const force = ["1", "true", "force", "reload"].includes(
+      String(req.query.force || "").toLowerCase()
+    );
+    const slate = await getPapaLockPicks(getSupabaseAdmin(), date, { force, limit });
 
-    setPublicCache(res, 15, 120);
+    setPublicCache(res, slate.cached ? 60 : 20, 300);
     res.json({
-      date,
+      ...slate,
+      liveRefresh: { refreshed: false, skipped: true, reason: "PapaLock prepared-engine reader" }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+publicRouter.get("/bankers/history", async (req, res, next) => {
+  try {
+    const limit = Math.max(1, Math.min(Number(req.query.limit) || 30, 100));
+    const history = await getPapaLockHistory(getSupabaseAdmin(), { limit });
+    setPublicCache(res, 60, 600);
+    res.json({
+      engine: "PapaLock Banker Engine",
       generatedAt: new Date().toISOString(),
-      liveRefresh: refresh,
-      methodology: "Exact-selection consensus plus exceptional qualified single-engine picks",
-      ...slate
+      ...history
     });
   } catch (error) {
     next(error);

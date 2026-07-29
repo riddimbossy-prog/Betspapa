@@ -1,3 +1,15 @@
+## v1.25.0 — PapaLock Banker Engine
+
+- Replaced the public exact-selection consensus slate with the dedicated PapaLock supervisor.
+- Added independent family counting: PapaSense, Venue Pattern and Athena.
+- Added story-based safe-market routing and no-forced-banker conflict gates.
+- Added 12 overall, eight venue and recent-six sample requirements.
+- Added Elite and Prime grades, maximum three daily bankers and maximum two per league.
+- Added protected prepare, audit and settlement routes.
+- Added PapaLock prediction, evidence, result and calibration tables.
+- Updated the Banker page, explanations, filters and PWA cache.
+- Added PapaLock engine and integration tests.
+
 # BetsPapa Changelog
 
 ## v1.24.0 — Picks-Only Boards and Direct Mobile Engine Navigation

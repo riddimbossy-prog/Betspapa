@@ -61,16 +61,16 @@ test("public board route is a read-only prepared-board endpoint", async () => {
 });
 
 test("portal shows a local prepared board before the network refresh", async () => {
-  const source = await readFile(resolve(root, "assets/js/portal.v1240.js"), "utf8");
+  const source = await readFile(resolve(root, "assets/js/portal.v1250.js"), "utf8");
   assert.match(source, /readCachedEngineBoard/);
   assert.match(source, /\/api\/boards\/\$\{engineKey\}/);
   assert.doesNotMatch(source, /\/api\/engines\/\$\{engineKey\}.*refresh=1/);
   assert.match(source, /setTimeout\(\(\) => load\(\{ silent: true \}\), 60000\)/);
 });
 
-test("v1.24.0 keeps the all-engine board with league-only specialist guards", () => {
-  assert.equal(SERVICE_VERSION, "1.24.0");
-  assert.equal(ENGINE_VERSION, "papasense-v2.1.1-picks-only-board");
+test("v1.25.0 keeps the all-engine board with league-only specialist guards", () => {
+  assert.equal(SERVICE_VERSION, "1.25.0");
+  assert.equal(ENGINE_VERSION, "papasense-v2.1.2-papalock-banker");
 });
 
 test("public engine boards hide withheld and unprepared fixtures", () => {

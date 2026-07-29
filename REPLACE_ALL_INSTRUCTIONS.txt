@@ -1,30 +1,20 @@
-BetsPapa v1.24.0 — FULL REPLACE
-Picks-Only Boards + Direct Mobile/Z Fold Engine Navigation
+BetsPapa v1.25.0 — FULL REPLACE
+PapaLock Banker Engine
 
-1. BACK UP the current repository and Supabase project.
-2. For a fresh database only, install the existing migrations in order:
-   supabase/BETSPAPA_V1_20_0_ATHENA_V3.sql
-   supabase/BETSPAPA_V1_21_0_PAPASENSE_V2.sql
-   supabase/BETSPAPA_V1_23_0_COMPETITION_AND_HALF_MARKET_GUARDS.sql
-3. No new Supabase SQL is required for v1.24.0.
-4. Replace all repository files with this package.
-5. Commit and push:
-   BetsPapa v1.24.0 Picks-Only Boards and Mobile Engine Navigation
-6. Let Render deploy the backend.
-7. Check /api/health:
-   Service version: 1.24.0
-   PapaSense: papasense-v2.1.1-picks-only-board
-   Athena: athena-v3.1.0-specialist-half-market-guards
-8. Run fixture sync, history hydration and board preparation.
-9. Open https://betspapa.com/reset.html once on every test phone, tablet and Z Fold.
-10. Verify the bottom rail shows:
-    Papa’s Pick | Safer | Aggressive | Athena | More
-11. Open More and verify:
-    Bankers, Results, Live & Fixtures, Venue Pattern, Responsible Use, Privacy and Terms.
-12. Confirm fixtures with no real picks are absent from the public boards.
+1. Back up the current repository and Supabase project.
+2. Run the existing migrations only when they have not already been installed:
+   - supabase/BETSPAPA_V1_20_0_ATHENA_V3.sql
+   - supabase/BETSPAPA_V1_21_0_PAPASENSE_V2.sql
+   - supabase/BETSPAPA_V1_23_0_COMPETITION_AND_HALF_MARKET_GUARDS.sql
+3. Run the new migration:
+   - supabase/BETSPAPA_V1_25_0_PAPALOCK_BANKER_ENGINE.sql
+4. Replace the repository contents with this package.
+5. Deploy the Render backend and the public site.
+6. Run the protected workflow or call POST /api/admin/bankers/prepare for the target date.
+7. Open https://betspapa.com/reset.html once on each installed device to remove the v1.24 PWA cache.
 
-Important:
-- A fixture remains visible on the main board when at least one engine has a real pick.
-- Only the engines with picks are displayed inside that fixture card.
-- NO PICK and preparing fixtures remain available to internal diagnostics but stay off public boards.
-- League-only and specialist-market guards from v1.23.0 remain active.
+Expected versions:
+- Service: 1.25.0
+- PapaSense: papasense-v2.1.2-papalock-banker
+- Athena: athena-v3.1.0-specialist-half-market-guards
+- PapaLock: papalock-v1.0.0

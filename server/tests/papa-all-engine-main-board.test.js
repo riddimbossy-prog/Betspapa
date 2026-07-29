@@ -19,7 +19,7 @@ test("Papa's Pick main page exposes all five engines", async () => {
 });
 
 test("main board client renders fixture-centred engine rows", async () => {
-  const js = await source("assets/js/portal.v1240.js");
+  const js = await source("assets/js/portal.v1250.js");
   assert.match(js, /HUB_ENGINE_ORDER = \["primary", "safer", "aggressive", "venue", "athena"\]/);
   assert.match(js, /\/api\/main-board\/today/);
   assert.match(js, /function hubEngineRow/);
@@ -37,11 +37,11 @@ test("public API merges all engines for the main board", async () => {
   assert.match(routes, /hiddenFixtures/);
 });
 
-test("v1.24 PWA refreshes the picks-only all-engine assets", async () => {
+test("v1.25 PWA refreshes the picks-only all-engine assets", async () => {
   const sw = await source("sw.js");
-  assert.match(sw, /betspapa-pwa-v1240/);
+  assert.match(sw, /betspapa-pwa-v1250/);
   assert.match(sw, /portal\.v1220\.css/);
-  assert.match(sw, /portal\.v1240\.js/);
+  assert.match(sw, /portal\.v1250\.js/);
   assert.match(sw, /mobile-nav\.v1240\.js/);
   assert.match(sw, /mobile-nav\.v1240\.css/);
 });

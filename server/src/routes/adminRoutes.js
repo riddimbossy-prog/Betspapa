@@ -19,6 +19,7 @@ import { invalidatePreparedBoards, warmPreparedBoards } from "../services/boardS
 import { getAthenaPicks, invalidateAthenaPickCache } from "../services/athenaPickService.js";
 import { hydrateFixtureGoalEvents } from "../services/goalEventService.js";
 import { refreshCompetitionMetadata } from "../services/competitionMetadataService.js";
+import { getPapaLockPicks, invalidatePapaLockCache, settlePapaLockDate } from "../services/papaLockPickService.js";
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
@@ -125,6 +126,7 @@ adminRouter.post("/competition-metadata/refresh", async (req, res, next) => {
     const result = await refreshCompetitionMetadata(supabase, { limit: req.body?.limit || 100 });
     invalidatePreparedBoards();
     invalidateAthenaPickCache();
+    invalidatePapaLockCache();
     res.json({ status: "ok", action: "competition-metadata-refresh", result });
   } catch (error) {
     next(error);
@@ -308,14 +310,57 @@ adminRouter.get("/athena-audit", async (req, res, next) => {
   }
 });
 
+adminRouter.get("/bankers/audit", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.query?.date || todayUtc());
+    const force = ["1", "true", "force", "reload"].includes(
+      String(req.query?.force || "").toLowerCase()
+    );
+    const result = await getPapaLockPicks(getSupabaseAdmin(), date, {
+      force,
+      limit: 3,
+      persist: false
+    });
+    res.json({ status: "ok", action: "papalock-audit", ...result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.post("/bankers/prepare", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.body?.date || todayUtc());
+    const result = await getPapaLockPicks(getSupabaseAdmin(), date, {
+      force: true,
+      limit: 3,
+      persist: true
+    });
+    res.json({ status: "ok", action: "papalock-prepare", ...result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.post("/bankers/settle", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.body?.date || todayUtc());
+    const result = await settlePapaLockDate(getSupabaseAdmin(), date);
+    res.json({ status: "ok", action: "papalock-settle", ...result });
+  } catch (error) {
+    next(error);
+  }
+});
+
 adminRouter.post("/generate-predictions", async (req, res, next) => {
   try {
     const date = assertIsoDate(req.body?.date || todayUtc());
     const supabase = getSupabaseAdmin();
     const result = await generatePredictionsForDate(supabase, date);
     invalidatePreparedBoards(date);
+    invalidatePapaLockCache(date);
     const boardWarm = await warmPreparedBoards(supabase, date);
-    res.json({ status: "ok", action: "generate-predictions", result, boardWarm });
+    const bankers = await getPapaLockPicks(supabase, date, { force: true, limit: 3, persist: true });
+    res.json({ status: "ok", action: "generate-predictions", result, boardWarm, bankers });
   } catch (error) {
     next(error);
   }
@@ -326,9 +371,11 @@ adminRouter.post("/grade-results", async (req, res, next) => {
     const date = assertIsoDate(req.body?.date || todayUtc());
     const supabase = getSupabaseAdmin();
     const result = await gradePredictionsForDate(supabase, date);
+    const bankers = await settlePapaLockDate(supabase, date);
     invalidatePreparedBoards(date);
+    invalidatePapaLockCache(date);
     const boardWarm = await warmPreparedBoards(supabase, date);
-    res.json({ status: "ok", action: "grade-results", result, boardWarm });
+    res.json({ status: "ok", action: "grade-results", result, bankers, boardWarm });
   } catch (error) {
     next(error);
   }
@@ -340,7 +387,9 @@ adminRouter.post("/settle-date", async (req, res, next) => {
     const supabase = getSupabaseAdmin();
     const synced = await syncDate(supabase, date);
     const graded = await gradePredictionsForDate(supabase, date);
+    const bankers = await settlePapaLockDate(supabase, date);
     invalidatePreparedBoards(date);
+    invalidatePapaLockCache(date);
     const boardWarm = await warmPreparedBoards(supabase, date);
     res.json({
       status: "ok",
@@ -348,6 +397,7 @@ adminRouter.post("/settle-date", async (req, res, next) => {
       date,
       synced,
       graded,
+      bankers,
       boardWarm
     });
   } catch (error) {
@@ -360,8 +410,10 @@ adminRouter.post("/warm-board", async (req, res, next) => {
     const date = assertIsoDate(req.body?.date || todayUtc());
     const supabase = getSupabaseAdmin();
     invalidatePreparedBoards(date);
+    invalidatePapaLockCache(date);
     const result = await warmPreparedBoards(supabase, date);
-    res.json({ status: "ok", action: "warm-board", result });
+    const bankers = await getPapaLockPicks(supabase, date, { force: true, limit: 3, persist: true });
+    res.json({ status: "ok", action: "warm-board", result, bankers });
   } catch (error) {
     next(error);
   }
@@ -389,7 +441,9 @@ adminRouter.post("/bootstrap-league", async (req, res, next) => {
     const upcoming = await syncDate(supabase, predictionDate);
     const predictions = await generatePredictionsForDate(supabase, predictionDate);
     invalidatePreparedBoards(predictionDate);
+    invalidatePapaLockCache(predictionDate);
     const boardWarm = await warmPreparedBoards(supabase, predictionDate);
+    const bankers = await getPapaLockPicks(supabase, predictionDate, { force: true, limit: 3, persist: true });
 
     res.json({
       status: "ok",
@@ -398,7 +452,8 @@ adminRouter.post("/bootstrap-league", async (req, res, next) => {
       profiles,
       upcoming,
       predictions,
-      boardWarm
+      boardWarm,
+      bankers
     });
   } catch (error) {
     next(error);
@@ -417,11 +472,14 @@ adminRouter.post("/run-daily", async (req, res, next) => {
     }
 
     const graded = await gradePredictionsForDate(supabase, date);
+    const settledBankers = await settlePapaLockDate(supabase, date);
     const predictions = await generatePredictionsForDate(supabase, date);
     invalidatePreparedBoards(date);
+    invalidatePapaLockCache(date);
     const boardWarm = await warmPreparedBoards(supabase, date);
+    const bankers = await getPapaLockPicks(supabase, date, { force: true, limit: 3, persist: true });
 
-    res.json({ status: "ok", action: "run-daily", date, synced, rebuilt, graded, predictions, boardWarm });
+    res.json({ status: "ok", action: "run-daily", date, synced, rebuilt, graded, settledBankers, predictions, boardWarm, bankers });
   } catch (error) {
     next(error);
   }

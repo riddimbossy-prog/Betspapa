@@ -54,8 +54,8 @@ test("Fold and tablet responsive layer keeps multi-column boards", async () => {
 
 test("PWA launches at the Papa's Pick root", async () => {
   const manifest = JSON.parse(await source("manifest.webmanifest"));
-  assert.equal(manifest.start_url, "/?source=pwa&v=1240");
-  assert.equal(manifest.version, "1.24.0");
+  assert.equal(manifest.start_url, "/?source=pwa&v=1250");
+  assert.equal(manifest.version, "1.25.0");
   const papa = manifest.shortcuts.find((item) => item.name === "Papa's Pick");
   assert.equal(papa.url, "/?source=shortcut");
 });

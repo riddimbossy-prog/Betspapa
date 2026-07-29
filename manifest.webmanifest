@@ -2,8 +2,8 @@
   "id": "/",
   "name": "BetsPapa \u2014 Football Intelligence",
   "short_name": "BetsPapa",
-  "description": "BetsPapa opens on a picks-only all-engine board with direct mobile access to Papa's Pick, Safer, Aggressive and Athena.",
-  "start_url": "/?source=pwa&v=1240",
+  "description": "BetsPapa opens on a picks-only all-engine board with PapaLock supervising the dedicated Banker section.",
+  "start_url": "/?source=pwa&v=1250",
   "scope": "/",
   "display": "standalone",
   "display_override": [
@@ -62,9 +62,9 @@
       ]
     },
     {
-      "name": "Consensus Bankers",
+      "name": "PapaLock Bankers",
       "short_name": "Bankers",
-      "description": "Open the strongest consensus picks across all four engines",
+      "description": "Open the PapaLock Banker Engine’s independently audited selections",
       "url": "/bankers.html?source=shortcut",
       "icons": [
         {
@@ -130,5 +130,5 @@
       "label": "BetsPapa football intelligence dashboard"
     }
   ],
-  "version": "1.24.0"
+  "version": "1.25.0"
 }

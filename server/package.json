@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.24.0",
+  "version": "1.25.0",
   "private": true,
-  "description": "BetsPapa v1.24.0 keeps public boards picks-only and adds direct Papa, Safer, Aggressive and Athena navigation for phones, tablets and Z Fold.",
+  "description": "BetsPapa v1.25.0 adds the PapaLock Banker Engine with independent family confirmation, strict market audits and prepared banker settlement.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
