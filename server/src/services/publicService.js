@@ -8,6 +8,7 @@ import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 import { gradeEnginePick } from "./gradingService.js";
 import { fixtureMatchState, summarizeMatchStates } from "./matchStateService.js";
 import { competitionPolicy } from "../engine/competitionPolicy.js";
+import { buildEarlySeasonFlag } from "../engine/earlySeasonFlag.js";
 
 
 export function getBackgroundProcessingStatus(date) {
@@ -195,6 +196,50 @@ export async function listFixtures(supabase, date) {
   return fixtures.map((fixture) => publicFixture(fixture, teamMap, leagueMap));
 }
 
+async function loadEarlySeasonFlags(supabase, fixtures, teamMap) {
+  const flags = new Map();
+  if (!fixtures.length) return flags;
+
+  const leagueIds = [...new Set(fixtures.map((fixture) => fixture.league_id).filter(Boolean))];
+  const seasons = [...new Set(fixtures.map((fixture) => fixture.season).filter((value) => value != null))];
+  if (!leagueIds.length || !seasons.length) return flags;
+
+  const rows = await fetchAllRows(() =>
+    supabase
+      .from("fixtures")
+      .select("id,league_id,season,fixture_date,home_team_id,away_team_id,status")
+      .in("league_id", leagueIds)
+      .in("season", seasons)
+      .eq("status", "FT")
+  );
+
+  const datesByTeam = new Map();
+  for (const row of rows || []) {
+    const stamp = new Date(row.fixture_date).getTime();
+    if (!Number.isFinite(stamp)) continue;
+    for (const teamId of [row.home_team_id, row.away_team_id]) {
+      const key = `${row.league_id}:${row.season}:${teamId}`;
+      if (!datesByTeam.has(key)) datesByTeam.set(key, []);
+      datesByTeam.get(key).push(stamp);
+    }
+  }
+
+  for (const fixture of fixtures) {
+    const cutoff = new Date(fixture.fixture_date).getTime();
+    const played = (teamId) =>
+      (datesByTeam.get(`${fixture.league_id}:${fixture.season}:${teamId}`) || [])
+        .filter((stamp) => stamp < cutoff).length;
+    const flag = buildEarlySeasonFlag({
+      homePlayed: played(fixture.home_team_id),
+      awayPlayed: played(fixture.away_team_id),
+      homeName: teamMap.get(fixture.home_team_id)?.name || "Home",
+      awayName: teamMap.get(fixture.away_team_id)?.name || "Away"
+    });
+    if (flag) flags.set(Number(fixture.id), flag);
+  }
+  return flags;
+}
+
 function mapPublicPredictions({
   fixtures,
   predictions,
@@ -330,6 +375,7 @@ function mapPublicPredictions({
         analysisFingerprint:
           prediction.market_scores?.analysisFingerprint ||
           null,
+        earlySeason: prediction.market_scores?.earlySeason || null,
         createdAt: prediction.created_at,
         updatedAt: prediction.updated_at
       };
@@ -362,6 +408,7 @@ export async function loadPreparedBoardData(supabase, date) {
   }
 
   const fixtureIds = fixtures.map((fixture) => fixture.id);
+  const flags = await loadEarlySeasonFlags(supabase, fixtures, entityMaps.teamMap);
   const predictionQuery = supabase
     .from("predictions")
     .select("*")
@@ -383,16 +430,20 @@ export async function loadPreparedBoardData(supabase, date) {
   throwIfSupabaseError(resultError, "Unable to load prepared board settlements");
 
   return {
-    fixtures: fixtures.map((fixture) =>
-      publicFixture(fixture, entityMaps.teamMap, entityMaps.leagueMap)
-    ),
+    fixtures: fixtures.map((fixture) => ({
+      ...publicFixture(fixture, entityMaps.teamMap, entityMaps.leagueMap),
+      earlySeason: flags.get(Number(fixture.id)) || null
+    })),
     predictions: mapPublicPredictions({
       fixtures,
       predictions,
       resultRows,
       teamMap: entityMaps.teamMap,
       leagueMap: entityMaps.leagueMap
-    })
+    }).map((prediction) => ({
+      ...prediction,
+      earlySeason: flags.get(Number(prediction.internalFixtureId)) || prediction.earlySeason || null
+    }))
   };
 }
 

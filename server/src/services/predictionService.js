@@ -1,6 +1,7 @@
 import { ENGINE_VERSION, PREDICTABLE_STATUSES } from "../config.js";
 import { predictMatch } from "../engine/transitionEngine.js";
 import { toPerspectiveGame } from "../engine/splitFormEngine.js";
+import { buildEarlySeasonFlag, playedBeforeKickoff } from "../engine/earlySeasonFlag.js";
 import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 import { hydrateProfilesForFixtures } from "./historyHydrationService.js";
@@ -668,7 +669,8 @@ function predictionRow(fixture, prediction) {
       ? ["NO PICK — no market cleared the story, sample and confidence gates"]
       : !primary?.qualified
         ? ["Directional pick — below the strong-pick threshold"]
-        : [])
+        : []),
+    ...(prediction.earlySeason ? [prediction.earlySeason.reason] : [])
   ];
 
   return {
@@ -708,7 +710,8 @@ function predictionRow(fixture, prediction) {
       profileAudit: prediction.profileAudit,
       analysisFingerprint: prediction.analysisFingerprint,
       papaSenseResolution: prediction.papaSenseResolution,
-      noBet: prediction.noBet
+      noBet: prediction.noBet,
+      earlySeason: prediction.earlySeason || null
     },
     transition_matrix: prediction.transitionMatrix,
     reasons,
@@ -804,6 +807,14 @@ async function predictFixture(supabase, fixture, cached) {
   );
   home.recentFive = recentFiveForTeam(recentByTeam, fixture.home_team_id, fixture.fixture_date);
   away.recentFive = recentFiveForTeam(recentByTeam, fixture.away_team_id, fixture.fixture_date);
+  const homeGames = recentByTeam.get(Number(fixture.home_team_id)) || [];
+  const awayGames = recentByTeam.get(Number(fixture.away_team_id)) || [];
+  const earlySeason = buildEarlySeasonFlag({
+    homePlayed: playedBeforeKickoff(homeGames, fixture.fixture_date),
+    awayPlayed: playedBeforeKickoff(awayGames, fixture.fixture_date),
+    homeName: homeTeam.name,
+    awayName: awayTeam.name
+  });
 
   const profileAudit = buildProfileAudit({
     fixture,
@@ -825,6 +836,7 @@ async function predictFixture(supabase, fixture, cached) {
     analysisFingerprint: profileAudit.analysisFingerprint,
     odds: fixture.market_odds || fixture.odds || fixture.bookmaker_odds || null,
     calibration: buildCalibrationMap(context.calibrationRows || []),
+    earlySeason,
     league: {
       transitionBaseline: deriveLeagueBaseline(context.htftRows),
       goals: {
@@ -835,7 +847,14 @@ async function predictFixture(supabase, fixture, cached) {
     }
   };
 
-  return predictMatch(input);
+  const result = predictMatch(input);
+  result.earlySeason = earlySeason;
+  if (earlySeason) {
+    for (const pick of Object.values(result.enginePicks || {})) {
+      pick.cautions = [...new Set([...(pick.cautions || []), earlySeason.reason])];
+    }
+  }
+  return result;
 }
 
 export async function generatePredictionsForDate(supabase, date) {

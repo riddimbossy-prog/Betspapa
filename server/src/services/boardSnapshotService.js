@@ -28,13 +28,18 @@ function compactBoardItem(item) {
     processing: Boolean(item.processing),
     processingState: item.processingState ?? null,
     processingMessage: item.processingMessage ?? null,
-    pick: item.pick ?? null
+    pick: item.pick ?? null,
+    earlySeason: item.earlySeason ?? null
   };
 }
 
 
 export function isVisibleBoardPick(pick) {
   return Boolean(pick) && pick.available !== false && pick.key !== "no-pick";
+}
+
+export function isPublicBoardItem(item) {
+  return isVisibleBoardPick(item?.pick) || Boolean(item?.earlySeason);
 }
 
 function processingSummary(items) {
@@ -78,7 +83,7 @@ export function createEngineBoardSnapshot({
       message: "Waiting for the scheduled board-preparation workflow."
     }
   }).map(compactBoardItem);
-  const items = allItems.filter((item) => isVisibleBoardPick(item.pick));
+  const items = allItems.filter((item) => isPublicBoardItem(item));
   const processing = processingSummary(allItems);
   return {
     date,

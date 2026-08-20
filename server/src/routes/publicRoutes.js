@@ -22,7 +22,7 @@ import {
   refreshCurrentMatchData,
   summarizeMatchStates
 } from "../services/matchStateService.js";
-import { getPreparedEngineBoard, isVisibleBoardPick } from "../services/boardSnapshotService.js";
+import { getPreparedEngineBoard, isPublicBoardItem, isVisibleBoardPick } from "../services/boardSnapshotService.js";
 import { getPapaLockHistory, getPapaLockPicks, invalidatePapaLockCache } from "../services/papaLockPickService.js";
 import { toPublicPapaLockSlate } from "../engine/papaLockBankerEngine.js";
 
@@ -273,11 +273,12 @@ function mainBoardRow(map, item) {
       away: item.away ?? null,
       engines: {},
       processing: {},
-      athena: null
+      athena: null,
+      earlySeason: item.earlySeason ?? null
     });
   }
   const row = map.get(key);
-  for (const field of ["id", "fixtureId", "internalFixtureId", "kickoff", "status", "matchState", "settlement", "venue", "league", "home", "away"]) {
+  for (const field of ["id", "fixtureId", "internalFixtureId", "kickoff", "status", "matchState", "settlement", "venue", "league", "home", "away", "earlySeason"]) {
     if (row[field] == null && item[field] != null) row[field] = item[field];
   }
   row.engineOutcomes = { ...row.engineOutcomes, ...(item.engineOutcomes || {}) };
@@ -364,11 +365,11 @@ publicRouter.get("/main-board/today", async (req, res, next) => {
       return row;
     }).sort((a, b) => new Date(a.kickoff || 0) - new Date(b.kickoff || 0));
 
-    // Public boards are picks-only. A fixture remains visible when at least one
-    // engine has a real selection; all-withheld and all-preparing fixtures stay
-    // in diagnostics and preparation counts but are not sent to the public board.
+    // Public boards are picks-only, except first-five early-season matches which
+    // stay visible with a red flag even when every engine withholds.
     const items = mergedItems.filter((row) =>
-      Object.values(row.engines || {}).some((pick) => isVisibleBoardPick(pick))
+      Object.values(row.engines || {}).some((pick) => isVisibleBoardPick(pick)) ||
+      isPublicBoardItem(row)
     );
     const hiddenFixtures = Math.max(0, mergedItems.length - items.length);
 

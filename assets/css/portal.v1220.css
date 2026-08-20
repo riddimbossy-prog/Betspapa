@@ -36,6 +36,7 @@ body[data-engine="primary"]{--engine-accent:#f5c95e;--engine-glow:rgba(245,201,9
 body[data-engine="aggressive"]{--engine-accent:#ff7d63;--engine-glow:rgba(255,125,99,.15)}
 body[data-engine="safer"]{--engine-accent:#49e38f;--engine-glow:rgba(73,227,143,.14)}
 body[data-engine="venue"]{--engine-accent:#65a7ff;--engine-glow:rgba(101,167,255,.15)}
+body[data-engine="form"]{--engine-accent:#ff8fb8;--engine-glow:rgba(255,143,184,.16)}
 body[data-engine] .portal-hero{border-color:color-mix(in srgb,var(--engine-accent) 38%,transparent);background:
 radial-gradient(circle at 90% 0,var(--engine-glow),transparent 34%),
 linear-gradient(140deg,rgba(49,8,94,.94),rgba(16,1,39,.96))}
@@ -852,9 +853,25 @@ body.portal-dialog-open {
 .hub-engine-row.engine-aggressive{--row-accent:#ff7d63}
 .hub-engine-row.engine-venue{--row-accent:#65a7ff}
 .hub-engine-row.engine-athena{--row-accent:#b48cff}
+.hub-engine-row.engine-form{--row-accent:#ff8fb8}
 .hub-engine-row.withheld .hub-engine-score{color:#fecaca}
 .hub-engine-row.preparing .hub-engine-score{color:#b9abc9}
 .hub-engine-row.settled .hub-engine-name small{color:#f5d471}
 @media(max-width:1050px){.papa-hub-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}.papa-hub-grid{grid-template-columns:1fr}}
 @media(max-width:680px){.papa-hub-toolbar{grid-template-columns:1fr}.papa-hub-grid{grid-template-columns:1fr}.hub-match-head{padding:.9rem}.hub-engine-row{grid-template-columns:minmax(100px,.8fr) minmax(0,1.55fr);min-height:82px;padding:.72rem .62rem}.hub-engine-score{grid-column:2;text-align:left;font-size:.7rem}.hub-engine-pick strong,.hub-engine-pick small{white-space:normal}.hub-engine-name b{white-space:normal}.hub-match-teams{gap:.45rem}.hub-match-teams .pick-team{font-size:.94rem}.hub-match-teams .pick-team img,.hub-match-teams .team-fallback{width:36px;height:36px}}
 @media(max-width:390px){.hub-engine-row{grid-template-columns:1fr}.hub-engine-score{grid-column:1}.hub-engine-name{grid-template-columns:8px 1fr}.hub-engine-tabs{margin-inline:-2px}.hub-match-teams{grid-template-columns:1fr}.hub-versus{display:none}.hub-match-teams .pick-team.away{justify-content:flex-start;text-align:left}}
+
+.early-season-flag{
+  display:inline-flex;align-items:center;gap:.28rem;width:max-content;
+  padding:.32rem .58rem;border:1px solid rgba(255,90,110,.55);border-radius:999px;
+  background:rgba(160,12,36,.28);color:#ffc1c7;font-size:.68rem;font-weight:900;
+  letter-spacing:.07em;text-transform:uppercase
+}
+.early-season-flag.chip{margin:0}
+.pick-card.early-season,.papa-hub-card.early-season{
+  border-color:rgba(255,86,104,.48);
+  box-shadow:0 0 0 1px rgba(255,70,90,.22),0 16px 34px rgba(70,0,12,.28)
+}
+.papa-hub-card.early-season .hub-match-head{background:linear-gradient(180deg,rgba(120,8,24,.22),transparent 78%)}
+.hub-summary-chips .early-season-flag{border-color:rgba(255,90,110,.45);color:#ffc1c7;background:rgba(127,29,29,.22)}
+

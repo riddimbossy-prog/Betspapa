@@ -20,4 +20,8 @@ Only the last five finished same-league matches for each team, before kickoff.
 - If neither side dominates, form goals decide Over 1.5, Over 2.5, Under 3.5, BTTS, team over 0.5 or second-half over 0.5.
 - Close competing stories are withheld.
 
+## Early season
+
+A team's first five same-league matches are red-flagged on every public board. Those fixtures stay visible even when Split Form (and the other engines) return NO PICK.
+
 PapaLock does not treat Split Form as a confirmation family.

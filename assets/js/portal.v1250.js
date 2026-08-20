@@ -453,6 +453,7 @@
         <p>${escapeHtml(leagueText(item.league))} · ${escapeHtml(formatKickoff(item.kickoff))}</p>
         ${matchStatusMarkup(item, item.activeEngine || engineKey)}
       </div>
+      ${earlySeasonMarkup(item)}
       <div class="explanation-box">
         <span class="eyebrow">${escapeHtml(pick?.market || "Market")}</span>
         <h3>${escapeHtml(pick?.selection || "Prediction")}</h3>
@@ -474,17 +475,24 @@
       </div>`;
   }
 
+  function earlySeasonMarkup(item, extraClass = "") {
+    const flag = item?.earlySeason;
+    if (!flag) return "";
+    return `<span class="early-season-flag ${escapeHtml(extraClass)}" title="${escapeHtml(flag.reason || "First five league matches")}">⚑ ${escapeHtml(flag.label || "EARLY SEASON")}</span>`;
+  }
+
   function engineCard(item) {
     const pick = item.pick;
 
     if (!pick) {
       const waiting = item.processingState && item.processingState !== "running";
       return `
-        <article class="pick-card processing-card" data-processing="true">
+        <article class="pick-card processing-card ${item.earlySeason ? "early-season" : ""}" data-processing="true">
           <div class="pick-meta">
             <span>${escapeHtml(leagueText(item.league))}</span>
             <span>${escapeHtml(formatKickoff(item.kickoff))}</span>
           </div>
+          ${earlySeasonMarkup(item)}
           ${matchStatusMarkup(item, engineKey)}
           <div class="pick-teams">
             <div class="pick-team">${logoMarkup(item.home)}<span>${escapeHtml(item.home?.name || "Home")}</span></div>
@@ -501,11 +509,12 @@
 
     if (pick.available === false || pick.key === "no-pick") {
       return `
-        <article class="pick-card no-pick-card" data-fixture-id="${escapeHtml(item.fixtureId)}">
+        <article class="pick-card no-pick-card ${item.earlySeason ? "early-season" : ""}" data-fixture-id="${escapeHtml(item.fixtureId)}">
           <div class="pick-meta">
             <span>${escapeHtml(leagueText(item.league))}</span>
             <span>${escapeHtml(formatKickoff(item.kickoff))}</span>
           </div>
+          ${earlySeasonMarkup(item)}
           ${matchStatusMarkup(item, item.activeEngine || engineKey)}
           <div class="pick-teams">
             <div class="pick-team">${logoMarkup(item.home)}<span>${escapeHtml(item.home?.name || "Home")}</span></div>
@@ -519,11 +528,12 @@
     }
 
     return `
-      <button class="pick-card" data-fixture-id="${escapeHtml(item.fixtureId)}">
+      <button class="pick-card ${item.earlySeason ? "early-season" : ""}" data-fixture-id="${escapeHtml(item.fixtureId)}">
         <div class="pick-meta">
           <span>${escapeHtml(leagueText(item.league))}</span>
           <span>${escapeHtml(formatKickoff(item.kickoff))}</span>
         </div>
+        ${earlySeasonMarkup(item)}
         ${matchStatusMarkup(item, item.activeEngine || engineKey)}
         <div class="pick-teams">
           <div class="pick-team">${logoMarkup(item.home)}<span>${escapeHtml(item.home?.name || "Home")}</span></div>
@@ -699,10 +709,13 @@
     const readyKeys = visibleKeys.filter((key) => hubPickReady(hubEnginePick(item, key)));
     const totalReady = HUB_ENGINE_ORDER.filter((key) => hubPickReady(hubEnginePick(item, key))).length;
     const agreement = hubAgreement(item);
-    if (!readyKeys.length) return "";
-    return `<article class="papa-hub-card" data-hub-fixture="${escapeHtml(item.fixtureId)}">
+    const early = Boolean(item.earlySeason);
+    if (!readyKeys.length && !early) return "";
+    const rowKeys = readyKeys.length ? readyKeys : visibleKeys;
+    return `<article class="papa-hub-card ${early ? "early-season" : ""}" data-hub-fixture="${escapeHtml(item.fixtureId)}">
       <header class="hub-match-head">
         <div class="pick-meta"><span>${escapeHtml(leagueText(item.league))}</span><span>${escapeHtml(formatKickoff(item.kickoff))}</span></div>
+        ${earlySeasonMarkup(item)}
         ${matchStatusMarkup(item)}
         <div class="hub-match-teams">
           <div class="pick-team">${logoMarkup(item.home)}<span>${escapeHtml(item.home?.name || "Home")}</span></div>
@@ -710,11 +723,12 @@
           <div class="pick-team away">${logoMarkup(item.away)}<span>${escapeHtml(item.away?.name || "Away")}</span></div>
         </div>
         <div class="hub-summary-chips">
-          <span>${totalReady}/5 engines picked</span>
+          <span>${totalReady}/${HUB_ENGINE_ORDER.length} engines picked</span>
           ${agreement ? `<span class="agreement">${agreement} engines agree</span>` : ""}
+          ${early ? earlySeasonMarkup(item, "chip") : ""}
         </div>
       </header>
-      <div class="hub-engine-list">${readyKeys.map((key) => hubEngineRow(item, key)).join("")}</div>
+      <div class="hub-engine-list">${rowKeys.map((key) => hubEngineRow(item, key)).join("")}</div>
     </article>`;
   }
 
@@ -743,7 +757,7 @@
       <div class="metric"><span>Matches with picks</span><strong>${summary.matches}</strong><small>Fixtures with no real selection are hidden</small></div>
       <div class="metric"><span>Engine picks</span><strong>${summary.readySelections}</strong><small>Qualified or directional selections ready now</small></div>
       <div class="metric"><span>Strong picks</span><strong>${summary.strongSelections}</strong><small>Qualified PapaSense or Athena selections</small></div>
-      <div class="metric"><span>Active engines</span><strong>${summary.activeEngines}/5</strong><small>Engines contributing at least one pick today</small></div>`;
+      <div class="metric"><span>Active engines</span><strong>${summary.activeEngines}/${HUB_ENGINE_ORDER.length}</strong><small>Engines contributing at least one pick today</small></div>`;
     $("#marketCount")?.replaceChildren(document.createTextNode(String(markets.size)));
   }
 
@@ -776,7 +790,8 @@
         if (league.value && leagueValue !== league.value) return false;
         if (matchState.value && stateClass(item) !== matchState.value) return false;
         const picks = keys.map((key) => ({ key, pick: hubEnginePick(item, key) }));
-        if (!picks.some(({ pick }) => hubPickReady(pick))) return false;
+        const early = Boolean(item.earlySeason);
+        if (!picks.some(({ pick }) => hubPickReady(pick)) && !early) return false;
         if (market.value && !picks.some(({ pick }) => hubPickReady(pick) && pick?.market === market.value)) return false;
         if (strength.value === "qualified" && !picks.some(({ pick }) => hubPickReady(pick) && pick.qualified !== false)) return false;
         if (strength.value === "directional" && !picks.some(({ pick }) => hubPickReady(pick) && pick.qualified === false)) return false;
@@ -841,7 +856,8 @@
 
     const renderPayload = (payload, { cached = false } = {}) => {
       hubItems = (payload.items || []).filter((item) =>
-        HUB_ENGINE_ORDER.some((key) => hubPickReady(hubEnginePick(item, key)))
+        HUB_ENGINE_ORDER.some((key) => hubPickReady(hubEnginePick(item, key))) ||
+        Boolean(item.earlySeason)
       );
       renderPapaHubMetrics();
       setupPapaHubFilters();

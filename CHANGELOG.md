@@ -6,6 +6,7 @@
 - Straight wins need a clean last-five picture; otherwise it stays on 1X/X2, DNB or a goal market.
 - Fewer than five matches, or two equally strong last-five stories, return NO PICK.
 - Added a Split Form board, main-board tab/filter, More-sheet link and engine tests.
+- First five league matches now carry a red Early Season flag and stay visible even when engines withhold.
 
 ## v1.25.1 — PapaLock containment and Athena key audit
 
