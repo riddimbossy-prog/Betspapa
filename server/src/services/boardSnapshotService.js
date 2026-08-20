@@ -30,6 +30,8 @@ function compactBoardItem(item) {
     processingMessage: item.processingMessage ?? null,
     pick: item.pick ?? null,
     earlySeason: item.earlySeason ?? null,
+    topFiveClash: item.topFiveClash ?? null,
+    redFlags: item.redFlags || item.pick?.redFlags || [],
     leagueGoalsFlag: item.leagueGoalsFlag ?? item.pick?.leagueGoalsFlag ?? null,
     leagueScoring: item.leagueScoring ?? null
   };
@@ -41,7 +43,10 @@ export function isVisibleBoardPick(pick) {
 }
 
 export function isPublicBoardItem(item) {
-  return isVisibleBoardPick(item?.pick) || Boolean(item?.earlySeason);
+  return isVisibleBoardPick(item?.pick) ||
+    Boolean(item?.earlySeason) ||
+    Boolean(item?.topFiveClash) ||
+    Boolean((item?.redFlags || []).length);
 }
 
 function processingSummary(items) {

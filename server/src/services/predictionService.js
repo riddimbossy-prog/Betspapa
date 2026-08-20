@@ -3,6 +3,8 @@ import { predictMatch } from "../engine/transitionEngine.js";
 import { toPerspectiveGame } from "../engine/splitFormEngine.js";
 import { buildEarlySeasonFlag, playedBeforeKickoff } from "../engine/earlySeasonFlag.js";
 import { classifyLeagueScoring } from "../engine/leagueScoringPolicy.js";
+import { buildTopFiveClashFlag, rankLeagueTable } from "../engine/topFiveClashFlag.js";
+import { collectRedFlags } from "./fixtureRiskService.js";
 import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 import { hydrateProfilesForFixtures } from "./historyHydrationService.js";
@@ -496,7 +498,7 @@ async function loadLeagueFinishedGames(supabase, leagueId, season, cached) {
     for (const games of byTeam.values()) {
       games.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
     }
-    return byTeam;
+    return { byTeam, rows: rows || [] };
   });
 
   cached.set(key, promise);
@@ -672,6 +674,7 @@ function predictionRow(fixture, prediction) {
         ? ["Directional pick — below the strong-pick threshold"]
         : []),
     ...(prediction.earlySeason ? [prediction.earlySeason.reason] : []),
+    ...(prediction.topFiveClash ? [prediction.topFiveClash.reason] : []),
     ...Object.values(prediction.enginePicks || {})
       .flatMap((pick) => pick?.leagueGoalsFlag ? [pick.leagueGoalsFlag.reason] : [])
   ];
@@ -715,6 +718,8 @@ function predictionRow(fixture, prediction) {
       papaSenseResolution: prediction.papaSenseResolution,
       noBet: prediction.noBet,
       earlySeason: prediction.earlySeason || null,
+      topFiveClash: prediction.topFiveClash || null,
+      redFlags: prediction.redFlags || [],
       leagueScoring: prediction.leagueScoring || null
     },
     transition_matrix: prediction.transitionMatrix,
@@ -803,12 +808,13 @@ async function predictFixture(supabase, fixture, cached) {
 
   const home = buildTeamInput(homeTeam, "home", htftMap, goalMap, halfGoalMap);
   const away = buildTeamInput(awayTeam, "away", htftMap, goalMap, halfGoalMap);
-  const recentByTeam = await loadLeagueFinishedGames(
+  const finished = await loadLeagueFinishedGames(
     supabase,
     fixture.league_id,
     fixture.season,
     cached
   );
+  const recentByTeam = finished.byTeam;
   home.recentFive = recentFiveForTeam(recentByTeam, fixture.home_team_id, fixture.fixture_date);
   away.recentFive = recentFiveForTeam(recentByTeam, fixture.away_team_id, fixture.fixture_date);
   const homeGames = recentByTeam.get(Number(fixture.home_team_id)) || [];
@@ -819,6 +825,23 @@ async function predictFixture(supabase, fixture, cached) {
     homeName: homeTeam.name,
     awayName: awayTeam.name
   });
+  const table = rankLeagueTable(finished.rows, {
+    leagueId: fixture.league_id,
+    season: fixture.season,
+    cutoff: new Date(fixture.fixture_date).getTime()
+  });
+  const homeRow = table.find((row) => Number(row.teamId) === Number(fixture.home_team_id));
+  const awayRow = table.find((row) => Number(row.teamId) === Number(fixture.away_team_id));
+  const topFiveClash = buildTopFiveClashFlag({
+    homeRank: homeRow?.rank,
+    awayRank: awayRow?.rank,
+    tableSize: table.length,
+    homePlayed: homeRow?.played || 0,
+    awayPlayed: awayRow?.played || 0,
+    homeName: homeTeam.name,
+    awayName: awayTeam.name
+  });
+  const redFlags = collectRedFlags(earlySeason, topFiveClash);
 
   const profileAudit = buildProfileAudit({
     fixture,
@@ -841,6 +864,8 @@ async function predictFixture(supabase, fixture, cached) {
     odds: fixture.market_odds || fixture.odds || fixture.bookmaker_odds || null,
     calibration: buildCalibrationMap(context.calibrationRows || []),
     earlySeason,
+    topFiveClash,
+    redFlags,
     league: {
       transitionBaseline: deriveLeagueBaseline(context.htftRows),
       goals: {
@@ -854,10 +879,13 @@ async function predictFixture(supabase, fixture, cached) {
 
   const result = predictMatch(input);
   result.earlySeason = earlySeason;
+  result.topFiveClash = topFiveClash;
+  result.redFlags = redFlags;
   result.leagueScoring = classifyLeagueScoring(input.league?.goals);
-  if (earlySeason) {
+  if (redFlags.length) {
     for (const pick of Object.values(result.enginePicks || {})) {
-      pick.cautions = [...new Set([...(pick.cautions || []), earlySeason.reason])];
+      pick.redFlags = redFlags;
+      pick.cautions = [...new Set([...(pick.cautions || []), ...redFlags.map((flag) => flag.reason)])];
     }
   }
   return result;

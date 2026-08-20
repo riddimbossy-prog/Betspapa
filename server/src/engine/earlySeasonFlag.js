@@ -19,6 +19,7 @@ export function buildEarlySeasonFlag({
 
   return {
     level: "red",
+    number: 1,
     code: "EARLY_SEASON",
     label: "EARLY SEASON",
     window: EARLY_SEASON_WINDOW,

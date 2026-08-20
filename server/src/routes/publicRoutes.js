@@ -26,6 +26,7 @@ import { getPreparedEngineBoard, isPublicBoardItem, isVisibleBoardPick } from ".
 import { getPapaLockHistory, getPapaLockPicks, invalidatePapaLockCache } from "../services/papaLockPickService.js";
 import { toPublicPapaLockSlate } from "../engine/papaLockBankerEngine.js";
 import { applyLeagueScoringGuard } from "../engine/leagueScoringPolicy.js";
+import { applyRedFlagsToPick, collectRedFlags } from "../services/fixtureRiskService.js";
 
 export const publicRouter = Router();
 
@@ -276,15 +277,27 @@ function mainBoardRow(map, item) {
       processing: {},
       athena: null,
       earlySeason: item.earlySeason ?? null,
+      topFiveClash: item.topFiveClash ?? null,
+      redFlags: item.redFlags || [],
       leagueScoring: item.leagueScoring ?? null,
       leagueGoalsFlag: item.leagueGoalsFlag ?? null
     });
   }
   const row = map.get(key);
-  for (const field of ["id", "fixtureId", "internalFixtureId", "kickoff", "status", "matchState", "settlement", "venue", "league", "home", "away", "earlySeason", "leagueScoring", "leagueGoalsFlag"]) {
+  for (const field of ["id", "fixtureId", "internalFixtureId", "kickoff", "status", "matchState", "settlement", "venue", "league", "home", "away", "earlySeason", "topFiveClash", "leagueScoring", "leagueGoalsFlag"]) {
     if (row[field] == null && item[field] != null) row[field] = item[field];
   }
   row.engineOutcomes = { ...row.engineOutcomes, ...(item.engineOutcomes || {}) };
+  if ((item.redFlags || []).length) {
+    const seen = new Set((row.redFlags || []).map((flag) => flag.code));
+    row.redFlags = [...(row.redFlags || [])];
+    for (const flag of item.redFlags) {
+      if (flag?.code && !seen.has(flag.code)) {
+        seen.add(flag.code);
+        row.redFlags.push(flag);
+      }
+    }
+  }
   return row;
 }
 
@@ -328,7 +341,7 @@ publicRouter.get("/main-board/today", async (req, res, next) => {
     for (const [engineKey, board] of Object.entries(boards)) {
       for (const item of board.items || []) {
         const row = mainBoardRow(rows, item);
-        row.engines[engineKey] = item.pick || null;
+        row.engines[engineKey] = applyRedFlagsToPick(item.pick || null, item.redFlags || row.redFlags || []);
         row.processing[engineKey] = item.pick ? null : {
           state: item.processingState || board.processing?.state || "scheduled",
           message: item.processingMessage || board.processing?.message || "Waiting for the prepared board."
@@ -340,7 +353,10 @@ publicRouter.get("/main-board/today", async (req, res, next) => {
     for (const pick of publicAthena) {
       const row = mainBoardRow(rows, pick);
       row.athena = pick;
-      row.engines.athena = applyLeagueScoringGuard(normalizedAthenaForMainBoard(pick), row.leagueScoring);
+      row.engines.athena = applyRedFlagsToPick(
+        applyLeagueScoringGuard(normalizedAthenaForMainBoard(pick), row.leagueScoring || pick.leagueScoring),
+        collectRedFlags(row.redFlags, pick.redFlags, pick.topFiveClash, pick.earlySeason)
+      );
       if (pick.settlement?.outcome) row.engineOutcomes.athena = pick.settlement.outcome;
     }
 

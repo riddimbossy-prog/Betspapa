@@ -83,7 +83,7 @@ test("portal paints an early-season red flag on hub and engine cards", async () 
   const css = await readFile(resolve(root, "assets/css/portal.v1220.css"), "utf8");
   assert.match(js, /function earlySeasonMarkup/);
   assert.match(js, /early-season-flag/);
-  assert.match(js, /item\.earlySeason/);
+  assert.match(js, /item\?\.earlySeason/);
   assert.match(css, /\.early-season-flag/);
   assert.match(css, /\.papa-hub-card\.early-season/);
 });

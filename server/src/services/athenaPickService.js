@@ -26,6 +26,7 @@ import {
   classifyLeagueScoringFromMatches
 } from "../engine/leagueScoringPolicy.js";
 import { loadLeagueScoringByFixture } from "./leagueScoringService.js";
+import { applyRedFlagsToPick, loadFixtureRiskPack } from "./fixtureRiskService.js";
 
 const MIN_OVERALL_MATCHES = 8;
 const MIN_VENUE_MATCHES = 5;
@@ -1007,6 +1008,7 @@ async function buildAthenaPicks(supabase, date) {
   const history = attachAthenaEventContext(rawHistory, eventContext);
   const historyByTeam = new Map(teamIds.map((teamId) => [teamId, []]));
   const leagueClimates = await loadLeagueScoringByFixture(supabase, fixtures);
+  const riskPack = await loadFixtureRiskPack(supabase, fixtures, teamMap);
 
   for (const past of history) {
     if (historyByTeam.has(Number(past.home_team_id))) {
@@ -1173,8 +1175,9 @@ async function buildAthenaPicks(supabase, date) {
       const settlement = settleAthenaMarket(fixture, market);
       const selection = athenaSelectionLabel(market, home.name, away.name);
       const grade = Number(chosen.score || 0) >= ATHENA_PRIME_SCORE ? "PRIME" : "QUALIFIED";
+      const risk = riskPack.get(Number(fixture.id)) || {};
 
-      accepted.push({
+      accepted.push(applyRedFlagsToPick({
         fixtureId: fixture.external_fixture_id,
         internalFixtureId: fixture.id,
         kickoff: fixture.fixture_date,
@@ -1185,6 +1188,9 @@ async function buildAthenaPicks(supabase, date) {
         away,
         league,
         leagueScoring: leagueClimate,
+        earlySeason: risk.earlySeason || null,
+        topFiveClash: risk.topFiveClash || null,
+        redFlags: risk.redFlags || [],
         engine: ATHENA_ENGINE_NAME,
         engineVersion: ATHENA_ENGINE_VERSION,
         runtimeEngineVersion: ATHENA_RUNTIME_VERSION,
@@ -1220,7 +1226,7 @@ async function buildAthenaPicks(supabase, date) {
         samples,
         oddsConflict: result.oddsConflict,
         routeAudit: routeAudit(result.routes)
-      });
+      }, risk.redFlags || []));
     } catch (error) {
       rejected.push({
         fixtureId: fixture.external_fixture_id,

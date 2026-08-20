@@ -528,6 +528,13 @@ function candidateForStory(prediction, athenaPick, story, calibrationProfiles) {
   if (leagueFlag) {
     return { rejected: true, story, reasons: [leagueFlag.reason] };
   }
+  const clash = prediction?.topFiveClash ||
+    (prediction?.redFlags || []).find((flag) => flag.code === "TOP5_CLASH") ||
+    (athenaPick?.topFiveClash) ||
+    (athenaPick?.redFlags || []).find((flag) => flag.code === "TOP5_CLASH");
+  if (clash) {
+    return { rejected: true, story, reasons: [clash.reason || "Two top-five teams are too volatile for a PapaLock banker"] };
+  }
 
   const familyPicks = familyPicksForPrediction(prediction, athenaPick);
   const records = FAMILY_KEYS

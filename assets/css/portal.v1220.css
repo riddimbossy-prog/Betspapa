@@ -882,5 +882,9 @@ body.portal-dialog-open {
 .league-climate-chip.low{border:1px solid rgba(96,165,250,.45);background:rgba(23,62,120,.28);color:#bfdbfe}
 .league-climate-chip.rising::after{content:" ↑"; }
 .league-climate-chip.falling::after{content:" ↓"; }
+.hub-engine-row.flagged .hub-engine-pick{gap:.35rem}
+.hub-engine-row.flagged .early-season-flag{margin-top:.15rem}
+.hub-engine-pick .early-season-flag{font-size:.58rem;padding:.22rem .45rem}
+
 
 

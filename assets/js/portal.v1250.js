@@ -493,17 +493,32 @@
 
   function riskFlagMarkup(item, pick = null, extraClass = "") {
     const flags = [
+      ...(item?.redFlags || []),
       item?.earlySeason,
+      item?.topFiveClash,
       item?.leagueGoalsFlag,
-      pick?.leagueGoalsFlag
+      pick?.leagueGoalsFlag,
+      ...(pick?.redFlags || [])
     ].filter(Boolean);
     const unique = [];
     for (const flag of flags) {
       if (!unique.some((entry) => entry.code === flag.code)) unique.push(flag);
     }
+    unique.sort((left, right) => Number(left.number || 99) - Number(right.number || 99));
     return unique.map((flag) =>
       `<span class="early-season-flag ${escapeHtml(extraClass)}" title="${escapeHtml(flag.reason || flag.label || "Risk flag")}">⚑ ${escapeHtml(flag.label || "RED FLAG")}</span>`
     ).join("");
+  }
+
+  function hasRedFlag(item, pick = null) {
+    return Boolean(
+      (item?.redFlags || []).length ||
+      item?.earlySeason ||
+      item?.topFiveClash ||
+      item?.leagueGoalsFlag ||
+      pick?.leagueGoalsFlag ||
+      (pick?.redFlags || []).length
+    );
   }
 
   function earlySeasonMarkup(item, extraClass = "") {
@@ -516,7 +531,7 @@
     if (!pick) {
       const waiting = item.processingState && item.processingState !== "running";
       return `
-        <article class="pick-card processing-card ${item.earlySeason || item.leagueGoalsFlag ? "early-season" : ""}" data-processing="true">
+        <article class="pick-card processing-card ${hasRedFlag(item) ? "early-season" : ""}" data-processing="true">
           <div class="pick-meta">
             <span>${escapeHtml(leagueText(item.league))}</span>
             <span>${escapeHtml(formatKickoff(item.kickoff))}</span>
@@ -539,7 +554,7 @@
 
     if (pick.available === false || pick.key === "no-pick") {
       return `
-        <article class="pick-card no-pick-card ${item.earlySeason || item.leagueGoalsFlag || pick.leagueGoalsFlag ? "early-season" : ""}" data-fixture-id="${escapeHtml(item.fixtureId)}">
+        <article class="pick-card no-pick-card ${hasRedFlag(item, pick) ? "early-season" : ""}" data-fixture-id="${escapeHtml(item.fixtureId)}">
           <div class="pick-meta">
             <span>${escapeHtml(leagueText(item.league))}</span>
             <span>${escapeHtml(formatKickoff(item.kickoff))}</span>
@@ -559,7 +574,7 @@
     }
 
     return `
-      <button class="pick-card ${item.earlySeason || item.leagueGoalsFlag || pick.leagueGoalsFlag ? "early-season" : ""}" data-fixture-id="${escapeHtml(item.fixtureId)}">
+      <button class="pick-card ${hasRedFlag(item, pick) ? "early-season" : ""}" data-fixture-id="${escapeHtml(item.fixtureId)}">
         <div class="pick-meta">
           <span>${escapeHtml(leagueText(item.league))}</span>
           <span>${escapeHtml(formatKickoff(item.kickoff))}</span>
@@ -731,9 +746,10 @@
         : pick.market || (key === "athena" ? "Athena market" : "Market");
     const score = hubPickReady(pick) ? `${hubPickConfidence(pick).toFixed(1)}%` : "";
     const disabled = !pick ? "disabled" : "";
-    return `<button class="hub-engine-row engine-${escapeHtml(key)} ${escapeHtml(state.className)}" data-hub-engine="${escapeHtml(key)}" data-fixture-id="${escapeHtml(item.fixtureId)}" type="button" ${disabled}>
+    const flags = riskFlagMarkup(item, pick, "chip");
+    return `<button class="hub-engine-row engine-${escapeHtml(key)} ${escapeHtml(state.className)} ${hasRedFlag(item, pick) ? "flagged" : ""}" data-hub-engine="${escapeHtml(key)}" data-fixture-id="${escapeHtml(item.fixtureId)}" type="button" ${disabled}>
       <span class="hub-engine-name"><i></i><b>${escapeHtml(meta.name)}</b><small>${escapeHtml(state.label)}</small></span>
-      <span class="hub-engine-pick"><strong>${escapeHtml(selection)}</strong><small>${escapeHtml(market)}</small></span>
+      <span class="hub-engine-pick"><strong>${escapeHtml(selection)}</strong><small>${escapeHtml(market)}</small>${flags}</span>
       <span class="hub-engine-score">${escapeHtml(score || (pick ? "WITHHELD" : "…"))}</span>
     </button>`;
   }
@@ -742,7 +758,7 @@
     const readyKeys = visibleKeys.filter((key) => hubPickReady(hubEnginePick(item, key)));
     const totalReady = HUB_ENGINE_ORDER.filter((key) => hubPickReady(hubEnginePick(item, key))).length;
     const agreement = hubAgreement(item);
-    const early = Boolean(item.earlySeason || item.leagueGoalsFlag);
+    const early = hasRedFlag(item);
     if (!readyKeys.length && !early) return "";
     const rowKeys = readyKeys.length ? readyKeys : visibleKeys;
     return `<article class="papa-hub-card ${early ? "early-season" : ""}" data-hub-fixture="${escapeHtml(item.fixtureId)}">
@@ -825,7 +841,7 @@
         if (league.value && leagueValue !== league.value) return false;
         if (matchState.value && stateClass(item) !== matchState.value) return false;
         const picks = keys.map((key) => ({ key, pick: hubEnginePick(item, key) }));
-        const early = Boolean(item.earlySeason);
+        const early = hasRedFlag(item);
         if (!picks.some(({ pick }) => hubPickReady(pick)) && !early) return false;
         if (market.value && !picks.some(({ pick }) => hubPickReady(pick) && pick?.market === market.value)) return false;
         if (strength.value === "qualified" && !picks.some(({ pick }) => hubPickReady(pick) && pick.qualified !== false)) return false;
@@ -892,7 +908,7 @@
     const renderPayload = (payload, { cached = false } = {}) => {
       hubItems = (payload.items || []).filter((item) =>
         HUB_ENGINE_ORDER.some((key) => hubPickReady(hubEnginePick(item, key))) ||
-        Boolean(item.earlySeason)
+        hasRedFlag(item)
       );
       renderPapaHubMetrics();
       setupPapaHubFilters();
