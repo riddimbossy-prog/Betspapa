@@ -475,10 +475,23 @@
       </div>`;
   }
 
+  function riskFlagMarkup(item, pick = null, extraClass = "") {
+    const flags = [
+      item?.earlySeason,
+      item?.leagueGoalsFlag,
+      pick?.leagueGoalsFlag
+    ].filter(Boolean);
+    const unique = [];
+    for (const flag of flags) {
+      if (!unique.some((entry) => entry.code === flag.code)) unique.push(flag);
+    }
+    return unique.map((flag) =>
+      `<span class="early-season-flag ${escapeHtml(extraClass)}" title="${escapeHtml(flag.reason || flag.label || "Risk flag")}">⚑ ${escapeHtml(flag.label || "RED FLAG")}</span>`
+    ).join("");
+  }
+
   function earlySeasonMarkup(item, extraClass = "") {
-    const flag = item?.earlySeason;
-    if (!flag) return "";
-    return `<span class="early-season-flag ${escapeHtml(extraClass)}" title="${escapeHtml(flag.reason || "First five league matches")}">⚑ ${escapeHtml(flag.label || "EARLY SEASON")}</span>`;
+    return riskFlagMarkup(item, item?.pick, extraClass);
   }
 
   function engineCard(item) {
@@ -487,7 +500,7 @@
     if (!pick) {
       const waiting = item.processingState && item.processingState !== "running";
       return `
-        <article class="pick-card processing-card ${item.earlySeason ? "early-season" : ""}" data-processing="true">
+        <article class="pick-card processing-card ${item.earlySeason || item.leagueGoalsFlag ? "early-season" : ""}" data-processing="true">
           <div class="pick-meta">
             <span>${escapeHtml(leagueText(item.league))}</span>
             <span>${escapeHtml(formatKickoff(item.kickoff))}</span>
@@ -509,7 +522,7 @@
 
     if (pick.available === false || pick.key === "no-pick") {
       return `
-        <article class="pick-card no-pick-card ${item.earlySeason ? "early-season" : ""}" data-fixture-id="${escapeHtml(item.fixtureId)}">
+        <article class="pick-card no-pick-card ${item.earlySeason || item.leagueGoalsFlag || pick.leagueGoalsFlag ? "early-season" : ""}" data-fixture-id="${escapeHtml(item.fixtureId)}">
           <div class="pick-meta">
             <span>${escapeHtml(leagueText(item.league))}</span>
             <span>${escapeHtml(formatKickoff(item.kickoff))}</span>
@@ -528,7 +541,7 @@
     }
 
     return `
-      <button class="pick-card ${item.earlySeason ? "early-season" : ""}" data-fixture-id="${escapeHtml(item.fixtureId)}">
+      <button class="pick-card ${item.earlySeason || item.leagueGoalsFlag || pick.leagueGoalsFlag ? "early-season" : ""}" data-fixture-id="${escapeHtml(item.fixtureId)}">
         <div class="pick-meta">
           <span>${escapeHtml(leagueText(item.league))}</span>
           <span>${escapeHtml(formatKickoff(item.kickoff))}</span>
@@ -540,6 +553,7 @@
           <div class="pick-team">${logoMarkup(item.away)}<span>${escapeHtml(item.away?.name || "Away")}</span></div>
         </div>
         <span class="pick-badge">${escapeHtml(pick.qualified ? "Qualified" : "Directional")}</span>
+        ${riskFlagMarkup(item, pick)}
         <strong class="pick-selection">${escapeHtml(pick.selection || pick.market)}</strong>
         <div class="pick-bottom">
           <span>${escapeHtml(pick.market || "Market")}</span>
@@ -709,7 +723,7 @@
     const readyKeys = visibleKeys.filter((key) => hubPickReady(hubEnginePick(item, key)));
     const totalReady = HUB_ENGINE_ORDER.filter((key) => hubPickReady(hubEnginePick(item, key))).length;
     const agreement = hubAgreement(item);
-    const early = Boolean(item.earlySeason);
+    const early = Boolean(item.earlySeason || item.leagueGoalsFlag);
     if (!readyKeys.length && !early) return "";
     const rowKeys = readyKeys.length ? readyKeys : visibleKeys;
     return `<article class="papa-hub-card ${early ? "early-season" : ""}" data-hub-fixture="${escapeHtml(item.fixtureId)}">

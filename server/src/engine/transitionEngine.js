@@ -1,4 +1,5 @@
 import { selectSplitFormPick } from "./splitFormEngine.js";
+import { applyLeagueScoringGuard, classifyLeagueScoring } from "./leagueScoringPolicy.js";
 import { predictMatch as predictWithOverhaul } from "./overhaulEngine.js";
 import { predictMatch as predictWithConsensusSupport } from "./consensusSupportEngine.js";
 import {
@@ -891,13 +892,17 @@ function buildEngineSuite(markets, overhaul, support, input, classification) {
     });
   };
 
-  return {
+  const climate = classifyLeagueScoring(input.league?.goals);
+  const suite = {
     primary: build("primary", "Papa's Pick", selections.primary),
     aggressive: build("aggressive", "Aggressive", selections.aggressive),
     safer: build("safer", "Safer", selections.safer),
     venue: build("venue", "Venue Pattern", selections.venue),
     form: selectSplitFormPick(input)
   };
+  return Object.fromEntries(
+    Object.entries(suite).map(([key, pick]) => [key, applyLeagueScoringGuard(pick, climate)])
+  );
 }
 
 function buildDecisionTrace(primary, markets, overhaul, support, enginePicks) {

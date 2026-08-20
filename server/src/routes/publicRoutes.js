@@ -25,6 +25,7 @@ import {
 import { getPreparedEngineBoard, isPublicBoardItem, isVisibleBoardPick } from "../services/boardSnapshotService.js";
 import { getPapaLockHistory, getPapaLockPicks, invalidatePapaLockCache } from "../services/papaLockPickService.js";
 import { toPublicPapaLockSlate } from "../engine/papaLockBankerEngine.js";
+import { applyLeagueScoringGuard } from "../engine/leagueScoringPolicy.js";
 
 export const publicRouter = Router();
 
@@ -274,11 +275,13 @@ function mainBoardRow(map, item) {
       engines: {},
       processing: {},
       athena: null,
-      earlySeason: item.earlySeason ?? null
+      earlySeason: item.earlySeason ?? null,
+      leagueScoring: item.leagueScoring ?? null,
+      leagueGoalsFlag: item.leagueGoalsFlag ?? null
     });
   }
   const row = map.get(key);
-  for (const field of ["id", "fixtureId", "internalFixtureId", "kickoff", "status", "matchState", "settlement", "venue", "league", "home", "away", "earlySeason"]) {
+  for (const field of ["id", "fixtureId", "internalFixtureId", "kickoff", "status", "matchState", "settlement", "venue", "league", "home", "away", "earlySeason", "leagueScoring", "leagueGoalsFlag"]) {
     if (row[field] == null && item[field] != null) row[field] = item[field];
   }
   row.engineOutcomes = { ...row.engineOutcomes, ...(item.engineOutcomes || {}) };
@@ -337,7 +340,7 @@ publicRouter.get("/main-board/today", async (req, res, next) => {
     for (const pick of publicAthena) {
       const row = mainBoardRow(rows, pick);
       row.athena = pick;
-      row.engines.athena = normalizedAthenaForMainBoard(pick);
+      row.engines.athena = applyLeagueScoringGuard(normalizedAthenaForMainBoard(pick), row.leagueScoring);
       if (pick.settlement?.outcome) row.engineOutcomes.athena = pick.settlement.outcome;
     }
 

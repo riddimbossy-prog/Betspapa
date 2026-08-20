@@ -21,6 +21,10 @@ import { dateRangeUtc } from "../utils/date.js";
 import { fixtureMatchState } from "./matchStateService.js";
 import { competitionPolicy } from "../engine/competitionPolicy.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
+import {
+  applyLeagueScoringGuard,
+  classifyLeagueScoringFromMatches
+} from "../engine/leagueScoringPolicy.js";
 
 const MIN_OVERALL_MATCHES = 8;
 const MIN_VENUE_MATCHES = 5;
@@ -1130,10 +1134,42 @@ async function buildAthenaPicks(supabase, date) {
         continue;
       }
 
-      const market = arbitration.primary.market;
+      const leagueClimate = classifyLeagueScoringFromMatches([...homeRows, ...awayRows]);
+      let chosen = arbitration.primary;
+      const guarded = applyLeagueScoringGuard({
+        available: true,
+        key: chosen.market,
+        marketId: chosen.market,
+        market: marketGroup(chosen.market),
+        selection: athenaSelectionLabel(chosen.market, home.name, away.name)
+      }, leagueClimate);
+      if (guarded?.available === false) {
+        const fallback = (arbitration.alternatives || []).find((item) => {
+          if (!item?.market || item.market === MARKETS.NO_PICK) return false;
+          const next = applyLeagueScoringGuard({
+            available: true,
+            key: item.market,
+            marketId: item.market,
+            market: marketGroup(item.market),
+            selection: athenaSelectionLabel(item.market, home.name, away.name)
+          }, leagueClimate);
+          return next?.available !== false;
+        });
+        if (!fallback) {
+          rejected.push({
+            fixtureId: fixture.external_fixture_id,
+            reason: guarded.leagueGoalsFlag?.reason || "Athena totals pick contradicted the league scoring climate",
+            failures: [guarded.leagueGoalsFlag?.code || "LEAGUE_GOALS"]
+          });
+          continue;
+        }
+        chosen = fallback;
+      }
+
+      const market = chosen.market;
       const settlement = settleAthenaMarket(fixture, market);
       const selection = athenaSelectionLabel(market, home.name, away.name);
-      const grade = Number(arbitration.primary.score || 0) >= ATHENA_PRIME_SCORE ? "PRIME" : "QUALIFIED";
+      const grade = Number(chosen.score || 0) >= ATHENA_PRIME_SCORE ? "PRIME" : "QUALIFIED";
 
       accepted.push({
         fixtureId: fixture.external_fixture_id,
@@ -1152,11 +1188,11 @@ async function buildAthenaPicks(supabase, date) {
         mode: "swing-half-goals-v3",
         separationVersion: ATHENA_SEPARATION_VERSION,
         grade,
-        score: Number(arbitration.primary.score || 0),
+        score: Number(chosen.score || 0),
         marketId: market,
         market: marketGroup(market),
         selection,
-        selected: arbitration.primary,
+        selected: chosen,
         classification: result.classification,
         separation,
         story: result.story,

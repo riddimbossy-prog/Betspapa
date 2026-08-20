@@ -7,6 +7,7 @@
 - Fewer than five matches, or two equally strong last-five stories, return NO PICK.
 - Added a Split Form board, main-board tab/filter, More-sheet link and engine tests.
 - First five league matches now carry a red Early Season flag and stay visible even when engines withhold.
+- High-scoring leagues no longer get Under totals tips; low-scoring leagues no longer get Over totals tips. Remaining clashes get a red League Goals flag.
 
 ## v1.25.1 — PapaLock containment and Athena key audit
 

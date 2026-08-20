@@ -1,4 +1,5 @@
 import { competitionPolicy } from "./competitionPolicy.js";
+import { buildLeagueGoalsFlag, classifyLeagueScoring } from "./leagueScoringPolicy.js";
 
 const PAPA_SENSE_KEYS = ["primary", "safer", "aggressive"];
 const FAMILY_KEYS = ["papasense", "venue", "athena"];
@@ -515,6 +516,18 @@ function candidateForStory(prediction, athenaPick, story, calibrationProfiles) {
   if (!gate.passed) return { rejected: true, story, reasons: gate.failures };
   const target = targetForStory(story, prediction);
   if (!target) return { rejected: true, story, reasons: ["No safe PapaLock target exists for this story"] };
+  const climate = prediction?.engine?.leagueScoring ||
+    prediction?.market_scores?.leagueScoring ||
+    classifyLeagueScoring(prediction?.league?.goals || {});
+  const leagueFlag = buildLeagueGoalsFlag({
+    key: target.key,
+    market: target.market,
+    selection: target.selection,
+    available: true
+  }, climate);
+  if (leagueFlag) {
+    return { rejected: true, story, reasons: [leagueFlag.reason] };
+  }
 
   const familyPicks = familyPicksForPrediction(prediction, athenaPick);
   const records = FAMILY_KEYS

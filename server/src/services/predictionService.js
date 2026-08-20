@@ -2,6 +2,7 @@ import { ENGINE_VERSION, PREDICTABLE_STATUSES } from "../config.js";
 import { predictMatch } from "../engine/transitionEngine.js";
 import { toPerspectiveGame } from "../engine/splitFormEngine.js";
 import { buildEarlySeasonFlag, playedBeforeKickoff } from "../engine/earlySeasonFlag.js";
+import { classifyLeagueScoring } from "../engine/leagueScoringPolicy.js";
 import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 import { hydrateProfilesForFixtures } from "./historyHydrationService.js";
@@ -670,7 +671,9 @@ function predictionRow(fixture, prediction) {
       : !primary?.qualified
         ? ["Directional pick — below the strong-pick threshold"]
         : []),
-    ...(prediction.earlySeason ? [prediction.earlySeason.reason] : [])
+    ...(prediction.earlySeason ? [prediction.earlySeason.reason] : []),
+    ...Object.values(prediction.enginePicks || {})
+      .flatMap((pick) => pick?.leagueGoalsFlag ? [pick.leagueGoalsFlag.reason] : [])
   ];
 
   return {
@@ -711,7 +714,8 @@ function predictionRow(fixture, prediction) {
       analysisFingerprint: prediction.analysisFingerprint,
       papaSenseResolution: prediction.papaSenseResolution,
       noBet: prediction.noBet,
-      earlySeason: prediction.earlySeason || null
+      earlySeason: prediction.earlySeason || null,
+      leagueScoring: prediction.leagueScoring || null
     },
     transition_matrix: prediction.transitionMatrix,
     reasons,
@@ -842,6 +846,7 @@ async function predictFixture(supabase, fixture, cached) {
       goals: {
         bttsRate: weightedLeagueGoalRate(context.goalRows, "btts_rate", 0.5),
         over15Rate: weightedLeagueGoalRate(context.goalRows, "over_15_rate", 0.7),
+        over25Rate: weightedLeagueGoalRate(context.goalRows, "over_25_rate", 0.48),
         under35Rate: weightedLeagueGoalRate(context.goalRows, "under_35_rate", 0.72)
       }
     }
@@ -849,6 +854,7 @@ async function predictFixture(supabase, fixture, cached) {
 
   const result = predictMatch(input);
   result.earlySeason = earlySeason;
+  result.leagueScoring = classifyLeagueScoring(input.league?.goals);
   if (earlySeason) {
     for (const pick of Object.values(result.enginePicks || {})) {
       pick.cautions = [...new Set([...(pick.cautions || []), earlySeason.reason])];

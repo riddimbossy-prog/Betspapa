@@ -19,6 +19,7 @@ Only the last five finished same-league matches for each team, before kickoff.
 - A dominant last-five side can produce a result market; five matches still prefer DNB or 1X unless the split is extremely clean.
 - If neither side dominates, form goals decide Over 1.5, Over 2.5, Under 3.5, BTTS, team over 0.5 or second-half over 0.5.
 - Close competing stories are withheld.
+- Under totals are not issued in high-scoring leagues. Over 2.5 is not issued in low-scoring leagues.
 
 ## Early season
 

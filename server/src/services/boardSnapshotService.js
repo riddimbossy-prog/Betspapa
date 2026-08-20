@@ -29,7 +29,9 @@ function compactBoardItem(item) {
     processingState: item.processingState ?? null,
     processingMessage: item.processingMessage ?? null,
     pick: item.pick ?? null,
-    earlySeason: item.earlySeason ?? null
+    earlySeason: item.earlySeason ?? null,
+    leagueGoalsFlag: item.leagueGoalsFlag ?? item.pick?.leagueGoalsFlag ?? null,
+    leagueScoring: item.leagueScoring ?? null
   };
 }
 

@@ -1,3 +1,5 @@
+import { classifyLeagueScoring, isContradictingTotalsKey } from "./leagueScoringPolicy.js";
+
 export const SPLIT_FORM_VERSION = "splitform-v1.0.0";
 export const SPLIT_FORM_WINDOW = 5;
 export const SPLIT_FORM_MIN_GAMES = 5;
@@ -288,8 +290,10 @@ export function selectSplitFormPick(input = {}) {
   const gap = homePower - awayPower;
   const audit = { home, away, expectedGoals: xg, formPicture: picture };
 
+  const climate = classifyLeagueScoring(input.league?.goals);
   const candidates = [];
   const push = (key, score, story, reasons) => {
+    if (isContradictingTotalsKey(key, climate)) return;
     if (score >= SPLIT_FORM_QUALIFY) {
       candidates.push({ key, score: clamp(score), story, reasons });
     }
