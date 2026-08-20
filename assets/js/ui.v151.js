@@ -31,7 +31,7 @@
     header.insertAdjacentElement("afterend", wrap);
   }
 
-  const enginePages = ["papas-pick.html", "aggressive.html", "safer.html", "venue-pattern.html"];
+  const enginePages = ["papas-pick.html", "aggressive.html", "safer.html", "venue-pattern.html", "form.html"];
   if (enginePages.includes(path) && !document.querySelector(".engine-subnav-v150")) {
     const hero = document.querySelector(".portal-hero");
     if (hero) {
@@ -42,7 +42,8 @@
         ["papas-pick.html", "Papa’s Pick"],
         ["aggressive.html", "Aggressive"],
         ["safer.html", "Safer"],
-        ["venue-pattern.html", "Venue Pattern"]
+        ["venue-pattern.html", "Venue Pattern"],
+        ["form.html", "Split Form"]
       ];
       nav.innerHTML = tabs.map(([href,label]) => `<a href="${href}" class="${path===href ? "active" : ""}">${label}</a>`).join("");
       hero.insertAdjacentElement("afterend", nav);

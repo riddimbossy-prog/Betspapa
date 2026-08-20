@@ -458,7 +458,7 @@ function plainExplanation(story, prediction, records, evidence, score) {
 
 function buildOtherViews(prediction, athenaPick) {
   const views = [];
-  for (const key of ["primary", "safer", "aggressive", "venue"]) {
+  for (const key of ["primary", "safer", "aggressive", "venue", "form"]) {
     const pick = prediction?.engines?.[key];
     if (!pick || pick.available === false) continue;
     views.push({

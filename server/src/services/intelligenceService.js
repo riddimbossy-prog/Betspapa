@@ -3,20 +3,22 @@ import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 import { gradeEnginePick } from "./gradingService.js";
 
-export const ENGINE_KEYS = ["primary", "aggressive", "safer", "venue"];
+export const ENGINE_KEYS = ["primary", "aggressive", "safer", "venue", "form"];
 
 export const ENGINE_LABELS = {
   primary: "Papa's Pick",
   aggressive: "Aggressive",
   safer: "Safer",
-  venue: "Venue Pattern"
+  venue: "Venue Pattern",
+  form: "Split Form"
 };
 
 const BANKER_THRESHOLDS = {
   primary: 72,
   aggressive: 68,
   safer: 70,
-  venue: 70
+  venue: 70,
+  form: 74
 };
 
 function confidencePercent(value) {

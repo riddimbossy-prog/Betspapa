@@ -1,3 +1,4 @@
+import { selectSplitFormPick } from "./splitFormEngine.js";
 import { predictMatch as predictWithOverhaul } from "./overhaulEngine.js";
 import { predictMatch as predictWithConsensusSupport } from "./consensusSupportEngine.js";
 import {
@@ -894,7 +895,8 @@ function buildEngineSuite(markets, overhaul, support, input, classification) {
     primary: build("primary", "Papa's Pick", selections.primary),
     aggressive: build("aggressive", "Aggressive", selections.aggressive),
     safer: build("safer", "Safer", selections.safer),
-    venue: build("venue", "Venue Pattern", selections.venue)
+    venue: build("venue", "Venue Pattern", selections.venue),
+    form: selectSplitFormPick(input)
   };
 }
 
@@ -1092,6 +1094,7 @@ export function predictMatch(input) {
       "Safer can only choose a mathematically broader market from Papa's same story.",
       "Aggressive can only choose a sharper market from Papa's same story.",
       "Venue Pattern is independent and requires a minimum home-versus-away sample and route margin.",
+      "Split Form is independent and only uses each team's last five HT/FT splits, W-D-L form and form goals.",
       "Directional conflict blocks team-result markets and redirects only to compatible neutral markets.",
       "Cup, friendly and unverified competitions are blocked before every engine runs.",
       "Specialist half markets require overall, correct venue and recent evidence." ,

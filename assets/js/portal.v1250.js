@@ -44,6 +44,11 @@
       short: "Venue",
       description: "An independent comparison of the home team’s home behaviour against the away team’s away behaviour. It can return NO PICK when the venue route is weak or conflicted."
     },
+    form: {
+      name: "Split Form",
+      short: "Form",
+      description: "An independent last-five engine. It only uses HT/FT splits, W-D-L form and form goals from each team’s last five finished league matches."
+    },
     athena: {
       name: "Athena",
       short: "Athena",
@@ -417,6 +422,23 @@
       </section>`;
   }
 
+  function formPictureMarkup(pick) {
+    const picture = pick?.explanationEvidence?.formPicture || pick?.internalAudit?.formPicture;
+    if (!picture?.home || !picture?.away) return "";
+    const side = (row) => `
+      <div>
+        <strong>${escapeHtml(row.name || "Team")}</strong>
+        <span>Form <b>${escapeHtml(row.form || "—")}</b></span>
+        <span>Points <b>${escapeHtml(String(row.points ?? "—"))}/15</b></span>
+        <span>Form goals <b>${escapeHtml(row.goals || "—")}</b></span>
+        <small>${escapeHtml(row.scoreline || "")}</small>
+      </div>`;
+    return `<section class="athena-half-picture">
+      <h3>Last five — HT/FT, form and form goals</h3>
+      <div class="athena-half-grid">${side(picture.home)}${side(picture.away)}</div>
+    </section>`;
+  }
+
   function explanationDialog(item, pick) {
     const explanation =
       pick?.explanationParagraph ||
@@ -439,6 +461,7 @@
       </div>
       ${htftGateMarkup(pick)}
       ${noDrawPolicyMarkup(pick)}
+      ${formPictureMarkup(pick)}
       <div class="reason-columns">
         <section>
           <h3>Why this pick</h3>
@@ -608,7 +631,7 @@
     render();
   }
 
-  const HUB_ENGINE_ORDER = ["primary", "safer", "aggressive", "venue", "athena"];
+  const HUB_ENGINE_ORDER = ["primary", "safer", "aggressive", "venue", "form", "athena"];
 
   function hubEnginePick(item, key) {
     return item?.engines?.[key] || null;

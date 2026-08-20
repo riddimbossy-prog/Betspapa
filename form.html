@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta content="Papa’s Pick is the all-engine football board for Papa, Safer, Aggressive, Venue Pattern and Athena, with prepared picks and live status." name="description"/><meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
 <meta content="#070b16" name="theme-color"/>
-<title>Papa’s Pick — BetsPapa</title>
+<title>Split Form Engine — BetsPapa</title>
 <link href="assets/images/favicon-64.png" rel="icon" type="image/png"/>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -42,24 +42,24 @@
       });
     })();
   </script>
-<link href="https://betspapa.com/" rel="canonical"/></head>
-<body data-engine="primary" data-page="papa-hub" data-start-page="papas-pick">
+</head>
+<body data-engine="form" data-page="engine">
 <div aria-live="polite" class="pwa-launch-splash" id="pwaSplash" role="status">
-<span class="pwa-splash-accessible">Launching BetsPapa — Papa Knows the Game</span>
+<span class="pwa-splash-accessible">Launching BetsPapa Split Form</span>
 </div>
 <header class="portal-header">
 <a class="portal-brand" href="index.html">
 <img alt="" src="assets/images/betspapa-papa-mark.png"/>
 <span><strong>BETS<span>PAPA</span></strong><small>PAPA KNOWS THE GAME</small></span>
 </a>
-<nav aria-label="Primary navigation" class="portal-nav" id="portalNav"><a aria-current="page" class="active" href="index.html">Papa’s Pick</a><a href="bankers.html">Bankers</a><a href="athena.html">Athena</a><a href="live-fixtures.html">Live &amp; Fixtures</a><a href="results-intelligence.html">Results</a><a href="responsible.html">More</a></nav>
+<nav aria-label="Primary navigation" class="portal-nav" id="portalNav"><a href="index.html">Papa’s Pick</a><a href="bankers.html">Bankers</a><a href="athena.html">Athena</a><a href="live-fixtures.html">Live &amp; Fixtures</a><a href="results-intelligence.html">Results</a><a href="responsible.html">More</a></nav>
 <button aria-controls="portalNav" aria-expanded="false" aria-label="Open navigation" class="portal-menu" id="portalMenu" type="button">☰</button>
 </header>
 <main class="portal-main">
 <section class="portal-hero">
-<span class="eyebrow">BetsPapa v1.25.0 · Picks-only main board</span>
-<h1 id="portalTitle">Papa’s Pick</h1>
-<p id="portalDescription">Papa’s Pick, Safer, Aggressive, Venue Pattern, Split Form and Athena are compared in one place. Fixtures are shown only when at least one engine has a real selection.</p>
+<span class="eyebrow">BetsPapa v1.25.0</span>
+<h1 id="portalTitle">Split Form Engine</h1>
+<p id="portalDescription">Independent last-five engine: HT/FT splits, W-D-L form and form goals from each team’s last five finished league matches. Papa, Safer, Aggressive, Venue and Athena are left unchanged.</p>
 </section>
 <div class="status-strip" id="portalStatus"><span>Connecting to live data…</span><small></small></div>
 <div aria-label="Match status legend" class="match-state-legend">
@@ -68,28 +68,18 @@
 <span><i class="finished"></i> Settling</span>
 <span><i class="settled"></i> Settled</span>
 </div>
-<div class="portal-toolbar papa-hub-toolbar">
+<div class="portal-toolbar">
 <label><span>Date</span><input id="dateFilter" type="date"/></label>
-<label><span>Engine</span><select id="engineFilter"><option value="">All engines</option><option value="primary">Papa’s Pick</option><option value="safer">Safer</option><option value="aggressive">Aggressive</option><option value="venue">Venue Pattern</option><option value="form">Split Form</option><option value="athena">Athena</option></select></label>
 <label><span>League</span><select id="leagueFilter"><option value="">All leagues</option></select></label>
 <label><span>Market</span><select id="marketFilter"><option value="">All markets</option></select></label>
-<label><span>Strength</span><select id="strengthFilter"><option value="">All strengths</option><option value="qualified">Strong — Qualified</option><option value="directional">Directional — Not a banker</option></select></label>
+<label><span>Strength</span><select id="strengthFilter"><option value="">All strengths</option><option value="qualified">Strong — Qualified</option><option value="directional">Directional — Not a banker</option><option value="no-pick">No Pick — Withheld</option></select></label>
 <label><span>Match state</span><select id="matchStateFilter"><option value="">All states</option><option value="pending">Pending</option><option value="live">Live</option><option value="finished">Settling</option><option value="settled">Settled</option></select></label>
-<label><span>Search</span><input id="searchFilter" placeholder="Team, league, engine or market" type="search"/></label>
+<label><span>Search</span><input id="searchFilter" placeholder="Team, league or market" type="search"/></label>
 <button id="clearFilters" type="button">Clear</button>
 <button id="refreshButton" type="button">Refresh</button>
 </div>
-<div class="hub-engine-tabs" id="hubEngineTabs" aria-label="Choose engine">
-<button class="active" data-engine-tab="" type="button">All engines</button>
-<button data-engine-tab="primary" type="button">Papa’s Pick</button>
-<button data-engine-tab="safer" type="button">Safer</button>
-<button data-engine-tab="aggressive" type="button">Aggressive</button>
-<button data-engine-tab="venue" type="button">Venue Pattern</button>
-<button data-engine-tab="form" type="button">Split Form</button>
-<button data-engine-tab="athena" type="button">Athena</button>
-</div>
 <section class="metric-row" id="portalMetrics"></section>
-<div class="section-title"><h2>All-engine picks board</h2><p><span id="marketCount">0</span> market families · fixtures without a real pick stay off the public board</p></div><section class="papa-hub-grid" id="portalContent"></section>
+<div class="section-title"><h2>Selections and match status</h2><p><span id="marketCount">0</span> market families</p></div><section class="portal-grid" id="portalContent"></section>
 <footer class="portal-footer">
 <span>Sports analytics only. Predictions are not guarantees. 18+.</span>
 <div>

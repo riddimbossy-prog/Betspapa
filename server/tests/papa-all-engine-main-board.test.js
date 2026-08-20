@@ -8,10 +8,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../..");
 const source = (path) => readFile(resolve(root, path), "utf8");
 
-test("Papa's Pick main page exposes all five engines", async () => {
+test("Papa's Pick main page exposes all engines including Split Form", async () => {
   const html = await source("index.html");
   assert.match(html, /data-page="papa-hub"/);
-  for (const name of ["Papa’s Pick", "Safer", "Aggressive", "Venue Pattern", "Athena"]) {
+  for (const name of ["Papa’s Pick", "Safer", "Aggressive", "Venue Pattern", "Split Form", "Athena"]) {
     assert.match(html, new RegExp(name));
   }
   assert.match(html, /id="engineFilter"/);
@@ -20,7 +20,7 @@ test("Papa's Pick main page exposes all five engines", async () => {
 
 test("main board client renders fixture-centred engine rows", async () => {
   const js = await source("assets/js/portal.v1250.js");
-  assert.match(js, /HUB_ENGINE_ORDER = \["primary", "safer", "aggressive", "venue", "athena"\]/);
+  assert.match(js, /HUB_ENGINE_ORDER = \["primary", "safer", "aggressive", "venue", "form", "athena"\]/);
   assert.match(js, /\/api\/main-board\/today/);
   assert.match(js, /function hubEngineRow/);
   assert.match(js, /function loadPapaHubPage/);
@@ -32,7 +32,7 @@ test("public API merges all engines for the main board", async () => {
   const routes = await source("server/src/routes/publicRoutes.js");
   assert.match(routes, /publicRouter\.get\("\/main-board\/today"/);
   assert.match(routes, /normalizedAthenaForMainBoard/);
-  assert.match(routes, /engines: \["primary", "safer", "aggressive", "venue", "athena"\]/);
+  assert.match(routes, /engines: \["primary", "safer", "aggressive", "venue", "form", "athena"\]/);
   assert.match(routes, /some\(\(pick\) => isVisibleBoardPick\(pick\)\)/);
   assert.match(routes, /hiddenFixtures/);
 });
@@ -44,4 +44,5 @@ test("v1.25 PWA refreshes the picks-only all-engine assets", async () => {
   assert.match(sw, /portal\.v1250\.js/);
   assert.match(sw, /mobile-nav\.v1240\.js/);
   assert.match(sw, /mobile-nav\.v1240\.css/);
+  assert.match(sw, /form\.html/);
 });

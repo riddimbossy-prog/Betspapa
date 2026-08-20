@@ -107,7 +107,7 @@ async function buildAllSnapshots(supabase, date) {
   const data = await loadPreparedBoardData(supabase, date);
   const generatedAt = new Date().toISOString();
   const result = new Map();
-  for (const engineKey of ["primary", "aggressive", "safer", "venue"]) {
+  for (const engineKey of ["primary", "aggressive", "safer", "venue", "form"]) {
     result.set(engineKey, createEngineBoardSnapshot({
       date,
       engineKey,

@@ -50,6 +50,7 @@
             <a href="${link("results-intelligence.html")}"><strong>Results</strong><small>Settled picks and engine performance</small></a>
             <a href="${link("live-fixtures.html")}"><strong>Live & Fixtures</strong><small>Fixtures, live scores and settlement</small></a>
             <a href="${link("venue-pattern.html")}"><strong>Venue Pattern</strong><small>Home venue against away behaviour</small></a>
+            <a href="${link("form.html")}"><strong>Split Form</strong><small>Last-five HT/FT, form and form goals</small></a>
             <a href="${link("responsible.html")}"><strong>Responsible Use</strong><small>Limits and safe-use guidance</small></a>
             <a href="${link("privacy.html")}"><strong>Privacy</strong><small>How site information is handled</small></a>
             <a href="${link("terms.html")}"><strong>Terms</strong><small>Use of BetsPapa content</small></a>

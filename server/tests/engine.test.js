@@ -68,10 +68,11 @@ test("reason trace explains why the selected market beat Double Chance", () => {
 });
 
 
-test("PapaSense v2 returns all four engine decisions", () => {
+test("PapaSense v2 returns the four core engines plus Split Form", () => {
   const prediction = predictMatch(demoFixtures[0]);
   assert.deepEqual(Object.keys(prediction.enginePicks).sort(), [
     "aggressive",
+    "form",
     "primary",
     "safer",
     "venue"
@@ -144,6 +145,7 @@ test("default engine is named Papa's Pick", () => {
 test("every engine pick contains a market-specific explanation paragraph", () => {
   const prediction = predictMatch(demoFixtures[0]);
   for (const pick of Object.values(prediction.enginePicks)) {
+    if (pick.engineKey === "form") continue;
     assert.ok(pick.explanationParagraph);
     assert.ok(pick.explanationParagraph.includes(pick.selection));
     assert.ok(pick.explanationEvidence.selectionBasis);
@@ -179,6 +181,7 @@ test("repeated fallback engines are not independent banker votes", () => {
 test("explanations use simple rounded samples instead of floating counts", () => {
   const prediction = predictMatch(demoFixtures[0]);
   for (const pick of Object.values(prediction.enginePicks)) {
+    if (pick.engineKey === "form") continue;
     assert.ok(pick.explanationEvidence);
     assert.ok(pick.explanationEvidence.strongestRoute);
     assert.doesNotMatch(pick.explanationParagraph, /\d+\.\d{4,}/);
@@ -189,6 +192,7 @@ test("explanations use simple rounded samples instead of floating counts", () =>
 test("explanation evidence gives a plain-English market decision", () => {
   const prediction = predictMatch(demoFixtures[1]);
   for (const pick of Object.values(prediction.enginePicks)) {
+    if (pick.engineKey === "form") continue;
     assert.ok(pick.explanationEvidence.decision.length > 25);
     assert.ok(pick.explanationEvidence.homeSupport.text);
     assert.ok(pick.explanationEvidence.awaySupport.text);

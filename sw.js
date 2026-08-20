@@ -10,6 +10,7 @@ const CORE_ASSETS = [
   "/aggressive.html",
   "/safer.html",
   "/venue-pattern.html",
+  "/form.html",
   "/athena.html",
   "/boss-picks.html",
   "/live-fixtures.html",

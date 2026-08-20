@@ -1,4 +1,14 @@
+## v1.25.2 — Split Form engine
+
+- Added Split Form as an independent engine. It does not copy Papa, Safer, Aggressive, Venue or Athena.
+- Split Form only reads each team's last five finished league matches.
+- It uses three signals: HT/FT split, W-D-L form, and form goals.
+- Straight wins need a clean last-five picture; otherwise it stays on 1X/X2, DNB or a goal market.
+- Fewer than five matches, or two equally strong last-five stories, return NO PICK.
+- Added a Split Form board, main-board tab/filter, More-sheet link and engine tests.
+
 ## v1.25.1 — PapaLock containment and Athena key audit
+
 
 - Mapped Athena market IDs (`OVER_2_5`, `HOME_TEAM_OVER_0_5`, `SECOND_HALF_OVER_0_5`, …) onto PapaLock keys.
 - Restricted story routing to true containments: Win Either Half no longer becomes 1X, BTTS No no longer becomes Under 3.5, first-half Over 0.5 no longer becomes Over 1.5.

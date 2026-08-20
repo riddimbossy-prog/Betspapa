@@ -1,5 +1,6 @@
 import { ENGINE_VERSION, PREDICTABLE_STATUSES } from "../config.js";
 import { predictMatch } from "../engine/transitionEngine.js";
+import { toPerspectiveGame } from "../engine/splitFormEngine.js";
 import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 import { hydrateProfilesForFixtures } from "./historyHydrationService.js";
@@ -469,6 +470,47 @@ function buildCalibrationMap(rows = []) {
   return output;
 }
 
+async function loadLeagueFinishedGames(supabase, leagueId, season, cached) {
+  const key = `ft-games:${leagueId}:${season}`;
+  if (cached.has(key)) return cached.get(key);
+
+  const promise = fetchAllRows(() =>
+    supabase
+      .from("fixtures")
+      .select("id,league_id,season,fixture_date,home_team_id,away_team_id,halftime_home,halftime_away,fulltime_home,fulltime_away,status")
+      .eq("league_id", leagueId)
+      .eq("season", season)
+      .eq("status", "FT")
+      .order("fixture_date", { ascending: false })
+  ).then((rows) => {
+    const byTeam = new Map();
+    for (const row of rows || []) {
+      for (const teamId of [row.home_team_id, row.away_team_id]) {
+        const id = Number(teamId);
+        if (!byTeam.has(id)) byTeam.set(id, []);
+        byTeam.get(id).push(toPerspectiveGame(row, id));
+      }
+    }
+    for (const games of byTeam.values()) {
+      games.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    }
+    return byTeam;
+  });
+
+  cached.set(key, promise);
+  return promise;
+}
+
+function recentFiveForTeam(byTeam, teamId, kickoff) {
+  const cutoff = new Date(kickoff || 0).getTime();
+  return (byTeam.get(Number(teamId)) || [])
+    .filter((game) => {
+      const time = new Date(game.date || 0).getTime();
+      return Number.isFinite(time) && time < cutoff;
+    })
+    .slice(0, 5);
+}
+
 async function loadTeams(supabase, teamIds) {
   const { data, error } = await supabase
     .from("teams")
@@ -754,6 +796,14 @@ async function predictFixture(supabase, fixture, cached) {
 
   const home = buildTeamInput(homeTeam, "home", htftMap, goalMap, halfGoalMap);
   const away = buildTeamInput(awayTeam, "away", htftMap, goalMap, halfGoalMap);
+  const recentByTeam = await loadLeagueFinishedGames(
+    supabase,
+    fixture.league_id,
+    fixture.season,
+    cached
+  );
+  home.recentFive = recentFiveForTeam(recentByTeam, fixture.home_team_id, fixture.fixture_date);
+  away.recentFive = recentFiveForTeam(recentByTeam, fixture.away_team_id, fixture.fixture_date);
 
   const profileAudit = buildProfileAudit({
     fixture,

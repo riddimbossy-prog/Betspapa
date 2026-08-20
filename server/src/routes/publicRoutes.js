@@ -311,14 +311,15 @@ publicRouter.get("/main-board/today", async (req, res, next) => {
     // Load primary first. A primary refresh warms all four PapaSense snapshots,
     // avoiding four duplicate database refreshes on the all-engine board.
     const primary = await getPreparedEngineBoard(supabase, date, "primary", { force });
-    const [safer, aggressive, venue, athenaResult] = await Promise.all([
+    const [safer, aggressive, venue, form, athenaResult] = await Promise.all([
       getPreparedEngineBoard(supabase, date, "safer", { force: false }),
       getPreparedEngineBoard(supabase, date, "aggressive", { force: false }),
       getPreparedEngineBoard(supabase, date, "venue", { force: false }),
+      getPreparedEngineBoard(supabase, date, "form", { force: false }),
       getAthenaPicks(supabase, date, { force })
     ]);
 
-    const boards = { primary, safer, aggressive, venue };
+    const boards = { primary, safer, aggressive, venue, form };
     const rows = new Map();
     for (const [engineKey, board] of Object.entries(boards)) {
       for (const item of board.items || []) {
@@ -375,8 +376,8 @@ publicRouter.get("/main-board/today", async (req, res, next) => {
     const readySelections = picks.filter((pick) => pick && pick.available !== false && pick.key !== "no-pick").length;
     const withheldSelections = picks.filter((pick) => pick && (pick.available === false || pick.key === "no-pick")).length;
     const strongSelections = picks.filter((pick) => pick && pick.available !== false && pick.key !== "no-pick" && pick.qualified !== false).length;
-    const preparingSelections = items.length * 5 - picks.filter(Boolean).length;
-    const engineCounts = Object.fromEntries(["primary", "safer", "aggressive", "venue", "athena"].map((key) => [key, {
+    const preparingSelections = items.length * 6 - picks.filter(Boolean).length;
+    const engineCounts = Object.fromEntries(["primary", "safer", "aggressive", "venue", "form", "athena"].map((key) => [key, {
       ready: items.filter((item) => item.engines?.[key] && item.engines[key].available !== false && item.engines[key].key !== "no-pick").length,
       withheld: items.filter((item) => item.engines?.[key] && (item.engines[key].available === false || item.engines[key].key === "no-pick")).length,
       preparing: items.filter((item) => !item.engines?.[key]).length
@@ -389,7 +390,7 @@ publicRouter.get("/main-board/today", async (req, res, next) => {
       generatedAt: new Date().toISOString(),
       engineVersion: primary.engineVersion,
       athenaEngineVersion: athenaResult.engineVersion,
-      engines: ["primary", "safer", "aggressive", "venue", "athena"],
+      engines: ["primary", "safer", "aggressive", "venue", "form", "athena"],
       summary: {
         fixtures: items.length,
         hiddenFixtures,
