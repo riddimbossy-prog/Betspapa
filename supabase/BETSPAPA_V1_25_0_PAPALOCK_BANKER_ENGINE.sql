@@ -26,7 +26,7 @@ create table if not exists public.papalock_predictions (
   internal_audit jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (fixture_id, engine_version)
+  unique (fixture_id, engine_version, prediction_date)
 );
 
 create index if not exists papalock_predictions_date_idx

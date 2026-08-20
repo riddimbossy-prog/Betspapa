@@ -27,23 +27,37 @@ At least two independent families must support the same match story before PapaL
 
 ## Safe-market routing
 
-PapaLock converts compatible sharp picks into the safest common expression:
+PapaLock converts a sharp pick into a banker **only when the banker market is implied by that pick**:
 
-- Home result story → Home or Draw
-- Away result story → Away or Draw
-- General goal story → Over 1.5 Goals
-- Low-event story → Under 3.5 Goals
-- Home team-goal story → Home Over 0.5
-- Away team-goal story → Away Over 0.5
+- Home win / home DNB → Home or Draw
+- Away win / away DNB → Away or Draw
+- Over 2.5, Over 3.5, BTTS Yes, Goals Both Halves, first-half Over 1.5 → Over 1.5 Goals
+- Under 1.5 / Under 2.5 → Under 3.5 Goals
+- Home Over 1.5, home win, home win either half, home second-half goal → Home Over 0.5
 - Confirmed half-goal story → Second Half Over 0.5
 
+Not containments, so they do not create that banker:
+
+- Win Either Half ↛ Home or Draw
+- Second-half DNB ↛ Home or Draw
+- BTTS No ↛ Under 3.5
+- First-half Over 0.5 ↛ Over 1.5
+
 Team-specific second-half scoring is not a PapaLock launch market.
+
+Athena enums such as `OVER_2_5` and `HOME_TEAM_OVER_0_5` are canonicalised onto the same keys as PapaSense.
+
+PapaLock Score is a rule score. Evidence strength must clear 0.52. Missing evidence is not treated as a pass.
 
 ## Supabase
 
 Run:
 
 `supabase/BETSPAPA_V1_25_0_PAPALOCK_BANKER_ENGINE.sql`
+
+If that file was already applied with the old unique key, also run:
+
+`supabase/BETSPAPA_V1_25_1_PAPALOCK_CONSTRAINTS.sql`
 
 The migration creates:
 
@@ -67,6 +81,6 @@ Protected admin:
 
 ## Verification
 
-- 136 automated tests pass
-- PapaLock engine tests cover family independence, safe-market routing, league exclusion, sample gates, Elite grading and daily limits
+- PapaLock engine tests cover family independence, containment routing, Athena key mapping, league exclusion, sample gates, Elite grading, daily limits and public-payload stripping
 - Frontend and backend JavaScript syntax checks pass
+

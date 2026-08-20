@@ -1,5 +1,4 @@
 import { PAPALOCK_VERSION, buildPapaLockSlate } from "../engine/papaLockBankerEngine.js";
-import { dateRangeUtc } from "../utils/date.js";
 import { getAthenaPicks } from "./athenaPickService.js";
 import { gradeEnginePick } from "./gradingService.js";
 import { listPublicPredictions } from "./publicService.js";
@@ -79,10 +78,17 @@ async function persistPapaLockSlate(supabase, date, slate) {
       updated_at: now
     }));
 
-    const { data: savedRows, error } = await supabase
+    let savedRows = null;
+    let error = null;
+    const upsert = (onConflict) => supabase
       .from("papalock_predictions")
-      .upsert(rows, { onConflict: "fixture_id,engine_version" })
+      .upsert(rows, { onConflict })
       .select("id,fixture_id");
+
+    ({ data: savedRows, error } = await upsert("fixture_id,engine_version,prediction_date"));
+    if (error && /no unique|there is no unique|ON CONFLICT/i.test(String(error.message || ""))) {
+      ({ data: savedRows, error } = await upsert("fixture_id,engine_version"));
+    }
     throwIfSupabaseError(error, "Unable to save PapaLock predictions");
 
     const idByFixture = new Map((savedRows || []).map((row) => [Number(row.fixture_id), row.id]));
@@ -122,7 +128,7 @@ async function persistPapaLockSlate(supabase, date, slate) {
       return {
         saved: 0,
         evidenceRows: 0,
-        warning: "Run supabase/BETSPAPA_V1_25_0_PAPALOCK_BANKER_ENGINE.sql to persist PapaLock bankers."
+        warning: "Run supabase/BETSPAPA_V1_25_0_PAPALOCK_BANKER_ENGINE.sql and supabase/BETSPAPA_V1_25_1_PAPALOCK_CONSTRAINTS.sql to persist PapaLock bankers."
       };
     }
     throw error;
@@ -227,7 +233,7 @@ export async function refreshPapaLockCalibration(supabase) {
     rows = await fetchAllRows(() =>
       supabase
         .from("papalock_results")
-        .select("story,league_id,outcome,banker_score")
+        .select("story,league_id,outcome")
         .eq("engine_version", PAPALOCK_VERSION)
     );
   } catch (error) {
@@ -245,21 +251,13 @@ export async function refreshPapaLockCalibration(supabase) {
         leagueId,
         wins: 0,
         losses: 0,
-        voids: 0,
-        brierTotal: 0,
-        brierCount: 0
+        voids: 0
       });
     }
     const group = groups.get(key);
     if (row.outcome === "WIN") group.wins += 1;
     else if (row.outcome === "LOSS") group.losses += 1;
     else if (row.outcome === "VOID") group.voids += 1;
-    if (["WIN", "LOSS"].includes(row.outcome)) {
-      const probability = Math.max(0, Math.min(1, Number(row.banker_score || 0) / 100));
-      const actual = row.outcome === "WIN" ? 1 : 0;
-      group.brierTotal += (probability - actual) ** 2;
-      group.brierCount += 1;
-    }
   };
 
   for (const row of rows) {
@@ -281,7 +279,7 @@ export async function refreshPapaLockCalibration(supabase) {
       voids: group.voids,
       observed_hit_rate: round(sampleCount ? group.wins / sampleCount : 0),
       lower_bound: round(wilsonLowerBound(group.wins, sampleCount)),
-      brier_score: group.brierCount ? round(group.brierTotal / group.brierCount) : null,
+      brier_score: null,
       last_calibrated_at: now,
       updated_at: now
     };

@@ -11,9 +11,10 @@ const source = (path) => readFile(resolve(root, path), "utf8");
 
 test("v1.25 exposes PapaLock as the dedicated public Banker engine", async () => {
   assert.equal(SERVICE_VERSION, "1.25.0");
-  assert.equal(PAPALOCK_VERSION, "papalock-v1.0.0");
+  assert.equal(PAPALOCK_VERSION, "papalock-v1.1.0");
   const routes = await source("server/src/routes/publicRoutes.js");
   assert.match(routes, /getPapaLockPicks/);
+  assert.match(routes, /toPublicPapaLockSlate/);
   assert.match(routes, /\/bankers\/today/);
   assert.match(routes, /\/bankers\/history/);
 });
@@ -28,10 +29,13 @@ test("PapaLock admin prepare, audit and settlement routes are protected", async 
 
 test("PapaLock migration installs prediction, evidence, result and calibration tables", async () => {
   const sql = await source("supabase/BETSPAPA_V1_25_0_PAPALOCK_BANKER_ENGINE.sql");
+  const patch = await source("supabase/BETSPAPA_V1_25_1_PAPALOCK_CONSTRAINTS.sql");
   assert.match(sql, /create table if not exists public\.papalock_predictions/i);
   assert.match(sql, /create table if not exists public\.papalock_engine_evidence/i);
   assert.match(sql, /create table if not exists public\.papalock_results/i);
   assert.match(sql, /create table if not exists public\.papalock_calibration_profiles/i);
+  assert.match(sql, /unique \(fixture_id, engine_version, prediction_date\)/i);
+  assert.match(patch, /prediction_date/i);
 });
 
 test("Banker page presents PapaLock grades and uses the v1.25 assets", async () => {

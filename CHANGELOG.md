@@ -1,3 +1,18 @@
+## v1.25.1 — PapaLock containment and Athena key audit
+
+- Mapped Athena market IDs (`OVER_2_5`, `HOME_TEAM_OVER_0_5`, `SECOND_HALF_OVER_0_5`, …) onto PapaLock keys.
+- Restricted story routing to true containments: Win Either Half no longer becomes 1X, BTTS No no longer becomes Under 3.5, first-half Over 0.5 no longer becomes Over 1.5.
+- Stopped missing market evidence from looking like a strong banker.
+- Averaged PapaSense family confidence instead of taking the hottest engine.
+- Used the shared competition policy, so Champions League and other cups stay blocked.
+- Used opposite-side classification names and Athena side, not a raw HOME/AWAY substring.
+- Counted hidden Qualified stories correctly.
+- Stopped treating bookmaker disagreement as a hard Athena family drop.
+- Stopped writing a Brier score from the rule score.
+- Stripped internal audits from the public Banker API.
+- Unique PapaLock rows by fixture, engine version and date.
+- Added regression coverage for the audit findings.
+
 ## v1.25.0 — PapaLock Banker Engine
 
 - Replaced the public exact-selection consensus slate with the dedicated PapaLock supervisor.

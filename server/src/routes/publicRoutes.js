@@ -24,6 +24,7 @@ import {
 } from "../services/matchStateService.js";
 import { getPreparedEngineBoard, isVisibleBoardPick } from "../services/boardSnapshotService.js";
 import { getPapaLockHistory, getPapaLockPicks, invalidatePapaLockCache } from "../services/papaLockPickService.js";
+import { toPublicPapaLockSlate } from "../engine/papaLockBankerEngine.js";
 
 export const publicRouter = Router();
 
@@ -451,7 +452,7 @@ publicRouter.get("/bankers/today", async (req, res, next) => {
 
     setPublicCache(res, slate.cached ? 60 : 20, 300);
     res.json({
-      ...slate,
+      ...toPublicPapaLockSlate(slate),
       liveRefresh: { refreshed: false, skipped: true, reason: "PapaLock prepared-engine reader" }
     });
   } catch (error) {

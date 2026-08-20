@@ -1,11 +1,14 @@
+import { competitionPolicy } from "./competitionPolicy.js";
+
 const PAPA_SENSE_KEYS = ["primary", "safer", "aggressive"];
 const FAMILY_KEYS = ["papasense", "venue", "athena"];
 
-export const PAPALOCK_VERSION = "papalock-v1.0.0";
+export const PAPALOCK_VERSION = "papalock-v1.1.0";
 export const PAPALOCK_MIN_SCORE = 84;
 export const PAPALOCK_ELITE_SCORE = 92;
 export const PAPALOCK_MAX_DAILY = 3;
 export const PAPALOCK_MAX_PER_LEAGUE = 2;
+export const PAPALOCK_MIN_EVIDENCE = 0.52;
 
 const CORE_STORIES = Object.freeze({
   HOME_PROTECTION: "HOME_PROTECTION",
@@ -16,6 +19,10 @@ const CORE_STORIES = Object.freeze({
   AWAY_GOAL: "AWAY_GOAL",
   SECOND_HALF_ACTIVITY: "SECOND_HALF_ACTIVITY"
 });
+
+const HOME_CLASS = /STABLE_HOME|LATE_HOME|FULL_HOME|HOME_LEADER|HOME_SEPARATION|HOME_REVERSAL/;
+const AWAY_CLASS = /STABLE_AWAY|LATE_AWAY|FULL_AWAY|AWAY_LEADER|AWAY_SEPARATION|AWAY_REVERSAL/;
+const HARD_CONFLICT_CLASS = /DIRECTIONAL_CONFLICT|VENUE_CONFLICT|CONFLICT_NO_PICK|FALSE_SWING/;
 
 function clamp(value, min = 0, max = 1) {
   return Math.max(min, Math.min(max, Number(value) || 0));
@@ -36,81 +43,137 @@ function normalise(value) {
     .trim();
 }
 
+function collapseMarketToken(value) {
+  return normalise(value)
+    .replace(/_/g, "-")
+    .replace(/(\d)[.-](\d)/g, "$1$2");
+}
+
+const KEY_ALIASES = Object.freeze({
+  "match-over-15": "over-15",
+  "over 15": "over-15",
+  "match-over-25": "over-25",
+  "over 25": "over-25",
+  "match-under-35": "under-35",
+  "under 35": "under-35",
+  "under 25": "under-25",
+  "btts-yes": "gg-yes",
+  "btts-no": "gg-no",
+  "both-teams-to-score": "gg-yes",
+  "home-or-draw": "home-1x",
+  "home-double-chance": "home-1x",
+  "away-or-draw": "away-x2",
+  "away-double-chance": "away-x2",
+  "home-team-over-05": "home-over-05",
+  "away-team-over-05": "away-over-05",
+  "home-team-to-score": "home-over-05",
+  "away-team-to-score": "away-over-05",
+  "second half over 05": "second-half-over-05",
+  "home team to score in the second half": "home-second-half-over-05",
+  "away team to score in the second half": "away-second-half-over-05",
+  "home team over 05": "home-over-05",
+  "away team over 05": "away-over-05"
+});
+
 function canonicalKey(pick) {
-  const raw = normalise(pick?.key || pick?.marketId || pick?.market);
-  const aliases = {
-    "match-over-1.5": "over-15",
-    "over 1.5": "over-15",
-    "over-1.5": "over-15",
-    "match-over-2.5": "over-25",
-    "over 2.5": "over-25",
-    "over-2.5": "over-25",
-    "match-under-3.5": "under-35",
-    "under 3.5": "under-35",
-    "under-3.5": "under-35",
-    "btts-yes": "gg-yes",
-    "btts-no": "gg-no",
-    "second-half-over-0.5": "second-half-over-05",
-    "second half over 0.5": "second-half-over-05",
-    "home team to score in the second half": "home-second-half-over-05",
-    "away team to score in the second half": "away-second-half-over-05",
-    "home team over 0.5": "home-over-05",
-    "away team over 0.5": "away-over-05"
-  };
-  if (aliases[raw]) return aliases[raw];
-  return raw.replace(/_/g, "-");
+  const raw = pick?.key || pick?.marketId || pick?.market;
+  const collapsed = collapseMarketToken(raw);
+  return KEY_ALIASES[collapsed] || KEY_ALIASES[normalise(raw)] || collapsed;
+}
+
+const STORY_KEYS = Object.freeze({
+  [CORE_STORIES.HOME_PROTECTION]: ["home-1x", "home-dnb", "home-win"],
+  [CORE_STORIES.AWAY_PROTECTION]: ["away-x2", "away-dnb", "away-win"],
+  [CORE_STORIES.HOME_GOAL]: [
+    "home-over-05", "home-over-15", "home-second-half-over-05",
+    "home-win", "home-win-either-half"
+  ],
+  [CORE_STORIES.AWAY_GOAL]: [
+    "away-over-05", "away-over-15", "away-second-half-over-05",
+    "away-win", "away-win-either-half"
+  ],
+  [CORE_STORIES.LOW_EVENT]: ["under-35", "under-25", "under-15"],
+  [CORE_STORIES.SECOND_HALF_ACTIVITY]: [
+    "second-half-over-05", "second-half-over-15", "goals-both-halves",
+    "home-second-half-over-05", "away-second-half-over-05"
+  ],
+  [CORE_STORIES.MATCH_GOALS]: [
+    "over-15", "over-25", "over-35", "gg-yes", "goals-both-halves",
+    "first-half-over-15", "second-half-over-15"
+  ]
+});
+
+function uniqueStories(stories) {
+  return [...new Set(stories.filter(Boolean))];
+}
+
+function storiesFromSelection(selection, home, away) {
+  const text = collapseMarketToken(selection);
+  const stories = [];
+  const namesHome = home && text.includes(home);
+  const namesAway = away && text.includes(away);
+
+  if (text.includes("win either half")) {
+    if (namesHome) stories.push(CORE_STORIES.HOME_GOAL);
+    if (namesAway) stories.push(CORE_STORIES.AWAY_GOAL);
+    return uniqueStories(stories);
+  }
+
+  if (text.includes("second half") && text.includes("draw no bet")) {
+    return [];
+  }
+
+  if (text.includes("or draw") || text.includes("draw no bet")) {
+    if (namesHome) stories.push(CORE_STORIES.HOME_PROTECTION);
+    if (namesAway) stories.push(CORE_STORIES.AWAY_PROTECTION);
+  }
+
+  if (text.includes("second half") && (text.includes("over 05") || text.includes("to score"))) {
+    stories.push(CORE_STORIES.SECOND_HALF_ACTIVITY);
+    if (namesHome) stories.push(CORE_STORIES.HOME_GOAL);
+    if (namesAway) stories.push(CORE_STORIES.AWAY_GOAL);
+  }
+
+  if (text.includes("over 15") || text.includes("over 25") || text.includes("over 35") || text.includes("both teams to score")) {
+    if (!/both teams to score(?:\s+—)?\s+no\b/.test(text) && !text.includes("btts no") && !text.includes("gg no")) {
+      stories.push(CORE_STORIES.MATCH_GOALS);
+    }
+  }
+
+  if (text.includes("under 35") || text.includes("under 25") || text.includes("under 15")) {
+    stories.push(CORE_STORIES.LOW_EVENT);
+  }
+
+  if ((text.includes("over 05") || text.includes("to score")) && !text.includes("second half") && !text.includes("first half")) {
+    if (namesHome) stories.push(CORE_STORIES.HOME_GOAL);
+    if (namesAway) stories.push(CORE_STORIES.AWAY_GOAL);
+  }
+
+  return uniqueStories(stories);
+}
+
+function storiesForPick(pick, homeName = "Home", awayName = "Away") {
+  if (!pick || pick.available === false || pick.qualified === false) return [];
+  const key = canonicalKey(pick);
+  const stories = [];
+  for (const [story, keys] of Object.entries(STORY_KEYS)) {
+    if (keys.includes(key)) stories.push(story);
+  }
+  if (stories.length) return uniqueStories(stories);
+
+  return storiesFromSelection(
+    pick.selection,
+    normalise(homeName),
+    normalise(awayName)
+  );
 }
 
 function storyForPick(pick, homeName = "Home", awayName = "Away") {
-  if (!pick || pick.available === false || pick.qualified === false) return null;
-  const key = canonicalKey(pick);
-  const selection = normalise(pick.selection);
-  const home = normalise(homeName);
-  const away = normalise(awayName);
-
-  if (["home-1x", "home-dnb", "home-win", "home-win-either-half", "home-second-half-dnb"].includes(key)) {
-    return CORE_STORIES.HOME_PROTECTION;
-  }
-  if (["away-x2", "away-dnb", "away-win", "away-win-either-half", "away-second-half-dnb"].includes(key)) {
-    return CORE_STORIES.AWAY_PROTECTION;
-  }
-  if (["home-over-05", "home-over-15", "home-second-half-over-05"].includes(key)) {
-    return CORE_STORIES.HOME_GOAL;
-  }
-  if (["away-over-05", "away-over-15", "away-second-half-over-05"].includes(key)) {
-    return CORE_STORIES.AWAY_GOAL;
-  }
-  if (["under-35", "under-25", "under-15", "gg-no"].includes(key)) {
-    return CORE_STORIES.LOW_EVENT;
-  }
-  if (["second-half-over-05", "second-half-over-15"].includes(key)) {
-    return CORE_STORIES.SECOND_HALF_ACTIVITY;
-  }
-  if (["over-15", "over-25", "over-35", "gg-yes", "goals-both-halves", "first-half-over-05", "first-half-over-15"].includes(key)) {
-    return CORE_STORIES.MATCH_GOALS;
-  }
-
-  if (selection.includes("or draw") || selection.includes("draw no bet") || selection.includes("win either half")) {
-    if (home && selection.includes(home)) return CORE_STORIES.HOME_PROTECTION;
-    if (away && selection.includes(away)) return CORE_STORIES.AWAY_PROTECTION;
-  }
-  if (selection.includes("second half") && selection.includes("over 0.5")) {
-    return CORE_STORIES.SECOND_HALF_ACTIVITY;
-  }
-  if (selection.includes("over 1.5") || selection.includes("both teams")) {
-    return CORE_STORIES.MATCH_GOALS;
-  }
-  if (selection.includes("under 3.5")) return CORE_STORIES.LOW_EVENT;
-  return null;
+  return storiesForPick(pick, homeName, awayName)[0] || null;
 }
 
 function competitionEligible(prediction) {
-  const league = prediction?.league || {};
-  const type = normalise(league.competition_type || league.competitionType || "league");
-  const enabled = league.prediction_enabled ?? league.predictionEnabled;
-  const name = normalise(league.name);
-  const obviousExcluded = /(friendly|cup|shield|super cup|play-?off|knockout|trophy)/i.test(name);
-  return !obviousExcluded && type === "league" && enabled !== false;
+  return competitionPolicy(prediction?.league || {}).eligible;
 }
 
 function auditEvidence(prediction) {
@@ -147,7 +210,7 @@ function sampleGate(evidence) {
 function criticalWarnings(pick) {
   return (pick?.cautions || pick?.warnings || [])
     .filter(Boolean)
-    .filter((warning) => /(insufficient|small sample|contradiction|conflict|missing|unavailable|unstable|unverified|friendly|cup)/i.test(String(warning)));
+    .filter((warning) => /(insufficient|small sample|contradiction|missing|unavailable|unstable|unverified|friendly|\bcup\b)/i.test(String(warning)));
 }
 
 function pickEvidenceStrength(pick, story) {
@@ -192,7 +255,10 @@ function pickEvidenceStrength(pick, story) {
   }
 
   const confidence = clamp(percent(pick?.confidence ?? pick?.score) / 100);
-  if (!values.length) return Math.min(0.8, Math.max(0.62, confidence));
+  if (!values.length) {
+    const athenaPick = pick?.engineKey === "athena" || /athena/i.test(String(pick?.engineName || ""));
+    return clamp(confidence * (athenaPick ? 0.72 : 0.45));
+  }
   values.sort((a, b) => a - b);
   const lowerHalf = values.slice(0, Math.max(1, Math.ceil(values.length / 2)));
   const conservative = lowerHalf.reduce((sum, value) => sum + value, 0) / lowerHalf.length;
@@ -200,15 +266,13 @@ function pickEvidenceStrength(pick, story) {
 }
 
 function familyRecord(familyKey, picks, story, homeName, awayName) {
-  const supporting = picks.filter((pick) => storyForPick(pick, homeName, awayName) === story);
+  const supporting = picks.filter((pick) => storiesForPick(pick, homeName, awayName).includes(story));
   if (!supporting.length) return null;
   const valid = supporting.filter((pick) => criticalWarnings(pick).length === 0);
   if (!valid.length) return null;
   const confidences = valid.map((pick) => percent(pick.confidence ?? pick.score));
   const evidenceStrengths = valid.map((pick) => pickEvidenceStrength(pick, story));
-  const confidence = familyKey === "papasense"
-    ? Math.max(...confidences)
-    : confidences.reduce((sum, value) => sum + value, 0) / confidences.length;
+  const confidence = confidences.reduce((sum, value) => sum + value, 0) / confidences.length;
   const evidenceStrength = Math.min(...evidenceStrengths);
   return {
     familyKey,
@@ -283,16 +347,38 @@ function exactTargetSupport(target, records) {
   }, 0);
 }
 
-function classificationConflict(prediction, story) {
-  const classifications = PAPA_SENSE_KEYS
+function classificationLabels(prediction, athenaPick) {
+  const papa = PAPA_SENSE_KEYS
     .map((key) => prediction?.engines?.[key]?.internalAudit?.classification)
     .filter(Boolean);
-  const conflicts = classifications.map((item) => Number(item.conflict || 0)).filter(Number.isFinite);
-  const maxConflict = conflicts.length ? Math.max(...conflicts) : 0;
-  const names = classifications.map((item) => String(item.classification || ""));
+  const names = papa.flatMap((item) => [
+    item.classification,
+    item.rawClassification,
+    item.venue?.classification
+  ]).filter(Boolean).map((name) => String(name));
+  const athenaType = athenaPick?.classification?.type
+    || athenaPick?.internalAudit?.classification?.type
+    || "";
+  const athenaSide = athenaPick?.classification?.side
+    || athenaPick?.internalAudit?.classification?.side
+    || "";
+  if (athenaType) names.push(String(athenaType));
+  if (athenaSide === "HOME") names.push("STABLE_HOME_LEADER");
+  if (athenaSide === "AWAY") names.push("STABLE_AWAY_LEADER");
+  const conflicts = papa.map((item) => Number(item.conflict || 0)).filter(Number.isFinite);
+  return {
+    names,
+    maxConflict: conflicts.length ? Math.max(...conflicts) : 0
+  };
+}
+
+function classificationConflict(prediction, story, athenaPick) {
+  const { names, maxConflict } = classificationLabels(prediction, athenaPick);
+  const directionalStory = story === CORE_STORIES.HOME_PROTECTION || story === CORE_STORIES.AWAY_PROTECTION;
   let hard = false;
-  if (story === CORE_STORIES.HOME_PROTECTION && names.some((name) => /AWAY|CONFLICT/.test(name))) hard = true;
-  if (story === CORE_STORIES.AWAY_PROTECTION && names.some((name) => /HOME|CONFLICT/.test(name))) hard = true;
+  if (directionalStory && names.some((name) => HARD_CONFLICT_CLASS.test(name))) hard = true;
+  if (story === CORE_STORIES.HOME_PROTECTION && names.some((name) => AWAY_CLASS.test(name))) hard = true;
+  if (story === CORE_STORIES.AWAY_PROTECTION && names.some((name) => HOME_CLASS.test(name))) hard = true;
   return { maxConflict: clamp(maxConflict), hard };
 }
 
@@ -316,7 +402,7 @@ function calibrationForStory(calibrationProfiles, story, leagueId) {
   };
 }
 
-function scoreCandidate({ records, evidence, story, target, prediction, calibration }) {
+function scoreCandidate({ records, evidence, story, target, prediction, calibration, athenaPick }) {
   const familyCount = records.length;
   const averageConfidence = records.reduce((sum, record) => sum + record.confidence, 0) / familyCount;
   const evidenceStrength = Math.min(...records.map((record) => record.evidenceStrength));
@@ -326,7 +412,7 @@ function scoreCandidate({ records, evidence, story, target, prediction, calibrat
   );
   const exactSupport = exactTargetSupport(target, records);
   const familyBonus = familyCount === 3 ? 26 : familyCount === 2 ? 18 : 0;
-  const conflict = classificationConflict(prediction, story);
+  const conflict = classificationConflict(prediction, story, athenaPick);
   const conflictPenalty = conflict.hard ? 18 : Math.max(0, conflict.maxConflict - 0.55) * 18;
   const specialistPenalty = story === CORE_STORIES.SECOND_HALF_ACTIVITY &&
     !records.some((record) => record.familyKey === "athena") ? 20 : 0;
@@ -405,6 +491,7 @@ function familyPicksForPrediction(prediction, athenaPick) {
       ...athenaPick.selected,
       engineKey: "athena",
       engineName: "Athena",
+      key: athenaPick.marketId,
       marketId: athenaPick.marketId,
       market: athenaPick.market,
       selection: athenaPick.selection,
@@ -413,7 +500,9 @@ function familyPicksForPrediction(prediction, athenaPick) {
       qualified: true,
       cautions: [
         ...(athenaPick.selected?.warnings || []),
-        ...(athenaPick.oddsConflict?.conflict ? ["Bookmaker direction conflicts with Athena"] : [])
+        ...(athenaPick.oddsConflict?.conflict
+          ? ["Bookmaker prices disagreed with Athena's original direction"]
+          : [])
       ],
       internalAudit: athenaPick.internalAudit || {}
     }] : []
@@ -451,7 +540,24 @@ function candidateForStory(prediction, athenaPick, story, calibrationProfiles) {
     story,
     prediction?.league?.id || prediction?.league?.external_league_id
   );
-  const scored = scoreCandidate({ records, evidence, story, target, prediction, calibration });
+  const scored = scoreCandidate({
+    records,
+    evidence,
+    story,
+    target,
+    prediction,
+    calibration,
+    athenaPick
+  });
+
+  if (scored.evidenceStrength < PAPALOCK_MIN_EVIDENCE) {
+    return {
+      rejected: true,
+      story,
+      reasons: ["Family market evidence is too weak for a banker"]
+    };
+  }
+
   const grade = records.length === 3 && scored.score >= PAPALOCK_ELITE_SCORE
     ? "ELITE"
     : scored.score >= PAPALOCK_MIN_SCORE
@@ -462,7 +568,7 @@ function candidateForStory(prediction, athenaPick, story, calibrationProfiles) {
   const publicEligible = grade === "ELITE" || grade === "PRIME";
 
   return {
-    rejected: !publicEligible,
+    rejected: grade === "WITHHELD",
     story,
     target,
     records,
@@ -552,6 +658,40 @@ function publicRecord(prediction, athenaPick, candidate) {
   };
 }
 
+function toPublicPapaLockPick(pick) {
+  if (!pick || typeof pick !== "object") return pick;
+  const {
+    internalAudit,
+    ...rest
+  } = pick;
+  const evidence = rest.evidence || {};
+  return {
+    ...rest,
+    evidence: {
+      individuallyAnalysed: Boolean(evidence.individuallyAnalysed),
+      homeOverall: evidence.homeOverall,
+      homeVenue: evidence.homeVenue,
+      homeRecent: evidence.homeRecent,
+      awayOverall: evidence.awayOverall,
+      awayVenue: evidence.awayVenue,
+      awayRecent: evidence.awayRecent
+    }
+  };
+}
+
+export function toPublicPapaLockSlate(slate = {}) {
+  const {
+    internalRejections,
+    persistence,
+    picks,
+    ...publicSlate
+  } = slate;
+  return {
+    ...publicSlate,
+    picks: (picks || []).map(toPublicPapaLockPick)
+  };
+}
+
 export function buildPapaLockSlate(predictions = [], athenaPicks = [], {
   limit = PAPALOCK_MAX_DAILY,
   calibrationProfiles = []
@@ -560,6 +700,7 @@ export function buildPapaLockSlate(predictions = [], athenaPicks = [], {
   const athenaByFixture = new Map((athenaPicks || []).map((pick) => [String(pick.fixtureId), pick]));
   const selected = [];
   const rejections = [];
+  let qualifiedHiddenCount = 0;
 
   for (const prediction of predictions || []) {
     if (!competitionEligible(prediction)) {
@@ -567,25 +708,36 @@ export function buildPapaLockSlate(predictions = [], athenaPicks = [], {
       continue;
     }
     const athenaPick = athenaByFixture.get(String(prediction.fixtureId)) || null;
-    const candidates = Object.values(CORE_STORIES)
-      .map((story) => candidateForStory(prediction, athenaPick, story, calibrationProfiles))
+    const evaluated = Object.values(CORE_STORIES)
+      .map((story) => candidateForStory(prediction, athenaPick, story, calibrationProfiles));
+    const viable = evaluated
       .filter((candidate) => candidate && !candidate.rejected)
       .sort((a, b) => b.scored.score - a.scored.score);
+    const publicCandidates = viable.filter((candidate) => candidate.publicEligible);
 
-    if (!candidates.length) {
+    if (!publicCandidates.length) {
       const evidence = auditEvidence(prediction);
       const gate = sampleGate(evidence);
-      rejections.push({
-        fixtureId: prediction.fixtureId,
-        reason: gate.passed
-          ? "No story reached the PapaLock Prime gate with two independent families"
-          : gate.failures[0]
-      });
+      if (viable.some((candidate) => candidate.grade === "QUALIFIED")) {
+        qualifiedHiddenCount += 1;
+        rejections.push({
+          fixtureId: prediction.fixtureId,
+          reason: viable[0]?.reasons?.[0] || `PapaLock score did not reach the ${PAPALOCK_MIN_SCORE} Prime gate`
+        });
+      } else {
+        rejections.push({
+          fixtureId: prediction.fixtureId,
+          reason: gate.passed
+            ? (evaluated.find((item) => item.reasons?.length)?.reasons[0]
+              || "No story reached the PapaLock Prime gate with two independent families")
+            : gate.failures[0]
+        });
+      }
       continue;
     }
 
-    const top = candidates[0];
-    const runnerUp = candidates[1];
+    const top = publicCandidates[0];
+    const runnerUp = publicCandidates[1];
     if (runnerUp && contradictoryStories(top.story, runnerUp.story) && Math.abs(top.scored.score - runnerUp.scored.score) < 6) {
       rejections.push({
         fixtureId: prediction.fixtureId,
@@ -635,19 +787,21 @@ export function buildPapaLockSlate(predictions = [], athenaPicks = [], {
       minimumOverallMatches: 12,
       minimumVenueMatches: 8,
       minimumRecentMatches: 6,
+      minimumEvidenceStrength: PAPALOCK_MIN_EVIDENCE,
       primeScore: PAPALOCK_MIN_SCORE,
       eliteScore: PAPALOCK_ELITE_SCORE,
       maximumPublished: safeLimit,
       maximumPerLeague: PAPALOCK_MAX_PER_LEAGUE,
       verifiedLeagueOnly: true,
       exactSelectionAgreementRequired: false,
+      containmentRoutingOnly: true,
       noForcedBankers: true
     },
     picks,
     totalSelections: picks.length,
     eliteCount: picks.filter((pick) => pick.papaLockGrade === "ELITE").length,
     primeCount: picks.filter((pick) => pick.papaLockGrade === "PRIME").length,
-    qualifiedHiddenCount: selected.filter((pick) => pick.papaLockGrade === "QUALIFIED").length,
+    qualifiedHiddenCount,
     rejectedCount: rejections.length,
     rejectionSummary: Object.entries(rejectionCounts)
       .map(([reason, count]) => ({ reason, count }))
@@ -656,4 +810,4 @@ export function buildPapaLockSlate(predictions = [], athenaPicks = [], {
   };
 }
 
-export { CORE_STORIES, canonicalKey, storyForPick };
+export { CORE_STORIES, canonicalKey, storyForPick, storiesForPick };
