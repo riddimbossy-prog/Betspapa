@@ -874,4 +874,13 @@ body.portal-dialog-open {
 }
 .papa-hub-card.early-season .hub-match-head{background:linear-gradient(180deg,rgba(120,8,24,.22),transparent 78%)}
 .hub-summary-chips .early-season-flag{border-color:rgba(255,90,110,.45);color:#ffc1c7;background:rgba(127,29,29,.22)}
+.league-climate-chip{
+  display:inline-flex;align-items:center;width:max-content;padding:.32rem .58rem;
+  border-radius:999px;font-size:.68rem;font-weight:900;letter-spacing:.05em;text-transform:uppercase
+}
+.league-climate-chip.high{border:1px solid rgba(255,146,82,.5);background:rgba(154,58,12,.22);color:#ffd0b5}
+.league-climate-chip.low{border:1px solid rgba(96,165,250,.45);background:rgba(23,62,120,.28);color:#bfdbfe}
+.league-climate-chip.rising::after{content:" ↑"; }
+.league-climate-chip.falling::after{content:" ↓"; }
+
 

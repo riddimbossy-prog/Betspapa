@@ -475,6 +475,22 @@
       </div>`;
   }
 
+  function leagueClimateMarkup(item) {
+    const climate = item?.leagueScoring;
+    if (!climate || (climate.label !== "high" && climate.label !== "low")) return "";
+    const pct = Math.round((Number(climate.over25Rate) || 0) * 100);
+    const rising = climate.trend?.direction === "rising";
+    const falling = climate.trend?.direction === "falling";
+    const title = climate.label === "high"
+      ? `High-scoring league. Over 2.5 has landed in about ${pct}% of matches.`
+      : `Low-scoring league. Over 2.5 has landed in about ${pct}% of matches.`;
+    const label = climate.label === "high"
+      ? `HIGH SCORING · O2.5 ${pct}%`
+      : `LOW SCORING · O2.5 ${pct}%`;
+    const trend = rising ? " rising" : falling ? " falling" : "";
+    return `<span class="league-climate-chip ${escapeHtml(climate.label)}${trend}" title="${escapeHtml(title)}">${escapeHtml(label)}</span>`;
+  }
+
   function riskFlagMarkup(item, pick = null, extraClass = "") {
     const flags = [
       item?.earlySeason,
@@ -506,6 +522,7 @@
             <span>${escapeHtml(formatKickoff(item.kickoff))}</span>
           </div>
           ${earlySeasonMarkup(item)}
+          ${leagueClimateMarkup(item)}
           ${matchStatusMarkup(item, engineKey)}
           <div class="pick-teams">
             <div class="pick-team">${logoMarkup(item.home)}<span>${escapeHtml(item.home?.name || "Home")}</span></div>
@@ -528,6 +545,7 @@
             <span>${escapeHtml(formatKickoff(item.kickoff))}</span>
           </div>
           ${earlySeasonMarkup(item)}
+          ${leagueClimateMarkup(item)}
           ${matchStatusMarkup(item, item.activeEngine || engineKey)}
           <div class="pick-teams">
             <div class="pick-team">${logoMarkup(item.home)}<span>${escapeHtml(item.home?.name || "Home")}</span></div>
@@ -547,6 +565,7 @@
           <span>${escapeHtml(formatKickoff(item.kickoff))}</span>
         </div>
         ${earlySeasonMarkup(item)}
+        ${leagueClimateMarkup(item)}
         ${matchStatusMarkup(item, item.activeEngine || engineKey)}
         <div class="pick-teams">
           <div class="pick-team">${logoMarkup(item.home)}<span>${escapeHtml(item.home?.name || "Home")}</span></div>
@@ -730,6 +749,7 @@
       <header class="hub-match-head">
         <div class="pick-meta"><span>${escapeHtml(leagueText(item.league))}</span><span>${escapeHtml(formatKickoff(item.kickoff))}</span></div>
         ${earlySeasonMarkup(item)}
+        ${leagueClimateMarkup(item)}
         ${matchStatusMarkup(item)}
         <div class="hub-match-teams">
           <div class="pick-team">${logoMarkup(item.home)}<span>${escapeHtml(item.home?.name || "Home")}</span></div>
@@ -740,6 +760,7 @@
           <span>${totalReady}/${HUB_ENGINE_ORDER.length} engines picked</span>
           ${agreement ? `<span class="agreement">${agreement} engines agree</span>` : ""}
           ${early ? earlySeasonMarkup(item, "chip") : ""}
+          ${leagueClimateMarkup(item)}
         </div>
       </header>
       <div class="hub-engine-list">${rowKeys.map((key) => hubEngineRow(item, key)).join("")}</div>

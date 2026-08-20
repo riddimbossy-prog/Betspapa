@@ -8,6 +8,7 @@ import {
   applyLeagueScoringGuard,
   buildLeagueGoalsFlag,
   classifyLeagueScoring,
+  resolveLeagueScoringTrend,
   totalsSideFromPick
 } from "../src/engine/leagueScoringPolicy.js";
 import { selectSplitFormPick } from "../src/engine/splitFormEngine.js";
@@ -80,4 +81,26 @@ test("portal can paint a league-goals red flag", async () => {
   const js = await readFile(resolve(root, "assets/js/portal.v1250.js"), "utf8");
   assert.match(js, /function riskFlagMarkup/);
   assert.match(js, /leagueGoalsFlag/);
+  assert.match(js, /function leagueClimateMarkup/);
+  assert.match(js, /HIGH SCORING/);
 });
+
+test("thin current season falls back to last season's scoring trend", () => {
+  const trend = resolveLeagueScoringTrend(
+    { over15Rate: 0.5, over25Rate: 0.3, under35Rate: 0.85, matches: 18 },
+    { over15Rate: 0.82, over25Rate: 0.6, under35Rate: 0.55, matches: 400 }
+  );
+  assert.equal(trend.source, "previous");
+  assert.equal(trend.label, "high");
+  assert.equal(trend.trend.direction, "falling");
+});
+
+test("full current season uses this year's scoring climate", () => {
+  const trend = resolveLeagueScoringTrend(
+    { over15Rate: 0.63, over25Rate: 0.4, under35Rate: 0.82, matches: 300 },
+    { over15Rate: 0.82, over25Rate: 0.6, under35Rate: 0.55, matches: 400 }
+  );
+  assert.equal(trend.source, "current");
+  assert.equal(trend.label, "low");
+});
+

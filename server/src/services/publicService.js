@@ -9,7 +9,8 @@ import { gradeEnginePick } from "./gradingService.js";
 import { fixtureMatchState, summarizeMatchStates } from "./matchStateService.js";
 import { competitionPolicy } from "../engine/competitionPolicy.js";
 import { buildEarlySeasonFlag } from "../engine/earlySeasonFlag.js";
-import { applyLeagueScoringGuard, classifyLeagueScoring } from "../engine/leagueScoringPolicy.js";
+import { applyLeagueScoringGuard } from "../engine/leagueScoringPolicy.js";
+import { loadLeagueScoringByFixture } from "./leagueScoringService.js";
 
 
 export function getBackgroundProcessingStatus(date) {
@@ -241,54 +242,6 @@ async function loadEarlySeasonFlags(supabase, fixtures, teamMap) {
   return flags;
 }
 
-async function loadLeagueScoringByFixture(supabase, fixtures) {
-  const climates = new Map();
-  if (!fixtures.length) return climates;
-  const leagueIds = [...new Set(fixtures.map((fixture) => fixture.league_id).filter(Boolean))];
-  const seasons = [...new Set(fixtures.map((fixture) => fixture.season).filter((value) => value != null))];
-  if (!leagueIds.length || !seasons.length) return climates;
-
-  let rows = [];
-  try {
-    rows = await fetchAllRows(() =>
-      supabase
-        .from("team_goal_profiles")
-        .select("league_id,season,scope,matches_played,over_15_rate,over_25_rate,under_35_rate")
-        .in("league_id", leagueIds)
-        .in("season", seasons)
-        .eq("scope", "overall")
-    );
-  } catch {
-    return climates;
-  }
-
-  const totals = new Map();
-  for (const row of rows || []) {
-    const key = `${row.league_id}:${row.season}`;
-    if (!totals.has(key)) {
-      totals.set(key, { matches: 0, over15: 0, over25: 0, under35: 0 });
-    }
-    const sample = Number(row.matches_played || 0);
-    const bucket = totals.get(key);
-    bucket.matches += sample;
-    bucket.over15 += Number(row.over_15_rate || 0) * sample;
-    bucket.over25 += Number(row.over_25_rate || 0) * sample;
-    bucket.under35 += Number(row.under_35_rate || 0) * sample;
-  }
-
-  for (const fixture of fixtures) {
-    const bucket = totals.get(`${fixture.league_id}:${fixture.season}`);
-    if (!bucket?.matches) continue;
-    climates.set(Number(fixture.id), classifyLeagueScoring({
-      over15Rate: bucket.over15 / bucket.matches,
-      over25Rate: bucket.over25 / bucket.matches,
-      under35Rate: bucket.under35 / bucket.matches,
-      matches: bucket.matches
-    }));
-  }
-  return climates;
-}
-
 function mapPublicPredictions({
   fixtures,
   predictions,
@@ -482,7 +435,8 @@ export async function loadPreparedBoardData(supabase, date) {
   return {
     fixtures: fixtures.map((fixture) => ({
       ...publicFixture(fixture, entityMaps.teamMap, entityMaps.leagueMap),
-      earlySeason: flags.get(Number(fixture.id)) || null
+      earlySeason: flags.get(Number(fixture.id)) || null,
+      leagueScoring: climates.get(Number(fixture.id)) || null
     })),
     predictions: mapPublicPredictions({
       fixtures,

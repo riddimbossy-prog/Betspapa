@@ -25,6 +25,7 @@ import {
   applyLeagueScoringGuard,
   classifyLeagueScoringFromMatches
 } from "../engine/leagueScoringPolicy.js";
+import { loadLeagueScoringByFixture } from "./leagueScoringService.js";
 
 const MIN_OVERALL_MATCHES = 8;
 const MIN_VENUE_MATCHES = 5;
@@ -1005,6 +1006,7 @@ async function buildAthenaPicks(supabase, date) {
   const eventContext = await loadAthenaEventContext(supabase, rawHistory);
   const history = attachAthenaEventContext(rawHistory, eventContext);
   const historyByTeam = new Map(teamIds.map((teamId) => [teamId, []]));
+  const leagueClimates = await loadLeagueScoringByFixture(supabase, fixtures);
 
   for (const past of history) {
     if (historyByTeam.has(Number(past.home_team_id))) {
@@ -1134,7 +1136,8 @@ async function buildAthenaPicks(supabase, date) {
         continue;
       }
 
-      const leagueClimate = classifyLeagueScoringFromMatches([...homeRows, ...awayRows]);
+      const leagueClimate = leagueClimates.get(Number(fixture.id)) ||
+        classifyLeagueScoringFromMatches([...homeRows, ...awayRows]);
       let chosen = arbitration.primary;
       const guarded = applyLeagueScoringGuard({
         available: true,
@@ -1181,6 +1184,7 @@ async function buildAthenaPicks(supabase, date) {
         home,
         away,
         league,
+        leagueScoring: leagueClimate,
         engine: ATHENA_ENGINE_NAME,
         engineVersion: ATHENA_ENGINE_VERSION,
         runtimeEngineVersion: ATHENA_RUNTIME_VERSION,

@@ -8,6 +8,7 @@
 - Added a Split Form board, main-board tab/filter, More-sheet link and engine tests.
 - First five league matches now carry a red Early Season flag and stay visible even when engines withhold.
 - High-scoring leagues no longer get Under totals tips; low-scoring leagues no longer get Over totals tips. Remaining clashes get a red League Goals flag.
+- League scoring now uses current-season rates, then last season when the sample is thin. High/low climate chips show on the board.
 
 ## v1.25.1 — PapaLock containment and Athena key audit
 

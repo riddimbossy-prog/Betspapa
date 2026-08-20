@@ -66,6 +66,51 @@ export function classifyLeagueScoringFromMatches(rows = []) {
   });
 }
 
+export const CURRENT_SEASON_TRUST = 80;
+export const PREVIOUS_SEASON_TRUST = 80;
+
+export function scoringTrendDelta(current, previous) {
+  if (!current?.matches || !previous?.matches) return null;
+  const over25Delta = Number((current.over25Rate - previous.over25Rate).toFixed(3));
+  const direction = over25Delta >= 0.04 ? "rising" : over25Delta <= -0.04 ? "falling" : "stable";
+  return {
+    over15Delta: Number((current.over15Rate - previous.over15Rate).toFixed(3)),
+    over25Delta,
+    under35Delta: Number((current.under35Rate - previous.under35Rate).toFixed(3)),
+    direction
+  };
+}
+
+export function resolveLeagueScoringTrend(currentRates = null, previousRates = null) {
+  const current = currentRates ? classifyLeagueScoring(currentRates) : classifyLeagueScoring();
+  const previous = previousRates ? classifyLeagueScoring(previousRates) : classifyLeagueScoring();
+  const trend = scoringTrendDelta(current, previous);
+
+  if (current.matches >= CURRENT_SEASON_TRUST) {
+    return { ...current, source: "current", previous, trend };
+  }
+  if (current.matches >= 20 && previous.matches >= PREVIOUS_SEASON_TRUST) {
+    const weight = Math.min(0.55, current.matches / CURRENT_SEASON_TRUST);
+    const blended = classifyLeagueScoring({
+      over15Rate: current.over15Rate * weight + previous.over15Rate * (1 - weight),
+      over25Rate: current.over25Rate * weight + previous.over25Rate * (1 - weight),
+      under35Rate: current.under35Rate * weight + previous.under35Rate * (1 - weight),
+      matches: current.matches + previous.matches
+    });
+    return { ...blended, source: "blend", current, previous, trend };
+  }
+  if (previous.matches >= PREVIOUS_SEASON_TRUST) {
+    return { ...previous, source: "previous", current, previous, trend };
+  }
+  if (current.matches > 0) {
+    return { ...current, source: "thin-current", previous, trend };
+  }
+  if (previous.matches > 0) {
+    return { ...previous, source: "previous", current, previous, trend };
+  }
+  return { ...classifyLeagueScoring(), source: "unknown", current, previous, trend: null };
+}
+
 export function classifyLeagueScoring(goals = {}) {
   const over15Rate = rate(goals.over15Rate ?? goals.over_15_rate);
   const over25Rate = rate(goals.over25Rate ?? goals.over_25_rate);
