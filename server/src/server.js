@@ -13,6 +13,7 @@ import { publicRouter } from "./routes/publicRoutes.js";
 import { getSupabaseAdmin } from "./supabase.js";
 import { getErrorDetails, HttpError } from "./utils/errors.js";
 import { PAPALOCK_VERSION } from "./engine/papaLockBankerEngine.js";
+import { TOTAL_GOALS_BANKER_VERSION } from "./engine/totalGoalsBankerEngine.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4173;
@@ -109,6 +110,7 @@ app.get("/", (_req, res) => {
     legacyBossPicks: "/api/boss-picks/today",
     papaLockBankers: "/api/bankers/today",
     papaLockHistory: "/api/bankers/history",
+    totalGoalsBankers: "/api/goals-bankers/today",
     legacyBankersByEngine: "/api/bankers/by-engine",
     resultsIntelligence: "/api/results/intelligence",
     adminDiagnostics: "/api/admin/diagnostics"
@@ -125,6 +127,7 @@ app.get("/api/health", async (_req, res) => {
       athenaEngineVersion: ATHENA_ENGINE_VERSION,
       engineVersion: ENGINE_VERSION,
       papaLockEngineVersion: PAPALOCK_VERSION,
+      totalGoalsBankerVersion: TOTAL_GOALS_BANKER_VERSION,
       database: "connected",
       leaguesCount: database.leaguesCount,
       providerKeyConfigured: Boolean(

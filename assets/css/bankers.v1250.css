@@ -218,3 +218,39 @@ body[data-page="bankers"] .portal-hero > * { position:relative; z-index:1; }
 .papalock-prime .consensus-meter span {
   background:linear-gradient(90deg,#7d2cff,#f5c95e);
 }
+
+body[data-page="goals-bankers"] .portal-hero {
+  border-color: rgba(73,227,143,.28);
+  background:
+    radial-gradient(circle at 88% 0,rgba(73,227,143,.16),transparent 34%),
+    linear-gradient(140deg,rgba(8,36,28,.96),rgba(7,11,22,.98));
+}
+.goals-league-map {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:12px;
+  margin:0 0 22px;
+}
+.goals-league-chip {
+  display:grid;
+  gap:4px;
+  padding:14px 16px;
+  border:1px solid rgba(73,227,143,.22);
+  border-radius:16px;
+  background:rgba(10,28,22,.86);
+}
+.goals-league-chip strong { color:#fff; }
+.goals-league-chip span { color:#b8ffd7; font-weight:800; }
+.goals-league-chip small { color:#9db7ab; }
+.goals-banker-odds { color:#f5c95e; font-weight:800; margin:.35rem 0; }
+.goals-banker-reasons { margin:.4rem 0 0; padding-left:1.1rem; color:#d7e7df; }
+.goals-align-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.goals-align-row span {
+  padding:.22rem .55rem;
+  border-radius:999px;
+  background:rgba(255,255,255,.05);
+  font-size:.72rem;
+  font-weight:700;
+}
+.goals-banker-card .pick-badge { width:max-content; }
+

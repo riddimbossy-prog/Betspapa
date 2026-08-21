@@ -47,6 +47,7 @@
           </header>
           <div class="bp-mobile-sheet-grid">
             <a href="${link("bankers.html")}"><strong>Bankers</strong><small>Strong consensus selections</small></a>
+            <a href="${link("goals-bankers.html")}"><strong>Total Goals Banker</strong><small>League patterns at 1.20–1.55</small></a>
             <a href="${link("results-intelligence.html")}"><strong>Results</strong><small>Settled picks and engine performance</small></a>
             <a href="${link("live-fixtures.html")}"><strong>Live & Fixtures</strong><small>Fixtures, live scores and settlement</small></a>
             <a href="${link("venue-pattern.html")}"><strong>Venue Pattern</strong><small>Home venue against away behaviour</small></a>

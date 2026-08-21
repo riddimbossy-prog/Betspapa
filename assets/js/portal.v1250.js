@@ -1230,6 +1230,109 @@
     await loadConsensusBankers();
   }
 
+  function goalsBankerCard(item) {
+    const climate = item.leagueScoring || {};
+    const pct = (value) => Number.isFinite(Number(value)) ? `${Math.round(Number(value) * 100)}%` : "—";
+    return `<article class="consensus-banker-card goals-banker-card" data-fixture="${escapeHtml(item.fixtureId)}">
+      <div class="pick-meta">
+        <span>${escapeHtml(leagueText(item.league))}</span>
+        <span>${escapeHtml(formatKickoff(item.kickoff))}</span>
+      </div>
+      <div class="hub-match-teams">
+        <div class="pick-team">${logoMarkup(item.home)}<span>${escapeHtml(item.home?.name || "Home")}</span></div>
+        <span class="hub-versus">VS</span>
+        <div class="pick-team away">${logoMarkup(item.away)}<span>${escapeHtml(item.away?.name || "Away")}</span></div>
+      </div>
+      <span class="pick-badge consensus-grade">${escapeHtml(item.selection)}</span>
+      <strong class="pick-selection">${escapeHtml(item.selection)}</strong>
+      <div class="goals-banker-odds">Odds ${escapeHtml(String(item.odds || "—"))} · ${escapeHtml(item.oddsSource === "bookmaker" ? "book" : "implied")}</div>
+      <ul class="goals-banker-reasons">${(item.reasons || []).map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>
+      <div class="goals-align-row">
+        <span>League ${pct(item.leagueRate)}</span>
+        <span>Home 5 ${pct(item.homeRecentRate)}</span>
+        <span>Away 5 ${pct(item.awayRecentRate)}</span>
+      </div>
+      ${climate.label ? `<span class="league-climate-chip ${escapeHtml(climate.label)}">${escapeHtml(climate.label === "high" ? "HIGH SCORING" : climate.label === "low" ? "LOW SCORING" : "NEUTRAL")}</span>` : ""}
+    </article>`;
+  }
+
+  function renderGoalsBankers(payload) {
+    const picks = payload.picks || [];
+    const leagueMap = payload.leagueMap || [];
+    const leagueFilter = $("#goalsLeagueFilter");
+    const marketFilter = $("#goalsMarketFilter");
+    const searchFilter = $("#goalsSearchFilter");
+
+    if (leagueFilter && !leagueFilter.dataset.ready) {
+      const leagues = [...new Set(picks.map((pick) => leagueText(pick.league)).filter(Boolean))];
+      leagueFilter.innerHTML = `<option value="">All leagues</option>${leagues.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")}`;
+      leagueFilter.dataset.ready = "1";
+    }
+    if (marketFilter && !marketFilter.dataset.ready) {
+      const markets = [...new Set(picks.map((pick) => pick.selection).filter(Boolean))];
+      marketFilter.innerHTML = `<option value="">All totals</option>${markets.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")}`;
+      marketFilter.dataset.ready = "1";
+    }
+
+    $("#portalMetrics").innerHTML = [
+      `<div class="diagnostic-card"><span>Leagues mapped</span><strong>${leagueMap.length}</strong></div>`,
+      `<div class="diagnostic-card"><span>Goals bankers</span><strong>${picks.length}</strong></div>`,
+      `<div class="diagnostic-card"><span>Odds band</span><strong>1.20–1.55</strong></div>`,
+      `<div class="diagnostic-card"><span>Rejected</span><strong>${payload.rejectedCount || 0}</strong></div>`
+    ].join("");
+
+    $("#goalsLeagueMap").innerHTML = leagueMap.length
+      ? leagueMap.map((row) => `<article class="goals-league-chip">
+          <strong>${escapeHtml(leagueText(row))}</strong>
+          <span>${escapeHtml(row.selection)}</span>
+          <small>${row.picks} match${row.picks === 1 ? "" : "es"} · ${row.climate ? escapeHtml(String(row.climate).toUpperCase()) : "pattern"}</small>
+        </article>`).join("")
+      : `<div class="empty-card">No league totals pattern cleared the 1.20–1.55 band today.</div>`;
+
+    const draw = () => {
+      const leagueValue = leagueFilter?.value || "";
+      const marketValue = marketFilter?.value || "";
+      const query = (searchFilter?.value || "").trim().toLowerCase();
+      const filtered = picks.filter((item) => {
+        if (leagueValue && leagueText(item.league) !== leagueValue) return false;
+        if (marketValue && item.selection !== marketValue) return false;
+        if (query) {
+          const text = [item.home?.name, item.away?.name, leagueText(item.league), item.selection].join(" ").toLowerCase();
+          if (!text.includes(query)) return false;
+        }
+        return true;
+      });
+      $("#portalContent").innerHTML = filtered.length
+        ? `<div class="consensus-banker-grid">${filtered.map(goalsBankerCard).join("")}</div>`
+        : `<div class="empty-card">No totals banker matches these filters.</div>`;
+    };
+
+    [leagueFilter, marketFilter].filter(Boolean).forEach((input) => { input.onchange = draw; });
+    if (searchFilter) searchFilter.oninput = draw;
+    draw();
+  }
+
+  async function loadGoalsBankers({ silent = false } = {}) {
+    const dateInput = $("#dateFilter");
+    const date = dateInput.value || localIsoDate();
+    dateInput.value = date;
+    if (!silent) setStatus("Scanning league goal patterns…");
+    const payload = await fetchApi(`/api/goals-bankers/today?date=${encodeURIComponent(date)}`);
+    renderGoalsBankers(payload);
+    setStatus(
+      `${payload.pickCount || 0} total-goals bankers`,
+      `${(payload.leagueMap || []).length} leagues mapped · odds 1.20–1.55`
+    );
+  }
+
+  async function loadGoalsBankersPage() {
+    const dateInput = $("#dateFilter");
+    dateInput.value = dateInput.value || localIsoDate();
+    dateInput.onchange = () => loadGoalsBankers();
+    $("#refreshButton")?.addEventListener("click", () => loadGoalsBankers());
+    await loadGoalsBankers();
+  }
+
 
   function athenaCacheKey(date) {
     return `${ATHENA_CACHE_PREFIX}${date}`;
@@ -1680,6 +1783,7 @@
       if (page === "papa-hub") await loadPapaHubPage();
       if (page === "engine") await loadEnginePage();
       if (page === "bankers") await loadBankersPage();
+      if (page === "goals-bankers") await loadGoalsBankersPage();
       if (page === "athena-picks") await loadAthenaPage();
       if (page === "results") await loadResultsPage();
       if (page === "diagnostics") await loadDiagnosticsPage();

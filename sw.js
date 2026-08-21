@@ -15,6 +15,7 @@ const CORE_ASSETS = [
   "/boss-picks.html",
   "/live-fixtures.html",
   "/bankers.html",
+  "/goals-bankers.html",
   "/results-intelligence.html",
   "/privacy.html",
   "/terms.html",

@@ -10,6 +10,7 @@
 - High-scoring leagues no longer get Under totals tips; low-scoring leagues no longer get Over totals tips. Remaining clashes get a red League Goals flag.
 - League scoring now uses current-season rates, then last season when the sample is thin. High/low climate chips show on the board.
 - Red flags now apply across every engine. Flag 2 marks two current top-five teams playing each other.
+- Total Goals Banker scans each league’s scoring pattern, publishes only 1.20–1.55 totals, requires both teams to agree, and blocks every red flag.
 
 ## v1.25.1 — PapaLock containment and Athena key audit
 
