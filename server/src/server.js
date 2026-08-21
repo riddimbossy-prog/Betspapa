@@ -111,6 +111,7 @@ app.get("/", (_req, res) => {
     papaLockBankers: "/api/bankers/today",
     papaLockHistory: "/api/bankers/history",
     totalGoalsBankers: "/api/goals-bankers/today",
+    winsBankers: "/api/wins-bankers/today",
     legacyBankersByEngine: "/api/bankers/by-engine",
     resultsIntelligence: "/api/results/intelligence",
     adminDiagnostics: "/api/admin/diagnostics"

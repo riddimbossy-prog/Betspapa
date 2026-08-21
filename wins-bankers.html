@@ -4,8 +4,8 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
 <meta content="#070b16" name="theme-color"/>
-<meta content="Total Goals Banker scans each league's scoring pattern, keeps 1.20–1.55 odds, requires both teams to agree, and respects every red flag." name="description"/>
-<title>Total Goals Banker — BetsPapa</title>
+<meta content="Wins Banker only publishes a favourite win when the team is top 4, over 2 PPG, over 2 goals per game, the opponent is winless in five, and SportyBet prices clear the listed bands." name="description"/>
+<title>Wins Banker — BetsPapa</title>
 <link href="assets/images/favicon-64.png" rel="icon" type="image/png"/>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -24,48 +24,47 @@
 <link href="/manifest.webmanifest?v=1250" rel="manifest"/>
 <link href="/assets/images/pwa-brand-apple-180.png" rel="apple-touch-icon" sizes="180x180"/>
 </head>
-<body data-page="goals-bankers">
+<body data-page="wins-bankers">
 <div aria-live="polite" class="pwa-launch-splash" id="pwaSplash" role="status">
-<span class="pwa-splash-accessible">Launching BetsPapa Total Goals Banker</span>
+<span class="pwa-splash-accessible">Launching BetsPapa Wins Banker</span>
 </div>
 <header class="portal-header">
 <a class="portal-brand" href="index.html">
 <img alt="" src="assets/images/betspapa-papa-mark.png"/>
 <span><strong>BETS<span>PAPA</span></strong><small>PAPA KNOWS THE GAME</small></span>
 </a>
-<nav aria-label="Primary navigation" class="portal-nav" id="portalNav"><a href="index.html">Papa’s Pick</a><a href="bankers.html">Bankers</a><a aria-current="page" class="active" href="goals-bankers.html">Goals Banker</a><a href="wins-bankers.html">Wins Banker</a><a href="athena.html">Athena</a><a href="live-fixtures.html">Live & Fixtures</a><a href="results-intelligence.html">Results</a><a href="responsible.html">More</a></nav>
+<nav aria-label="Primary navigation" class="portal-nav" id="portalNav"><a href="index.html">Papa’s Pick</a><a href="bankers.html">Bankers</a><a href="goals-bankers.html">Goals Banker</a><a aria-current="page" class="active" href="wins-bankers.html">Wins Banker</a><a href="athena.html">Athena</a><a href="live-fixtures.html">Live & Fixtures</a><a href="results-intelligence.html">Results</a><a href="responsible.html">More</a></nav>
 <button aria-controls="portalNav" aria-expanded="false" aria-label="Open navigation" class="portal-menu" id="portalMenu" type="button">☰</button>
 </header>
 <main class="portal-main">
 <section class="portal-hero">
-<span class="eyebrow">BetsPapa v1.25.0 · Total Goals Banker</span>
-<h1>Total Goals Banker</h1>
-<p>Each league is scanned for a scoring pattern. SportyBet prices on match totals, BTTS, first-half goals and team goals only publish between 1.20 and 1.55 when both sides point the same way and no red flag is active.</p>
+<span class="eyebrow">BetsPapa v1.25.0 · Wins Banker</span>
+<h1>Wins Banker</h1>
+<p>A favourite win only publishes when every filter below is true on live SportyBet prices. Miss one and the match is withheld.</p>
 </section>
-<div class="status-strip" id="portalStatus"><span>Scanning league goal patterns…</span><small></small></div>
+<div class="status-strip" id="portalStatus"><span>Scanning favourite wins…</span><small></small></div>
 <div class="portal-toolbar">
 <label><span>Date</span><input id="dateFilter" type="date"/></label>
-<label><span>League</span><select id="goalsLeagueFilter"><option value="">All leagues</option></select></label>
-<label><span>Market</span><select id="goalsMarketFilter"><option value="">All totals</option></select></label>
-<label><span>Search</span><input id="goalsSearchFilter" placeholder="Team, league or market" type="search"/></label>
-<button id="refreshButton" type="button">Refresh Goals Bankers</button>
+<label><span>League</span><select id="winsLeagueFilter"><option value="">All leagues</option></select></label>
+<label><span>Search</span><input id="winsSearchFilter" placeholder="Team or league" type="search"/></label>
+<button id="refreshButton" type="button">Refresh Wins Bankers</button>
 </div>
+<section class="wins-rule-grid" id="winsRuleGrid">
+<article><strong>Favourite</strong><span>Top 4 · over 2 PPG · over 2 goals per game · SportyBet 1.19–1.55</span></article>
+<article><strong>Opponent</strong><span>Winless last five · SportyBet longer than 4.50 · to score longer than 1.65</span></article>
+<article><strong>Goals prices</strong><span>Match Over 1.5 at 1.20 or shorter · favourite 2+ shorter than 1.55</span></article>
+</section>
 <section class="metric-row" id="portalMetrics"></section>
 <div class="section-title">
-<h2>League map</h2>
-<p>Every published totals banker is grouped under the league pattern that produced it.</p>
-</div>
-<section class="goals-league-map" id="goalsLeagueMap"></section>
-<div class="section-title">
-<h2>Totals bankers</h2>
-<p>Odds band 1.20–1.55 on SportyBet. Totals, BTTS, first-half and team goals. Early season and top-five clashes are excluded.</p>
+<h2>Win bankers</h2>
+<p>Red flags still apply. Odds are SportyBet 1X2, Over 1.5 and team goals only.</p>
 </div>
 <div id="portalContent"></div>
 <footer class="portal-footer">
 <span>Sports analytics only. Predictions are not guarantees. 18+.</span>
 <div>
+<a href="goals-bankers.html">Goals Banker</a>
 <a href="bankers.html">PapaLock Bankers</a>
-<a href="responsible.html">Responsible Use</a>
 </div>
 </footer>
 </main>
@@ -76,7 +75,7 @@
 </div>
 </dialog>
 <script src="assets/js/country-flags.v1175.js"></script>
-<script src="assets/js/portal.v1250.js?v=goals-markets2"></script>
+<script src="assets/js/portal.v1250.js?v=wins1"></script>
 <script src="assets/js/mobile-nav.v1240.js"></script>
 <script src="/assets/js/pwa.v1160.js"></script>
 <script src="/assets/js/ui.v1170.js"></script>

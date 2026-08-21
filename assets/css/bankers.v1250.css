@@ -254,3 +254,44 @@ body[data-page="goals-bankers"] .portal-hero {
 }
 .goals-banker-card .pick-badge { width:max-content; }
 
+body[data-page="wins-bankers"] .portal-hero {
+  border-color: rgba(245,201,94,.32);
+  background:
+    radial-gradient(circle at 88% 0,rgba(245,201,94,.18),transparent 34%),
+    linear-gradient(140deg,rgba(42,18,4,.96),rgba(7,11,22,.98));
+}
+.wins-rule-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:12px;
+  margin:0 0 22px;
+}
+.wins-rule-grid article {
+  display:grid;
+  gap:6px;
+  padding:14px 16px;
+  border:1px solid rgba(245,201,94,.22);
+  border-radius:16px;
+  background:rgba(36,18,4,.78);
+}
+.wins-rule-grid strong { color:#f5c95e; }
+.wins-rule-grid span { color:#ead7b2; font-size:.88rem; line-height:1.45; }
+.wins-banker-card {
+  border-color:rgba(245,201,94,.28);
+}
+.wins-price-row {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:10px;
+}
+.wins-price-row span {
+  padding:.22rem .55rem;
+  border-radius:999px;
+  background:rgba(245,201,94,.1);
+  color:#ffe7a8;
+  font-size:.72rem;
+  font-weight:700;
+}
+
+

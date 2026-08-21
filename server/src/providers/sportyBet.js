@@ -81,6 +81,17 @@ function parseTotals(event) {
   const odds = {};
   for (const market of event.markets || []) {
     const id = String(market.id);
+    if (id === "1") {
+      for (const outcome of market.outcomes || []) {
+        const price = Number(outcome.odds);
+        if (!Number.isFinite(price) || price <= 1) continue;
+        const desc = String(outcome.desc || "").toLowerCase();
+        if (String(outcome.id) === "1" || desc === "home") odds.home = price;
+        if (String(outcome.id) === "2" || desc === "draw") odds.draw = price;
+        if (String(outcome.id) === "3" || desc === "away") odds.away = price;
+      }
+      continue;
+    }
     if (id === "18") {
       for (const outcome of market.outcomes || []) writeOutcome(odds, "", market.specifier, outcome);
       continue;
@@ -146,7 +157,7 @@ function flatten(payload) {
 async function fetchPage(pageNum) {
   const base = (process.env.SPORTYBET_API_BASE || DEFAULT_BASE).replace(/\/$/, "");
   const operId = process.env.SPORTYBET_OPER_ID || "2";
-  const url = `${base}/factsCenter/pcUpcomingEvents?sportId=sr:sport:1&marketId=18,29,68,19,20&pageSize=${PAGE_SIZE}&pageNum=${pageNum}`;
+  const url = `${base}/factsCenter/pcUpcomingEvents?sportId=sr:sport:1&marketId=1,18,29,68,19,20&pageSize=${PAGE_SIZE}&pageNum=${pageNum}`;
   const response = await fetch(url, {
     headers: {
       Accept: "application/json",

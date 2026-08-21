@@ -25,6 +25,7 @@ import {
 import { getPreparedEngineBoard, isPublicBoardItem, isVisibleBoardPick } from "../services/boardSnapshotService.js";
 import { getPapaLockHistory, getPapaLockPicks, invalidatePapaLockCache } from "../services/papaLockPickService.js";
 import { getTotalGoalsBankers } from "../services/totalGoalsBankerService.js";
+import { getWinsBankers } from "../services/winsBankerService.js";
 import { toPublicPapaLockSlate } from "../engine/papaLockBankerEngine.js";
 import { applyLeagueScoringGuard } from "../engine/leagueScoringPolicy.js";
 import { applyRedFlagsToPick, collectRedFlags } from "../services/fixtureRiskService.js";
@@ -493,6 +494,23 @@ publicRouter.get("/goals-bankers/today", async (req, res, next) => {
     res.json({
       ...slate,
       liveRefresh: { refreshed: false, skipped: true, reason: "Total Goals Banker prepared reader" }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+publicRouter.get("/wins-bankers/today", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.query.date || todayUtc());
+    const force = ["1", "true", "force", "reload"].includes(
+      String(req.query.force || "").toLowerCase()
+    );
+    const slate = await getWinsBankers(getSupabaseAdmin(), date, { force });
+    setPublicCache(res, slate.cached ? 60 : 20, 300);
+    res.json({
+      ...slate,
+      liveRefresh: { refreshed: false, skipped: true, reason: "Wins Banker prepared reader" }
     });
   } catch (error) {
     next(error);

@@ -1,6 +1,7 @@
 import { fetchAllRows } from "./supabaseHelpers.js";
 import { buildEarlySeasonFlag } from "../engine/earlySeasonFlag.js";
 import { buildTopFiveClashFlag, rankLeagueTable } from "../engine/topFiveClashFlag.js";
+import { toPerspectiveGame } from "../engine/splitFormEngine.js";
 
 export function collectRedFlags(...flags) {
   const unique = [];
@@ -17,6 +18,37 @@ export function applyRedFlagsToPick(pick, redFlags = []) {
     ...pick,
     redFlags,
     cautions: [...new Set([...(pick.cautions || []), ...reasons])]
+  };
+}
+
+function lastFiveResults(rows, fixture, teamId) {
+  const leagueId = fixture.league_id;
+  const season = fixture.season;
+  const cutoff = new Date(fixture.fixture_date).getTime();
+  return (rows || [])
+    .filter((row) =>
+      Number(row.league_id) === Number(leagueId) &&
+      Number(row.season) === Number(season) &&
+      (Number(row.home_team_id) === Number(teamId) || Number(row.away_team_id) === Number(teamId)) &&
+      new Date(row.fixture_date).getTime() < cutoff
+    )
+    .sort((left, right) => new Date(right.fixture_date) - new Date(left.fixture_date))
+    .slice(0, 5)
+    .map((row) => toPerspectiveGame(row, teamId).ftResult)
+    .filter(Boolean);
+}
+
+function sideStats(row) {
+  const played = Number(row?.played || 0);
+  const points = Number(row?.points || 0);
+  const gf = Number(row?.gf || 0);
+  return {
+    rank: row?.rank ?? null,
+    played,
+    points,
+    gf,
+    ppg: played ? points / played : 0,
+    gpg: played ? gf / played : 0
   };
 }
 
@@ -44,14 +76,10 @@ export async function loadFixtureRiskPack(supabase, fixtures = [], teamMap = new
       season: fixture.season,
       cutoff
     });
-    const home = table.find((row) => Number(row.teamId) === Number(fixture.home_team_id)) || {
-      rank: null,
-      played: 0
-    };
-    const away = table.find((row) => Number(row.teamId) === Number(fixture.away_team_id)) || {
-      rank: null,
-      played: 0
-    };
+    const homeRow = table.find((row) => Number(row.teamId) === Number(fixture.home_team_id));
+    const awayRow = table.find((row) => Number(row.teamId) === Number(fixture.away_team_id));
+    const home = sideStats(homeRow);
+    const away = sideStats(awayRow);
     const homeName = teamMap.get(Number(fixture.home_team_id))?.name ||
       teamMap.get(fixture.home_team_id)?.name ||
       "Home";
@@ -82,8 +110,20 @@ export async function loadFixtureRiskPack(supabase, fixtures = [], teamMap = new
         size: table.length,
         homeRank: home.rank,
         awayRank: away.rank,
-        homePlayed: home.played || 0,
-        awayPlayed: away.played || 0
+        homePlayed: home.played,
+        awayPlayed: away.played,
+        homePoints: home.points,
+        awayPoints: away.points,
+        homeGf: home.gf,
+        awayGf: away.gf,
+        homePpg: home.ppg,
+        awayPpg: away.ppg,
+        homeGpg: home.gpg,
+        awayGpg: away.gpg
+      },
+      lastFive: {
+        home: lastFiveResults(rows, fixture, fixture.home_team_id),
+        away: lastFiveResults(rows, fixture, fixture.away_team_id)
       }
     });
   }

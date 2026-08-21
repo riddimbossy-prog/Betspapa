@@ -1350,6 +1350,104 @@
     await loadGoalsBankers();
   }
 
+  function winsBankerCard(item) {
+    return `<article class="consensus-banker-card wins-banker-card" data-fixture="${escapeHtml(item.fixtureId)}">
+      <div class="pick-meta">
+        <span>${escapeHtml(leagueText(item.league))}</span>
+        <span>${escapeHtml(formatKickoff(item.kickoff))}</span>
+      </div>
+      <div class="hub-match-teams">
+        <div class="pick-team">${logoMarkup(item.home)}<span>${escapeHtml(item.home?.name || "Home")}</span></div>
+        <span class="hub-versus">VS</span>
+        <div class="pick-team away">${logoMarkup(item.away)}<span>${escapeHtml(item.away?.name || "Away")}</span></div>
+      </div>
+      <span class="pick-badge consensus-grade">${escapeHtml(item.selection)}</span>
+      <strong class="pick-selection">${escapeHtml(item.selection)}</strong>
+      <div class="goals-banker-odds">SportyBet ${escapeHtml(String(item.odds || "—"))}${item.sportyBetUrl ? ` · <a href="${escapeHtml(item.sportyBetUrl)}" target="_blank" rel="noopener">open</a>` : ""}</div>
+      <ul class="goals-banker-reasons">${(item.reasons || []).map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>
+      <div class="goals-align-row">
+        <span>P${item.favoriteRank || "—"} · ${escapeHtml(String(item.favoritePpg || "—"))} PPG</span>
+        <span>${escapeHtml(String(item.favoriteGpg || "—"))} GPG</span>
+        <span>Opp ${escapeHtml(item.opponentForm || "—")}</span>
+      </div>
+      <div class="wins-price-row">
+        <span>Opp ${escapeHtml(String(item.opponentOdds || "—"))}</span>
+        <span>O1.5 ${escapeHtml(String(item.over15Odds || "—"))}</span>
+        <span>2+ ${escapeHtml(String(item.favoriteTwoPlusOdds || "—"))}</span>
+        <span>Opp score ${escapeHtml(String(item.opponentScoreOdds || "—"))}</span>
+      </div>
+    </article>`;
+  }
+
+  function renderWinsBankers(payload) {
+    const picks = payload.picks || [];
+    const leagueFilter = $("#winsLeagueFilter");
+    const searchFilter = $("#winsSearchFilter");
+    if (leagueFilter && !leagueFilter.dataset.ready) {
+      const leagues = [...new Set(picks.map((pick) => leagueText(pick.league)).filter(Boolean))];
+      leagueFilter.innerHTML = `<option value="">All leagues</option>${leagues.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")}`;
+      leagueFilter.dataset.ready = "1";
+    }
+    $("#portalMetrics").innerHTML = [
+      `<div class="diagnostic-card"><span>Wins bankers</span><strong>${picks.length}</strong></div>`,
+      `<div class="diagnostic-card"><span>Favourite band</span><strong>1.19–1.55</strong></div>`,
+      `<div class="diagnostic-card"><span>Opponent</span><strong>> 4.50</strong></div>`,
+      `<div class="diagnostic-card"><span>Rejected</span><strong>${payload.rejectedCount || 0}</strong></div>`
+    ].join("");
+    const draw = () => {
+      const leagueValue = leagueFilter?.value || "";
+      const query = (searchFilter?.value || "").trim().toLowerCase();
+      const filtered = picks.filter((item) => {
+        if (leagueValue && leagueText(item.league) !== leagueValue) return false;
+        if (query) {
+          const text = [item.home?.name, item.away?.name, leagueText(item.league), item.selection].join(" ").toLowerCase();
+          if (!text.includes(query)) return false;
+        }
+        return true;
+      });
+      $("#portalContent").innerHTML = filtered.length
+        ? `<div class="portal-grid consensus-banker-grid">${filtered.map(winsBankerCard).join("")}</div>`
+        : `<div class="empty-card">No favourite cleared every Wins Banker filter today.</div>`;
+    };
+    if (leagueFilter) leagueFilter.onchange = draw;
+    if (searchFilter) searchFilter.oninput = draw;
+    draw();
+  }
+
+  async function loadWinsBankers({ silent = false } = {}) {
+    const dateInput = $("#dateFilter");
+    const date = dateInput.value || utcIsoDate();
+    dateInput.value = date;
+    if (!silent) setStatus("Scanning favourite wins…");
+    let payload = await fetchApi(`/api/wins-bankers/today?date=${encodeURIComponent(date)}`);
+    if (!(payload.pickCount || 0) && payload.rolledForward && payload.date && payload.date !== date) {
+      dateInput.value = payload.date;
+    }
+    if (!(payload.pickCount || 0) && !(payload.reviewedFixtures || 0)) {
+      const utc = utcIsoDate();
+      if (utc !== date) {
+        const alt = await fetchApi(`/api/wins-bankers/today?date=${encodeURIComponent(utc)}`);
+        if (alt.pickCount || alt.reviewedFixtures) {
+          dateInput.value = alt.date || utc;
+          payload = alt;
+        }
+      }
+    }
+    renderWinsBankers(payload);
+    setStatus(
+      `${payload.pickCount || 0} wins bankers`,
+      `Favourite 1.19–1.55 · opponent > 4.50${payload.rolledForward ? " · next UTC date" : ""}`
+    );
+  }
+
+  async function loadWinsBankersPage() {
+    const dateInput = $("#dateFilter");
+    dateInput.value = dateInput.value || utcIsoDate();
+    dateInput.onchange = () => loadWinsBankers();
+    $("#refreshButton")?.addEventListener("click", () => loadWinsBankers());
+    await loadWinsBankers();
+  }
+
 
   function athenaCacheKey(date) {
     return `${ATHENA_CACHE_PREFIX}${date}`;
@@ -1801,6 +1899,7 @@
       if (page === "engine") await loadEnginePage();
       if (page === "bankers") await loadBankersPage();
       if (page === "goals-bankers") await loadGoalsBankersPage();
+      if (page === "wins-bankers") await loadWinsBankersPage();
       if (page === "athena-picks") await loadAthenaPage();
       if (page === "results") await loadResultsPage();
       if (page === "diagnostics") await loadDiagnosticsPage();
