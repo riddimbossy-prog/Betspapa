@@ -11,7 +11,7 @@
 - League scoring now uses current-season rates, then last season when the sample is thin. High/low climate chips show on the board.
 - Red flags now apply across every engine. Flag 2 marks two current top-five teams playing each other.
 - Added Wins Banker: top-4 favourite, over 2 PPG, over 2 goals per game, opponent winless in five, SportyBet favourite 1.19–1.55, opponent longer than 4.50, Over 1.5 at 1.20 or shorter, favourite 2+ shorter than 1.55, opponent to score longer than 1.65.
-- Wins Banker filters now sit in a clear table, and each pick shows rule vs this match.
+- Wins Banker now requires SportyBet Over 1.5 at 1.20 or shorter, then 1 or 2 extra filters. More extras still qualify.
 - Goals Banker now prices match totals 0.5–4.5, BTTS, first-half goals and team Over 0.5/1.5 from SportyBet. Still 1.20–1.55 only.
 
 ## v1.25.1 — PapaLock containment and Athena key audit

@@ -1,4 +1,4 @@
-export const WINS_BANKER_VERSION = "wins-banker-v1.0.0";
+export const WINS_BANKER_VERSION = "wins-banker-v1.1.0";
 export const WINS_BANKER_NAME = "Wins Banker";
 export const FAV_ODDS_MIN = 1.19;
 export const FAV_ODDS_MAX = 1.55;
@@ -11,6 +11,7 @@ export const MIN_GPG = 2;
 export const TOP_RANK = 4;
 export const MIN_PLAYED = 5;
 export const MIN_TABLE = 8;
+export const MIN_EXTRA_FILTERS = 1;
 
 function rate(value) {
   const number = Number(value);
@@ -20,6 +21,11 @@ function rate(value) {
 function round(value, digits = 3) {
   const factor = 10 ** digits;
   return Math.round((Number(value) || 0) * factor) / factor;
+}
+
+function finitePrice(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 1 ? number : null;
 }
 
 export function formString(results = []) {
@@ -52,6 +58,10 @@ export function identifyFavorite(odds = {}) {
     favOdds: homeIsFav ? home : away,
     oppOdds: homeIsFav ? away : home
   };
+}
+
+function filterRow({ key, label, rule, value, passed, required = false }) {
+  return { key, label, rule, value, passed: Boolean(passed), required };
 }
 
 export function selectWinsBanker({
@@ -94,55 +104,97 @@ export function selectWinsBanker({
   const favPpg = rate(isHome ? homePpg : awayPpg);
   const favGpg = rate(isHome ? homeGpg : awayGpg);
   const oppForm = isHome ? awayLastFive : homeLastFive;
-  const over15 = Number(prices["over-15"]);
-  const favTwoPlus = Number(isHome ? prices["home-over-15"] : prices["away-over-15"]);
-  const oppScore = Number(isHome ? prices["away-over-05"] : prices["home-over-05"]);
+  const over15 = finitePrice(prices["over-15"]);
+  const favTwoPlus = finitePrice(isHome ? prices["home-over-15"] : prices["away-over-15"]);
+  const oppScore = finitePrice(isHome ? prices["away-over-05"] : prices["home-over-05"]);
 
-  if (favorite.favOdds < FAV_ODDS_MIN || favorite.favOdds > FAV_ODDS_MAX) {
-    return { available: false, key: "no-pick", reasons: [`Favourite SportyBet price ${favorite.favOdds} is outside 1.19–1.55`] };
-  }
-  if (!(favorite.oppOdds > OPP_ODDS_MIN)) {
-    return { available: false, key: "no-pick", reasons: [`Opponent SportyBet price ${favorite.oppOdds} is not over 4.50`] };
-  }
-  if (Number(tableSize) < MIN_TABLE) {
-    return { available: false, key: "no-pick", reasons: ["League table is too small to trust a top-4 favourite"] };
-  }
-  if (favPlayed < MIN_PLAYED) {
-    return { available: false, key: "no-pick", reasons: [`${favName} does not have five league matches for PPG`] };
-  }
-  if (!(favRank >= 1 && favRank <= TOP_RANK)) {
-    return { available: false, key: "no-pick", reasons: [`${favName} is not inside the current top 4`] };
-  }
-  if (!(favPpg > MIN_PPG)) {
-    return { available: false, key: "no-pick", reasons: [`${favName} PPG ${round(favPpg, 2)} is not over 2.00`] };
-  }
-  if (!(favGpg > MIN_GPG)) {
-    return { available: false, key: "no-pick", reasons: [`${favName} scores ${round(favGpg, 2)} goals per game, not over 2.00`] };
-  }
-  if (oppForm.length < 5) {
-    return { available: false, key: "no-pick", reasons: [`${oppName} does not have five recent league matches`] };
-  }
-  if (winsInForm(oppForm) > 0) {
-    return { available: false, key: "no-pick", reasons: [`${oppName} is not winless in the last five (${formString(oppForm)})`] };
-  }
-  if (!Number.isFinite(over15) || over15 <= 1) {
+  if (over15 == null) {
     return { available: false, key: "no-pick", reasons: ["No SportyBet Over 1.5 price"] };
   }
   if (!(over15 <= OVER15_MAX)) {
-    return { available: false, key: "no-pick", reasons: [`SportyBet Over 1.5 is ${over15}, not 1.20 or shorter`] };
+    return {
+      available: false,
+      key: "no-pick",
+      reasons: [`SportyBet Over 1.5 is ${over15}, not 1.20 or shorter`]
+    };
   }
-  if (!Number.isFinite(favTwoPlus) || favTwoPlus <= 1) {
-    return { available: false, key: "no-pick", reasons: [`No SportyBet ${favName} Over 1.5 team-goals price`] };
+
+  const extras = [
+    filterRow({
+      key: "top-4",
+      label: "Favourite position",
+      rule: "Top 4",
+      value: Number.isFinite(favRank) && favRank > 0 ? `P${favRank}` : "—",
+      passed: Number(tableSize) >= MIN_TABLE && favRank >= 1 && favRank <= TOP_RANK
+    }),
+    filterRow({
+      key: "ppg",
+      label: "Points per game",
+      rule: "Over 2.00",
+      value: favPlayed >= MIN_PLAYED ? round(favPpg, 2) : "—",
+      passed: favPlayed >= MIN_PLAYED && favPpg > MIN_PPG
+    }),
+    filterRow({
+      key: "gpg",
+      label: "Goals per game",
+      rule: "Over 2.00",
+      value: favPlayed >= MIN_PLAYED ? round(favGpg, 2) : "—",
+      passed: favPlayed >= MIN_PLAYED && favGpg > MIN_GPG
+    }),
+    filterRow({
+      key: "fav-odds",
+      label: "Favourite win odds",
+      rule: "1.19–1.55",
+      value: round(favorite.favOdds, 2),
+      passed: favorite.favOdds >= FAV_ODDS_MIN && favorite.favOdds <= FAV_ODDS_MAX
+    }),
+    filterRow({
+      key: "opp-odds",
+      label: "Opponent win odds",
+      rule: "Over 4.50",
+      value: round(favorite.oppOdds, 2),
+      passed: favorite.oppOdds > OPP_ODDS_MIN
+    }),
+    filterRow({
+      key: "opp-form",
+      label: "Opponent last 5",
+      rule: "Winless",
+      value: oppForm.length >= 5 ? formString(oppForm) : "—",
+      passed: oppForm.length >= 5 && winsInForm(oppForm) === 0
+    }),
+    filterRow({
+      key: "fav-2plus",
+      label: "Favourite to score 2+",
+      rule: "Shorter than 1.55",
+      value: favTwoPlus == null ? "—" : round(favTwoPlus, 2),
+      passed: favTwoPlus != null && favTwoPlus < FAV_TWO_PLUS_MAX
+    }),
+    filterRow({
+      key: "opp-score",
+      label: "Opponent to score",
+      rule: "Longer than 1.65",
+      value: oppScore == null ? "—" : round(oppScore, 2),
+      passed: oppScore != null && oppScore > OPP_SCORE_MIN
+    })
+  ];
+
+  const extraPassed = extras.filter((row) => row.passed);
+  if (extraPassed.length < MIN_EXTRA_FILTERS) {
+    return {
+      available: false,
+      key: "no-pick",
+      reasons: ["Over 1.5 is short enough, but none of the extra Wins Banker filters passed"]
+    };
   }
-  if (!(favTwoPlus < FAV_TWO_PLUS_MAX)) {
-    return { available: false, key: "no-pick", reasons: [`${favName} to score 2+ is ${favTwoPlus}, not under 1.55`] };
-  }
-  if (!Number.isFinite(oppScore) || oppScore <= 1) {
-    return { available: false, key: "no-pick", reasons: [`No SportyBet ${oppName} Over 0.5 team-goals price`] };
-  }
-  if (!(oppScore > OPP_SCORE_MIN)) {
-    return { available: false, key: "no-pick", reasons: [`${oppName} to score is ${oppScore}, not over 1.65`] };
-  }
+
+  const required = filterRow({
+    key: "over-15",
+    label: "Match Over 1.5",
+    rule: "1.20 or shorter",
+    value: round(over15, 2),
+    passed: true,
+    required: true
+  });
 
   return {
     available: true,
@@ -152,26 +204,28 @@ export function selectWinsBanker({
     direction: "win",
     side: favorite.side,
     qualified: true,
-    tier: "Banker",
+    tier: extraPassed.length >= 2 ? "Banker" : "Lean",
     odds: round(favorite.favOdds, 3),
     opponentOdds: round(favorite.oppOdds, 3),
     over15Odds: round(over15, 3),
-    favoriteTwoPlusOdds: round(favTwoPlus, 3),
-    opponentScoreOdds: round(oppScore, 3),
+    favoriteTwoPlusOdds: favTwoPlus == null ? null : round(favTwoPlus, 3),
+    opponentScoreOdds: oppScore == null ? null : round(oppScore, 3),
     oddsSource: "sportybet",
     book: "SportyBet",
     sportyBetUrl: odds.url || prices.url || null,
     favoriteName: favName,
     opponentName: oppName,
-    favoriteRank: favRank,
+    favoriteRank: Number.isFinite(favRank) ? favRank : null,
     favoritePpg: round(favPpg, 3),
     favoriteGpg: round(favGpg, 3),
     opponentForm: formString(oppForm),
-    score: round(favPpg * 22 + favGpg * 8 + (FAV_ODDS_MAX - favorite.favOdds) * 18 + Math.min(favorite.oppOdds, 12), 2),
+    extraPassed: extraPassed.length,
+    extraTotal: extras.length,
+    filters: [required, ...extras],
+    score: round(extraPassed.length * 18 + (OVER15_MAX - over15) * 40 + (favorite.favOdds <= FAV_ODDS_MAX ? 8 : 0), 2),
     reasons: [
-      `${favName} is ${favRank} in the table, ${round(favPpg, 2)} PPG and ${round(favGpg, 2)} goals per game.`,
-      `${oppName} is winless in the last five (${formString(oppForm)}) at SportyBet ${round(favorite.oppOdds, 2)}.`,
-      `SportyBet ${favName} ${round(favorite.favOdds, 2)} · Over 1.5 ${round(over15, 2)} · ${favName} 2+ ${round(favTwoPlus, 2)} · ${oppName} to score ${round(oppScore, 2)}.`
+      `SportyBet Over 1.5 at ${round(over15, 2)} is 1.20 or shorter.`,
+      `${extraPassed.length} extra filter${extraPassed.length === 1 ? "" : "s"} passed: ${extraPassed.map((row) => row.label).join(", ")}.`
     ]
   };
 }

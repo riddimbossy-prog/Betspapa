@@ -40,7 +40,7 @@
 <section class="portal-hero">
 <span class="eyebrow">BetsPapa v1.25.0 · Wins Banker</span>
 <h1>Wins Banker</h1>
-<p>A favourite win only publishes when every filter below is true on live SportyBet prices. Miss one and the match is withheld.</p>
+<p>SportyBet Over 1.5 at 1.20 or shorter is required. Then 1 or 2 of the extra filters is enough to publish a favourite win.</p>
 </section>
 <div class="status-strip" id="portalStatus"><span>Scanning favourite wins…</span><small></small></div>
 <div class="portal-toolbar">
@@ -52,7 +52,7 @@
 <section class="wins-filter-panel">
 <div class="section-title">
 <h2>Filters</h2>
-<p>Every row must pass. If one fails, the match is withheld.</p>
+<p>Over 1.5 is required. Add 1 or 2 extras from the table. More extras still qualify.</p>
 </div>
 <div class="wins-filter-wrap">
 <table class="wins-filter-table">
@@ -60,19 +60,20 @@
 <tr>
 <th>Filter</th>
 <th>Must be</th>
+<th>Need</th>
 <th>Source</th>
 </tr>
 </thead>
 <tbody>
-<tr><td>Favourite position</td><td>Current top 4</td><td>League table</td></tr>
-<tr><td>Points per game</td><td>Over 2.00</td><td>Season</td></tr>
-<tr><td>Goals per game</td><td>Over 2.00</td><td>Season</td></tr>
-<tr><td>Favourite win odds</td><td>1.19 to 1.55</td><td>SportyBet 1X2</td></tr>
-<tr><td>Opponent win odds</td><td>Over 4.50</td><td>SportyBet 1X2</td></tr>
-<tr><td>Opponent last 5</td><td>Winless</td><td>Recent form</td></tr>
-<tr><td>Match Over 1.5</td><td>1.20 or shorter</td><td>SportyBet</td></tr>
-<tr><td>Favourite to score 2+</td><td>Shorter than 1.55</td><td>SportyBet team goals</td></tr>
-<tr><td>Opponent to score</td><td>Longer than 1.65</td><td>SportyBet team goals</td></tr>
+<tr><td>Match Over 1.5</td><td>1.20 or shorter</td><td>Required</td><td>SportyBet</td></tr>
+<tr><td>Favourite position</td><td>Current top 4</td><td>1 or 2 extras</td><td>League table</td></tr>
+<tr><td>Points per game</td><td>Over 2.00</td><td>1 or 2 extras</td><td>Season</td></tr>
+<tr><td>Goals per game</td><td>Over 2.00</td><td>1 or 2 extras</td><td>Season</td></tr>
+<tr><td>Favourite win odds</td><td>1.19 to 1.55</td><td>1 or 2 extras</td><td>SportyBet 1X2</td></tr>
+<tr><td>Opponent win odds</td><td>Over 4.50</td><td>1 or 2 extras</td><td>SportyBet 1X2</td></tr>
+<tr><td>Opponent last 5</td><td>Winless</td><td>1 or 2 extras</td><td>Recent form</td></tr>
+<tr><td>Favourite to score 2+</td><td>Shorter than 1.55</td><td>1 or 2 extras</td><td>SportyBet team goals</td></tr>
+<tr><td>Opponent to score</td><td>Longer than 1.65</td><td>1 or 2 extras</td><td>SportyBet team goals</td></tr>
 </tbody>
 </table>
 </div>
@@ -81,7 +82,7 @@
 <section class="metric-row" id="portalMetrics"></section>
 <div class="section-title">
 <h2>Win bankers</h2>
-<p>Red flags still apply. Odds are SportyBet 1X2, Over 1.5 and team goals only.</p>
+<p>Required Over 1.5 at 1.20 or shorter, plus 1 or 2 extras. Red flags still apply. Odds are SportyBet only.</p>
 </div>
 <div id="portalContent"></div>
 <footer class="portal-footer">
@@ -99,7 +100,7 @@
 </div>
 </dialog>
 <script src="assets/js/country-flags.v1175.js"></script>
-<script src="assets/js/portal.v1250.js?v=wins-table1"></script>
+<script src="assets/js/portal.v1250.js?v=wins-flex1"></script>
 <script src="assets/js/mobile-nav.v1240.js"></script>
 <script src="/assets/js/pwa.v1160.js"></script>
 <script src="/assets/js/ui.v1170.js"></script>

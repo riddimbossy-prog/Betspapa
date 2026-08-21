@@ -328,6 +328,17 @@ body[data-page="wins-bankers"] .portal-hero {
 @media (max-width: 640px) {
   .wins-filter-table td:first-child { white-space: normal; }
 }
+.wins-extra-chip {
+  margin-top: 8px;
+  color: #f5c95e;
+  font-size: .78rem;
+  font-weight: 800;
+}
+.wins-match-table tr.pass td:last-child { color: #b8ffd7; }
+.wins-match-table tr.fail td:last-child { color: #6f6758; }
+.wins-match-table tr.required td:last-child { color: #f5c95e; }
+.wins-filter-table td:nth-child(3) { color: #f5c95e; font-weight: 800; }
+
 
 
 

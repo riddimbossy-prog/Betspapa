@@ -1351,17 +1351,11 @@
   }
 
   function winsBankerCard(item) {
-    const rows = [
-      ["Position", "Top 4", item.favoriteRank ? `P${item.favoriteRank}` : "—"],
-      ["Points per game", "Over 2.00", item.favoritePpg ?? "—"],
-      ["Goals per game", "Over 2.00", item.favoriteGpg ?? "—"],
-      ["Favourite odds", "1.19–1.55", item.odds ?? "—"],
-      ["Opponent odds", "Over 4.50", item.opponentOdds ?? "—"],
-      ["Opponent last 5", "Winless", item.opponentForm ?? "—"],
-      ["Match Over 1.5", "1.20 or shorter", item.over15Odds ?? "—"],
-      ["Favourite 2+", "Shorter than 1.55", item.favoriteTwoPlusOdds ?? "—"],
-      ["Opponent to score", "Longer than 1.65", item.opponentScoreOdds ?? "—"]
-    ];
+    const rows = item.filters?.length
+      ? item.filters
+      : [
+          { label: "Match Over 1.5", rule: "1.20 or shorter", value: item.over15Odds ?? "—", passed: true, required: true }
+        ];
     return `<article class="consensus-banker-card wins-banker-card" data-fixture="${escapeHtml(item.fixtureId)}">
       <div class="pick-meta">
         <span>${escapeHtml(leagueText(item.league))}</span>
@@ -1375,10 +1369,16 @@
       <span class="pick-badge consensus-grade">${escapeHtml(item.selection)}</span>
       <strong class="pick-selection">${escapeHtml(item.selection)}</strong>
       <div class="goals-banker-odds">SportyBet ${escapeHtml(String(item.odds || "—"))}${item.sportyBetUrl ? ` · <a href="${escapeHtml(item.sportyBetUrl)}" target="_blank" rel="noopener">open</a>` : ""}</div>
+      <div class="wins-extra-chip">${escapeHtml(String(item.extraPassed || 0))} extra filter${Number(item.extraPassed) === 1 ? "" : "s"} passed</div>
       <table class="wins-match-table">
-        <thead><tr><th>Filter</th><th>Must be</th><th>This match</th></tr></thead>
+        <thead><tr><th>Filter</th><th>Must be</th><th>This match</th><th></th></tr></thead>
         <tbody>
-          ${rows.map((row) => `<tr><td>${escapeHtml(row[0])}</td><td>${escapeHtml(String(row[1]))}</td><td>${escapeHtml(String(row[2]))}</td></tr>`).join("")}
+          ${rows.map((row) => `<tr class="${row.passed ? "pass" : "fail"} ${row.required ? "required" : ""}">
+            <td>${escapeHtml(row.label)}</td>
+            <td>${escapeHtml(String(row.rule))}</td>
+            <td>${escapeHtml(String(row.value ?? "—"))}</td>
+            <td>${row.required ? "Required" : row.passed ? "Pass" : "—"}</td>
+          </tr>`).join("")}
         </tbody>
       </table>
     </article>`;
@@ -1395,8 +1395,8 @@
     }
     $("#portalMetrics").innerHTML = [
       `<div class="diagnostic-card"><span>Wins bankers</span><strong>${picks.length}</strong></div>`,
-      `<div class="diagnostic-card"><span>Favourite band</span><strong>1.19–1.55</strong></div>`,
-      `<div class="diagnostic-card"><span>Opponent</span><strong>> 4.50</strong></div>`,
+      `<div class="diagnostic-card"><span>Required</span><strong>O1.5 ≤ 1.20</strong></div>`,
+      `<div class="diagnostic-card"><span>Extras needed</span><strong>1 or 2</strong></div>`,
       `<div class="diagnostic-card"><span>Rejected</span><strong>${payload.rejectedCount || 0}</strong></div>`
     ].join("");
     const draw = () => {
@@ -1412,7 +1412,7 @@
       });
       $("#portalContent").innerHTML = filtered.length
         ? `<div class="portal-grid consensus-banker-grid">${filtered.map(winsBankerCard).join("")}</div>`
-        : `<div class="empty-card">No favourite cleared every Wins Banker filter today.</div>`;
+        : `<div class="empty-card">No favourite had Over 1.5 at 1.20 or shorter plus 1 extra filter today.</div>`;
     };
     if (leagueFilter) leagueFilter.onchange = draw;
     if (searchFilter) searchFilter.oninput = draw;
@@ -1441,7 +1441,7 @@
     renderWinsBankers(payload);
     setStatus(
       `${payload.pickCount || 0} wins bankers`,
-      `Favourite 1.19–1.55 · opponent > 4.50${payload.rolledForward ? " · next UTC date" : ""}`
+      `Over 1.5 ≤ 1.20 + 1 extra${payload.rolledForward ? " · next UTC date" : ""}`
     );
   }
 

@@ -33,60 +33,71 @@ const base = {
   }
 };
 
+const weak = {
+  ...base,
+  homeRank: 9,
+  homePpg: 1.1,
+  homeGpg: 1.1,
+  awayLastFive: ["W", "W", "W", "D", "L"],
+  odds: {
+    home: 1.8,
+    away: 3.9,
+    "over-15": 1.14,
+    "home-over-15": 1.9,
+    "away-over-05": 1.4,
+    url: "https://www.sportybet.com/ng/sport/football"
+  }
+};
+
 test("SportyBet 1X2 marks the shorter side as favourite", () => {
   const fav = identifyFavorite({ home: 1.32, away: 8.5 });
   assert.equal(fav.side, "home");
   assert.equal(fav.favOdds, 1.32);
 });
 
-test("wins banker publishes a top-4 favourite that clears every filter", () => {
+test("wins banker still publishes when every extra filter passes", () => {
   const pick = selectWinsBanker(base);
   assert.equal(pick.available, true);
   assert.equal(pick.key, "home-win");
   assert.equal(pick.book, "SportyBet");
-  assert.equal(pick.odds, 1.32);
-  assert.match(pick.selection, /Bodø\/Glimt Win/);
-  assert.equal(pick.opponentForm, formString(base.awayLastFive));
+  assert.ok(pick.extraPassed >= 2);
 });
 
-test("favourite outside 1.19-1.55 is rejected", () => {
-  const pick = selectWinsBanker({ ...base, odds: { ...base.odds, home: 1.72 } });
+test("Over 1.5 at 1.20 or shorter plus one extra filter is enough", () => {
+  const pick = selectWinsBanker({
+    ...weak,
+    homeRank: 3
+  });
+  assert.equal(pick.available, true);
+  assert.equal(pick.extraPassed, 1);
+  assert.equal(pick.filters.find((row) => row.key === "top-4").passed, true);
+  assert.equal(pick.filters.find((row) => row.key === "over-15").required, true);
+});
+
+test("two extra filters also publish", () => {
+  const pick = selectWinsBanker({
+    ...weak,
+    homeRank: 2,
+    homePpg: 2.3
+  });
+  assert.equal(pick.available, true);
+  assert.equal(pick.extraPassed, 2);
+});
+
+test("Over 1.5 alone with no extra filters is rejected", () => {
+  const pick = selectWinsBanker(weak);
   assert.equal(pick.available, false);
 });
 
-test("opponent shorter than 4.50 is rejected", () => {
-  const pick = selectWinsBanker({ ...base, odds: { ...base.odds, away: 4.4 } });
-  assert.equal(pick.available, false);
-});
-
-test("favourite not in the top 4 is rejected", () => {
-  const pick = selectWinsBanker({ ...base, homeRank: 5 });
-  assert.equal(pick.available, false);
-});
-
-test("PPG of 2.00 is not enough", () => {
-  const pick = selectWinsBanker({ ...base, homePpg: 2 });
-  assert.equal(pick.available, false);
-});
-
-test("opponent with a win in the last five is rejected", () => {
-  const pick = selectWinsBanker({ ...base, awayLastFive: ["L", "W", "L", "D", "L"] });
-  assert.equal(pick.available, false);
-});
-
-test("Over 1.5 longer than 1.20 is rejected", () => {
+test("Over 1.5 longer than 1.20 is rejected even with extras", () => {
   const pick = selectWinsBanker({ ...base, odds: { ...base.odds, "over-15": 1.22 } });
   assert.equal(pick.available, false);
 });
 
-test("favourite 2+ at 1.55 is rejected", () => {
-  const pick = selectWinsBanker({ ...base, odds: { ...base.odds, "home-over-15": 1.55 } });
-  assert.equal(pick.available, false);
-});
-
-test("opponent to score at 1.65 is rejected", () => {
-  const pick = selectWinsBanker({ ...base, odds: { ...base.odds, "away-over-05": 1.65 } });
-  assert.equal(pick.available, false);
+test("favourite outside 1.19-1.55 can still publish if another extra passes", () => {
+  const pick = selectWinsBanker({ ...base, odds: { ...base.odds, home: 1.72 } });
+  assert.equal(pick.available, true);
+  assert.equal(pick.filters.find((row) => row.key === "fav-odds").passed, false);
 });
 
 test("red flags block a wins banker", () => {
@@ -122,7 +133,8 @@ test("wins banker page exists", async () => {
   const js = await readFile(resolve(root, "assets/js/portal.v1250.js"), "utf8");
   assert.match(html, /data-page="wins-bankers"/);
   assert.match(html, /<table class="wins-filter-table">/);
-  assert.match(html, /Favourite win odds/);
+  assert.match(html, /Required/);
+  assert.match(html, /1 or 2 extras/);
   assert.match(js, /wins-bankers\/today/);
   assert.match(js, /wins-match-table/);
 });
