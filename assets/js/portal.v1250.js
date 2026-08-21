@@ -1351,6 +1351,17 @@
   }
 
   function winsBankerCard(item) {
+    const rows = [
+      ["Position", "Top 4", item.favoriteRank ? `P${item.favoriteRank}` : "—"],
+      ["Points per game", "Over 2.00", item.favoritePpg ?? "—"],
+      ["Goals per game", "Over 2.00", item.favoriteGpg ?? "—"],
+      ["Favourite odds", "1.19–1.55", item.odds ?? "—"],
+      ["Opponent odds", "Over 4.50", item.opponentOdds ?? "—"],
+      ["Opponent last 5", "Winless", item.opponentForm ?? "—"],
+      ["Match Over 1.5", "1.20 or shorter", item.over15Odds ?? "—"],
+      ["Favourite 2+", "Shorter than 1.55", item.favoriteTwoPlusOdds ?? "—"],
+      ["Opponent to score", "Longer than 1.65", item.opponentScoreOdds ?? "—"]
+    ];
     return `<article class="consensus-banker-card wins-banker-card" data-fixture="${escapeHtml(item.fixtureId)}">
       <div class="pick-meta">
         <span>${escapeHtml(leagueText(item.league))}</span>
@@ -1364,18 +1375,12 @@
       <span class="pick-badge consensus-grade">${escapeHtml(item.selection)}</span>
       <strong class="pick-selection">${escapeHtml(item.selection)}</strong>
       <div class="goals-banker-odds">SportyBet ${escapeHtml(String(item.odds || "—"))}${item.sportyBetUrl ? ` · <a href="${escapeHtml(item.sportyBetUrl)}" target="_blank" rel="noopener">open</a>` : ""}</div>
-      <ul class="goals-banker-reasons">${(item.reasons || []).map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>
-      <div class="goals-align-row">
-        <span>P${item.favoriteRank || "—"} · ${escapeHtml(String(item.favoritePpg || "—"))} PPG</span>
-        <span>${escapeHtml(String(item.favoriteGpg || "—"))} GPG</span>
-        <span>Opp ${escapeHtml(item.opponentForm || "—")}</span>
-      </div>
-      <div class="wins-price-row">
-        <span>Opp ${escapeHtml(String(item.opponentOdds || "—"))}</span>
-        <span>O1.5 ${escapeHtml(String(item.over15Odds || "—"))}</span>
-        <span>2+ ${escapeHtml(String(item.favoriteTwoPlusOdds || "—"))}</span>
-        <span>Opp score ${escapeHtml(String(item.opponentScoreOdds || "—"))}</span>
-      </div>
+      <table class="wins-match-table">
+        <thead><tr><th>Filter</th><th>Must be</th><th>This match</th></tr></thead>
+        <tbody>
+          ${rows.map((row) => `<tr><td>${escapeHtml(row[0])}</td><td>${escapeHtml(String(row[1]))}</td><td>${escapeHtml(String(row[2]))}</td></tr>`).join("")}
+        </tbody>
+      </table>
     </article>`;
   }
 

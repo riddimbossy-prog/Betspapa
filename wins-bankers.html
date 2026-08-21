@@ -49,11 +49,35 @@
 <label><span>Search</span><input id="winsSearchFilter" placeholder="Team or league" type="search"/></label>
 <button id="refreshButton" type="button">Refresh Wins Bankers</button>
 </div>
-<section class="wins-rule-grid" id="winsRuleGrid">
-<article><strong>Favourite</strong><span>Top 4 · over 2 PPG · over 2 goals per game · SportyBet 1.19–1.55</span></article>
-<article><strong>Opponent</strong><span>Winless last five · SportyBet longer than 4.50 · to score longer than 1.65</span></article>
-<article><strong>Goals prices</strong><span>Match Over 1.5 at 1.20 or shorter · favourite 2+ shorter than 1.55</span></article>
+<section class="wins-filter-panel">
+<div class="section-title">
+<h2>Filters</h2>
+<p>Every row must pass. If one fails, the match is withheld.</p>
+</div>
+<div class="wins-filter-wrap">
+<table class="wins-filter-table">
+<thead>
+<tr>
+<th>Filter</th>
+<th>Must be</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>Favourite position</td><td>Current top 4</td><td>League table</td></tr>
+<tr><td>Points per game</td><td>Over 2.00</td><td>Season</td></tr>
+<tr><td>Goals per game</td><td>Over 2.00</td><td>Season</td></tr>
+<tr><td>Favourite win odds</td><td>1.19 to 1.55</td><td>SportyBet 1X2</td></tr>
+<tr><td>Opponent win odds</td><td>Over 4.50</td><td>SportyBet 1X2</td></tr>
+<tr><td>Opponent last 5</td><td>Winless</td><td>Recent form</td></tr>
+<tr><td>Match Over 1.5</td><td>1.20 or shorter</td><td>SportyBet</td></tr>
+<tr><td>Favourite to score 2+</td><td>Shorter than 1.55</td><td>SportyBet team goals</td></tr>
+<tr><td>Opponent to score</td><td>Longer than 1.65</td><td>SportyBet team goals</td></tr>
+</tbody>
+</table>
+</div>
 </section>
+
 <section class="metric-row" id="portalMetrics"></section>
 <div class="section-title">
 <h2>Win bankers</h2>
@@ -75,7 +99,7 @@
 </div>
 </dialog>
 <script src="assets/js/country-flags.v1175.js"></script>
-<script src="assets/js/portal.v1250.js?v=wins1"></script>
+<script src="assets/js/portal.v1250.js?v=wins-table1"></script>
 <script src="assets/js/mobile-nav.v1240.js"></script>
 <script src="/assets/js/pwa.v1160.js"></script>
 <script src="/assets/js/ui.v1170.js"></script>
