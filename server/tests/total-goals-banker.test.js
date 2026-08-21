@@ -11,6 +11,7 @@ import {
   selectLeagueGoalPatterns,
   selectTotalGoalsBanker
 } from "../src/engine/totalGoalsBankerEngine.js";
+import { nameSimilarity, totalsFromSportyMarkets } from "../src/providers/sportyBetOdds.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../..");
@@ -70,7 +71,7 @@ test("both teams must point the same way as the league tip", () => {
   assert.equal(clash.available, false);
 });
 
-test("implied 1.20-1.55 prices still publish when bookmaker odds are missing", () => {
+test("missing live book odds are never guessed", () => {
   const pick = selectTotalGoalsBanker({
     leagueRates: highLeague,
     climateLabel: "high",
@@ -82,10 +83,7 @@ test("implied 1.20-1.55 prices still publish when bookmaker odds are missing", (
     awayRecent: highRecent,
     odds: {}
   });
-  assert.equal(pick.available, true);
-  assert.equal(pick.key, "over-15");
-  assert.equal(pick.oddsSource, "implied");
-  assert.ok(pick.odds >= 1.2 && pick.odds <= 1.55);
+  assert.equal(pick.available, false);
 });
 
 test("red flags block a totals banker", () => {
@@ -146,3 +144,44 @@ test("portal and page exist for Total Goals Bankers", async () => {
   assert.match(js, /goals-bankers\/today/);
   assert.match(js, /leagueMap/);
 });
+
+test("SportyBet Over/Under market 18 becomes live totals prices", () => {
+  const odds = totalsFromSportyMarkets([
+    {
+      id: "18",
+      name: "Over/Under",
+      specifier: "total=2.5",
+      outcomes: [
+        { desc: "Over 2.5", odds: "1.45" },
+        { desc: "Under 2.5", odds: "2.75" }
+      ]
+    },
+    {
+      id: "18",
+      name: "Over/Under",
+      specifier: "total=1.5",
+      outcomes: [
+        { desc: "Over 1.5", odds: "1.14" },
+        { desc: "Under 1.5", odds: "5.80" }
+      ]
+    },
+    {
+      id: "18",
+      name: "Over/Under",
+      specifier: "total=3.5",
+      outcomes: [
+        { desc: "Over 3.5", odds: "2.10" },
+        { desc: "Under 3.5", odds: "1.74" }
+      ]
+    }
+  ]);
+  assert.equal(odds["over-25"], 1.45);
+  assert.equal(odds["over-15"], 1.14);
+  assert.equal(odds["under-35"], 1.74);
+});
+
+test("SportyBet short names still match full club names", () => {
+  assert.ok(nameSimilarity("Man City", "Manchester City") > 0.9);
+  assert.ok(nameSimilarity("AFC Bournemouth", "Bournemouth") > 0.85);
+});
+

@@ -1,4 +1,4 @@
-export const TOTAL_GOALS_BANKER_VERSION = "goals-banker-v1.0.0";
+export const TOTAL_GOALS_BANKER_VERSION = "goals-banker-v1.1.0";
 export const TOTAL_GOALS_BANKER_NAME = "Total Goals Banker";
 export const ODDS_MIN = 1.2;
 export const ODDS_MAX = 1.55;
@@ -231,8 +231,8 @@ export function selectTotalGoalsBanker({
     if (!homeSeasonOk || !awaySeasonOk || !homeRecentOk || !awayRecentOk) continue;
 
     const bookOdds = Number(odds?.[pattern.key]);
-    const price = Number.isFinite(bookOdds) && bookOdds > 1 ? bookOdds : pattern.impliedOdds;
-    if (!inBankerOddsBand(price)) continue;
+    if (!Number.isFinite(bookOdds) || bookOdds <= 1) continue;
+    if (!inBankerOddsBand(bookOdds)) continue;
 
     const conservative = Math.min(
       pattern.hitRate,
@@ -241,8 +241,8 @@ export function selectTotalGoalsBanker({
       homeSeasonRates.matches ? homeSeasonRates[pattern.rateKey] : 1,
       awaySeasonRates.matches ? awaySeasonRates[pattern.rateKey] : 1
     );
-    const conservativeOdds = impliedOdds(conservative);
 
+    const bookName = odds.sourceName || odds.book || "book";
     candidates.push({
       available: true,
       key: pattern.key,
@@ -251,21 +251,20 @@ export function selectTotalGoalsBanker({
       direction: pattern.direction,
       qualified: true,
       tier: "Banker",
-      odds: round(price, 3),
-      oddsSource: Number.isFinite(bookOdds) && bookOdds > 1 ? "bookmaker" : "implied",
-      impliedOdds: pattern.impliedOdds,
+      odds: round(bookOdds, 3),
+      oddsSource: odds.source || "bookmaker",
+      book: bookName,
       conservativeRate: round(conservative, 4),
-      conservativeOdds,
       leagueRate: round(pattern.hitRate, 4),
       homeSeasonRate: round(homeSeasonRates[pattern.rateKey], 4),
       awaySeasonRate: round(awaySeasonRates[pattern.rateKey], 4),
       homeRecentRate: round(homeRecentRates[pattern.rateKey], 4),
       awayRecentRate: round(awayRecentRates[pattern.rateKey], 4),
-      score: round(conservative * 100 - Math.abs(price - 1.33) * 8, 2),
+      score: round(conservative * 100 - Math.abs(bookOdds - 1.33) * 8, 2),
       reasons: [
-        `League ${pattern.label} hits ${Math.round(pattern.hitRate * 100)}% (implied ${pattern.impliedOdds}).`,
+        `League ${pattern.label} hits ${Math.round(pattern.hitRate * 100)}%.`,
         `Both teams point the same way: home last five ${Math.round(homeRecentRates[pattern.rateKey] * 100)}%, away last five ${Math.round(awayRecentRates[pattern.rateKey] * 100)}%.`,
-        `Price ${round(price, 2)} sits inside the 1.20–1.55 banker band.`
+        `${bookName} ${round(bookOdds, 2)} sits inside the 1.20–1.55 banker band.`
       ]
     });
   }
@@ -274,7 +273,7 @@ export function selectTotalGoalsBanker({
     return {
       available: false,
       key: "no-pick",
-      reasons: ["League pattern and both teams do not agree on a 1.20–1.55 totals banker"]
+      reasons: ["No live book price in 1.20–1.55, or both teams do not agree on the league totals tip"]
     };
   }
 

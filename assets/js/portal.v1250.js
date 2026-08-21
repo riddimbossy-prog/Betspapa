@@ -1249,7 +1249,7 @@
       </div>
       <span class="pick-badge consensus-grade">${escapeHtml(item.selection)}</span>
       <strong class="pick-selection">${escapeHtml(item.selection)}</strong>
-      <div class="goals-banker-odds">Odds ${escapeHtml(String(item.odds || "—"))} · ${escapeHtml(item.oddsSource === "bookmaker" ? "book" : "implied")}</div>
+      <div class="goals-banker-odds">Odds ${escapeHtml(String(item.odds || "—"))} · ${escapeHtml(item.book || item.oddsSource || "live book")}</div>
       <ul class="goals-banker-reasons">${(item.reasons || []).map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>
       <div class="goals-align-row">
         <span>League ${pct(item.leagueRate)}</span>
