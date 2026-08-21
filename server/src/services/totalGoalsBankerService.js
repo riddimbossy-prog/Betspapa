@@ -1,4 +1,5 @@
 import { PREDICTABLE_STATUSES } from "../config.js";
+import { nextUtcDate } from "../utils/date.js";
 import { fetchAllRows } from "./supabaseHelpers.js";
 import { loadPreparedBoardData } from "./publicService.js";
 import { loadLeagueScoringByFixture } from "./leagueScoringService.js";
@@ -128,6 +129,17 @@ function publicPick(fixture, pick, climate, redFlags) {
 }
 
 export async function getTotalGoalsBankers(supabase, date, { force = false } = {}) {
+  const first = await buildTotalGoalsBankers(supabase, date, { force });
+  if (first.reviewedFixtures > 0) return first;
+  const rolled = nextUtcDate(date);
+  const second = await buildTotalGoalsBankers(supabase, rolled, { force });
+  if (second.reviewedFixtures > 0) {
+    return { ...second, requestedDate: date, rolledForward: true };
+  }
+  return first;
+}
+
+async function buildTotalGoalsBankers(supabase, date, { force = false } = {}) {
   const cacheKey = date;
   const cached = cache.get(cacheKey);
   if (!force && cached && Date.now() - cached.createdAt < CACHE_TTL_MS) {

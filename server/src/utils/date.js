@@ -25,6 +25,13 @@ export function dateRangeUtc(date) {
   return { start: start.toISOString(), end: end.toISOString() };
 }
 
+export function nextUtcDate(date) {
+  assertIsoDate(date);
+  const next = new Date(`${date}T00:00:00.000Z`);
+  next.setUTCDate(next.getUTCDate() + 1);
+  return next.toISOString().slice(0, 10);
+}
+
 export function assertReasonableRange(from, to, maxDays = 370) {
   assertIsoDate(from, "from");
   assertIsoDate(to, "to");

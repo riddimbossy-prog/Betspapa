@@ -189,6 +189,10 @@
     return new Date(date.getTime() - offset).toISOString().slice(0, 10);
   }
 
+  function utcIsoDate() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
   function formatKickoff(value) {
     if (!value) return "Time pending";
     const date = new Date(value);
@@ -1303,7 +1307,7 @@
         return true;
       });
       $("#portalContent").innerHTML = filtered.length
-        ? `<div class="consensus-banker-grid">${filtered.map(goalsBankerCard).join("")}</div>`
+        ? `<div class="portal-grid consensus-banker-grid">${filtered.map(goalsBankerCard).join("")}</div>`
         : `<div class="empty-card">No totals banker matches these filters.</div>`;
     };
 
@@ -1314,20 +1318,33 @@
 
   async function loadGoalsBankers({ silent = false } = {}) {
     const dateInput = $("#dateFilter");
-    const date = dateInput.value || localIsoDate();
+    const date = dateInput.value || utcIsoDate();
     dateInput.value = date;
     if (!silent) setStatus("Scanning league goal patterns…");
-    const payload = await fetchApi(`/api/goals-bankers/today?date=${encodeURIComponent(date)}`);
+    let payload = await fetchApi(`/api/goals-bankers/today?date=${encodeURIComponent(date)}`);
+    if (!(payload.pickCount || 0) && payload.rolledForward && payload.date && payload.date !== date) {
+      dateInput.value = payload.date;
+    }
+    if (!(payload.pickCount || 0) && !(payload.reviewedFixtures || 0)) {
+      const utc = utcIsoDate();
+      if (utc !== date) {
+        const alt = await fetchApi(`/api/goals-bankers/today?date=${encodeURIComponent(utc)}`);
+        if (alt.pickCount || alt.reviewedFixtures) {
+          dateInput.value = alt.date || utc;
+          payload = alt;
+        }
+      }
+    }
     renderGoalsBankers(payload);
     setStatus(
       `${payload.pickCount || 0} total-goals bankers`,
-      `${(payload.leagueMap || []).length} leagues mapped · odds 1.20–1.55`
+      `${(payload.leagueMap || []).length} leagues mapped · odds 1.20–1.55${payload.rolledForward ? " · next UTC date" : ""}`
     );
   }
 
   async function loadGoalsBankersPage() {
     const dateInput = $("#dateFilter");
-    dateInput.value = dateInput.value || localIsoDate();
+    dateInput.value = dateInput.value || utcIsoDate();
     dateInput.onchange = () => loadGoalsBankers();
     $("#refreshButton")?.addEventListener("click", () => loadGoalsBankers());
     await loadGoalsBankers();
