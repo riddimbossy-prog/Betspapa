@@ -179,6 +179,7 @@ export function selectLeagueGoalPatterns(leagueRates, climateLabel = "neutral") 
 export function selectTotalGoalsBanker({
   leagueRates = {},
   climateLabel = "neutral",
+  climateSource = null,
   leagueSample = 0,
   homeSeason = {},
   awaySeason = {},
@@ -195,7 +196,9 @@ export function selectTotalGoalsBanker({
       reasons: flags.map((flag) => flag.reason || flag.label || "Red flag")
     };
   }
-  if (rate(leagueSample || leagueRates.matches) < MIN_LEAGUE_SAMPLE) {
+  const sample = rate(leagueSample || leagueRates.matches);
+  const trustedClimate = ["current", "previous", "blend", "thin-current"].includes(String(climateSource || ""));
+  if (sample < 20 || (sample < MIN_LEAGUE_SAMPLE && !trustedClimate)) {
     return { available: false, key: "no-pick", reasons: ["League sample is too thin for a goals banker"] };
   }
 
@@ -223,8 +226,8 @@ export function selectTotalGoalsBanker({
   for (const pattern of patterns) {
     const homeSeasonOk = !homeSeasonRates.matches || teamAgrees(homeSeasonRates, pattern);
     const awaySeasonOk = !awaySeasonRates.matches || teamAgrees(awaySeasonRates, pattern);
-    const homeRecentOk = teamAgrees(homeRecentRates, pattern, { floorFudge: 0.04 });
-    const awayRecentOk = teamAgrees(awayRecentRates, pattern, { floorFudge: 0.04 });
+    const homeRecentOk = teamAgrees(homeRecentRates, pattern, { floorFudge: 0.1 });
+    const awayRecentOk = teamAgrees(awayRecentRates, pattern, { floorFudge: 0.1 });
     if (!homeSeasonOk || !awaySeasonOk || !homeRecentOk || !awayRecentOk) continue;
 
     const bookOdds = Number(odds?.[pattern.key]);
@@ -239,7 +242,6 @@ export function selectTotalGoalsBanker({
       awaySeasonRates.matches ? awaySeasonRates[pattern.rateKey] : 1
     );
     const conservativeOdds = impliedOdds(conservative);
-    if (!inBankerOddsBand(conservativeOdds)) continue;
 
     candidates.push({
       available: true,

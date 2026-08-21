@@ -45,6 +45,7 @@ test("both teams must point the same way as the league tip", () => {
   const pick = selectTotalGoalsBanker({
     leagueRates: highLeague,
     climateLabel: "high",
+    climateSource: "current",
     leagueSample: 220,
     homeSeason: highTeam,
     awaySeason: highTeam,
@@ -58,6 +59,7 @@ test("both teams must point the same way as the league tip", () => {
   const clash = selectTotalGoalsBanker({
     leagueRates: highLeague,
     climateLabel: "high",
+    climateSource: "current",
     leagueSample: 220,
     homeSeason: highTeam,
     awaySeason: lowTeam,
@@ -68,10 +70,29 @@ test("both teams must point the same way as the league tip", () => {
   assert.equal(clash.available, false);
 });
 
+test("implied 1.20-1.55 prices still publish when bookmaker odds are missing", () => {
+  const pick = selectTotalGoalsBanker({
+    leagueRates: highLeague,
+    climateLabel: "high",
+    climateSource: "current",
+    leagueSample: 220,
+    homeSeason: highTeam,
+    awaySeason: highTeam,
+    homeRecent: highRecent,
+    awayRecent: highRecent,
+    odds: {}
+  });
+  assert.equal(pick.available, true);
+  assert.equal(pick.key, "over-15");
+  assert.equal(pick.oddsSource, "implied");
+  assert.ok(pick.odds >= 1.2 && pick.odds <= 1.55);
+});
+
 test("red flags block a totals banker", () => {
   const pick = selectTotalGoalsBanker({
     leagueRates: lowLeague,
     climateLabel: "low",
+    climateSource: "current",
     leagueSample: 300,
     homeSeason: lowTeam,
     awaySeason: lowTeam,
@@ -88,6 +109,7 @@ test("bookmaker odds outside 1.20-1.55 are rejected", () => {
   const pick = selectTotalGoalsBanker({
     leagueRates: lowLeague,
     climateLabel: "low",
+    climateSource: "current",
     leagueSample: 300,
     homeSeason: lowTeam,
     awaySeason: lowTeam,

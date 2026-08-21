@@ -1,5 +1,4 @@
 import { PREDICTABLE_STATUSES } from "../config.js";
-import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows } from "./supabaseHelpers.js";
 import { loadPreparedBoardData } from "./publicService.js";
 import { loadLeagueScoringByFixture } from "./leagueScoringService.js";
@@ -29,66 +28,70 @@ function profileRates(row) {
   };
 }
 
-async function loadOddsByFixture(supabase, fixtureIds) {
-  const map = new Map();
-  if (!fixtureIds.length) return map;
-  const rows = await fetchAllRows(() =>
-    supabase
-      .from("fixtures")
-      .select("id,market_odds,odds,bookmaker_odds")
-      .in("id", fixtureIds)
-  );
-  for (const row of rows || []) {
-    map.set(Number(row.id), row.market_odds || row.odds || row.bookmaker_odds || null);
+function oddsFromUnknownShape(value) {
+  if (!value) return null;
+  if (typeof value === "string") {
+    try { return JSON.parse(value); } catch { return null; }
   }
-  return map;
+  return typeof value === "object" ? value : null;
 }
 
 async function loadTeamSeasonRates(supabase, fixtures) {
   const map = new Map();
   const teamIds = [...new Set(fixtures.flatMap((fixture) => [
-    Number(fixture.home?.id || fixture.home_team_id),
-    Number(fixture.away?.id || fixture.away_team_id)
+    Number(fixture.home?.id),
+    Number(fixture.away?.id)
   ]).filter(Number.isFinite))];
   if (!teamIds.length) return map;
-  let rows = [];
   try {
-    rows = await fetchAllRows(() =>
+    const rows = await fetchAllRows(() =>
       supabase
         .from("team_goal_profiles")
         .select("team_id,league_id,season,scope,matches_played,over_15_rate,over_25_rate,under_35_rate")
         .in("team_id", teamIds)
         .eq("scope", "overall")
     );
+    for (const row of rows || []) {
+      map.set(`${row.team_id}:${row.league_id}:${row.season}`, profileRates(row));
+      map.set(`${row.team_id}:${row.league_id}`, profileRates(row));
+    }
   } catch {
     return map;
-  }
-  for (const row of rows || []) {
-    map.set(`${row.team_id}:${row.league_id}:${row.season}`, profileRates(row));
   }
   return map;
 }
 
-async function loadRecentRatesByFixture(supabase, rawFixtures) {
+async function loadRecentRatesByFixture(supabase, fixtures) {
   const map = new Map();
-  if (!rawFixtures.length) return map;
-  const leagueIds = [...new Set(rawFixtures.map((fixture) => fixture.league_id).filter(Boolean))];
-  const seasons = [...new Set(rawFixtures.map((fixture) => fixture.season).filter((value) => value != null))];
-  const rows = await fetchAllRows(() =>
-    supabase
-      .from("fixtures")
-      .select("id,league_id,season,fixture_date,home_team_id,away_team_id,fulltime_home,fulltime_away,status")
-      .in("league_id", leagueIds)
-      .in("season", seasons)
-      .eq("status", "FT")
-  );
+  if (!fixtures.length) return map;
+  const leagueIds = [...new Set(fixtures.map((fixture) => fixture.league?.id).filter(Boolean))];
+  const seasons = [...new Set(fixtures.map((fixture) =>
+    fixture.season ?? fixture.league?.season
+  ).filter((value) => value != null))];
+  if (!leagueIds.length || !seasons.length) return map;
 
-  for (const fixture of rawFixtures) {
-    const cutoff = new Date(fixture.fixture_date).getTime();
+  let rows = [];
+  try {
+    rows = await fetchAllRows(() =>
+      supabase
+        .from("fixtures")
+        .select("id,league_id,season,fixture_date,home_team_id,away_team_id,fulltime_home,fulltime_away,status")
+        .in("league_id", leagueIds)
+        .in("season", seasons)
+        .eq("status", "FT")
+    );
+  } catch {
+    return map;
+  }
+
+  for (const fixture of fixtures) {
+    const leagueId = fixture.league?.id;
+    const season = fixture.season ?? fixture.league?.season;
+    const cutoff = new Date(fixture.kickoff || fixture.fixture_date).getTime();
     const forTeam = (teamId) => (rows || [])
       .filter((row) =>
-        Number(row.league_id) === Number(fixture.league_id) &&
-        Number(row.season) === Number(fixture.season) &&
+        Number(row.league_id) === Number(leagueId) &&
+        Number(row.season) === Number(season) &&
         (Number(row.home_team_id) === Number(teamId) || Number(row.away_team_id) === Number(teamId)) &&
         new Date(row.fixture_date).getTime() < cutoff
       )
@@ -96,8 +99,8 @@ async function loadRecentRatesByFixture(supabase, rawFixtures) {
       .slice(0, 5)
       .map((row) => toPerspectiveGame(row, teamId));
     map.set(Number(fixture.id), {
-      home: ratesFromMatches(forTeam(fixture.home_team_id)),
-      away: ratesFromMatches(forTeam(fixture.away_team_id))
+      home: ratesFromMatches(forTeam(fixture.home?.id)),
+      away: ratesFromMatches(forTeam(fixture.away?.id))
     });
   }
   return map;
@@ -135,59 +138,61 @@ export async function getTotalGoalsBankers(supabase, date, { force = false } = {
   const fixtures = (board.fixtures || []).filter((fixture) =>
     PREDICTABLE_STATUSES.has(fixture.status)
   );
-  const { start, end } = dateRangeUtc(date);
-  const rawFixtures = await fetchAllRows(() =>
-    supabase
-      .from("fixtures")
-      .select("id,league_id,season,fixture_date,home_team_id,away_team_id,status,market_odds,odds,bookmaker_odds")
-      .gte("fixture_date", start)
-      .lt("fixture_date", end)
-  );
-  const rawMap = new Map((rawFixtures || []).map((row) => [Number(row.id), row]));
+  const rawForClimate = fixtures.map((fixture) => ({
+    id: fixture.id,
+    league_id: fixture.league?.id,
+    season: fixture.season ?? fixture.league?.season,
+    fixture_date: fixture.kickoff,
+    home_team_id: fixture.home?.id,
+    away_team_id: fixture.away?.id,
+    status: fixture.status
+  }));
   const teamMap = new Map();
   for (const fixture of fixtures) {
     if (fixture.home?.id) teamMap.set(Number(fixture.home.id), fixture.home);
     if (fixture.away?.id) teamMap.set(Number(fixture.away.id), fixture.away);
   }
-  const climates = await loadLeagueScoringByFixture(supabase, rawFixtures || []);
-  const riskPack = await loadFixtureRiskPack(supabase, rawFixtures || [], teamMap);
-  const seasonRates = await loadTeamSeasonRates(supabase, fixtures);
-  const recentRates = await loadRecentRatesByFixture(supabase, rawFixtures || []);
-  const oddsMap = await loadOddsByFixture(supabase, fixtures.map((fixture) => fixture.id));
+
+  const [climates, riskPack, seasonRates, recentRates] = await Promise.all([
+    loadLeagueScoringByFixture(supabase, rawForClimate),
+    loadFixtureRiskPack(supabase, rawForClimate, teamMap),
+    loadTeamSeasonRates(supabase, fixtures),
+    loadRecentRatesByFixture(supabase, fixtures)
+  ]);
 
   const picks = [];
-  const rejections = [];
+  const rejectionCounts = {};
 
   for (const fixture of fixtures) {
-    const raw = rawMap.get(Number(fixture.id)) || {};
     const climate = climates.get(Number(fixture.id)) || fixture.leagueScoring || null;
     const risk = riskPack.get(Number(fixture.id)) || {};
     const redFlags = risk.redFlags || fixture.redFlags || [];
     const recent = recentRates.get(Number(fixture.id)) || { home: {}, away: {} };
-    const oddsSource = oddsMap.get(Number(fixture.id)) || raw.market_odds || raw.odds || raw.bookmaker_odds;
-    const odds = {
-      "over-15": extractGoalOdds(oddsSource, "over-15"),
-      "over-25": extractGoalOdds(oddsSource, "over-25"),
-      "under-25": extractGoalOdds(oddsSource, "under-25"),
-      "under-35": extractGoalOdds(oddsSource, "under-35")
-    };
+    const oddsSource = oddsFromUnknownShape(fixture.odds || fixture.marketOdds || fixture.bookmakerOdds);
+    const leagueId = fixture.league?.id;
+    const season = fixture.season ?? fixture.league?.season;
     const pick = selectTotalGoalsBanker({
       leagueRates: climate || {},
       climateLabel: climate?.label || "neutral",
+      climateSource: climate?.source || null,
       leagueSample: climate?.matches || 0,
-      homeSeason: seasonRates.get(`${fixture.home?.id}:${raw.league_id}:${raw.season}`) || {},
-      awaySeason: seasonRates.get(`${fixture.away?.id}:${raw.league_id}:${raw.season}`) || {},
+      homeSeason: seasonRates.get(`${fixture.home?.id}:${leagueId}:${season}`) ||
+        seasonRates.get(`${fixture.home?.id}:${leagueId}`) || {},
+      awaySeason: seasonRates.get(`${fixture.away?.id}:${leagueId}:${season}`) ||
+        seasonRates.get(`${fixture.away?.id}:${leagueId}`) || {},
       homeRecent: recent.home,
       awayRecent: recent.away,
-      odds,
+      odds: {
+        "over-15": extractGoalOdds(oddsSource, "over-15"),
+        "over-25": extractGoalOdds(oddsSource, "over-25"),
+        "under-25": extractGoalOdds(oddsSource, "under-25"),
+        "under-35": extractGoalOdds(oddsSource, "under-35")
+      },
       redFlags
     });
     if (!pick.available) {
-      rejections.push({
-        fixtureId: fixture.fixtureId,
-        league: fixture.league?.name,
-        reason: pick.reasons?.[0] || "No totals banker"
-      });
+      const reason = pick.reasons?.[0] || "No totals banker";
+      rejectionCounts[reason] = (rejectionCounts[reason] || 0) + 1;
       continue;
     }
     picks.push(publicPick(fixture, pick, climate, redFlags));
@@ -202,10 +207,10 @@ export async function getTotalGoalsBankers(supabase, date, { force = false } = {
     oddsBand: { min: ODDS_MIN, max: ODDS_MAX },
     reviewedFixtures: fixtures.length,
     pickCount: picks.length,
-    rejectedCount: rejections.length,
+    rejectedCount: fixtures.length - picks.length,
+    rejectionCounts,
     leagueMap: buildLeagueMap(picks),
-    picks,
-    rejections: rejections.slice(0, 40)
+    picks
   };
   cache.set(cacheKey, { createdAt: Date.now(), value });
   return { ...value, cached: false };
