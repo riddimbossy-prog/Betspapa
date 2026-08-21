@@ -38,6 +38,50 @@ function lastFiveResults(rows, fixture, teamId) {
     .filter(Boolean);
 }
 
+/** Last up-to-5 finished league matches at a specific venue for the team. */
+function lastVenueFive(rows, fixture, teamId, venue) {
+  const leagueId = fixture.league_id;
+  const season = fixture.season;
+  const cutoff = new Date(fixture.fixture_date).getTime();
+  const wantHome = venue === "home";
+  return (rows || [])
+    .filter((row) => {
+      if (Number(row.league_id) !== Number(leagueId)) return false;
+      if (Number(row.season) !== Number(season)) return false;
+      if (new Date(row.fixture_date).getTime() >= cutoff) return false;
+      if (wantHome) return Number(row.home_team_id) === Number(teamId);
+      return Number(row.away_team_id) === Number(teamId);
+    })
+    .sort((left, right) => new Date(right.fixture_date) - new Date(left.fixture_date))
+    .slice(0, 5)
+    .map((row) => toPerspectiveGame(row, teamId))
+    .filter((game) => game.ftResult);
+}
+
+function venueFormStats(games = []) {
+  const complete = games.filter((game) => game.ftResult);
+  const played = complete.length;
+  if (!played) {
+    return { played: 0, points: 0, gf: 0, ga: 0, ppg: 0, gpg: 0, gapg: 0, form: [] };
+  }
+  const points = complete.reduce(
+    (sum, game) => sum + (game.ftResult === "W" ? 3 : game.ftResult === "D" ? 1 : 0),
+    0
+  );
+  const gf = complete.reduce((sum, game) => sum + Number(game.ftFor || 0), 0);
+  const ga = complete.reduce((sum, game) => sum + Number(game.ftAgainst || 0), 0);
+  return {
+    played,
+    points,
+    gf,
+    ga,
+    ppg: points / played,
+    gpg: gf / played,
+    gapg: ga / played,
+    form: complete.map((game) => game.ftResult)
+  };
+}
+
 function sideStats(row) {
   const played = Number(row?.played || 0);
   const points = Number(row?.points || 0);
@@ -102,6 +146,12 @@ export async function loadFixtureRiskPack(supabase, fixtures = [], teamMap = new
       awayName
     });
     const redFlags = collectRedFlags(earlySeason, topFiveClash);
+
+    const homeVenueGames = lastVenueFive(rows, fixture, fixture.home_team_id, "home");
+    const awayVenueGames = lastVenueFive(rows, fixture, fixture.away_team_id, "away");
+    const homeVenue = venueFormStats(homeVenueGames);
+    const awayVenue = venueFormStats(awayVenueGames);
+
     pack.set(Number(fixture.id), {
       earlySeason,
       topFiveClash,
@@ -124,6 +174,22 @@ export async function loadFixtureRiskPack(supabase, fixtures = [], teamMap = new
       lastFive: {
         home: lastFiveResults(rows, fixture, fixture.home_team_id),
         away: lastFiveResults(rows, fixture, fixture.away_team_id)
+      },
+      venueForm: {
+        home: {
+          played: homeVenue.played,
+          ppg: homeVenue.ppg,
+          gpg: homeVenue.gpg,
+          gapg: homeVenue.gapg,
+          form: homeVenue.form
+        },
+        away: {
+          played: awayVenue.played,
+          ppg: awayVenue.ppg,
+          gpg: awayVenue.gpg,
+          gapg: awayVenue.gapg,
+          form: awayVenue.form
+        }
       }
     });
   }

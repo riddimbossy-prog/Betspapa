@@ -45,6 +45,7 @@ function publicPick(fixture, pick, risk) {
     earlySeason: redFlags.find((flag) => flag.code === "EARLY_SEASON") || null,
     topFiveClash: redFlags.find((flag) => flag.code === "TOP5_CLASH") || null,
     table: risk.table || null,
+    venueForm: risk.venueForm || null,
     ...pick
   };
 }
@@ -97,6 +98,7 @@ async function buildWinsBankers(supabase, date, { force = false } = {}) {
     const risk = riskPack.get(Number(fixture.id)) || {};
     const table = risk.table || {};
     const lastFive = risk.lastFive || { home: [], away: [] };
+    const venue = risk.venueForm || { home: {}, away: {} };
     const pick = selectWinsBanker({
       homeName: fixture.home?.name || "Home",
       awayName: fixture.away?.name || "Away",
@@ -109,6 +111,14 @@ async function buildWinsBankers(supabase, date, { force = false } = {}) {
       awayPpg: table.awayPpg,
       homeGpg: table.homeGpg,
       awayGpg: table.awayGpg,
+      homeVenuePpg: venue.home?.ppg,
+      awayVenuePpg: venue.away?.ppg,
+      homeVenueGpg: venue.home?.gpg,
+      awayVenueGpg: venue.away?.gpg,
+      homeVenueGa: venue.home?.gapg,
+      awayVenueGa: venue.away?.gapg,
+      homeVenueForm: venue.home?.form || [],
+      awayVenueForm: venue.away?.form || [],
       homeLastFive: lastFive.home,
       awayLastFive: lastFive.away,
       odds: pickLiveOdds(sportyOdds.get(Number(fixture.id))),

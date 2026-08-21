@@ -21,6 +21,14 @@ const base = {
   awayPpg: 0.6,
   homeGpg: 2.5,
   awayGpg: 0.8,
+  homeVenuePpg: 2.4,
+  awayVenuePpg: 0.6,
+  homeVenueGpg: 2.5,
+  awayVenueGpg: 0.8,
+  homeVenueGa: 0.6,
+  awayVenueGa: 1.8,
+  homeVenueForm: ["W", "W", "D", "W", "W"],
+  awayVenueForm: ["L", "D", "L", "L", "D"],
   homeLastFive: ["W", "W", "D", "W", "W"],
   awayLastFive: ["L", "D", "L", "L", "D"],
   odds: {
@@ -38,7 +46,10 @@ const weak = {
   homeRank: 9,
   homePpg: 1.1,
   homeGpg: 1.1,
+  homeVenuePpg: 1.1,
+  homeVenueGpg: 1.1,
   awayLastFive: ["W", "W", "W", "D", "L"],
+  awayVenueForm: ["W", "W", "W", "D", "L"],
   odds: {
     home: 1.8,
     away: 3.9,
@@ -61,16 +72,19 @@ test("wins banker still publishes when every extra filter passes", () => {
   assert.equal(pick.key, "home-win");
   assert.equal(pick.book, "SportyBet");
   assert.ok(pick.extraPassed >= 2);
+  assert.equal(pick.formBasis, "venue-split");
 });
 
 test("Over 1.5 at 1.20 or shorter plus one extra filter is enough", () => {
   const pick = selectWinsBanker({
     ...weak,
-    homeRank: 3
+    homeRank: 3,
+    homeVenuePpg: 1.1,
+    homeVenueGpg: 1.1
   });
   assert.equal(pick.available, true);
   assert.equal(pick.extraPassed, 1);
-  assert.equal(pick.filters.find((row) => row.key === "top-4").passed, true);
+  assert.equal(pick.filters.find((row) => row.key === "top-5").passed, true);
   assert.equal(pick.filters.find((row) => row.key === "over-15").required, true);
 });
 
@@ -78,7 +92,9 @@ test("two extra filters also publish", () => {
   const pick = selectWinsBanker({
     ...weak,
     homeRank: 2,
-    homePpg: 2.3
+    homePpg: 2.3,
+    homeVenuePpg: 2.3,
+    homeVenueGpg: 1.1
   });
   assert.equal(pick.available, true);
   assert.equal(pick.extraPassed, 2);
@@ -100,12 +116,138 @@ test("favourite outside 1.19-1.55 can still publish if another extra passes", ()
   assert.equal(pick.filters.find((row) => row.key === "fav-odds").passed, false);
 });
 
-test("red flags block a wins banker", () => {
+test("early-season red flag still blocks a wins banker", () => {
   const pick = selectWinsBanker({
     ...base,
     redFlags: [{ code: "EARLY_SEASON", reason: "Red flag: first 5 league matches." }]
   });
   assert.equal(pick.available, false);
+});
+
+test("top-five clash red flag still blocks a wins banker", () => {
+  const pick = selectWinsBanker({
+    ...base,
+    redFlags: [{ code: "TOP5_CLASH", reason: "Two top-five teams." }]
+  });
+  assert.equal(pick.available, false);
+});
+
+test("other red flags are skippable and do not block", () => {
+  const pick = selectWinsBanker({
+    ...base,
+    redFlags: [{ code: "LEAGUE_GOALS", reason: "League goals climate warning." }]
+  });
+  assert.equal(pick.available, true);
+  assert.ok(Array.isArray(pick.skippableRedFlags));
+  assert.equal(pick.skippableRedFlags.length, 1);
+});
+
+test("away favourite needs GPG above 2.2", () => {
+  const pick = selectWinsBanker({
+    ...base,
+    homeRank: 12,
+    awayRank: 2,
+    homePpg: 0.8,
+    awayPpg: 2.3,
+    homeGpg: 0.9,
+    awayGpg: 2.1,
+    homeVenuePpg: 0.8,
+    awayVenuePpg: 2.3,
+    homeVenueGpg: 0.9,
+    awayVenueGpg: 2.1,
+    homeVenueForm: ["L", "L", "D", "L", "L"],
+    awayVenueForm: ["W", "W", "W", "D", "W"],
+    odds: {
+      home: 6.5,
+      away: 1.35,
+      "over-15": 1.12,
+      "away-over-15": 1.3,
+      "home-over-05": 1.9,
+      url: "https://www.sportybet.com/ng/sport/football"
+    }
+  });
+  // 2.1 is not > 2.2, so gpg filter fails; may still publish via other extras
+  const gpgFilter = pick.filters?.find((row) => row.key === "gpg");
+  if (pick.available) {
+    assert.equal(gpgFilter.passed, false);
+  }
+});
+
+test("away favourite with GPG 2.3 passes goals filter", () => {
+  const pick = selectWinsBanker({
+    ...base,
+    homeRank: 12,
+    awayRank: 2,
+    homePpg: 0.8,
+    awayPpg: 2.3,
+    homeGpg: 0.9,
+    awayGpg: 2.3,
+    homeVenuePpg: 0.8,
+    awayVenuePpg: 2.3,
+    homeVenueGpg: 0.9,
+    awayVenueGpg: 2.3,
+    homeVenueGa: 1.9,
+    awayVenueGa: 0.5,
+    homeVenueForm: ["L", "L", "D", "L", "L"],
+    awayVenueForm: ["W", "W", "W", "D", "W"],
+    odds: {
+      home: 6.5,
+      away: 1.35,
+      "over-15": 1.12,
+      "away-over-15": 1.3,
+      "home-over-05": 1.9,
+      url: "https://www.sportybet.com/ng/sport/football"
+    }
+  });
+  assert.equal(pick.available, true);
+  assert.equal(pick.key, "away-win");
+  assert.equal(pick.filters.find((row) => row.key === "gpg").passed, true);
+});
+
+test("similar form and goal concessions are skipped", () => {
+  const pick = selectWinsBanker({
+    ...base,
+    homeVenueForm: ["W", "D", "W", "D", "L"],
+    awayVenueForm: ["W", "D", "D", "W", "L"],
+    homeVenueGa: 1.0,
+    awayVenueGa: 1.1,
+    homeVenuePpg: 2.0,
+    homeVenueGpg: 2.0
+  });
+  assert.equal(pick.available, false);
+  assert.match(pick.reasons[0], /similar/i);
+});
+
+test("PPG of exactly 2.0 is accepted", () => {
+  const pick = selectWinsBanker({
+    ...base,
+    homeVenuePpg: 2.0,
+    homeVenueGpg: 2.0,
+    homePpg: 2.0,
+    homeGpg: 2.0
+  });
+  assert.equal(pick.available, true);
+  assert.equal(pick.filters.find((row) => row.key === "ppg").passed, true);
+  assert.equal(pick.filters.find((row) => row.key === "gpg").passed, true);
+});
+
+test("top-5 rank is required (rank 5 passes, rank 6 does not as sole extra)", () => {
+  const rank5 = selectWinsBanker({
+    ...weak,
+    homeRank: 5,
+    homeVenuePpg: 1.0,
+    homeVenueGpg: 1.0
+  });
+  assert.equal(rank5.available, true);
+  assert.equal(rank5.filters.find((row) => row.key === "top-5").passed, true);
+
+  const rank6 = selectWinsBanker({
+    ...weak,
+    homeRank: 6,
+    homeVenuePpg: 1.0,
+    homeVenueGpg: 1.0
+  });
+  assert.equal(rank6.available, false);
 });
 
 test("SportyBet 1X2 market 1 is parsed", () => {
