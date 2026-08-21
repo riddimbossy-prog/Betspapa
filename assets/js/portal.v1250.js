@@ -1234,6 +1234,65 @@
     await loadConsensusBankers();
   }
 
+  function bankerLeagueKey(item) {
+    return leagueText(item.league || item);
+  }
+
+  function renderQualifiedTeams(picks, leagueKey, onClear) {
+    const panel = $("#qualifiedTeams");
+    if (!panel) return;
+    if (!leagueKey) {
+      panel.innerHTML = "";
+      return;
+    }
+    const matches = picks.filter((item) => bankerLeagueKey(item) === leagueKey);
+    const teams = [...new Set(matches.flatMap((item) => [item.home?.name, item.away?.name]).filter(Boolean))];
+    panel.innerHTML = `
+      <section class="qualified-teams">
+        <div class="section-title">
+          <h2>${escapeHtml(leagueKey)}</h2>
+          <p>${matches.length} qualified match${matches.length === 1 ? "" : "es"} · ${teams.length} team${teams.length === 1 ? "" : "s"}</p>
+        </div>
+        <div class="qualified-team-pills">${teams.map((name) => `<span>${escapeHtml(name)}</span>`).join("")}</div>
+        <div class="wins-filter-wrap">
+          <table class="wins-filter-table qualified-teams-table">
+            <thead><tr><th>Teams</th><th>Selection</th><th>SportyBet</th></tr></thead>
+            <tbody>
+              ${matches.map((item) => `<tr>
+                <td>${escapeHtml(item.home?.name || "Home")} vs ${escapeHtml(item.away?.name || "Away")}</td>
+                <td>${escapeHtml(item.selection || "—")}</td>
+                <td>${escapeHtml(String(item.odds || "—"))}</td>
+              </tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+        <button class="qualified-teams-clear" type="button">Show all leagues</button>
+      </section>`;
+    panel.querySelector(".qualified-teams-clear")?.addEventListener("click", () => onClear?.());
+  }
+
+  function bindLeagueChips(container, selected, onSelect) {
+    if (!container) return;
+    container.querySelectorAll("[data-league]").forEach((button) => {
+      button.classList.toggle("active", button.dataset.league === selected);
+      button.onclick = () => {
+        const key = button.dataset.league;
+        onSelect(selected === key ? "" : key);
+        $("#qualifiedTeams")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      };
+    });
+  }
+
+  function leagueChipMarkup(row, selected) {
+    const key = bankerLeagueKey(row);
+    const teamCount = Number(row.teamCount || (row.teams || []).length || 0);
+    return `<button type="button" class="goals-league-chip ${selected === key ? "active" : ""}" data-league="${escapeHtml(key)}">
+      <strong>${escapeHtml(key)}</strong>
+      <span>${escapeHtml(row.selection || "Qualified")}</span>
+      <small>${row.picks} match${row.picks === 1 ? "" : "es"} · ${teamCount || row.picks * 2} team${teamCount === 1 ? "" : "s"}</small>
+    </button>`;
+  }
+
   function goalsBankerCard(item) {
     const climate = item.leagueScoring || {};
     const pct = (value) => Number.isFinite(Number(value)) ? `${Math.round(Number(value) * 100)}%` : "—";
@@ -1286,26 +1345,29 @@
     ].join("");
 
     $("#goalsLeagueMap").innerHTML = leagueMap.length
-      ? leagueMap.map((row) => `<article class="goals-league-chip">
-          <strong>${escapeHtml(leagueText(row))}</strong>
-          <span>${escapeHtml(row.selection)}</span>
-          <small>${row.picks} match${row.picks === 1 ? "" : "es"} · ${row.climate ? escapeHtml(String(row.climate).toUpperCase()) : "pattern"}</small>
-        </article>`).join("")
+      ? leagueMap.map((row) => leagueChipMarkup(row, leagueFilter?.value || "")).join("")
       : `<div class="empty-card">No league totals pattern cleared the 1.20–1.55 band today.</div>`;
+
+    const applyLeague = (key) => {
+      if (leagueFilter) leagueFilter.value = key;
+      draw();
+    };
 
     const draw = () => {
       const leagueValue = leagueFilter?.value || "";
       const marketValue = marketFilter?.value || "";
       const query = (searchFilter?.value || "").trim().toLowerCase();
       const filtered = picks.filter((item) => {
-        if (leagueValue && leagueText(item.league) !== leagueValue) return false;
+        if (leagueValue && bankerLeagueKey(item) !== leagueValue) return false;
         if (marketValue && item.selection !== marketValue) return false;
         if (query) {
-          const text = [item.home?.name, item.away?.name, leagueText(item.league), item.selection].join(" ").toLowerCase();
+          const text = [item.home?.name, item.away?.name, bankerLeagueKey(item), item.selection].join(" ").toLowerCase();
           if (!text.includes(query)) return false;
         }
         return true;
       });
+      bindLeagueChips($("#goalsLeagueMap"), leagueValue, applyLeague);
+      renderQualifiedTeams(picks, leagueValue, () => applyLeague(""));
       $("#portalContent").innerHTML = filtered.length
         ? `<div class="portal-grid consensus-banker-grid">${filtered.map(goalsBankerCard).join("")}</div>`
         : `<div class="empty-card">No totals banker matches these filters.</div>`;
@@ -1386,10 +1448,11 @@
 
   function renderWinsBankers(payload) {
     const picks = payload.picks || [];
+    const leagueMap = payload.leagueMap || [];
     const leagueFilter = $("#winsLeagueFilter");
     const searchFilter = $("#winsSearchFilter");
     if (leagueFilter && !leagueFilter.dataset.ready) {
-      const leagues = [...new Set(picks.map((pick) => leagueText(pick.league)).filter(Boolean))];
+      const leagues = [...new Set(picks.map((pick) => bankerLeagueKey(pick)).filter(Boolean))];
       leagueFilter.innerHTML = `<option value="">All leagues</option>${leagues.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")}`;
       leagueFilter.dataset.ready = "1";
     }
@@ -1399,17 +1462,29 @@
       `<div class="diagnostic-card"><span>Extras needed</span><strong>1 or 2</strong></div>`,
       `<div class="diagnostic-card"><span>Rejected</span><strong>${payload.rejectedCount || 0}</strong></div>`
     ].join("");
+    const map = $("#winsLeagueMap");
+    if (map) {
+      map.innerHTML = leagueMap.length
+        ? leagueMap.map((row) => leagueChipMarkup(row, leagueFilter?.value || "")).join("")
+        : `<div class="empty-card">No league produced a Wins Banker today.</div>`;
+    }
+    const applyLeague = (key) => {
+      if (leagueFilter) leagueFilter.value = key;
+      draw();
+    };
     const draw = () => {
       const leagueValue = leagueFilter?.value || "";
       const query = (searchFilter?.value || "").trim().toLowerCase();
       const filtered = picks.filter((item) => {
-        if (leagueValue && leagueText(item.league) !== leagueValue) return false;
+        if (leagueValue && bankerLeagueKey(item) !== leagueValue) return false;
         if (query) {
-          const text = [item.home?.name, item.away?.name, leagueText(item.league), item.selection].join(" ").toLowerCase();
+          const text = [item.home?.name, item.away?.name, bankerLeagueKey(item), item.selection].join(" ").toLowerCase();
           if (!text.includes(query)) return false;
         }
         return true;
       });
+      bindLeagueChips(map, leagueValue, applyLeague);
+      renderQualifiedTeams(picks, leagueValue, () => applyLeague(""));
       $("#portalContent").innerHTML = filtered.length
         ? `<div class="portal-grid consensus-banker-grid">${filtered.map(winsBankerCard).join("")}</div>`
         : `<div class="empty-card">No favourite had Over 1.5 at 1.20 or shorter plus 1 extra filter today.</div>`;

@@ -431,20 +431,35 @@ export function buildLeagueMap(picks = []) {
         climate: pick.leagueScoring?.label || null,
         over25Rate: pick.leagueScoring?.over25Rate ?? null,
         picks: 0,
+        teams: new Set(),
+        matches: [],
         markets: new Set()
       });
     }
     const row = map.get(groupKey);
     row.picks += 1;
     row.markets.add(pick.selection);
+    if (pick.home?.name) row.teams.add(pick.home.name);
+    if (pick.away?.name) row.teams.add(pick.away.name);
+    row.matches.push({
+      fixtureId: pick.fixtureId || null,
+      home: pick.home?.name || "Home",
+      away: pick.away?.name || "Away",
+      selection: pick.selection || null,
+      odds: pick.odds ?? null
+    });
     if (row.markets.size > 1) {
       row.selection = `${row.markets.size} goal markets`;
     }
   }
   return [...map.values()]
     .map((row) => {
-      const { markets, ...rest } = row;
-      return rest;
+      const { markets, teams, ...rest } = row;
+      return {
+        ...rest,
+        teamCount: teams.size,
+        teams: [...teams].sort((left, right) => String(left).localeCompare(String(right)))
+      };
     })
     .sort((left, right) => right.picks - left.picks || String(left.name).localeCompare(String(right.name)));
 }

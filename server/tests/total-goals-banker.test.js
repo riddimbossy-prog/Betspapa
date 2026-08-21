@@ -145,12 +145,14 @@ test("SportyBet odds outside 1.20-1.55 are rejected", () => {
 
 test("league map groups each tip under its league", () => {
   const map = buildLeagueMap([
-    { league: { country: "Brazil", name: "Serie B" }, key: "under-35", selection: "Under 3.5 Goals", market: "Total Goals" },
-    { league: { country: "Brazil", name: "Serie B" }, key: "under-35", selection: "Under 3.5 Goals", market: "Total Goals" },
-    { league: { country: "Norway", name: "Toppserien" }, key: "over-15", selection: "Over 1.5 Goals", market: "Total Goals" }
+    { league: { country: "Brazil", name: "Serie B" }, key: "under-35", selection: "Under 3.5 Goals", market: "Total Goals", home: { name: "Vila Nova" }, away: { name: "Criciuma" } },
+    { league: { country: "Brazil", name: "Serie B" }, key: "under-35", selection: "Under 3.5 Goals", market: "Total Goals", home: { name: "Sport" }, away: { name: "Goiás" } },
+    { league: { country: "Norway", name: "Toppserien" }, key: "over-15", selection: "Over 1.5 Goals", market: "Total Goals", home: { name: "Brann" }, away: { name: "Rosenborg" } }
   ]);
   assert.equal(map.length, 2);
   assert.equal(map[0].picks, 2);
+  assert.equal(map[0].teamCount, 4);
+  assert.ok(map[0].teams.includes("Vila Nova"));
 });
 
 test("five high-scoring matches count as Over 1.5 form", () => {
@@ -336,4 +338,6 @@ test("portal and page exist for Total Goals Bankers", async () => {
   assert.match(html, /data-page="goals-bankers"/);
   assert.match(js, /goals-bankers\/today/);
   assert.match(js, /SportyBet/);
+  assert.match(js, /data-league/);
+  assert.match(js, /qualifiedTeams/);
 });

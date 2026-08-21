@@ -10,6 +10,7 @@ import {
   FAV_ODDS_MIN,
   selectWinsBanker
 } from "../engine/winsBankerEngine.js";
+import { buildLeagueMap } from "../engine/totalGoalsBankerEngine.js";
 
 const CACHE_TTL_MS = 60_000;
 const cache = new Map();
@@ -132,6 +133,7 @@ async function buildWinsBankers(supabase, date, { force = false } = {}) {
     pickCount: picks.length,
     rejectedCount: fixtures.length - picks.length,
     rejectionCounts,
+    leagueMap: buildLeagueMap(picks),
     picks
   };
   cache.set(date, { createdAt: Date.now(), value });

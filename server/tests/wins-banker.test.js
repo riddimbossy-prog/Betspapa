@@ -137,4 +137,5 @@ test("wins banker page exists", async () => {
   assert.match(html, /1 or 2 extras/);
   assert.match(js, /wins-bankers\/today/);
   assert.match(js, /wins-match-table/);
+  assert.match(js, /winsLeagueMap/);
 });
