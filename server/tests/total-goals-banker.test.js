@@ -159,6 +159,96 @@ test("five high-scoring matches count as Over 1.5 form", () => {
   ]);
   assert.equal(rates.matches, 5);
   assert.equal(rates.over15Rate, 1);
+  assert.equal(rates.over05Rate, 1);
+  assert.equal(rates.under45Rate, 1);
+});
+
+test("Under 4.5 and BTTS Yes qualify when SportyBet is in band", () => {
+  const busy = {
+    over15Rate: 0.86,
+    over25Rate: 0.7,
+    over05Rate: 0.94,
+    bttsRate: 0.72,
+    under45Rate: 0.4,
+    scoredRate: 0.8,
+    concededRate: 0.78,
+    matches: 12
+  };
+  const recent = { ...busy, matches: 5 };
+  const yes = selectTotalGoalsBanker({
+    leagueRates: { ...busy, matches: 180 },
+    climateLabel: "high",
+    climateSource: "current",
+    leagueSample: 180,
+    homeSeason: busy,
+    awaySeason: busy,
+    homeRecent: recent,
+    awayRecent: recent,
+    odds: { "btts-yes": 1.38, "over-15": 1.08 }
+  });
+  assert.equal(yes.key, "btts-yes");
+  assert.equal(yes.odds, 1.38);
+
+  const under = selectTotalGoalsBanker({
+    leagueRates: { over15Rate: 0.58, over25Rate: 0.32, under35Rate: 0.84, under45Rate: 0.9, matches: 220 },
+    climateLabel: "low",
+    climateSource: "current",
+    leagueSample: 220,
+    homeSeason: { over15Rate: 0.5, over25Rate: 0.3, under35Rate: 0.86, matches: 12 },
+    awaySeason: { over15Rate: 0.48, over25Rate: 0.28, under35Rate: 0.88, matches: 12 },
+    homeRecent: { over15Rate: 0.4, over25Rate: 0.2, under35Rate: 0.8, under45Rate: 1, matches: 5 },
+    awayRecent: { over15Rate: 0.4, over25Rate: 0.2, under35Rate: 0.8, under45Rate: 1, matches: 5 },
+    odds: { "under-45": 1.24, "under-35": 1.08 }
+  });
+  assert.equal(under.key, "under-45");
+  assert.equal(under.odds, 1.24);
+});
+
+test("first-half Over 0.5 and home Over 1.5 qualify from SportyBet", () => {
+  const recent = {
+    over15Rate: 0.8,
+    over25Rate: 0.6,
+    fhOver05Rate: 0.8,
+    scored15Rate: 0.8,
+    conceded15Rate: 0.8,
+    scoredRate: 1,
+    concededRate: 0.8,
+    matches: 5,
+    fhMatches: 5
+  };
+  const league = {
+    over15Rate: 0.84,
+    over25Rate: 0.62,
+    fhOver05Rate: 0.78,
+    scored15Rate: 0.7,
+    conceded15Rate: 0.66,
+    matches: 160,
+    fhMatches: 160
+  };
+  const half = selectTotalGoalsBanker({
+    leagueRates: league,
+    climateLabel: "high",
+    climateSource: "current",
+    leagueSample: 160,
+    homeRecent: recent,
+    awayRecent: recent,
+    odds: { "fh-over-05": 1.23, "over-15": 1.08 }
+  });
+  assert.equal(half.key, "fh-over-05");
+
+  const team = selectTotalGoalsBanker({
+    leagueRates: league,
+    climateLabel: "high",
+    climateSource: "current",
+    leagueSample: 160,
+    homeRecent: recent,
+    awayRecent: recent,
+    homeName: "Bodo/Glimt",
+    awayName: "Rosenborg",
+    odds: { "home-over-15": 1.28, "over-15": 1.08 }
+  });
+  assert.equal(team.key, "home-over-15");
+  assert.match(team.selection, /Bodo\/Glimt Over 1.5/);
 });
 
 test("SportyBet Over/Under market 18 becomes live totals prices", () => {
@@ -182,6 +272,38 @@ test("SportyBet Over/Under market 18 becomes live totals prices", () => {
   ]);
   assert.equal(odds["over-25"], 1.45);
   assert.equal(odds["over-15"], 1.14);
+});
+
+test("SportyBet BTTS, first-half and team markets are parsed", () => {
+  const odds = totalsFromSportyMarkets([
+    {
+      id: "29",
+      desc: "GG/NG",
+      outcomes: [
+        { id: "74", desc: "Yes", odds: "1.38" },
+        { id: "76", desc: "No", odds: "3.10" }
+      ]
+    },
+    {
+      id: "68",
+      specifier: "total=0.5",
+      outcomes: [
+        { id: "12", desc: "Over 0.5", odds: "1.23" },
+        { id: "13", desc: "Under 0.5", odds: "4.25" }
+      ]
+    },
+    {
+      id: "19",
+      specifier: "total=1.5",
+      outcomes: [
+        { id: "12", desc: "Over 1.5", odds: "1.28" },
+        { id: "13", desc: "Under 1.5", odds: "3.50" }
+      ]
+    }
+  ]);
+  assert.equal(odds["btts-yes"], 1.38);
+  assert.equal(odds["fh-over-05"], 1.23);
+  assert.equal(odds["home-over-15"], 1.28);
 });
 
 test("SportyBet short names still match full club names", () => {

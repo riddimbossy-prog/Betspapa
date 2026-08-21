@@ -61,19 +61,50 @@ export function totalsFromSportyMarkets(markets = []) {
   return parseTotals({ markets });
 }
 
+function lineSuffix(specifier) {
+  const line = String(specifier || "").match(/total=([0-9.]+)/i)?.[1];
+  if (!line || !line.includes(".")) return null;
+  return line.replace(".", "");
+}
+
+function writeOutcome(odds, prefix, specifier, outcome) {
+  const suffix = lineSuffix(specifier);
+  if (!suffix) return;
+  const price = Number(outcome.odds);
+  if (!Number.isFinite(price) || price <= 1) return;
+  const over = String(outcome.id) === "12" || /^over/i.test(String(outcome.desc || ""));
+  const key = `${prefix ? `${prefix}-` : ""}${over ? "over" : "under"}-${suffix}`;
+  odds[key] = price;
+}
+
 function parseTotals(event) {
   const odds = {};
   for (const market of event.markets || []) {
-    if (String(market.id) !== "18") continue;
-    const line = String(market.specifier || "").match(/total=([0-9.]+)/i)?.[1];
-    if (!line) continue;
-    const suffix = line.replace(".", "");
-    for (const outcome of market.outcomes || []) {
-      const price = Number(outcome.odds);
-      if (!Number.isFinite(price) || price <= 1) continue;
-      const over = String(outcome.id) === "12" || /^over/i.test(String(outcome.desc || ""));
-      const key = `${over ? "over" : "under"}-${suffix}`;
-      odds[key] = price;
+    const id = String(market.id);
+    if (id === "18") {
+      for (const outcome of market.outcomes || []) writeOutcome(odds, "", market.specifier, outcome);
+      continue;
+    }
+    if (id === "68") {
+      for (const outcome of market.outcomes || []) writeOutcome(odds, "fh", market.specifier, outcome);
+      continue;
+    }
+    if (id === "19") {
+      for (const outcome of market.outcomes || []) writeOutcome(odds, "home", market.specifier, outcome);
+      continue;
+    }
+    if (id === "20") {
+      for (const outcome of market.outcomes || []) writeOutcome(odds, "away", market.specifier, outcome);
+      continue;
+    }
+    if (id === "29") {
+      for (const outcome of market.outcomes || []) {
+        const price = Number(outcome.odds);
+        if (!Number.isFinite(price) || price <= 1) continue;
+        const desc = String(outcome.desc || "").toLowerCase();
+        if (desc === "yes" || String(outcome.id) === "74") odds["btts-yes"] = price;
+        if (desc === "no" || String(outcome.id) === "76") odds["btts-no"] = price;
+      }
     }
   }
   return odds;
@@ -115,7 +146,7 @@ function flatten(payload) {
 async function fetchPage(pageNum) {
   const base = (process.env.SPORTYBET_API_BASE || DEFAULT_BASE).replace(/\/$/, "");
   const operId = process.env.SPORTYBET_OPER_ID || "2";
-  const url = `${base}/factsCenter/pcUpcomingEvents?sportId=sr:sport:1&marketId=18&pageSize=${PAGE_SIZE}&pageNum=${pageNum}`;
+  const url = `${base}/factsCenter/pcUpcomingEvents?sportId=sr:sport:1&marketId=18,29,68,19,20&pageSize=${PAGE_SIZE}&pageNum=${pageNum}`;
   const response = await fetch(url, {
     headers: {
       Accept: "application/json",

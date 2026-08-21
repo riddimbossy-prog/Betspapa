@@ -11,6 +11,7 @@ import {
   TOTAL_GOALS_BANKER_VERSION,
   ODDS_MAX,
   ODDS_MIN,
+  GOAL_MARKET_KEYS,
   buildLeagueMap,
   extractGoalOdds,
   ratesFromMatches,
@@ -56,7 +57,7 @@ function storedTotals(fixture) {
 
 function pickLiveOdds(sporty) {
   if (!sporty) return {};
-  if (["over-15", "over-25", "under-25", "under-35"].some((key) => Number(sporty[key]) > 1)) {
+  if (GOAL_MARKET_KEYS.some((key) => Number(sporty[key]) > 1)) {
     return {
       ...sporty,
       odds: sporty,
@@ -94,27 +95,44 @@ async function loadTeamSeasonRates(supabase, fixtures) {
   return map;
 }
 
-async function loadRecentRatesByFixture(supabase, fixtures) {
-  const map = new Map();
-  if (!fixtures.length) return map;
+async function loadMatchGoalRates(supabase, fixtures) {
+  const recent = new Map();
+  const league = new Map();
+  if (!fixtures.length) return { recent, league };
   const leagueIds = [...new Set(fixtures.map((fixture) => fixture.league?.id).filter(Boolean))];
   const seasons = [...new Set(fixtures.map((fixture) =>
     fixture.season ?? fixture.league?.season
   ).filter((value) => value != null))];
-  if (!leagueIds.length || !seasons.length) return map;
+  if (!leagueIds.length || !seasons.length) return { recent, league };
 
   let rows = [];
   try {
     rows = await fetchAllRows(() =>
       supabase
         .from("fixtures")
-        .select("id,league_id,season,fixture_date,home_team_id,away_team_id,fulltime_home,fulltime_away,status")
+        .select("id,league_id,season,fixture_date,home_team_id,away_team_id,fulltime_home,fulltime_away,halftime_home,halftime_away,status")
         .in("league_id", leagueIds)
         .in("season", seasons)
         .eq("status", "FT")
     );
   } catch {
-    return map;
+    return { recent, league };
+  }
+
+  const leagueGames = new Map();
+  for (const row of rows || []) {
+    const key = `${row.league_id}:${row.season}`;
+    if (!leagueGames.has(key)) leagueGames.set(key, []);
+    leagueGames.get(key).push({
+      totalGoals: Number(row.fulltime_home) + Number(row.fulltime_away),
+      ftFor: Number(row.fulltime_home),
+      ftAgainst: Number(row.fulltime_away),
+      htFor: Number(row.halftime_home),
+      htAgainst: Number(row.halftime_away)
+    });
+  }
+  for (const [key, games] of leagueGames) {
+    league.set(key, ratesFromMatches(games));
   }
 
   for (const fixture of fixtures) {
@@ -131,12 +149,12 @@ async function loadRecentRatesByFixture(supabase, fixtures) {
       .sort((left, right) => new Date(right.fixture_date) - new Date(left.fixture_date))
       .slice(0, 5)
       .map((row) => toPerspectiveGame(row, teamId));
-    map.set(Number(fixture.id), {
+    recent.set(Number(fixture.id), {
       home: ratesFromMatches(forTeam(fixture.home?.id)),
       away: ratesFromMatches(forTeam(fixture.away?.id))
     });
   }
-  return map;
+  return { recent, league };
 }
 
 function publicPick(fixture, pick, climate, redFlags) {
@@ -197,13 +215,15 @@ async function buildTotalGoalsBankers(supabase, date, { force = false } = {}) {
     if (fixture.away?.id) teamMap.set(Number(fixture.away.id), fixture.away);
   }
 
-  const [climates, riskPack, seasonRates, recentRates, sportyOdds] = await Promise.all([
+  const [climates, riskPack, seasonRates, matchRates, sportyOdds] = await Promise.all([
     loadLeagueScoringByFixture(supabase, rawForClimate),
     loadFixtureRiskPack(supabase, rawForClimate, teamMap),
     loadTeamSeasonRates(supabase, fixtures),
-    loadRecentRatesByFixture(supabase, fixtures),
+    loadMatchGoalRates(supabase, fixtures),
     loadSportyBetGoalOdds(fixtures).catch(() => new Map())
   ]);
+  const recentRates = matchRates.recent || new Map();
+  const leagueMatchRates = matchRates.league || new Map();
 
   const picks = [];
   const rejectionCounts = {};
@@ -216,11 +236,12 @@ async function buildTotalGoalsBankers(supabase, date, { force = false } = {}) {
     const odds = pickLiveOdds(sportyOdds.get(Number(fixture.id)));
     const leagueId = fixture.league?.id;
     const season = fixture.season ?? fixture.league?.season;
+    const computedLeague = leagueMatchRates.get(`${leagueId}:${season}`) || {};
     const pick = selectTotalGoalsBanker({
-      leagueRates: climate || {},
+      leagueRates: { ...computedLeague, ...(climate || {}) },
       climateLabel: climate?.label || "neutral",
       climateSource: climate?.source || null,
-      leagueSample: climate?.matches || 0,
+      leagueSample: climate?.matches || computedLeague.matches || 0,
       homeSeason: seasonRates.get(`${fixture.home?.id}:${leagueId}:${season}`) ||
         seasonRates.get(`${fixture.home?.id}:${leagueId}`) || {},
       awaySeason: seasonRates.get(`${fixture.away?.id}:${leagueId}:${season}`) ||
@@ -228,7 +249,9 @@ async function buildTotalGoalsBankers(supabase, date, { force = false } = {}) {
       homeRecent: recent.home,
       awayRecent: recent.away,
       odds,
-      redFlags
+      redFlags,
+      homeName: fixture.home?.name || "Home",
+      awayName: fixture.away?.name || "Away"
     });
     if (!pick.available) {
       const reason = pick.reasons?.[0] || "No totals banker";
