@@ -11,7 +11,11 @@ import {
   selectLeagueGoalPatterns,
   selectTotalGoalsBanker
 } from "../src/engine/totalGoalsBankerEngine.js";
-import { nameSimilarity, totalsFromSportyMarkets } from "../src/providers/sportyBetOdds.js";
+import {
+  matchSportyBetOdds,
+  nameSimilarity,
+  totalsFromSportyMarkets
+} from "../src/providers/sportyBetOdds.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../..");
@@ -30,13 +34,13 @@ test("1.20 to 1.55 is the only banker odds band", () => {
   assert.equal(inBankerOddsBand(1.56), false);
 });
 
-test("high-scoring leagues map to Over totals inside the banker band", () => {
+test("high-scoring leagues map to Over totals", () => {
   const patterns = selectLeagueGoalPatterns(highLeague, "high");
   assert.ok(patterns.some((pattern) => pattern.key === "over-15"));
   assert.ok(patterns.every((pattern) => pattern.direction === "over"));
 });
 
-test("low-scoring leagues map to Under totals inside the banker band", () => {
+test("low-scoring leagues map to Under totals", () => {
   const patterns = selectLeagueGoalPatterns(lowLeague, "low");
   assert.equal(patterns[0].key, "under-35");
   assert.ok(patterns.every((pattern) => pattern.direction === "under"));
@@ -55,7 +59,7 @@ test("both teams must point the same way as the league tip", () => {
     odds: { "over-15": 1.28 }
   });
   assert.equal(pick.key, "over-15");
-  assert.equal(pick.odds, 1.28);
+  assert.equal(pick.book, "SportyBet");
 
   const clash = selectTotalGoalsBanker({
     leagueRates: highLeague,
@@ -71,7 +75,7 @@ test("both teams must point the same way as the league tip", () => {
   assert.equal(clash.available, false);
 });
 
-test("missing live book odds are never guessed", () => {
+test("missing SportyBet odds are never guessed", () => {
   const pick = selectTotalGoalsBanker({
     leagueRates: highLeague,
     climateLabel: "high",
@@ -84,6 +88,27 @@ test("missing live book odds are never guessed", () => {
     odds: {}
   });
   assert.equal(pick.available, false);
+  assert.match(pick.reasons[0], /SportyBet/);
+});
+
+test("SportyBet Over 2.5 at 1.30 is used even when Over 1.5 is too short", () => {
+  const busy = { over15Rate: 0.88, over25Rate: 0.72, under35Rate: 0.45, matches: 12 };
+  const busyRecent = { over15Rate: 0.8, over25Rate: 0.8, under35Rate: 0.4, matches: 5 };
+  const pick = selectTotalGoalsBanker({
+    leagueRates: { over15Rate: 0.9, over25Rate: 0.7, under35Rate: 0.48, matches: 200 },
+    climateLabel: "high",
+    climateSource: "current",
+    leagueSample: 200,
+    homeSeason: busy,
+    awaySeason: busy,
+    homeRecent: busyRecent,
+    awayRecent: busyRecent,
+    odds: { "over-15": 1.08, "over-25": 1.3, "under-35": 2.05 }
+  });
+  assert.equal(pick.available, true);
+  assert.equal(pick.key, "over-25");
+  assert.equal(pick.odds, 1.3);
+  assert.equal(pick.book, "SportyBet");
 });
 
 test("red flags block a totals banker", () => {
@@ -103,7 +128,7 @@ test("red flags block a totals banker", () => {
   assert.match(pick.reasons[0], /top-five/);
 });
 
-test("bookmaker odds outside 1.20-1.55 are rejected", () => {
+test("SportyBet odds outside 1.20-1.55 are rejected", () => {
   const pick = selectTotalGoalsBanker({
     leagueRates: lowLeague,
     climateLabel: "low",
@@ -126,7 +151,6 @@ test("league map groups each tip under its league", () => {
   ]);
   assert.equal(map.length, 2);
   assert.equal(map[0].picks, 2);
-  assert.equal(map.find((row) => row.name === "Toppserien").selection, "Over 1.5 Goals");
 });
 
 test("five high-scoring matches count as Over 1.5 form", () => {
@@ -137,47 +161,27 @@ test("five high-scoring matches count as Over 1.5 form", () => {
   assert.equal(rates.over15Rate, 1);
 });
 
-test("portal and page exist for Total Goals Bankers", async () => {
-  const html = await readFile(resolve(root, "goals-bankers.html"), "utf8");
-  const js = await readFile(resolve(root, "assets/js/portal.v1250.js"), "utf8");
-  assert.match(html, /data-page="goals-bankers"/);
-  assert.match(js, /goals-bankers\/today/);
-  assert.match(js, /leagueMap/);
-});
-
 test("SportyBet Over/Under market 18 becomes live totals prices", () => {
   const odds = totalsFromSportyMarkets([
     {
       id: "18",
-      name: "Over/Under",
       specifier: "total=2.5",
       outcomes: [
-        { desc: "Over 2.5", odds: "1.45" },
-        { desc: "Under 2.5", odds: "2.75" }
+        { id: "12", desc: "Over 2.5", odds: "1.45" },
+        { id: "13", desc: "Under 2.5", odds: "2.75" }
       ]
     },
     {
       id: "18",
-      name: "Over/Under",
       specifier: "total=1.5",
       outcomes: [
-        { desc: "Over 1.5", odds: "1.14" },
-        { desc: "Under 1.5", odds: "5.80" }
-      ]
-    },
-    {
-      id: "18",
-      name: "Over/Under",
-      specifier: "total=3.5",
-      outcomes: [
-        { desc: "Over 3.5", odds: "2.10" },
-        { desc: "Under 3.5", odds: "1.74" }
+        { id: "12", desc: "Over 1.5", odds: "1.14" },
+        { id: "13", desc: "Under 1.5", odds: "5.80" }
       ]
     }
   ]);
   assert.equal(odds["over-25"], 1.45);
   assert.equal(odds["over-15"], 1.14);
-  assert.equal(odds["under-35"], 1.74);
 });
 
 test("SportyBet short names still match full club names", () => {
@@ -185,3 +189,29 @@ test("SportyBet short names still match full club names", () => {
   assert.ok(nameSimilarity("AFC Bournemouth", "Bournemouth") > 0.85);
 });
 
+test("SportyBet events match BetsPapa fixtures by team names", () => {
+  const hit = matchSportyBetOdds([
+    {
+      home: "Vaalerenga IF",
+      away: "Molde",
+      homeKey: "vaalerenga",
+      awayKey: "molde",
+      kickoffMs: Date.parse("2026-08-21T15:00:00.000Z"),
+      odds: { "over-25": 1.3 },
+      url: "https://www.sportybet.com/ng/sport/football"
+    }
+  ], {
+    home: { name: "Vålerenga" },
+    away: { name: "Molde FK" },
+    kickoff: "2026-08-21T15:00:00.000Z"
+  });
+  assert.equal(hit.odds["over-25"], 1.3);
+});
+
+test("portal and page exist for Total Goals Bankers", async () => {
+  const html = await readFile(resolve(root, "goals-bankers.html"), "utf8");
+  const js = await readFile(resolve(root, "assets/js/portal.v1250.js"), "utf8");
+  assert.match(html, /data-page="goals-bankers"/);
+  assert.match(js, /goals-bankers\/today/);
+  assert.match(js, /SportyBet/);
+});

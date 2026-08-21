@@ -172,7 +172,7 @@ export function selectLeagueGoalPatterns(leagueRates, climateLabel = "neutral") 
         inBand: inBankerOddsBand(implied)
       };
     })
-    .filter((pattern) => pattern.inBand && pattern.hitRate >= pattern.floor)
+    .filter((pattern) => pattern.hitRate >= pattern.floor)
     .sort((left, right) => right.hitRate - left.hitRate);
 }
 
@@ -219,7 +219,13 @@ export function selectTotalGoalsBanker({
 
   const patterns = selectLeagueGoalPatterns(leagueRates, climateLabel);
   if (!patterns.length) {
-    return { available: false, key: "no-pick", reasons: ["No league totals market sits inside 1.20–1.55"] };
+    return { available: false, key: "no-pick", reasons: ["League scoring pattern does not support a totals banker"] };
+  }
+
+  const bookOddsMap = odds?.odds && typeof odds.odds === "object" ? odds.odds : odds;
+  const hasSportyBet = bookOddsMap && GOAL_MARKETS.some((market) => Number(bookOddsMap[market.key]) > 1);
+  if (!hasSportyBet) {
+    return { available: false, key: "no-pick", reasons: ["No SportyBet Over/Under price was found for this match"] };
   }
 
   const candidates = [];
@@ -230,7 +236,7 @@ export function selectTotalGoalsBanker({
     const awayRecentOk = teamAgrees(awayRecentRates, pattern, { floorFudge: 0.1 });
     if (!homeSeasonOk || !awaySeasonOk || !homeRecentOk || !awayRecentOk) continue;
 
-    const bookOdds = Number(odds?.[pattern.key]);
+    const bookOdds = Number(bookOddsMap?.[pattern.key]);
     if (!Number.isFinite(bookOdds) || bookOdds <= 1) continue;
     if (!inBankerOddsBand(bookOdds)) continue;
 
@@ -242,7 +248,6 @@ export function selectTotalGoalsBanker({
       awaySeasonRates.matches ? awaySeasonRates[pattern.rateKey] : 1
     );
 
-    const bookName = odds.sourceName || odds.book || "book";
     candidates.push({
       available: true,
       key: pattern.key,
@@ -252,8 +257,9 @@ export function selectTotalGoalsBanker({
       qualified: true,
       tier: "Banker",
       odds: round(bookOdds, 3),
-      oddsSource: odds.source || "bookmaker",
-      book: bookName,
+      oddsSource: "sportybet",
+      book: "SportyBet",
+      sportyBetUrl: odds.url || null,
       conservativeRate: round(conservative, 4),
       leagueRate: round(pattern.hitRate, 4),
       homeSeasonRate: round(homeSeasonRates[pattern.rateKey], 4),
@@ -264,7 +270,7 @@ export function selectTotalGoalsBanker({
       reasons: [
         `League ${pattern.label} hits ${Math.round(pattern.hitRate * 100)}%.`,
         `Both teams point the same way: home last five ${Math.round(homeRecentRates[pattern.rateKey] * 100)}%, away last five ${Math.round(awayRecentRates[pattern.rateKey] * 100)}%.`,
-        `${bookName} ${round(bookOdds, 2)} sits inside the 1.20–1.55 banker band.`
+        `SportyBet ${round(bookOdds, 2)} sits inside the 1.20–1.55 banker band.`
       ]
     });
   }
@@ -273,7 +279,7 @@ export function selectTotalGoalsBanker({
     return {
       available: false,
       key: "no-pick",
-      reasons: ["No live book price in 1.20–1.55, or both teams do not agree on the league totals tip"]
+      reasons: ["SportyBet has no 1.20–1.55 totals price that matches the league direction and both teams"]
     };
   }
 

@@ -6,7 +6,6 @@ import { loadLeagueScoringByFixture } from "./leagueScoringService.js";
 import { loadFixtureRiskPack } from "./fixtureRiskService.js";
 import { toPerspectiveGame } from "../engine/splitFormEngine.js";
 import { loadSportyBetGoalOdds } from "../providers/sportyBetOdds.js";
-import { loadApiFootballGoalOdds } from "../providers/apiFootballOdds.js";
 import {
   TOTAL_GOALS_BANKER_NAME,
   TOTAL_GOALS_BANKER_VERSION,
@@ -55,16 +54,17 @@ function storedTotals(fixture) {
     : null;
 }
 
-function pickLiveOdds(sporty, apiFootball, stored) {
-  for (const pack of [sporty, apiFootball, stored]) {
-    if (!pack) continue;
-    if (["over-15", "over-25", "under-25", "under-35"].some((key) => Number(pack[key]) > 1)) {
-      return {
-        ...pack,
-        source: pack.source || "bookmaker",
-        sourceName: pack.book || pack.source || "book"
-      };
-    }
+function pickLiveOdds(sporty) {
+  if (!sporty) return {};
+  if (["over-15", "over-25", "under-25", "under-35"].some((key) => Number(sporty[key]) > 1)) {
+    return {
+      ...sporty,
+      odds: sporty,
+      source: "sportybet",
+      sourceName: "SportyBet",
+      book: "SportyBet",
+      url: sporty.url || null
+    };
   }
   return {};
 }
@@ -197,13 +197,12 @@ async function buildTotalGoalsBankers(supabase, date, { force = false } = {}) {
     if (fixture.away?.id) teamMap.set(Number(fixture.away.id), fixture.away);
   }
 
-  const [climates, riskPack, seasonRates, recentRates, sportyOdds, apiOdds] = await Promise.all([
+  const [climates, riskPack, seasonRates, recentRates, sportyOdds] = await Promise.all([
     loadLeagueScoringByFixture(supabase, rawForClimate),
     loadFixtureRiskPack(supabase, rawForClimate, teamMap),
     loadTeamSeasonRates(supabase, fixtures),
     loadRecentRatesByFixture(supabase, fixtures),
-    loadSportyBetGoalOdds(fixtures, date).catch(() => new Map()),
-    loadApiFootballGoalOdds(date).catch(() => new Map())
+    loadSportyBetGoalOdds(fixtures).catch(() => new Map())
   ]);
 
   const picks = [];
@@ -214,11 +213,7 @@ async function buildTotalGoalsBankers(supabase, date, { force = false } = {}) {
     const risk = riskPack.get(Number(fixture.id)) || {};
     const redFlags = risk.redFlags || fixture.redFlags || [];
     const recent = recentRates.get(Number(fixture.id)) || { home: {}, away: {} };
-    const odds = pickLiveOdds(
-      sportyOdds.get(Number(fixture.id)),
-      apiOdds.get(Number(fixture.fixtureId)) || apiOdds.get(Number(fixture.external_fixture_id)),
-      storedTotals(fixture)
-    );
+    const odds = pickLiveOdds(sportyOdds.get(Number(fixture.id)));
     const leagueId = fixture.league?.id;
     const season = fixture.season ?? fixture.league?.season;
     const pick = selectTotalGoalsBanker({
