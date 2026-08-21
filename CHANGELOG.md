@@ -6,13 +6,14 @@
 - Straight wins need a clean last-five picture; otherwise it stays on 1X/X2, DNB or a goal market.
 - Fewer than five matches, or two equally strong last-five stories, return NO PICK.
 - Added a Split Form board, main-board tab/filter, More-sheet link and engine tests.
-- First five league matches now carry a red Early Season flag and stay visible even when engines withhold.
+- First five league matches now carry a red Early Season flag. Matches with no prediction stay off every public board.
 - High-scoring leagues no longer get Under totals tips; low-scoring leagues no longer get Over totals tips. Remaining clashes get a red League Goals flag.
 - League scoring now uses current-season rates, then last season when the sample is thin. High/low climate chips show on the board.
 - Red flags now apply across every engine. Flag 2 marks two current top-five teams playing each other.
 - Added Wins Banker: top-4 favourite, over 2 PPG, over 2 goals per game, opponent winless in five, SportyBet favourite 1.19–1.55, opponent longer than 4.50, Over 1.5 at 1.20 or shorter, favourite 2+ shorter than 1.55, opponent to score longer than 1.65.
 - Wins Banker now requires SportyBet Over 1.5 at 1.20 or shorter, then 1 or 2 extra filters. More extras still qualify.
 - Goals Banker and Wins Banker league chips now open the qualified teams from that league.
+- Public boards hide matches that have no prediction. Red flags still block picks; those fixtures are not shown.
 - Goals Banker now prices match totals 0.5–4.5, BTTS, first-half goals and team Over 0.5/1.5 from SportyBet. Still 1.20–1.55 only.
 
 ## v1.25.1 — PapaLock containment and Athena key audit

@@ -22,7 +22,7 @@ import {
   refreshCurrentMatchData,
   summarizeMatchStates
 } from "../services/matchStateService.js";
-import { getPreparedEngineBoard, isPublicBoardItem, isVisibleBoardPick } from "../services/boardSnapshotService.js";
+import { getPreparedEngineBoard, isVisibleBoardPick } from "../services/boardSnapshotService.js";
 import { getPapaLockHistory, getPapaLockPicks, invalidatePapaLockCache } from "../services/papaLockPickService.js";
 import { getTotalGoalsBankers } from "../services/totalGoalsBankerService.js";
 import { getWinsBankers } from "../services/winsBankerService.js";
@@ -386,11 +386,9 @@ publicRouter.get("/main-board/today", async (req, res, next) => {
       return row;
     }).sort((a, b) => new Date(a.kickoff || 0) - new Date(b.kickoff || 0));
 
-    // Public boards are picks-only, except first-five early-season matches which
-    // stay visible with a red flag even when every engine withholds.
+    // Public boards are picks-only. Matches with no real prediction stay off the board.
     const items = mergedItems.filter((row) =>
-      Object.values(row.engines || {}).some((pick) => isVisibleBoardPick(pick)) ||
-      isPublicBoardItem(row)
+      Object.values(row.engines || {}).some((pick) => isVisibleBoardPick(pick))
     );
     const hiddenFixtures = Math.max(0, mergedItems.length - items.length);
 

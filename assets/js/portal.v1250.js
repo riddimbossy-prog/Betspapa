@@ -600,11 +600,10 @@
       </button>`;
   }
 
-  function renderEngineMetrics(items) {
-    const completed = items.filter((item) => Boolean(item.pick));
-    const readyItems = completed.filter((item) => item.pick?.available !== false && item.pick?.key !== "no-pick");
-    const noPicks = completed.length - readyItems.length;
-    const preparing = items.length - completed.length;
+  function renderEngineMetrics(items, payload = {}) {
+    const readyItems = items.filter((item) => hubPickReady(item.pick));
+    const hidden = Number(payload.hiddenFixtures ?? payload.processing?.withheld ?? 0);
+    const preparing = Number(payload.pending ?? payload.processing?.pending ?? 0);
     const qualified = readyItems.filter((item) => item.pick?.qualified).length;
     const avg = readyItems.length
       ? readyItems.reduce((sum, item) => {
@@ -617,7 +616,7 @@
     $("#portalMetrics").innerHTML = `
       <div class="metric"><span>Picks ready</span><strong>${readyItems.length}</strong><small>Selections that passed this engine's rules</small></div>
       <div class="metric"><span>Strong picks</span><strong>${qualified}</strong><small>Passed story, sample and market gates</small></div>
-      <div class="metric"><span>NO PICK</span><strong>${noPicks}</strong><small>Withheld instead of forcing a weak market</small></div>
+      <div class="metric"><span>Hidden</span><strong>${hidden}</strong><small>No prediction, so the match stays off the board</small></div>
       <div class="metric"><span>Preparing</span><strong>${preparing}</strong><small>${preparing ? "Papa is analysing imported fixtures" : `Average strength ${avg ? `${avg.toFixed(1)}%` : "—"}`}</small></div>`;
     $("#marketCount")?.replaceChildren(document.createTextNode(String(markets)));
   }
@@ -644,13 +643,12 @@
     const render = () => {
       const query = search.value.trim().toLowerCase();
       const filtered = engineItems.filter((item) => {
+        if (!hubPickReady(item.pick)) return false;
         const leagueValue = leagueText(item.league);
         if (league.value && leagueValue !== league.value) return false;
         if (market.value && item.pick?.market !== market.value) return false;
-        const noPick = item.pick?.available === false || item.pick?.key === "no-pick";
-        if (strength.value === "qualified" && (!item.pick?.qualified || noPick)) return false;
-        if (strength.value === "directional" && (!item.pick || item.pick?.qualified || noPick)) return false;
-        if (strength.value === "no-pick" && !noPick) return false;
+        if (strength.value === "qualified" && item.pick?.qualified === false) return false;
+        if (strength.value === "directional" && item.pick?.qualified !== false) return false;
         if (matchState?.value && stateClass(item, item.activeEngine || engineKey) !== matchState.value) return false;
         if (query) {
           const text = [
@@ -667,7 +665,7 @@
 
       $("#portalContent").innerHTML = filtered.length
         ? filtered.map(engineCard).join("")
-        : `<div class="empty-card">No fixtures match these filters.</div>`;
+        : `<div class="empty-card">No fixtures with a prediction match these filters.</div>`;
 
       $$(".pick-card").forEach((card) => {
         card.addEventListener("click", () => {
@@ -763,8 +761,7 @@
     const totalReady = HUB_ENGINE_ORDER.filter((key) => hubPickReady(hubEnginePick(item, key))).length;
     const agreement = hubAgreement(item);
     const early = hasRedFlag(item);
-    if (!readyKeys.length && !early) return "";
-    const rowKeys = readyKeys.length ? readyKeys : visibleKeys;
+    if (!readyKeys.length) return "";
     return `<article class="papa-hub-card ${early ? "early-season" : ""}" data-hub-fixture="${escapeHtml(item.fixtureId)}">
       <header class="hub-match-head">
         <div class="pick-meta"><span>${escapeHtml(leagueText(item.league))}</span><span>${escapeHtml(formatKickoff(item.kickoff))}</span></div>
@@ -783,7 +780,7 @@
           ${leagueClimateMarkup(item)}
         </div>
       </header>
-      <div class="hub-engine-list">${rowKeys.map((key) => hubEngineRow(item, key)).join("")}</div>
+      <div class="hub-engine-list">${readyKeys.map((key) => hubEngineRow(item, key)).join("")}</div>
     </article>`;
   }
 
@@ -845,8 +842,7 @@
         if (league.value && leagueValue !== league.value) return false;
         if (matchState.value && stateClass(item) !== matchState.value) return false;
         const picks = keys.map((key) => ({ key, pick: hubEnginePick(item, key) }));
-        const early = hasRedFlag(item);
-        if (!picks.some(({ pick }) => hubPickReady(pick)) && !early) return false;
+        if (!picks.some(({ pick }) => hubPickReady(pick))) return false;
         if (market.value && !picks.some(({ pick }) => hubPickReady(pick) && pick?.market === market.value)) return false;
         if (strength.value === "qualified" && !picks.some(({ pick }) => hubPickReady(pick) && pick.qualified !== false)) return false;
         if (strength.value === "directional" && !picks.some(({ pick }) => hubPickReady(pick) && pick.qualified === false)) return false;
@@ -911,8 +907,7 @@
 
     const renderPayload = (payload, { cached = false } = {}) => {
       hubItems = (payload.items || []).filter((item) =>
-        HUB_ENGINE_ORDER.some((key) => hubPickReady(hubEnginePick(item, key))) ||
-        hasRedFlag(item)
+        HUB_ENGINE_ORDER.some((key) => hubPickReady(hubEnginePick(item, key)))
       );
       renderPapaHubMetrics();
       setupPapaHubFilters();
@@ -960,8 +955,8 @@
     dateInput.value = dateInput.value || localIsoDate();
 
     const renderPayload = (payload, { cached = false, allowScheduling = true } = {}) => {
-      engineItems = payload.items || [];
-      renderEngineMetrics(engineItems);
+      engineItems = (payload.items || []).filter((item) => hubPickReady(item.pick));
+      renderEngineMetrics(engineItems, payload);
       setupEngineFilters();
 
       const states = payload.matchStates || {};

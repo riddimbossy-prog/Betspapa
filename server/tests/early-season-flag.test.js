@@ -49,7 +49,7 @@ test("match six and later are not early-season flagged", () => {
   assert.equal(flag, null);
 });
 
-test("public boards keep first-five matches visible with the red flag", () => {
+test("public boards hide first-five matches that have no prediction", () => {
   const snapshot = createEngineBoardSnapshot({
     date: "2026-08-20",
     engineKey: "primary",
@@ -73,9 +73,8 @@ test("public boards keep first-five matches visible with the red flag", () => {
     }]
   });
 
-  assert.equal(snapshot.items.length, 1);
-  assert.equal(snapshot.items[0].earlySeason.level, "red");
-  assert.equal(snapshot.items[0].earlySeason.label, "EARLY SEASON");
+  assert.equal(snapshot.items.length, 0);
+  assert.equal(snapshot.hiddenFixtures, 2);
 });
 
 test("portal paints an early-season red flag on hub and engine cards", async () => {

@@ -44,9 +44,7 @@ export function isVisibleBoardPick(pick) {
 
 export function isPublicBoardItem(item) {
   return isVisibleBoardPick(item?.pick) ||
-    Boolean(item?.earlySeason) ||
-    Boolean(item?.topFiveClash) ||
-    Boolean((item?.redFlags || []).length);
+    Object.values(item?.engines || {}).some((pick) => isVisibleBoardPick(pick));
 }
 
 function processingSummary(items) {

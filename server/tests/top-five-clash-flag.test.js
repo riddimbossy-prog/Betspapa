@@ -79,7 +79,7 @@ test("sixth vs top five is not a top-five clash", () => {
   assert.equal(flag, null);
 });
 
-test("public boards keep top-five clashes visible across engines", () => {
+test("public boards hide top-five clashes that have no prediction", () => {
   const clash = buildTopFiveClashFlag({
     homeRank: 1,
     awayRank: 4,
@@ -117,8 +117,8 @@ test("public boards keep top-five clashes visible across engines", () => {
       }
     }]
   });
-  assert.equal(snapshot.items.length, 1);
-  assert.equal(snapshot.items[0].topFiveClash.code, "TOP5_CLASH");
+  assert.equal(snapshot.items.length, 0);
+  assert.equal(snapshot.hiddenFixtures, 1);
 });
 
 test("portal paints fixture red flags on every engine row", async () => {
