@@ -1,0 +1,400 @@
+/* BetsPapa daylight — cream canvas, cobalt chrome, coral actions */
+
+:root {
+  --bg: #f4f1ea;
+  --bg2: #eef2ff;
+  --panel: #ffffff;
+  --panel2: #eef2ff;
+  --purple: #1e4dff;
+  --gold: #ff4d2e;
+  --green: #0f9f6e;
+  --red: #e11d48;
+  --text: #141821;
+  --muted: #5c6573;
+  --line: rgba(20, 24, 33, 0.1);
+  --shadow: 0 0 0 1px rgba(20, 24, 33, 0.08), 0 14px 32px -18px rgba(20, 24, 33, 0.28);
+  --bp-bg: #f4f1ea;
+  --bp-bg-soft: #efece4;
+  --bp-surface: #ffffff;
+  --bp-surface-2: #eef2ff;
+  --bp-surface-3: #ffe8e1;
+  --bp-line: rgba(20, 24, 33, 0.1);
+  --bp-line-strong: rgba(30, 77, 255, 0.28);
+  --bp-text: #141821;
+  --bp-muted: #5c6573;
+  --bp-purple: #1e4dff;
+  --bp-purple-2: #1e4dff;
+  --bp-gold: #ff4d2e;
+  --bp-green: #0f9f6e;
+  --bp-red: #e11d48;
+  --bp-amber: #f59e0b;
+  --bp-blue: #1e4dff;
+  --bp-shadow: 0 0 0 1px rgba(20, 24, 33, 0.08), 0 14px 32px -18px rgba(20, 24, 33, 0.28);
+}
+
+html {
+  color-scheme: light;
+  background: #f4f1ea !important;
+}
+
+body {
+  background: #f4f1ea !important;
+  color: #141821 !important;
+  font-family: Outfit, Manrope, system-ui, sans-serif !important;
+}
+body::before { display: none !important; }
+
+.topbar,
+.portal-header,
+.content-header-v150,
+.account-header {
+  height: 64px !important;
+  min-height: 64px !important;
+  border-bottom: 1px solid rgba(20, 24, 33, 0.08) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(16px);
+}
+.portal-brand strong,
+.account-brand strong,
+.content-header-v150 strong {
+  color: #141821 !important;
+  font-family: Syne, "Space Grotesk", sans-serif;
+}
+.portal-brand strong span,
+.account-brand strong span,
+.content-header-v150 strong span { color: #ff4d2e !important; }
+.portal-brand small { color: #5c6573 !important; }
+.portal-nav a,
+.desktop-nav a,
+.account-header-links a {
+  color: #5c6573 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+.portal-nav a:hover,
+.desktop-nav a:hover { color: #141821 !important; background: #eef2ff !important; }
+.portal-nav a.active,
+.desktop-nav a.active {
+  color: #1e4dff !important;
+  background: #eef2ff !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+.portal-menu,
+.icon-button,
+.mobile-menu {
+  color: #141821 !important;
+  background: #eef2ff !important;
+  border-color: rgba(20, 24, 33, 0.08) !important;
+}
+@media (max-width: 800px) {
+  .portal-nav {
+    background: #fff !important;
+    border: 1px solid rgba(20, 24, 33, 0.08) !important;
+  }
+}
+
+.portal-hero,
+.hero-card,
+.hero-section .hero-card {
+  border: 0 !important;
+  color: #f4f7ff;
+  background:
+    radial-gradient(1200px 280px at 90% -20%, color-mix(in oklab, #ff4d2e 42%, transparent), transparent 60%),
+    radial-gradient(700px 220px at 0% 120%, color-mix(in oklab, #7dd3fc 35%, transparent), transparent 55%),
+    #1e4dff !important;
+  box-shadow: none !important;
+}
+.portal-hero h1,
+.hero-copy h1,
+.section-title h2,
+.engine-block-head h2,
+.dialog-title h2 {
+  font-family: Syne, "Space Grotesk", sans-serif;
+  color: inherit;
+}
+.portal-hero h1,
+.hero-copy h1 { color: #f4f7ff !important; }
+.hero-copy h1 span { color: #ffe8e1 !important; }
+.eyebrow,
+.kicker { color: color-mix(in oklab, #f4f7ff 80%, transparent) !important; }
+.portal-hero p,
+.hero-copy p { color: color-mix(in oklab, #f4f7ff 88%, transparent) !important; }
+
+.status-strip,
+.live-data-strip {
+  border: 0 !important;
+  background: #fff !important;
+  color: #5c6573 !important;
+  box-shadow: var(--shadow);
+}
+.live-data-copy span:last-child { color: #5c6573 !important; }
+
+.portal-toolbar input,
+.portal-toolbar select,
+.admin-login input,
+.account-form input {
+  color: #141821 !important;
+  background: #fff !important;
+  border: 1px solid rgba(20, 24, 33, 0.1) !important;
+}
+.portal-toolbar option { background: #fff; color: #141821; }
+.portal-toolbar label span { color: #5c6573 !important; }
+.portal-toolbar button,
+.gold-action,
+.gold-button,
+.content-button,
+.live-refresh {
+  border: 0 !important;
+  color: #fff7f4 !important;
+  background: #ff4d2e !important;
+  box-shadow: none !important;
+}
+.glass-button,
+#clearFilters {
+  color: #141821 !important;
+  background: #fff !important;
+  border: 1px solid rgba(20, 24, 33, 0.1) !important;
+}
+
+.hub-engine-tabs,
+.engine-switcher {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 8px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  grid-template-columns: none !important;
+}
+.hub-engine-tabs button,
+.engine-tab {
+  min-height: 44px !important;
+  padding: 8px 14px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: #fff !important;
+  color: #5c6573 !important;
+  box-shadow: var(--shadow);
+}
+.hub-engine-tabs button.active,
+.engine-tab.active {
+  background: #1e4dff !important;
+  color: #f4f7ff !important;
+  box-shadow: none;
+}
+.engine-tab span { color: inherit !important; }
+.engine-tab strong { color: inherit !important; }
+
+.metric,
+.diagnostic-card,
+.papa-verdict,
+.papa-promise {
+  border: 0 !important;
+  background: #fff !important;
+  color: #141821 !important;
+  box-shadow: var(--shadow);
+}
+.metric span,
+.diagnostic-card span { color: #7a8494 !important; }
+.metric strong,
+.diagnostic-card strong {
+  color: #141821 !important;
+  font-family: Syne, "Space Grotesk", sans-serif;
+}
+.papa-promise { color: #0f9f6e !important; background: #e8f8f1 !important; }
+
+.pick-card,
+.consensus-banker-card,
+.goals-banker-card,
+.boss-card,
+.engine-block,
+.processing-card,
+.empty-card,
+.admin-login,
+.content-card,
+.results-table-wrap,
+.diagnostic-table-wrap {
+  border: 0 !important;
+  background: #fff !important;
+  color: #141821 !important;
+  box-shadow: var(--shadow);
+}
+.pick-card:hover,
+.consensus-banker-card:hover,
+.goals-banker-card:hover,
+.boss-card:hover {
+  transform: none;
+  border-color: transparent !important;
+  box-shadow: 0 0 0 1px rgba(30, 77, 255, 0.28), 0 14px 32px -18px rgba(30, 77, 255, 0.35) !important;
+}
+.pick-meta,
+.pick-bottom,
+.empty-card { color: #5c6573 !important; }
+.pick-selection,
+.pick-team,
+.pick-team > span { color: #141821 !important; }
+.pick-badge,
+.consensus-grade {
+  color: #fff7f4 !important;
+  background: #ff4d2e !important;
+  border: 0 !important;
+}
+.pick-bottom b { color: #1e4dff !important; }
+.team-fallback {
+  background: #eef2ff !important;
+  color: #1e4dff;
+}
+.match-score { color: #141821 !important; font-family: Syne, "Space Grotesk", sans-serif; }
+
+.section-title h2 { color: #141821 !important; }
+.section-title p { color: #5c6573 !important; }
+
+.portal-table {
+  background: #fff !important;
+  color: #141821;
+}
+.portal-table th { color: #5c6573 !important; }
+.portal-table td { color: #141821; border-bottom-color: rgba(20, 24, 33, 0.08) !important; }
+
+.portal-dialog {
+  color: #141821 !important;
+  background: #fff !important;
+  border: 0 !important;
+  box-shadow: var(--shadow);
+}
+.portal-dialog::backdrop {
+  background: color-mix(in oklab, #141821 45%, transparent) !important;
+}
+.dialog-close {
+  color: #5c6573 !important;
+  background: #eef2ff !important;
+  border: 0 !important;
+}
+.dialog-title h2,
+.explanation-box,
+.reason-columns h3,
+.reason-columns ul { color: inherit; }
+.explanation-box {
+  background: #ffe8e1 !important;
+  border-left-color: #ff4d2e !important;
+}
+.reason-columns section {
+  background: #eef2ff !important;
+  border: 0 !important;
+}
+
+.portal-footer { color: #5c6573 !important; border-top-color: rgba(20, 24, 33, 0.08) !important; }
+
+.goals-league-chip {
+  background: #fff !important;
+  color: #141821 !important;
+  border: 0 !important;
+  box-shadow: var(--shadow);
+}
+.goals-league-chip strong { color: #141821 !important; }
+.goals-league-chip span { color: #1e4dff !important; }
+.goals-league-chip small { color: #5c6573 !important; }
+.goals-league-chip.active {
+  background: #1e4dff !important;
+  color: #f4f7ff !important;
+}
+.goals-league-chip.active strong,
+.goals-league-chip.active span,
+.goals-league-chip.active small { color: inherit !important; }
+
+body[data-page="bankers"] .portal-hero,
+body[data-page="goals-bankers"] .portal-hero,
+body[data-page="wins-bankers"] .portal-hero,
+body[data-engine] .portal-hero {
+  background:
+    radial-gradient(1200px 280px at 90% -20%, color-mix(in oklab, #ff4d2e 42%, transparent), transparent 60%),
+    #1e4dff !important;
+}
+body[data-page="bankers"] .portal-hero::after { display: none; }
+
+.consensus-banker-card::before { background: #ff4d2e !important; }
+.wins-filter-wrap {
+  background: #fff !important;
+  border: 0 !important;
+  box-shadow: var(--shadow);
+}
+.wins-filter-table th { color: #5c6573 !important; background: #eef2ff !important; }
+.wins-filter-table td,
+.wins-filter-table td:first-child,
+.wins-filter-table td:nth-child(3) { color: #141821 !important; }
+.wins-match-table td,
+.wins-match-table td:first-child { color: #141821 !important; }
+.wins-extra-chip,
+.goals-banker-odds { color: #ff4d2e !important; }
+
+.qualified-team-pills span { background: #eef2ff !important; color: #141821 !important; }
+.qualified-teams-clear { background: #1e4dff !important; color: #f4f7ff !important; border: 0 !important; }
+
+.boss-empty strong,
+.banker-empty strong { color: #1e4dff !important; font-family: Syne, "Space Grotesk", sans-serif; }
+.boss-empty span,
+.banker-empty span { color: #141821 !important; }
+.boss-empty small,
+.banker-empty small { color: #5c6573 !important; }
+.boss-method,
+.banker-method-panel > div,
+.consensus-sample-grid > div,
+.other-engine-views > div,
+.boss-sample-grid > div {
+  background: #eef2ff !important;
+  border: 0 !important;
+  color: #141821 !important;
+}
+.boss-method strong,
+.banker-method-panel strong { color: #1e4dff !important; }
+.boss-verdict h3,
+.consensus-verdict h3 { color: #141821 !important; }
+
+.match-state.pending { color: #9a6700; background: #fff4d6; border-color: #f5c95e; }
+.match-state-legend { color: #5c6573 !important; }
+
+.content-main { color: #141821; }
+.content-card p,
+.content-card li { color: #5c6573; }
+
+.account-header,
+.account-card {
+  background: #fff !important;
+  color: #141821 !important;
+}
+
+.bp-mobile-nav {
+  border: 0 !important;
+  color: #5c6573 !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: var(--shadow) !important;
+}
+.bp-mobile-nav a.active,
+.bp-mobile-nav button.active {
+  color: #f4f7ff !important;
+  background: #1e4dff !important;
+  box-shadow: none !important;
+}
+.bp-mobile-sheet {
+  background: #fff !important;
+  color: #141821 !important;
+}
+.bp-mobile-sheet a { color: #141821 !important; }
+.bp-mobile-sheet small { color: #5c6573 !important; }
+
+.pwa-launch-splash {
+  background: #1e4dff !important;
+  color: #f4f7ff !important;
+}
+
+.responsible-strip-v150 > div {
+  background: #ffe8e1 !important;
+  color: #5c6573 !important;
+  border: 0 !important;
+}
+.responsible-strip-v150 b { color: #ff4d2e !important; }
+
+:focus-visible { outline: 3px solid #1e4dff !important; }

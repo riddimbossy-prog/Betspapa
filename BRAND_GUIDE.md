@@ -1,21 +1,26 @@
-# BetsPapa Official Brand Guide
+# BetsPapa Brand Guide
 
 ## Core identity
 
 **Brand:** BetsPapa  
 **Tagline:** Papa Knows the Game  
 **Mascot:** The wise Papa football analyst  
-**Personality:** Experienced, calm, logical, trustworthy, premium and approachable.
+**Personality:** Experienced, sharp, colourful, trustworthy.
 
-## Official palette
+## Daylight palette
 
-- Midnight: `#090018`
-- Deep Royal Purple: `#12002B`
-- Royal Purple: `#6F21D9`
-- Bright Purple: `#9B4CFF`
-- Papa Gold: `#F2C44F`
-- Deep Gold: `#BD7A13`
-- White: `#FFFFFF`
+- Cream canvas: `#f4f1ea`
+- White surface: `#ffffff`
+- Ink: `#141821`
+- Muted: `#5c6573`
+- Cobalt: `#1e4dff`
+- Coral: `#ff4d2e`
+- Mint win: `#0f9f6e`
+
+## Type
+
+- Display: Syne
+- Body: Outfit
 
 ## Asset usage
 
@@ -24,5 +29,3 @@
 - `assets/images/betspapa-papa-mark.png` — compact header and navigation mark.
 - `assets/images/icon-192.png` and `icon-512.png` — PWA icons.
 - `assets/images/betspapa-social-card.jpg` — social sharing preview.
-
-Do not stretch, recolor, rotate or place the official logo over a low-contrast background.
