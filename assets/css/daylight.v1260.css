@@ -398,3 +398,52 @@ body[data-page="bankers"] .portal-hero::after { display: none; }
 .responsible-strip-v150 b { color: #ff4d2e !important; }
 
 :focus-visible { outline: 3px solid #1e4dff !important; }
+
+body, button, input, select, textarea {
+  font-size: 16px !important;
+  line-height: 1.5;
+}
+.portal-brand strong,
+.account-brand strong,
+.content-header-v150 strong { font-size: 18px !important; }
+.portal-brand small { font-size: 11px !important; letter-spacing: 0.1em !important; }
+.portal-nav a,
+.desktop-nav a,
+.account-header-links a { font-size: 14px !important; }
+.eyebrow,
+.kicker { font-size: 12px !important; }
+.portal-hero h1,
+.hero-copy h1 { font-size: clamp(34px, 4.6vw, 52px) !important; }
+.portal-hero p,
+.hero-copy p { font-size: 17px !important; }
+.hub-engine-tabs button,
+.engine-tab,
+.engine-tab strong { font-size: 14px !important; }
+.engine-tab span { font-size: 11px !important; }
+.metric span,
+.diagnostic-card span,
+.portal-toolbar label span { font-size: 12px !important; }
+.metric strong,
+.diagnostic-card strong { font-size: 22px !important; }
+.section-title h2 { font-size: 24px !important; }
+.section-title p { font-size: 15px !important; }
+.pick-card .pick-team,
+.pick-card .pick-team > span { font-size: 16px !important; }
+.pick-card .pick-selection { font-size: 17px !important; }
+.pick-card .pick-meta,
+.pick-card .pick-bottom,
+.pick-bottom > span { font-size: 13px !important; }
+.pick-badge { font-size: 11px !important; }
+.portal-toolbar input,
+.portal-toolbar select,
+.portal-toolbar button,
+.gold-action,
+.gold-button { font-size: 15px !important; }
+.goals-league-chip strong { font-size: 15px !important; }
+.goals-league-chip small { font-size: 13px !important; }
+.consensus-banker-card,
+.goals-banker-card,
+.boss-card { font-size: 16px; }
+.bp-mobile-nav small { font-size: 11px !important; }
+.content-card { font-size: 17px; line-height: 1.7; }
+.dialog-title h2 { font-size: 22px !important; }
