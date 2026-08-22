@@ -447,3 +447,26 @@ body, button, input, select, textarea {
 .bp-mobile-nav small { font-size: 11px !important; }
 .content-card { font-size: 17px; line-height: 1.7; }
 .dialog-title h2 { font-size: 22px !important; }
+
+.boss-method,
+.banker-method-panel,
+.boss-rejection-panel,
+.wins-how,
+.reason-columns,
+.no-pick-reason,
+.consensus-meter,
+.banker-votes,
+.hub-summary-chips,
+.hub-engine-score,
+.goals-banker-reasons,
+.goals-align-row,
+.athena-card-story,
+.athena-classification-panel,
+.engine-strength-label,
+.htft-firing-box,
+.no-draw-policy-box,
+.league-climate-chip,
+.early-season-flag,
+.metric small,
+.diagnostic-card small { display: none !important; }
+.explanation-box p { display: none !important; }

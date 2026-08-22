@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
 <meta content="#1e4dff" name="theme-color"/>
-<meta content="Wins Banker publishes a favourite win when venue form clears PPG/GPG, the team is top 5, and SportyBet Over 1.5 is 1.20 or shorter plus at least one extra filter." name="description"/>
+<meta content="Today’s win picks from BetsPapa." name="description"/>
 <title>Wins Banker — BetsPapa</title>
 <link href="assets/images/favicon-64.png" rel="icon" type="image/png"/>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
@@ -16,7 +16,7 @@
 <link href="/assets/css/pwa.v1160.css" rel="stylesheet"/>
 <link href="/assets/css/ui.v151.css" rel="stylesheet"/>
 <link href="assets/css/bankers.v1250.css" rel="stylesheet"/>
-<link href="assets/css/wins-board.v1260.css?v=1262" rel="stylesheet"/>
+<link href="assets/css/wins-board.v1260.css?v=1263" rel="stylesheet"/>
 <script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
 <meta content="yes" name="mobile-web-app-capable"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
@@ -24,7 +24,7 @@
 <meta content="BetsPapa" name="apple-mobile-web-app-title"/>
 <link href="/manifest.webmanifest?v=1260" rel="manifest"/>
 <link href="/assets/images/pwa-brand-apple-180.png" rel="apple-touch-icon" sizes="180x180"/>
-<link href="assets/css/daylight.v1260.css?v=1262" rel="stylesheet"/>
+<link href="assets/css/daylight.v1260.css?v=1263" rel="stylesheet"/>
 </head>
 <body data-page="wins-bankers">
 <div aria-live="polite" class="pwa-launch-splash" id="pwaSplash" role="status">
@@ -40,11 +40,11 @@
 </header>
 <main class="portal-main">
 <section class="portal-hero">
-<span class="eyebrow">BetsPapa · Wins Banker v1.2.0</span>
+<span class="eyebrow">BetsPapa</span>
 <h1>Wins Banker</h1>
-<p>Colourful live board. Venue-form PPG and GPG. Tap a match for filters and form.</p>
+<p>Today’s win picks.</p>
 </section>
-<div class="status-strip" id="portalStatus"><span>Scanning favourite wins…</span><small></small></div>
+<div class="status-strip" id="portalStatus"><span>Loading…</span><small></small></div>
 <div class="portal-toolbar">
 <label><span>Date</span><input id="dateFilter" type="date"/></label>
 <label><span>Search</span><input id="winsSearchFilter" placeholder="Team or league" type="search"/></label>
@@ -53,25 +53,17 @@
 </div>
 <section class="metric-row" id="portalMetrics"></section>
 <div class="section-title">
-<h2>Qualified leagues</h2>
-<p>Tap a league to filter the board.</p>
+<h2>Leagues</h2>
+<p></p>
 </div>
 <section class="goals-league-map" id="winsLeagueMap"></section>
 <div id="qualifiedTeams"></div>
 <div class="section-title">
-<h2>Today’s bankers</h2>
-<p>Tap a match for venue form, filters and SportyBet.</p>
+<h2>Picks</h2>
+<p></p>
 </div>
 <div id="portalContent"></div>
-<details class="wins-how">
-<summary>How a banker is chosen</summary>
-<ul>
-<li>Over 1.5 at 1.20 or shorter — required</li>
-<li>Favourite in the current top 5</li>
-<li>Venue PPG 2.00+ · home GPG 2.00+ · away GPG above 2.20</li>
-<li>Early season, top-5 clashes, and similar-form sides are skipped</li>
-</ul>
-</details>
+
 <footer class="portal-footer">
 <span>Sports analytics only. Predictions are not guarantees. 18+.</span>
 <div>
@@ -87,7 +79,7 @@
 </div>
 </dialog>
 <script src="assets/js/country-flags.v1175.js"></script>
-<script src="assets/js/wins-board.v1260.js"></script>
+<script src="assets/js/wins-board.v1260.js?v=1263"></script>
 <script src="assets/js/mobile-nav.v1240.js"></script>
 <script src="/assets/js/pwa.v1160.js"></script>
 <script src="/assets/js/ui.v1170.js"></script>

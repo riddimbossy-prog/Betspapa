@@ -74,22 +74,13 @@
         <strong>${escapeHtml(home)} <span style="font-weight:500;opacity:.55">vs</span> ${escapeHtml(away)}</strong>
         <small>${escapeHtml(leagueText(item.league))}</small>
       </span>
-      <span class="wins-meta">${escapeHtml(formatKickoff(item.kickoff))}<br>PPG ${escapeHtml(String(item.favoritePpg ?? "—"))} · GPG ${escapeHtml(String(item.favoriteGpg ?? "—"))}</span>
+      <span class="wins-meta">${escapeHtml(formatKickoff(item.kickoff))}</span>
       <span class="wins-odds"><b>${escapeHtml(String(item.odds ?? "—"))}</b><small>${escapeHtml(pick)}</small></span>
       <span class="wins-chevron" aria-hidden="true">›</span>
     </button>`;
   }
 
   function dialogMarkup(item) {
-    const rows = item.filters?.length ? item.filters : [
-      { label: "Match Over 1.5", rule: "1.20 or shorter", value: item.over15Odds ?? "—", passed: true, required: true }
-    ];
-    const filters = rows.map((row) => `<div class="wins-filter-row">
-      <div><div>${escapeHtml(row.label)}</div><small>${escapeHtml(String(row.rule))}</small></div>
-      <div><b>${escapeHtml(String(row.value ?? "—"))}</b>
-      <span class="wins-tag ${row.required ? "required" : row.passed ? "pass" : "skip"}">${row.required ? "Required" : row.passed ? "Pass" : "—"}</span></div>
-    </div>`).join("");
-    const reasons = (item.reasons || []).map((reason) => `<li>${escapeHtml(reason)}</li>`).join("");
     return `<div class="wins-sheet">
       <p class="wins-kicker">${escapeHtml(leagueText(item.league))}</p>
       <h2>${escapeHtml(item.selection)}</h2>
@@ -100,18 +91,13 @@
         <div>${logoMarkup(item.away)}<small>Away</small><strong>${escapeHtml(item.away?.name || "Away")}</strong></div>
       </div>
       <div class="wins-stats">
-        <div class="wins-stat"><span>Win odds</span><strong>${escapeHtml(String(item.odds ?? "—"))}</strong></div>
-        <div class="wins-stat"><span>Venue PPG</span><strong>${escapeHtml(String(item.favoritePpg ?? "—"))}</strong></div>
-        <div class="wins-stat"><span>Venue GPG</span><strong>${escapeHtml(String(item.favoriteGpg ?? "—"))}</strong></div>
-        <div class="wins-stat"><span>Rank</span><strong>${item.favoriteRank ? `P${escapeHtml(String(item.favoriteRank))}` : "—"}</strong></div>
+        <div class="wins-stat"><span>Pick</span><strong>${escapeHtml(item.selection || "—")}</strong></div>
+        <div class="wins-stat"><span>Odds</span><strong>${escapeHtml(String(item.odds ?? "—"))}</strong></div>
       </div>
       <div class="wins-forms">
-        <div class="wins-form"><span>Favourite form</span><div class="wins-pips">${formPips(item.favoriteForm)}</div></div>
-        <div class="wins-form"><span>Opponent form</span><div class="wins-pips">${formPips(item.opponentForm)}</div></div>
+        <div class="wins-form"><span>${escapeHtml(item.home?.name || "Home")}</span><div class="wins-pips">${formPips(item.favoriteForm)}</div></div>
+        <div class="wins-form"><span>${escapeHtml(item.away?.name || "Away")}</span><div class="wins-pips">${formPips(item.opponentForm)}</div></div>
       </div>
-      <p class="wins-note">${escapeHtml(item.formBasis ? `Calculations: ${item.formBasis}` : "Venue-split home/away form")} · ${escapeHtml(String(item.extraPassed ?? 0))} extra filters passed</p>
-      <div class="wins-filters">${filters}</div>
-      ${reasons ? `<ul class="wins-reasons">${reasons}</ul>` : ""}
       ${item.sportyBetUrl ? `<a class="wins-sporty" href="${escapeHtml(item.sportyBetUrl)}" target="_blank" rel="noopener">Open on SportyBet</a>` : ""}
     </div>`;
   }
@@ -140,9 +126,7 @@
 
     $("#portalMetrics").innerHTML = [
       `<div class="diagnostic-card"><span>Picks</span><strong>${picks.length}</strong></div>`,
-      `<div class="diagnostic-card"><span>Reviewed</span><strong>${payload.reviewedFixtures ?? "—"}</strong></div>`,
-      `<div class="diagnostic-card"><span>Leagues</span><strong>${leagueMap.length || "—"}</strong></div>`,
-      `<div class="diagnostic-card"><span>Rejected</span><strong>${payload.rejectedCount || 0}</strong></div>`
+      `<div class="diagnostic-card"><span>Leagues</span><strong>${leagueMap.length || "—"}</strong></div>`
     ].join("");
 
     const map = $("#winsLeagueMap");
@@ -166,7 +150,7 @@
       });
       $("#portalContent").innerHTML = filtered.length
         ? `<div class="wins-list">${filtered.map(rowMarkup).join("")}</div>`
-        : `<div class="empty-card">No favourite passed Over 1.5 at 1.20 or shorter plus an extra filter.</div>`;
+        : `<div class="empty-card">No picks today.</div>`;
       $("#portalContent").querySelectorAll(".wins-row").forEach((card) => {
         card.addEventListener("click", () => {
           const item = filtered.find((row) => String(row.fixtureId) === card.dataset.fixture);
@@ -190,12 +174,12 @@
     const dateInput = $("#dateFilter");
     const date = nextDate || dateInput.value || utcIsoDate();
     dateInput.value = date;
-    setStatus("Scanning favourite wins…");
+    setStatus("Loading…");
     try {
       const payload = await fetchBoard(date);
       if (payload.date && payload.date !== date) dateInput.value = payload.date;
       render(payload);
-      setStatus(`${payload.pickCount || 0} wins bankers`, payload.engineVersion || "wins-banker-v1.2.0");
+      setStatus(`${payload.pickCount || 0} picks`);
     } catch (error) {
       setStatus("Could not load Wins Banker", error.message);
       $("#portalContent").innerHTML = `<div class="empty-card">${escapeHtml(error.message)}</div>`;

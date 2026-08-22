@@ -391,39 +391,11 @@
   }
 
   function htftGateMarkup(pick) {
-    const gate = pick?.htftGate || pick?.explanationEvidence?.htftGate || null;
-    if (!gate) return "";
-    const triggers = (gate.triggerRoutes || [])
-      .slice(0, 6)
-      .map((row) => `<span>${escapeHtml(row.code || row.transition || "HT/FT")} ${escapeHtml(confidence((row.probability || 0) * 100))}</span>`)
-      .join("");
-    return `
-      <section class="htft-firing-box ${gate.eligible ? "passed" : "failed"}">
-        <div><span class="eyebrow">HT/FT FIRING RULE</span><strong>${gate.eligible ? "Gate passed" : "Gate failed"} · ${escapeHtml(confidence((gate.score || 0) * 100))} strength</strong></div>
-        <p>${escapeHtml(gate.rule || "No firing rule recorded.")}</p>
-        ${triggers ? `<div class="htft-trigger-chips">${triggers}</div>` : ""}
-        ${(gate.blockers || []).length ? `<ul>${gate.blockers.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>` : ""}
-      </section>`;
+    return "";
   }
 
   function noDrawPolicyMarkup(pick) {
-    const policy = pick?.explanationEvidence?.marketEvidence?.noDrawPolicy || null;
-    if (!policy) return "";
-    const status = policy.divertedToGoals
-      ? `Diverted to ${policy.preferredGoalMarket === "gg-yes" ? "GG" : "Over 1.5"}`
-      : "Result structure retained";
-    return `
-      <section class="no-draw-policy-box ${policy.divertedToGoals ? "diverted" : "retained"}">
-        <div><span class="eyebrow">NO DRAW DECISION CHECK</span><strong>${escapeHtml(status)}</strong></div>
-        <div class="no-draw-policy-grid">
-          <span>Decisive <b>${escapeHtml(confidence((policy.decisiveMass || 0) * 100))}</b></span>
-          <span>Clean decisive <b>${escapeHtml(confidence((policy.cleanDecisiveMass || 0) * 100))}</b></span>
-          <span>Draw mass <b>${escapeHtml(confidence((policy.drawMass || 0) * 100))}</b></span>
-          <span>Forced GG <b>${escapeHtml(confidence((policy.forcedGgMass || 0) * 100))}</b></span>
-          <span>League O1.5 <b>${escapeHtml(confidence((policy.leagueOver15Rate || 0) * 100))}</b></span>
-          <span>League GG <b>${escapeHtml(confidence((policy.leagueBttsRate || 0) * 100))}</b></span>
-        </div>
-      </section>`;
+    return "";
   }
 
   function formPictureMarkup(pick) {
@@ -433,23 +405,14 @@
       <div>
         <strong>${escapeHtml(row.name || "Team")}</strong>
         <span>Form <b>${escapeHtml(row.form || "—")}</b></span>
-        <span>Points <b>${escapeHtml(String(row.points ?? "—"))}/15</b></span>
-        <span>Form goals <b>${escapeHtml(row.goals || "—")}</b></span>
-        <small>${escapeHtml(row.scoreline || "")}</small>
       </div>`;
     return `<section class="athena-half-picture">
-      <h3>Last five — HT/FT, form and form goals</h3>
+      <h3>Recent form</h3>
       <div class="athena-half-grid">${side(picture.home)}${side(picture.away)}</div>
     </section>`;
   }
 
   function explanationDialog(item, pick) {
-    const explanation =
-      pick?.explanationParagraph ||
-      pick?.description ||
-      pick?.reasons?.[0] ||
-      "PapaSense selected the highest-ranked practical market.";
-
     return `
       <div class="dialog-title">
         <span class="eyebrow">${escapeHtml(pick?.engineName || ENGINE_META[engineKey]?.name || "BetsPapa")}</span>
@@ -457,61 +420,19 @@
         <p>${escapeHtml(leagueText(item.league))} · ${escapeHtml(formatKickoff(item.kickoff))}</p>
         ${matchStatusMarkup(item, item.activeEngine || engineKey)}
       </div>
-      ${earlySeasonMarkup(item)}
       <div class="explanation-box">
-        <span class="eyebrow">${escapeHtml(pick?.market || "Market")}</span>
+        <span class="eyebrow">${escapeHtml(pick?.market || "Pick")}</span>
         <h3>${escapeHtml(pick?.selection || "Prediction")}</h3>
-        <small class="engine-strength-label">Engine strength: ${escapeHtml(confidence(pick?.confidence ?? pick?.score))}</small>
-        <p>${escapeHtml(explanation)}</p>
       </div>
-      ${htftGateMarkup(pick)}
-      ${noDrawPolicyMarkup(pick)}
-      ${formPictureMarkup(pick)}
-      <div class="reason-columns">
-        <section>
-          <h3>Why this pick</h3>
-          <ul>${(pick?.reasons || []).map((reason) => `<li>${escapeHtml(reason)}</li>`).join("") || "<li>Highest-ranked market after all checks.</li>"}</ul>
-        </section>
-        <section>
-          <h3>Cautions</h3>
-          <ul>${(pick?.cautions || []).map((reason) => `<li>${escapeHtml(reason)}</li>`).join("") || "<li>No major contradiction survived the safety checks.</li>"}</ul>
-        </section>
-      </div>`;
+      ${formPictureMarkup(pick)}`;
   }
 
   function leagueClimateMarkup(item) {
-    const climate = item?.leagueScoring;
-    if (!climate || (climate.label !== "high" && climate.label !== "low")) return "";
-    const pct = Math.round((Number(climate.over25Rate) || 0) * 100);
-    const rising = climate.trend?.direction === "rising";
-    const falling = climate.trend?.direction === "falling";
-    const title = climate.label === "high"
-      ? `High-scoring league. Over 2.5 has landed in about ${pct}% of matches.`
-      : `Low-scoring league. Over 2.5 has landed in about ${pct}% of matches.`;
-    const label = climate.label === "high"
-      ? `HIGH SCORING · O2.5 ${pct}%`
-      : `LOW SCORING · O2.5 ${pct}%`;
-    const trend = rising ? " rising" : falling ? " falling" : "";
-    return `<span class="league-climate-chip ${escapeHtml(climate.label)}${trend}" title="${escapeHtml(title)}">${escapeHtml(label)}</span>`;
+    return "";
   }
 
   function riskFlagMarkup(item, pick = null, extraClass = "") {
-    const flags = [
-      ...(item?.redFlags || []),
-      item?.earlySeason,
-      item?.topFiveClash,
-      item?.leagueGoalsFlag,
-      pick?.leagueGoalsFlag,
-      ...(pick?.redFlags || [])
-    ].filter(Boolean);
-    const unique = [];
-    for (const flag of flags) {
-      if (!unique.some((entry) => entry.code === flag.code)) unique.push(flag);
-    }
-    unique.sort((left, right) => Number(left.number || 99) - Number(right.number || 99));
-    return unique.map((flag) =>
-      `<span class="early-season-flag ${escapeHtml(extraClass)}" title="${escapeHtml(flag.reason || flag.label || "Risk flag")}">⚑ ${escapeHtml(flag.label || "RED FLAG")}</span>`
-    ).join("");
+    return "";
   }
 
   function hasRedFlag(item, pick = null) {
@@ -547,11 +468,11 @@
             <div class="pick-team">${logoMarkup(item.home)}<span>${escapeHtml(item.home?.name || "Home")}</span></div>
             <div class="pick-team">${logoMarkup(item.away)}<span>${escapeHtml(item.away?.name || "Away")}</span></div>
           </div>
-          <span class="pick-badge processing">${waiting ? "Waiting for history" : "Processing"}</span>
-          <strong class="pick-selection">${waiting ? "Papa needs more team history" : "Papa is preparing this pick"}</strong>
+          <span class="pick-badge processing">${waiting ? "Waiting" : "Preparing"}</span>
+          <strong class="pick-selection">${waiting ? "Waiting" : "Preparing"}</strong>
           <div class="pick-bottom">
-            <span>${escapeHtml(item.processingMessage || "Current-engine analysis in progress")}</span>
-            <b>${waiting ? "Pending" : "Please wait"}</b>
+            <span></span>
+            <b></b>
           </div>
         </article>`;
     }
@@ -571,9 +492,8 @@
             <div class="pick-team">${logoMarkup(item.away)}<span>${escapeHtml(item.away?.name || "Away")}</span></div>
           </div>
           <span class="pick-badge no-pick">NO PICK</span>
-          <strong class="pick-selection">No market passed this engine's rules</strong>
-          <p class="no-pick-reason">${escapeHtml(pick.explanationParagraph || pick.description || pick.reasons?.[0] || "The evidence was not strong enough.")}</p>
-          <div class="pick-bottom"><span>Protected decision</span><b>Withheld</b></div>
+          <strong class="pick-selection">No pick</strong>
+          <div class="pick-bottom"><span></span><b></b></div>
         </article>`;
     }
 
@@ -590,12 +510,10 @@
           <div class="pick-team">${logoMarkup(item.home)}<span>${escapeHtml(item.home?.name || "Home")}</span></div>
           <div class="pick-team">${logoMarkup(item.away)}<span>${escapeHtml(item.away?.name || "Away")}</span></div>
         </div>
-        <span class="pick-badge">${escapeHtml(pick.qualified ? "Qualified" : "Directional")}</span>
-        ${riskFlagMarkup(item, pick)}
+        <span class="pick-badge">${escapeHtml(pick.qualified ? "Pick" : "Pick")}</span>
         <strong class="pick-selection">${escapeHtml(pick.selection || pick.market)}</strong>
         <div class="pick-bottom">
-          <span>${escapeHtml(pick.market || "Market")}</span>
-          <b>${escapeHtml(confidence(pick.confidence ?? pick.score))}</b>
+          <span>${escapeHtml(pick.market || "")}</span>
         </div>
       </button>`;
   }
@@ -614,10 +532,10 @@
     const markets = new Set(readyItems.map((item) => item.pick?.market).filter(Boolean)).size;
 
     $("#portalMetrics").innerHTML = `
-      <div class="metric"><span>Picks ready</span><strong>${readyItems.length}</strong><small>Selections that passed this engine's rules</small></div>
-      <div class="metric"><span>Strong picks</span><strong>${qualified}</strong><small>Passed story, sample and market gates</small></div>
-      <div class="metric"><span>Hidden</span><strong>${hidden}</strong><small>No prediction, so the match stays off the board</small></div>
-      <div class="metric"><span>Preparing</span><strong>${preparing}</strong><small>${preparing ? "Papa is analysing imported fixtures" : `Average strength ${avg ? `${avg.toFixed(1)}%` : "—"}`}</small></div>`;
+      <div class="metric"><span>Picks</span><strong>${readyItems.length}</strong></div>
+      <div class="metric"><span>Today</span><strong>${qualified}</strong></div>
+      <div class="metric"><span>Live soon</span><strong>${preparing}</strong></div>
+      <div class="metric"><span>Markets</span><strong>${markets}</strong></div>`;
     $("#marketCount")?.replaceChildren(document.createTextNode(String(markets)));
   }
 
@@ -737,22 +655,16 @@
     const pick = hubEnginePick(item, key);
     const state = hubEngineStatus(item, key, pick);
     const selection = !pick
-      ? "Preparing this fixture"
+      ? "Preparing"
       : hubPickUnavailable(pick)
-        ? "No market passed"
-        : pick.selection || pick.market || "Selection ready";
-    const market = !pick
-      ? item?.processing?.[key]?.message || "Waiting for prepared analysis"
-      : hubPickUnavailable(pick)
-        ? pick.explanationParagraph || pick.description || pick.reasons?.[0] || "Evidence was not strong enough."
-        : pick.market || (key === "athena" ? "Athena market" : "Market");
-    const score = hubPickReady(pick) ? `${hubPickConfidence(pick).toFixed(1)}%` : "";
+        ? "No pick"
+        : pick.selection || pick.market || "Pick";
+    const market = hubPickUnavailable(pick) ? "" : (pick?.market || "");
+    const score = "";
     const disabled = !pick ? "disabled" : "";
-    const flags = riskFlagMarkup(item, pick, "chip");
-    return `<button class="hub-engine-row engine-${escapeHtml(key)} ${escapeHtml(state.className)} ${hasRedFlag(item, pick) ? "flagged" : ""}" data-hub-engine="${escapeHtml(key)}" data-fixture-id="${escapeHtml(item.fixtureId)}" type="button" ${disabled}>
-      <span class="hub-engine-name"><i></i><b>${escapeHtml(meta.name)}</b><small>${escapeHtml(state.label)}</small></span>
-      <span class="hub-engine-pick"><strong>${escapeHtml(selection)}</strong><small>${escapeHtml(market)}</small>${flags}</span>
-      <span class="hub-engine-score">${escapeHtml(score || (pick ? "WITHHELD" : "…"))}</span>
+    return `<button class="hub-engine-row engine-${escapeHtml(key)} ${escapeHtml(state.className)}" data-hub-engine="${escapeHtml(key)}" data-fixture-id="${escapeHtml(item.fixtureId)}" type="button" ${disabled}>
+      <span class="hub-engine-name"><i></i><b>${escapeHtml(meta.name)}</b></span>
+      <span class="hub-engine-pick"><strong>${escapeHtml(selection)}</strong><small>${escapeHtml(market)}</small></span>
     </button>`;
   }
 
@@ -772,12 +684,6 @@
           <div class="pick-team">${logoMarkup(item.home)}<span>${escapeHtml(item.home?.name || "Home")}</span></div>
           <span class="hub-versus">VS</span>
           <div class="pick-team away">${logoMarkup(item.away)}<span>${escapeHtml(item.away?.name || "Away")}</span></div>
-        </div>
-        <div class="hub-summary-chips">
-          <span>${totalReady}/${HUB_ENGINE_ORDER.length} engines picked</span>
-          ${agreement ? `<span class="agreement">${agreement} engines agree</span>` : ""}
-          ${early ? earlySeasonMarkup(item, "chip") : ""}
-          ${leagueClimateMarkup(item)}
         </div>
       </header>
       <div class="hub-engine-list">${readyKeys.map((key) => hubEngineRow(item, key)).join("")}</div>
@@ -1068,7 +974,6 @@
   }
 
   function consensusBankerCard(item) {
-    const voteText = `${item.confirmationFamilies || item.consensusCount || 0}/3 confirmation families`;
     return `
       <button class="pick-card consensus-banker-card ${bankerTierClass(item)}" data-fixture="${escapeHtml(item.fixtureId)}">
         <div class="pick-meta">
@@ -1080,57 +985,26 @@
           <div class="pick-team">${logoMarkup(item.home)}<span>${escapeHtml(item.home?.name || "Home")}</span></div>
           <div class="pick-team">${logoMarkup(item.away)}<span>${escapeHtml(item.away?.name || "Away")}</span></div>
         </div>
-        <div class="consensus-grade-row">
-          <span class="pick-badge consensus-grade">${escapeHtml(item.tier || "PAPALOCK PRIME")}</span>
-          <strong>${escapeHtml(voteText)}</strong>
-        </div>
+        <span class="pick-badge consensus-grade">Banker</span>
         <strong class="pick-selection">${escapeHtml(item.selection)}</strong>
-        <div class="banker-votes">${bankerEngineChips(item)}</div>
-        <div class="consensus-meter" aria-label="Banker score ${escapeHtml(String(item.bankerScore || 0))} out of 100">
-          <span style="width:${Math.max(0, Math.min(100, Number(item.bankerScore || 0)))}%"></span>
-        </div>
         <div class="pick-bottom">
-          <span>${escapeHtml(item.market || "Market")}</span>
-          <b>${escapeHtml(`${Number(item.bankerScore || 0).toFixed(1)}/100`)}</b>
+          <span>${escapeHtml(item.market || "")}</span>
         </div>
       </button>`;
   }
 
   function consensusBankerDialog(item) {
-    const otherViews = item.otherEnginePicks || [];
-    const evidence = item.evidence || {};
     return `
       <div class="dialog-title">
-        <span class="eyebrow">TODAY'S BANKER · ${escapeHtml(item.tier || "PAPALOCK PRIME")}</span>
+        <span class="eyebrow">Banker</span>
         <h2>${escapeHtml(item.home?.name || "Home")} vs ${escapeHtml(item.away?.name || "Away")}</h2>
         <p>${`${escapeHtml(leagueText(item.league))} · ${escapeHtml(formatKickoff(item.kickoff))}`}</p>
         ${matchStatusMarkup(item)}
       </div>
       <div class="explanation-box consensus-verdict">
-        <span class="eyebrow">PAPALOCK FINAL PICK</span>
-        <h3>${escapeHtml(item.selection)} · ${Number(item.bankerScore || 0).toFixed(1)}/100</h3>
-        <p>${escapeHtml(item.publicExplanation || item.explanation || "PapaLock independently rechecked the safest market shared by the engine evidence.")}</p>
-      </div>
-      <section class="consensus-dialog-section">
-        <h3>Independent families backing this pick</h3>
-        <div class="dialog-engine-votes">${bankerEngineChips(item)}</div>
-      </section>
-      <div class="reason-columns">
-        <section><h3>Why it qualified</h3><ul>${(item.reasons || []).map((reason) => `<li>${escapeHtml(reason)}</li>`).join("") || "<li>Passed every banker gate.</li>"}</ul></section>
-        <section><h3>Safety checks</h3><ul>
-          <li>One final banker per fixture.</li>
-          <li>At least 12 same-league matches per team.</li>
-          <li>At least 8 relevant home/away matches per team.</li>
-          <li>Recent-six evidence must be complete.</li>
-          <li>No critical caution or incomplete profile.</li>
-        </ul></section>
-      </div>
-      <div class="consensus-sample-grid">
-        <div><span>${escapeHtml(item.home?.name || "Home")}</span><strong>${Number(evidence.homeOverall || 0)} overall</strong><small>${Number(evidence.homeVenue || 0)} home</small></div>
-        <div><span>${escapeHtml(item.away?.name || "Away")}</span><strong>${Number(evidence.awayOverall || 0)} overall</strong><small>${Number(evidence.awayVenue || 0)} away</small></div>
-        <div><span>Agreement</span><strong>${item.confirmationFamilies || item.consensusCount || 0}/3 families</strong><small>Independent story confirmation</small></div>
-      </div>
-      ${otherViews.length ? `<section class="consensus-dialog-section"><h3>Other engine views</h3><div class="other-engine-views">${otherViews.map((view) => `<div><span>${escapeHtml(view.engineName)}</span><strong>${escapeHtml(view.selection || view.market || "No pick")}</strong><small>${escapeHtml(confidence(view.confidence))}${view.qualified ? " · qualified" : " · directional"}</small></div>`).join("")}</div></section>` : ""}`;
+        <span class="eyebrow">${escapeHtml(item.market || "Pick")}</span>
+        <h3>${escapeHtml(item.selection)}</h3>
+      </div>`;
   }
 
   function renderConsensusBankers(payload) {
@@ -1140,10 +1014,10 @@
       : 0;
 
     $("#portalMetrics").innerHTML = `
-      <div class="metric"><span>Matches checked</span><strong>${payload.predictionsReviewed || 0}</strong><small>League fixtures reviewed by PapaLock</small></div>
-      <div class="metric"><span>Bankers ready</span><strong>${payload.totalSelections || 0}</strong><small>Only one strongest banker per fixture</small></div>
-      <div class="metric"><span>Elite Bankers</span><strong>${payload.eliteCount || 0}</strong><small>All three independent families confirmed the story</small></div>
-      <div class="metric"><span>Average banker score</span><strong>${average ? `${average.toFixed(1)}` : "—"}</strong><small>Family confirmation, market evidence and sample-quality score</small></div>`;
+      <div class="metric"><span>Checked</span><strong>${payload.predictionsReviewed || 0}</strong></div>
+      <div class="metric"><span>Bankers</span><strong>${payload.totalSelections || 0}</strong></div>
+      <div class="metric"><span>Elite</span><strong>${payload.eliteCount || 0}</strong></div>
+      <div class="metric"><span>Today</span><strong>${picks.length}</strong></div>`;
 
     const tierFilter = $("#bankerTierFilter");
     const marketFilter = $("#bankerMarketFilter");
@@ -1167,13 +1041,10 @@
         return true;
       });
 
-      const summary = payload.rejectionSummary || [];
+      const summary = [];
       $("#portalContent").innerHTML = filtered.length
-        ? `<div class="portal-grid consensus-banker-grid">${filtered.map(consensusBankerCard).join("")}</div>
-           <section class="banker-method-panel"><div><strong>PapaLock rule</strong><p>Papa, Safer and Aggressive count as one PapaSense family. Venue Pattern and Athena are separate families. At least two independent families must support the same match story before PapaLock performs its own market audit.</p></div><div><strong>No forced bankers</strong><p>PapaLock chooses the safest common expression, rejects close conflicts and publishes no more than three bankers per day.</p></div></section>
-           ${summary.length ? `<section class="boss-rejection-panel"><h2>Why other matches stayed off the Banker page</h2>${summary.map((row) => `<div><span>${escapeHtml(row.reason)}</span><strong>${row.count}</strong></div>`).join("")}</section>` : ""}`
-        : `<div class="empty-card banker-empty"><strong>NO BANKER QUALIFIED</strong><span>No match passed the selected filters and PapaLock’s independent market and sample gates.</span><small>PapaLock will not force a banker when independent families disagree or the evidence is thin.</small></div>
-           ${summary.length ? `<section class="boss-rejection-panel"><h2>Why matches were rejected</h2>${summary.map((row) => `<div><span>${escapeHtml(row.reason)}</span><strong>${row.count}</strong></div>`).join("")}</section>` : ""}`;
+        ? `<div class="portal-grid consensus-banker-grid">${filtered.map(consensusBankerCard).join("")}</div>`
+        : `<div class="empty-card banker-empty"><strong>No bankers today</strong><span>Nothing published for these filters.</span></div>`;
 
       $$(".consensus-banker-card").forEach((card) => {
         card.addEventListener("click", () => {
@@ -1304,13 +1175,6 @@
       <span class="pick-badge consensus-grade">${escapeHtml(item.selection)}</span>
       <strong class="pick-selection">${escapeHtml(item.selection)}</strong>
       <div class="goals-banker-odds">SportyBet ${escapeHtml(String(item.odds || "—"))}${item.sportyBetUrl ? ` · <a href="${escapeHtml(item.sportyBetUrl)}" target="_blank" rel="noopener">open</a>` : ""}</div>
-      <ul class="goals-banker-reasons">${(item.reasons || []).map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>
-      <div class="goals-align-row">
-        <span>League ${pct(item.leagueRate)}</span>
-        <span>Home 5 ${pct(item.homeRecentRate)}</span>
-        <span>Away 5 ${pct(item.awayRecentRate)}</span>
-      </div>
-      ${climate.label ? `<span class="league-climate-chip ${escapeHtml(climate.label)}">${escapeHtml(climate.label === "high" ? "HIGH SCORING" : climate.label === "low" ? "LOW SCORING" : "NEUTRAL")}</span>` : ""}
     </article>`;
   }
 
@@ -1333,10 +1197,10 @@
     }
 
     $("#portalMetrics").innerHTML = [
-      `<div class="diagnostic-card"><span>Leagues mapped</span><strong>${leagueMap.length}</strong></div>`,
-      `<div class="diagnostic-card"><span>Goals bankers</span><strong>${picks.length}</strong></div>`,
-      `<div class="diagnostic-card"><span>Odds band</span><strong>1.20–1.55</strong></div>`,
-      `<div class="diagnostic-card"><span>Rejected</span><strong>${payload.rejectedCount || 0}</strong></div>`
+      `<div class="diagnostic-card"><span>Leagues</span><strong>${leagueMap.length}</strong></div>`,
+      `<div class="diagnostic-card"><span>Picks</span><strong>${picks.length}</strong></div>`,
+      `<div class="diagnostic-card"><span>Today</span><strong>${picks.length ? "Live" : "—"}</strong></div>`,
+      `<div class="diagnostic-card"><span>Markets</span><strong>${[...new Set(picks.map((p) => p.selection).filter(Boolean))].length}</strong></div>`
     ].join("");
 
     $("#goalsLeagueMap").innerHTML = leagueMap.length
@@ -1618,50 +1482,24 @@
           <div class="pick-team">${logoMarkup(item.away)}<span>${escapeHtml(item.away?.name || "Away")}</span></div>
         </div>
         <div class="boss-grade-row">
-          <span class="pick-badge boss-grade">${escapeHtml(item.grade || "QUALIFIED")}</span>
-          <span class="boss-total-score">ATHENA v3 · ${Number(item.score || 0).toFixed(0)}/100</span>
+          <span class="pick-badge boss-grade">${escapeHtml(item.grade || "Pick")}</span>
         </div>
         <strong class="pick-selection">${escapeHtml(item.selection)}</strong>
-        <p class="athena-card-story">${escapeHtml(item.explanation?.summary || item.story || "Athena found a supported match pattern.")}</p>
-        <div class="pick-bottom"><span>${escapeHtml(classification)}</span><b>${escapeHtml(item.market)}</b></div>
+        <div class="pick-bottom"><span>${escapeHtml(item.market || "")}</span></div>
       </button>`;
   }
 
   function athenaDialog(item) {
-    const explanation = item.explanation || {};
-    const samples = explanation.samples || item.samples || {};
-    const reasons = explanation.whyPick || explanation.reasons || [];
-    const cautions = explanation.cautions || [];
-    const coverage = explanation.coverage || {};
-    const classification = String(item.classification?.type || "UNCLASSIFIED")
-      .replaceAll("_", " ")
-      .toLowerCase();
-
     return `
       <div class="dialog-title">
-        <span class="eyebrow">ATHENA v3 · ${escapeHtml(item.grade || "QUALIFIED")}</span>
+        <span class="eyebrow">Athena</span>
         <h2>${escapeHtml(item.home?.name || "Home")} vs ${escapeHtml(item.away?.name || "Away")}</h2>
         <p>${escapeHtml(leagueText(item.league))} · ${escapeHtml(formatKickoff(item.kickoff))}</p>
         ${matchStatusMarkup(item)}
       </div>
       <div class="explanation-box boss-verdict">
-        <span class="eyebrow">ATHENA'S PICK</span>
-        <h3>${escapeHtml(item.selection)} · ${Number(item.score || 0).toFixed(0)}/100</h3>
-        <p>${escapeHtml(explanation.summary || item.story || "Athena found a supported match pattern.")}</p>
-      </div>
-      <section class="athena-classification-panel">
-        <span>Match type</span><strong>${escapeHtml(classification)}</strong>
-        <small>${escapeHtml(explanation.matchType ? `Athena read this as ${explanation.matchType}.` : "HT/FT and half-goal records agree.")}</small>
-      </section>
-      <div class="reason-columns athena-plain-reasons">
-        <section><h3>Why Athena picked this</h3><ul>${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("") || "<li>The HT/FT route and goals-by-half records pointed to the same market.</li>"}</ul></section>
-        <section><h3>What Athena was careful about</h3><ul>${cautions.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("") || "<li>No major conflict survived the safety checks.</li>"}</ul></section>
-      </div>
-      ${athenaHalfPicture(item)}
-      <div class="boss-sample-grid">
-        <div><span>${escapeHtml(item.home?.name || "Home")}</span><strong>${samples.homeOverall || 0} overall</strong><small>${samples.homeVenue || 0} home</small></div>
-        <div><span>${escapeHtml(item.away?.name || "Away")}</span><strong>${samples.awayOverall || 0} overall</strong><small>${samples.awayVenue || 0} away</small></div>
-        <div><span>Data coverage</span><strong>Half scores: ${escapeHtml(coverage.halfTimeScores || "complete")}</strong><small>Goal events: ${escapeHtml(coverage.eventDetail || "not available")} · ${Number(coverage.eventCoveragePercent || 0)}%</small></div>
+        <span class="eyebrow">${escapeHtml(item.market || "Pick")}</span>
+        <h3>${escapeHtml(item.selection)}</h3>
       </div>`;
   }
 
@@ -1676,13 +1514,12 @@
 
   function renderAthena(payload) {
     const picks = payload.picks || [];
-    const rejectionRows = payload.rejections || [];
-    const coverage = payload.dataCoverage || {};
+    const rejectionRows = [];
     $("#portalMetrics").innerHTML = `
-      <div class="metric"><span>Matches checked</span><strong>${payload.reviewedFixtures || 0}</strong><small>Fixtures evaluated for the selected date</small></div>
-      <div class="metric"><span>Athena Picks</span><strong>${payload.qualifiedCount || 0}</strong><small>One v3 selection after swing and half-goal checks</small></div>
-      <div class="metric"><span>Prime</span><strong>${payload.primeCount || 0}</strong><small>Engine strength of 88/100 or higher</small></div>
-      <div class="metric"><span>Event detail</span><strong>${coverage.eventTablesAvailable ? "ON" : "LIMITED"}</strong><small>${escapeHtml(coverage.eventCoverageNote || "Half-time and full-time scores remain required.")}</small></div>`;
+      <div class="metric"><span>Checked</span><strong>${payload.reviewedFixtures || 0}</strong></div>
+      <div class="metric"><span>Picks</span><strong>${payload.qualifiedCount || 0}</strong></div>
+      <div class="metric"><span>Today</span><strong>${picks.length}</strong></div>
+      <div class="metric"><span>Markets</span><strong>${[...new Set(picks.map((item) => item.market).filter(Boolean))].length}</strong></div>`;
 
     const marketFilter = $("#athenaMarketFilter");
     const confidenceFilter = $("#athenaConfidenceFilter");
@@ -1706,18 +1543,16 @@
       const summary = $("#athenaFilterSummary");
       if (summary) {
         summary.textContent = filtersActive
-          ? `Showing ${filtered.length} of ${picks.length} Athena selections. Clear the filters to restore the full board.`
-          : `Showing all ${picks.length} Athena selections. Qualified begins at 80/100 and Prime at 88/100.`;
+          ? `Showing ${filtered.length} of ${picks.length}`
+          : `${picks.length} picks`;
       }
 
       if (filtered.length) {
-        $("#portalContent").innerHTML = `<div class="portal-grid boss-grid athena-grid">${filtered.map(athenaCard).join("")}</div>
-          <section class="boss-rejection-panel"><h2>Why other matches received NO PICK</h2>${rejectionRows.map((row) => `<div><span>${escapeHtml(row.reason)}</span><strong>${row.count}</strong></div>`).join("") || "<p>No rejection summary was returned.</p>"}</section>`;
+        $("#portalContent").innerHTML = `<div class="portal-grid boss-grid athena-grid">${filtered.map(athenaCard).join("")}</div>`;
       } else if (picks.length && filtersActive) {
-        $("#portalContent").innerHTML = `<div class="empty-card boss-empty"><strong>NO PICKS MATCH THESE FILTERS</strong><span>Try another market or confidence level.</span><small>Athena still has ${picks.length} qualified selection${picks.length === 1 ? "" : "s"} on the full board.</small></div>`;
+        $("#portalContent").innerHTML = `<div class="empty-card boss-empty"><strong>No picks for these filters</strong></div>`;
       } else {
-        $("#portalContent").innerHTML = `<div class="empty-card boss-empty"><strong>NO ATHENA PICK</strong><span>${escapeHtml(payload.status || "No fixture cleared Athena v3's swing, half-goal and safety checks.")}</span><small>Athena does not invent missing goal timing or force a direction when both teams have credible routes.</small></div>
-          <section class="boss-rejection-panel"><h2>Why the board is empty</h2>${rejectionRows.map((row) => `<div><span>${escapeHtml(row.reason)}</span><strong>${row.count}</strong></div>`).join("") || "<p>No fixture had enough complete history.</p>"}</section>`;
+        $("#portalContent").innerHTML = `<div class="empty-card boss-empty"><strong>No picks today</strong></div>`;
       }
 
       $$(".athena-card").forEach((card) => {
