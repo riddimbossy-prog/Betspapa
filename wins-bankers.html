@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
 <meta content="#070b16" name="theme-color"/>
-<meta content="Wins Banker only publishes a favourite win when the team is top 4, over 2 PPG, over 2 goals per game, the opponent is winless in five, and SportyBet prices clear the listed bands." name="description"/>
+<meta content="Wins Banker publishes a favourite win when venue form clears PPG/GPG, the team is top 5, and SportyBet Over 1.5 is 1.20 or shorter plus at least one extra filter." name="description"/>
 <title>Wins Banker — BetsPapa</title>
 <link href="assets/images/favicon-64.png" rel="icon" type="image/png"/>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
@@ -38,9 +38,9 @@
 </header>
 <main class="portal-main">
 <section class="portal-hero">
-<span class="eyebrow">BetsPapa v1.25.0 · Wins Banker</span>
+<span class="eyebrow">BetsPapa · Wins Banker v1.2.0</span>
 <h1>Wins Banker</h1>
-<p>SportyBet Over 1.5 at 1.20 or shorter is required. Then 1 or 2 of the extra filters is enough to publish a favourite win.</p>
+<p>SportyBet Over 1.5 at 1.20 or shorter is required. PPG and goals use <strong>home/away venue recent form</strong>. Top 5 only. Early season and top-5 clashes are skipped. Other red flags are skippable.</p>
 </section>
 <div class="status-strip" id="portalStatus"><span>Scanning favourite wins…</span><small></small></div>
 <div class="portal-toolbar">
@@ -52,7 +52,7 @@
 <section class="wins-filter-panel">
 <div class="section-title">
 <h2>Filters</h2>
-<p>Over 1.5 is required. Add 1 or 2 extras from the table. More extras still qualify.</p>
+<p>Over 1.5 is required. Add 1 or 2 extras from the table. More extras still qualify. Values on each card come from the live engine.</p>
 </div>
 <div class="wins-filter-wrap">
 <table class="wins-filter-table">
@@ -66,12 +66,12 @@
 </thead>
 <tbody>
 <tr><td>Match Over 1.5</td><td>1.20 or shorter</td><td>Required</td><td>SportyBet</td></tr>
-<tr><td>Favourite position</td><td>Current top 4</td><td>1 or 2 extras</td><td>League table</td></tr>
-<tr><td>Points per game</td><td>Over 2.00</td><td>1 or 2 extras</td><td>Season</td></tr>
-<tr><td>Goals per game</td><td>Over 2.00</td><td>1 or 2 extras</td><td>Season</td></tr>
+<tr><td>Favourite position</td><td>Current top 5</td><td>1 or 2 extras</td><td>League table</td></tr>
+<tr><td>Points per game</td><td>2.00 or above</td><td>1 or 2 extras</td><td>Venue form (H/A)</td></tr>
+<tr><td>Goals per game</td><td>Home ≥2.00 · Away &gt;2.20</td><td>1 or 2 extras</td><td>Venue form (H/A)</td></tr>
 <tr><td>Favourite win odds</td><td>1.19 to 1.55</td><td>1 or 2 extras</td><td>SportyBet 1X2</td></tr>
 <tr><td>Opponent win odds</td><td>Over 4.50</td><td>1 or 2 extras</td><td>SportyBet 1X2</td></tr>
-<tr><td>Opponent last 5</td><td>Winless</td><td>1 or 2 extras</td><td>Recent form</td></tr>
+<tr><td>Opponent last 5</td><td>Winless</td><td>1 or 2 extras</td><td>Venue form</td></tr>
 <tr><td>Favourite to score 2+</td><td>Shorter than 1.55</td><td>1 or 2 extras</td><td>SportyBet team goals</td></tr>
 <tr><td>Opponent to score</td><td>Longer than 1.65</td><td>1 or 2 extras</td><td>SportyBet team goals</td></tr>
 </tbody>
@@ -88,7 +88,7 @@
 <div id="qualifiedTeams"></div>
 <div class="section-title">
 <h2>Win bankers</h2>
-<p>Required Over 1.5 at 1.20 or shorter, plus 1 or 2 extras. Red flags still apply. Odds are SportyBet only.</p>
+<p>Required Over 1.5 at 1.20 or shorter, plus 1 or 2 extras. Each card shows live filter values (PPG, GPG, rank, form).</p>
 </div>
 <div id="portalContent"></div>
 <footer class="portal-footer">
@@ -106,7 +106,7 @@
 </div>
 </dialog>
 <script src="assets/js/country-flags.v1175.js"></script>
-<script src="assets/js/portal.v1250.js?v=league-click1"></script>
+<script src="assets/js/portal.v1250.js?v=wins-v120"></script>
 <script src="assets/js/mobile-nav.v1240.js"></script>
 <script src="/assets/js/pwa.v1160.js"></script>
 <script src="/assets/js/ui.v1170.js"></script>
