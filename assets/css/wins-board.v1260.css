@@ -1,0 +1,531 @@
+/* Wins Banker daylight board — cream canvas, cobalt hero, coral odds */
+
+body[data-page="wins-bankers"] {
+  --wb-bg: #f4f1ea;
+  --wb-surface: #ffffff;
+  --wb-raised: #eef2ff;
+  --wb-tint: #ffe8e1;
+  --wb-fg: #141821;
+  --wb-muted: #5c6573;
+  --wb-subtle: #7a8494;
+  --wb-primary: #1e4dff;
+  --wb-primary-fg: #f4f7ff;
+  --wb-accent: #ff4d2e;
+  --wb-accent-fg: #fff7f4;
+  --wb-win: #0f9f6e;
+  --wb-loss: #e11d48;
+  --wb-radius: 12px;
+  --wb-shadow: 0 0 0 1px rgba(20, 24, 33, 0.08), 0 10px 28px -20px rgba(20, 24, 33, 0.35);
+  --wb-shadow-hover: 0 0 0 1px rgba(30, 77, 255, 0.28), 0 14px 32px -18px rgba(30, 77, 255, 0.35);
+  --wb-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  background: var(--wb-bg);
+  color: var(--wb-fg);
+  font-family: Outfit, Manrope, system-ui, sans-serif;
+}
+
+body[data-page="wins-bankers"] .portal-header {
+  height: 64px;
+  border-bottom: 1px solid rgba(20, 24, 33, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+}
+body[data-page="wins-bankers"] .portal-brand strong { color: var(--wb-fg); font-family: Syne, "Space Grotesk", sans-serif; }
+body[data-page="wins-bankers"] .portal-brand strong span { color: var(--wb-accent); }
+body[data-page="wins-bankers"] .portal-brand small { color: var(--wb-muted); }
+body[data-page="wins-bankers"] .portal-nav a { color: var(--wb-muted); }
+body[data-page="wins-bankers"] .portal-nav a:hover,
+body[data-page="wins-bankers"] .portal-nav a.active { color: var(--wb-primary); }
+body[data-page="wins-bankers"] .portal-menu {
+  color: var(--wb-fg);
+  background: var(--wb-raised);
+  border-color: rgba(20, 24, 33, 0.08);
+}
+@media (max-width: 800px) {
+  body[data-page="wins-bankers"] .portal-nav {
+    background: #fff;
+    border-color: rgba(20, 24, 33, 0.08);
+  }
+}
+
+body[data-page="wins-bankers"] .portal-main {
+  width: min(64rem, calc(100% - 2rem));
+  padding: 24px 0 48px;
+}
+
+body[data-page="wins-bankers"] .portal-hero {
+  padding: 28px 28px 24px;
+  border: 0;
+  border-radius: 28px;
+  color: var(--wb-primary-fg);
+  background:
+    radial-gradient(1200px 280px at 90% -20%, color-mix(in oklab, var(--wb-accent) 42%, transparent), transparent 60%),
+    radial-gradient(700px 220px at 0% 120%, color-mix(in oklab, #7dd3fc 35%, transparent), transparent 55%),
+    var(--wb-primary);
+  box-shadow: none;
+}
+body[data-page="wins-bankers"] .eyebrow {
+  color: color-mix(in oklab, var(--wb-primary-fg) 80%, transparent);
+  letter-spacing: 0.14em;
+}
+body[data-page="wins-bankers"] .portal-hero h1 {
+  font-family: Syne, "Space Grotesk", sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+body[data-page="wins-bankers"] .portal-hero p { color: color-mix(in oklab, var(--wb-primary-fg) 85%, transparent); }
+
+body[data-page="wins-bankers"] .status-strip {
+  border: 0;
+  background: var(--wb-surface);
+  color: var(--wb-muted);
+  box-shadow: var(--wb-shadow);
+}
+body[data-page="wins-bankers"] .status-strip small { color: var(--wb-subtle); }
+
+body[data-page="wins-bankers"] .portal-toolbar {
+  grid-template-columns: 160px minmax(180px, 1.6fr) auto;
+}
+body[data-page="wins-bankers"] .wins-league-select { display: none; }
+body[data-page="wins-bankers"] .portal-toolbar label span { color: var(--wb-muted); }
+body[data-page="wins-bankers"] .portal-toolbar input,
+body[data-page="wins-bankers"] .portal-toolbar select {
+  color: var(--wb-fg);
+  background: var(--wb-surface);
+  border: 1px solid rgba(20, 24, 33, 0.1);
+  min-height: 44px;
+  border-radius: var(--wb-radius);
+}
+body[data-page="wins-bankers"] .portal-toolbar option { background: #fff; color: var(--wb-fg); }
+body[data-page="wins-bankers"] .portal-toolbar button {
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--wb-radius);
+  color: var(--wb-accent-fg);
+  background: var(--wb-accent);
+  font-weight: 700;
+  transition: transform 150ms var(--wb-ease), opacity 150ms var(--wb-ease);
+}
+body[data-page="wins-bankers"] .portal-toolbar button:active { transform: scale(0.96); }
+body[data-page="wins-bankers"] .portal-toolbar button:hover { opacity: 0.92; }
+
+body[data-page="wins-bankers"] .section-title h2 {
+  font-family: Syne, "Space Grotesk", sans-serif;
+  color: var(--wb-fg);
+}
+body[data-page="wins-bankers"] .section-title p { color: var(--wb-muted); }
+
+body[data-page="wins-bankers"] .metric-row { gap: 8px; }
+body[data-page="wins-bankers"] .diagnostic-card {
+  min-height: 0;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: var(--wb-radius);
+  background: var(--wb-surface);
+  box-shadow: var(--wb-shadow);
+}
+body[data-page="wins-bankers"] .diagnostic-card span { color: var(--wb-subtle); }
+body[data-page="wins-bankers"] .diagnostic-card strong {
+  color: var(--wb-fg);
+  font-family: Syne, "Space Grotesk", sans-serif;
+  font-size: 22px;
+}
+body[data-page="wins-bankers"] .metric-row .diagnostic-card:first-child {
+  background: var(--wb-accent);
+  color: var(--wb-accent-fg);
+  box-shadow: none;
+}
+body[data-page="wins-bankers"] .metric-row .diagnostic-card:first-child span,
+body[data-page="wins-bankers"] .metric-row .diagnostic-card:first-child strong { color: inherit; }
+
+body[data-page="wins-bankers"] .goals-league-map {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  grid-template-columns: none;
+}
+body[data-page="wins-bankers"] .goals-league-chip {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--wb-surface);
+  box-shadow: var(--wb-shadow);
+  color: var(--wb-muted);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+body[data-page="wins-bankers"] .goals-league-chip strong {
+  color: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+body[data-page="wins-bankers"] .goals-league-chip span { display: none; }
+body[data-page="wins-bankers"] .goals-league-chip small {
+  color: inherit;
+  opacity: 0.7;
+  font-size: 13px;
+}
+body[data-page="wins-bankers"] .goals-league-chip:hover,
+body[data-page="wins-bankers"] .goals-league-chip:focus-visible {
+  transform: none;
+  color: var(--wb-fg);
+}
+body[data-page="wins-bankers"] .goals-league-chip.active {
+  background: var(--wb-primary);
+  color: var(--wb-primary-fg);
+  box-shadow: none;
+  border: 0;
+}
+
+body[data-page="wins-bankers"] .wins-list {
+  display: grid;
+  gap: 8px;
+}
+body[data-page="wins-bankers"] .wins-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--wb-surface);
+  box-shadow: var(--wb-shadow);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(12px);
+  filter: blur(4px);
+  animation: wins-fade-up 400ms var(--wb-ease) forwards;
+  transition: box-shadow 150ms var(--wb-ease), transform 150ms var(--wb-ease);
+}
+body[data-page="wins-bankers"] .wins-row:hover { box-shadow: var(--wb-shadow-hover); }
+body[data-page="wins-bankers"] .wins-row:active { transform: scale(0.96); }
+body[data-page="wins-bankers"] .wins-rail {
+  display: none;
+  width: 4px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--wb-accent);
+  flex-shrink: 0;
+}
+@media (min-width: 640px) {
+  body[data-page="wins-bankers"] .wins-rail { display: block; }
+}
+body[data-page="wins-bankers"] .wins-crests {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+body[data-page="wins-bankers"] .wins-crests img,
+body[data-page="wins-bankers"] .wins-crests .team-fallback {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--wb-raised);
+  object-fit: contain;
+}
+body[data-page="wins-bankers"] .wins-copy { min-width: 0; flex: 1; }
+body[data-page="wins-bankers"] .wins-copy strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body[data-page="wins-bankers"] .wins-copy small {
+  display: block;
+  color: var(--wb-subtle);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body[data-page="wins-bankers"] .wins-meta {
+  display: none;
+  text-align: right;
+  flex-shrink: 0;
+  color: var(--wb-muted);
+  font-size: 12px;
+}
+@media (min-width: 640px) {
+  body[data-page="wins-bankers"] .wins-meta { display: block; }
+}
+body[data-page="wins-bankers"] .wins-odds {
+  flex-shrink: 0;
+  text-align: right;
+}
+body[data-page="wins-bankers"] .wins-odds b {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--wb-accent);
+  color: var(--wb-accent-fg);
+  font-size: 12px;
+  font-weight: 700;
+  transition: transform 150ms var(--wb-ease);
+}
+body[data-page="wins-bankers"] .wins-row:hover .wins-odds b { transform: scale(1.04); }
+body[data-page="wins-bankers"] .wins-odds small {
+  display: block;
+  margin-top: 4px;
+  max-width: 7rem;
+  color: var(--wb-muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body[data-page="wins-bankers"] .wins-chevron {
+  color: var(--wb-subtle);
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 150ms var(--wb-ease), color 150ms var(--wb-ease);
+}
+body[data-page="wins-bankers"] .wins-row:hover .wins-chevron {
+  transform: translateX(3px);
+  color: var(--wb-primary);
+}
+
+body[data-page="wins-bankers"] .empty-card {
+  border: 0;
+  background: var(--wb-surface);
+  color: var(--wb-muted);
+  box-shadow: var(--wb-shadow);
+}
+
+body[data-page="wins-bankers"] .wins-how {
+  margin-top: 24px;
+  padding: 12px 16px;
+  border-radius: 20px;
+  background: var(--wb-surface);
+  box-shadow: var(--wb-shadow);
+  color: var(--wb-muted);
+}
+body[data-page="wins-bankers"] .wins-how summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+body[data-page="wins-bankers"] .wins-how ul {
+  margin: 10px 0 4px;
+  padding-left: 18px;
+  line-height: 1.6;
+}
+
+body[data-page="wins-bankers"] .qualified-teams {
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--wb-surface);
+  box-shadow: var(--wb-shadow);
+}
+body[data-page="wins-bankers"] .qualified-team-pills span {
+  background: var(--wb-raised);
+  color: var(--wb-fg);
+}
+body[data-page="wins-bankers"] .qualified-teams-clear {
+  border: 0;
+  background: var(--wb-primary);
+  color: var(--wb-primary-fg);
+}
+body[data-page="wins-bankers"] .wins-filter-wrap {
+  border: 0;
+  background: var(--wb-raised);
+}
+body[data-page="wins-bankers"] .wins-filter-table th {
+  color: var(--wb-muted);
+  background: transparent;
+}
+body[data-page="wins-bankers"] .wins-filter-table td,
+body[data-page="wins-bankers"] .wins-filter-table td:first-child,
+body[data-page="wins-bankers"] .wins-filter-table td:nth-child(3) {
+  color: var(--wb-fg);
+  border-bottom-color: rgba(20, 24, 33, 0.08);
+}
+
+body[data-page="wins-bankers"] .portal-footer {
+  color: var(--wb-muted);
+  border-top-color: rgba(20, 24, 33, 0.08);
+}
+
+body[data-page="wins-bankers"] .portal-dialog {
+  width: min(40rem, calc(100vw - 1.5rem));
+  border: 0;
+  border-radius: 28px;
+  color: var(--wb-fg);
+  background: var(--wb-surface);
+  box-shadow: var(--wb-shadow);
+}
+body[data-page="wins-bankers"] .portal-dialog::backdrop {
+  background: color-mix(in oklab, var(--wb-fg) 45%, transparent);
+  backdrop-filter: blur(4px);
+}
+body[data-page="wins-bankers"] .dialog-close {
+  color: var(--wb-muted);
+  background: var(--wb-raised);
+  border: 0;
+}
+body[data-page="wins-bankers"] .wins-sheet .wins-kicker {
+  margin: 0;
+  color: var(--wb-primary);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+body[data-page="wins-bankers"] .wins-sheet h2 {
+  margin: 6px 0 4px;
+  font-family: Syne, "Space Grotesk", sans-serif;
+  font-size: 22px;
+}
+body[data-page="wins-bankers"] .wins-sheet .wins-kick { margin: 0; color: var(--wb-muted); font-size: 14px; }
+body[data-page="wins-bankers"] .wins-matchup {
+  margin: 18px 0;
+  padding: 16px 12px;
+  border-radius: 20px;
+  background: var(--wb-tint);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+body[data-page="wins-bankers"] .wins-matchup img,
+body[data-page="wins-bankers"] .wins-matchup .team-fallback {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 8px;
+  border-radius: 12px;
+  background: var(--wb-raised);
+  object-fit: contain;
+}
+body[data-page="wins-bankers"] .wins-matchup small {
+  display: block;
+  color: var(--wb-subtle);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+body[data-page="wins-bankers"] .wins-vs {
+  color: var(--wb-accent);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+body[data-page="wins-bankers"] .wins-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+@media (min-width: 640px) {
+  body[data-page="wins-bankers"] .wins-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+body[data-page="wins-bankers"] .wins-stat {
+  padding: 10px 12px;
+  border-radius: var(--wb-radius);
+  background: var(--wb-raised);
+}
+body[data-page="wins-bankers"] .wins-stat span { display: block; color: var(--wb-subtle); font-size: 12px; }
+body[data-page="wins-bankers"] .wins-stat strong { font-variant-numeric: tabular-nums; }
+body[data-page="wins-bankers"] .wins-forms {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+@media (min-width: 640px) {
+  body[data-page="wins-bankers"] .wins-forms { grid-template-columns: 1fr 1fr; }
+}
+body[data-page="wins-bankers"] .wins-form {
+  padding: 10px 12px;
+  border-radius: 20px;
+  background: var(--wb-raised);
+}
+body[data-page="wins-bankers"] .wins-form span { display: block; margin-bottom: 8px; color: var(--wb-subtle); font-size: 12px; }
+body[data-page="wins-bankers"] .wins-pips { display: flex; gap: 4px; }
+body[data-page="wins-bankers"] .wins-pip {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  animation: wins-pip 300ms var(--wb-ease) both;
+}
+body[data-page="wins-bankers"] .wins-pip-W { background: var(--wb-win); color: #fff; }
+body[data-page="wins-bankers"] .wins-pip-D { background: var(--wb-surface); color: var(--wb-muted); box-shadow: var(--wb-shadow); }
+body[data-page="wins-bankers"] .wins-pip-L { background: var(--wb-loss); color: #fff; }
+body[data-page="wins-bankers"] .wins-note { margin: 0 0 12px; color: var(--wb-muted); font-size: 12px; }
+body[data-page="wins-bankers"] .wins-filters {
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--wb-raised);
+}
+body[data-page="wins-bankers"] .wins-filter-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(20, 24, 33, 0.08);
+}
+body[data-page="wins-bankers"] .wins-filter-row:last-child { border-bottom: 0; }
+body[data-page="wins-bankers"] .wins-filter-row small { display: block; color: var(--wb-muted); }
+body[data-page="wins-bankers"] .wins-filter-row b { display: block; text-align: right; font-variant-numeric: tabular-nums; }
+body[data-page="wins-bankers"] .wins-tag {
+  display: inline-flex;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+body[data-page="wins-bankers"] .wins-tag.required { background: var(--wb-primary); color: var(--wb-primary-fg); }
+body[data-page="wins-bankers"] .wins-tag.pass { background: var(--wb-win); color: #fff; }
+body[data-page="wins-bankers"] .wins-tag.skip { background: var(--wb-surface); color: var(--wb-subtle); box-shadow: var(--wb-shadow); }
+body[data-page="wins-bankers"] .wins-reasons {
+  margin: 14px 0 0;
+  padding-left: 18px;
+  color: var(--wb-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+body[data-page="wins-bankers"] .wins-sporty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 18px;
+  height: 44px;
+  border-radius: var(--wb-radius);
+  background: var(--wb-accent);
+  color: var(--wb-accent-fg);
+  font-weight: 700;
+  transition: transform 150ms var(--wb-ease), opacity 150ms var(--wb-ease);
+}
+body[data-page="wins-bankers"] .wins-sporty:active { transform: scale(0.96); }
+
+@keyframes wins-fade-up {
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes wins-pip {
+  from { opacity: 0; transform: scale(0.25); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="wins-bankers"] .wins-row,
+  body[data-page="wins-bankers"] .wins-pip {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}

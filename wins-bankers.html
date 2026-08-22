@@ -3,25 +3,26 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<meta content="#070b16" name="theme-color"/>
+<meta content="#1e4dff" name="theme-color"/>
 <meta content="Wins Banker publishes a favourite win when venue form clears PPG/GPG, the team is top 5, and SportyBet Over 1.5 is 1.20 or shorter plus at least one extra filter." name="description"/>
 <title>Wins Banker — BetsPapa</title>
 <link href="assets/images/favicon-64.png" rel="icon" type="image/png"/>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
 <link href="assets/css/country-flags.v1175.css" rel="stylesheet"/>
 <link href="assets/css/portal.v1220.css" rel="stylesheet"/>
 <link href="assets/css/mobile-nav.v1240.css" rel="stylesheet"/>
 <link href="/assets/css/pwa.v1160.css" rel="stylesheet"/>
 <link href="/assets/css/ui.v151.css" rel="stylesheet"/>
 <link href="assets/css/bankers.v1250.css" rel="stylesheet"/>
+<link href="assets/css/wins-board.v1260.css" rel="stylesheet"/>
 <script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
 <meta content="yes" name="mobile-web-app-capable"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="BetsPapa" name="apple-mobile-web-app-title"/>
-<link href="/manifest.webmanifest?v=1250" rel="manifest"/>
+<link href="/manifest.webmanifest?v=1260" rel="manifest"/>
 <link href="/assets/images/pwa-brand-apple-180.png" rel="apple-touch-icon" sizes="180x180"/>
 </head>
 <body data-page="wins-bankers">
@@ -40,57 +41,36 @@
 <section class="portal-hero">
 <span class="eyebrow">BetsPapa · Wins Banker v1.2.0</span>
 <h1>Wins Banker</h1>
-<p>SportyBet Over 1.5 at 1.20 or shorter is required. PPG and goals use <strong>home/away venue recent form</strong>. Top 5 only. Early season and top-5 clashes are skipped. Other red flags are skippable.</p>
+<p>Colourful live board. Venue-form PPG and GPG. Tap a match for filters and form.</p>
 </section>
 <div class="status-strip" id="portalStatus"><span>Scanning favourite wins…</span><small></small></div>
 <div class="portal-toolbar">
 <label><span>Date</span><input id="dateFilter" type="date"/></label>
-<label><span>League</span><select id="winsLeagueFilter"><option value="">All leagues</option></select></label>
 <label><span>Search</span><input id="winsSearchFilter" placeholder="Team or league" type="search"/></label>
-<button id="refreshButton" type="button">Refresh Wins Bankers</button>
+<label class="wins-league-select"><span>League</span><select id="winsLeagueFilter"><option value="">All leagues</option></select></label>
+<button id="refreshButton" type="button">Refresh</button>
 </div>
-<section class="wins-filter-panel">
-<div class="section-title">
-<h2>Filters</h2>
-<p>Over 1.5 is required. Add 1 or 2 extras from the table. More extras still qualify. Values on each card come from the live engine.</p>
-</div>
-<div class="wins-filter-wrap">
-<table class="wins-filter-table">
-<thead>
-<tr>
-<th>Filter</th>
-<th>Must be</th>
-<th>Need</th>
-<th>Source</th>
-</tr>
-</thead>
-<tbody>
-<tr><td>Match Over 1.5</td><td>1.20 or shorter</td><td>Required</td><td>SportyBet</td></tr>
-<tr><td>Favourite position</td><td>Current top 5</td><td>1 or 2 extras</td><td>League table</td></tr>
-<tr><td>Points per game</td><td>2.00 or above</td><td>1 or 2 extras</td><td>Venue form (H/A)</td></tr>
-<tr><td>Goals per game</td><td>Home ≥2.00 · Away &gt;2.20</td><td>1 or 2 extras</td><td>Venue form (H/A)</td></tr>
-<tr><td>Favourite win odds</td><td>1.19 to 1.55</td><td>1 or 2 extras</td><td>SportyBet 1X2</td></tr>
-<tr><td>Opponent win odds</td><td>Over 4.50</td><td>1 or 2 extras</td><td>SportyBet 1X2</td></tr>
-<tr><td>Opponent last 5</td><td>Winless</td><td>1 or 2 extras</td><td>Venue form</td></tr>
-<tr><td>Favourite to score 2+</td><td>Shorter than 1.55</td><td>1 or 2 extras</td><td>SportyBet team goals</td></tr>
-<tr><td>Opponent to score</td><td>Longer than 1.65</td><td>1 or 2 extras</td><td>SportyBet team goals</td></tr>
-</tbody>
-</table>
-</div>
-</section>
-
 <section class="metric-row" id="portalMetrics"></section>
 <div class="section-title">
 <h2>Qualified leagues</h2>
-<p>Tap a league to see the teams that qualified from it.</p>
+<p>Tap a league to filter the board.</p>
 </div>
 <section class="goals-league-map" id="winsLeagueMap"></section>
 <div id="qualifiedTeams"></div>
 <div class="section-title">
-<h2>Win bankers</h2>
-<p>Required Over 1.5 at 1.20 or shorter, plus 1 or 2 extras. Each card shows live filter values (PPG, GPG, rank, form).</p>
+<h2>Today’s bankers</h2>
+<p>Tap a match for venue form, filters and SportyBet.</p>
 </div>
 <div id="portalContent"></div>
+<details class="wins-how">
+<summary>How a banker is chosen</summary>
+<ul>
+<li>Over 1.5 at 1.20 or shorter — required</li>
+<li>Favourite in the current top 5</li>
+<li>Venue PPG 2.00+ · home GPG 2.00+ · away GPG above 2.20</li>
+<li>Early season, top-5 clashes, and similar-form sides are skipped</li>
+</ul>
+</details>
 <footer class="portal-footer">
 <span>Sports analytics only. Predictions are not guarantees. 18+.</span>
 <div>
@@ -106,7 +86,7 @@
 </div>
 </dialog>
 <script src="assets/js/country-flags.v1175.js"></script>
-<script src="assets/js/portal.v1250.js?v=wins-v120"></script>
+<script src="assets/js/wins-board.v1260.js"></script>
 <script src="assets/js/mobile-nav.v1240.js"></script>
 <script src="/assets/js/pwa.v1160.js"></script>
 <script src="/assets/js/ui.v1170.js"></script>
