@@ -18,10 +18,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Pack public site
+        run: |
+          mkdir -p _site
+          rsync -a \
+            --exclude _site \
+            --exclude .git \
+            --exclude .github \
+            --exclude server \
+            --exclude docs \
+            --exclude supabase \
+            --exclude apps \
+            --exclude scripts \
+            --exclude deploy \
+            --exclude '*.md' \
+            --exclude .env.example \
+            . _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

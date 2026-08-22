@@ -166,17 +166,34 @@
   function registerServiceWorker() {
     if (!("serviceWorker" in navigator) || location.protocol !== "https:") return;
 
-    window.addEventListener("load", async () => {
+    const start = async () => {
       try {
         const registration = await navigator.serviceWorker.register("/sw.js", {
           scope: "/",
           updateViaCache: "none"
         });
         registration.update().catch(() => {});
+        registration.addEventListener("updatefound", () => {
+          const worker = registration.installing;
+          if (!worker) return;
+          worker.addEventListener("statechange", () => {
+            if (worker.state === "installed") {
+              worker.postMessage({ type: "SKIP_WAITING" });
+            }
+          });
+        });
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") {
+            registration.update().catch(() => {});
+          }
+        });
       } catch (error) {
         console.warn("BetsPapa PWA registration failed:", error);
       }
-    }, { once: true });
+    };
+
+    if (document.readyState === "complete") start();
+    else window.addEventListener("load", start, { once: true });
   }
 
   function recentlyDismissed() {

@@ -1,49 +1,21 @@
-const CACHE_NAME = "betspapa-pwa-v1250";
+const CACHE_NAME = "betspapa-pwa-v1261";
 const OFFLINE_URL = "/offline.html";
 
 const CORE_ASSETS = [
-  "/",
-  "/index.html",
   "/offline.html",
   "/manifest.webmanifest",
-  "/papas-pick.html",
-  "/aggressive.html",
-  "/safer.html",
-  "/venue-pattern.html",
-  "/form.html",
-  "/athena.html",
-  "/boss-picks.html",
-  "/live-fixtures.html",
-  "/bankers.html",
-  "/goals-bankers.html",
-  "/wins-bankers.html",
-  "/results-intelligence.html",
-  "/privacy.html",
-  "/terms.html",
-  "/responsible.html",
-  "/assets/css/country-flags.v1175.css",
+  "/assets/css/daylight.v1260.css",
   "/assets/css/portal.v1220.css",
-  "/assets/css/mobile-nav.v1240.css",
-  "/assets/css/content.v111.css",
-  "/assets/css/pwa.v1160.css",
   "/assets/css/ui.v151.css",
-  "/assets/css/live-fixtures.v151.css",
+  "/assets/css/mobile-nav.v1240.css",
   "/assets/css/bankers.v1250.css",
-  "/assets/js/country-flags.v1175.js",
-  "/assets/js/portal.v1250.js",
-  "/assets/js/mobile-nav.v1240.js",
-  "/assets/js/pwa.v1160.js",
-  "/assets/js/ui.v1170.js",
-  "/assets/js/live-fixtures.v152.js",
+  "/assets/css/wins-board.v1260.css",
   "/assets/images/pwa-brand-icon-192.png",
   "/assets/images/pwa-brand-icon-512.png",
   "/assets/images/pwa-brand-maskable-192.png",
   "/assets/images/pwa-brand-maskable-512.png",
   "/assets/images/pwa-brand-apple-180.png",
-  "/assets/images/betspapa-papa-mark.png",
-  "/assets/images/betspapa-logo.webp",
-  "/assets/images/pwa-brand-splash-portrait.jpg",
-  "/assets/images/pwa-brand-splash-landscape.jpg"
+  "/assets/images/betspapa-papa-mark.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -61,12 +33,20 @@ self.addEventListener("activate", (event) => {
         keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
       ))
       .then(() => self.clients.claim())
+      .then(() => self.clients.matchAll({ type: "window" }))
+      .then((clients) => {
+        clients.forEach((client) => {
+          if (client.url && typeof client.navigate === "function") {
+            client.navigate(client.url);
+          }
+        });
+      })
   );
 });
 
 async function networkFirst(request) {
   try {
-    const response = await fetch(request);
+    const response = await fetch(request, { cache: "no-store" });
     if (response && response.ok) {
       const cache = await caches.open(CACHE_NAME);
       cache.put(request, response.clone()).catch(() => {});
@@ -101,12 +81,17 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/admin/")) return;
 
-  if (request.mode === "navigate") {
+  if (request.mode === "navigate" || /\.(?:html?)$/i.test(url.pathname) || url.pathname === "/") {
     event.respondWith(networkFirst(request));
     return;
   }
 
-  if (/\.(?:css|js|png|jpg|jpeg|webp|svg|woff2?|webmanifest)$/i.test(url.pathname)) {
+  if (/\.(?:css|js|webmanifest)$/i.test(url.pathname)) {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  if (/\.(?:png|jpg|jpeg|webp|svg|woff2?)$/i.test(url.pathname)) {
     event.respondWith(staleWhileRevalidate(request));
   }
 });
