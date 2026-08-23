@@ -213,7 +213,9 @@ export function applyTransitionSafetyToMarkets(markets = [], transitionProfiles 
       weakerName: input?.[opposite]?.name || opposite
     });
     gates[gateKey] = gate;
-    if (gate.redirectGoals) leakRedirect = true;
+    const viableSideCandidate = Boolean(market.qualified) ||
+      (Boolean(market.htftGate?.eligible) && market.fallbackEligible !== false);
+    if (gate.redirectGoals && viableSideCandidate) leakRedirect = true;
     if (gate.allowed) {
       return {
         ...market,
@@ -230,9 +232,9 @@ export function applyTransitionSafetyToMarkets(markets = [], transitionProfiles 
     };
   });
 
-  // Once the explicit >80% leak rule is triggered, the result family is not
-  // allowed to sneak back in through a different Papa engine or fallback.
-  // Only already-qualified GG/O2.5/O1.5 candidates remain selectable.
+  // Once the explicit >80% leak rule is triggered by a viable side candidate,
+  // the result family is not allowed to sneak back in through another Papa
+  // engine or fallback. Only already-qualified GG/O2.5/O1.5 may replace it.
   if (leakRedirect) {
     output = output.map((market) => {
       const permitted = LEAK_GOAL_FALLBACK_KEYS.includes(String(market?.key || ""));
