@@ -1,4 +1,6 @@
-export const WINS_BANKER_VERSION = "wins-banker-v1.2.0";
+import { evaluateTransitionSafety } from "./transitionSafetyGate.js";
+
+export const WINS_BANKER_VERSION = "wins-banker-v1.3.0";
 export const WINS_BANKER_NAME = "Wins Banker";
 export const FAV_ODDS_MIN = 1.19;
 export const FAV_ODDS_MAX = 1.55;
@@ -111,6 +113,17 @@ function similarFormSkip({
   return `Teams are too similar in recent form and goal concessions (${formString(favForm)} ${favPts}pts vs ${formString(oppForm)} ${oppPts}pts)`;
 }
 
+function transitionFailureReason(gate, favName, oppName) {
+  if (gate?.redirectGoals) {
+    return `${favName} conceded in more than 80% of its last five venue matches. Straight-win approval is blocked; only an independently qualified BTTS Yes, Over 2.5 or Over 1.5 route may replace it.`;
+  }
+  if (gate?.reason === "transition-evidence-incomplete") {
+    return `Ordered goal-event coverage for ${favName} vs ${oppName} is incomplete across the required last-five venue sample, so the win call is blocked.`;
+  }
+  const failed = (gate?.checks || []).filter((row) => row.required && !row.ok).map((row) => row.label);
+  return `Transition safety rejected ${favName} Win: ${failed.join("; ") || "score-first, lead-hold, comeback or opponent stay-down evidence was too weak"}.`;
+}
+
 export function selectWinsBanker({
   homeName = "Home",
   awayName = "Away",
@@ -123,7 +136,6 @@ export function selectWinsBanker({
   awayPpg = 0,
   homeGpg = 0,
   awayGpg = 0,
-  // Venue-split (slip) home / away recent form metrics — preferred when present
   homeVenuePpg = null,
   awayVenuePpg = null,
   homeVenueGpg = null,
@@ -134,10 +146,11 @@ export function selectWinsBanker({
   awayVenueForm = [],
   homeLastFive = [],
   awayLastFive = [],
+  transitionSafety = null,
   odds = {},
   redFlags = []
 } = {}) {
-  // Hard skips only: early season + top-five clash. All other red flags are skippable.
+  // Existing red flags remain authoritative. Transition safety is an additional hard gate.
   const hardReasons = hardSkipReasons(redFlags);
   if (hardReasons.length) {
     return {
@@ -159,7 +172,23 @@ export function selectWinsBanker({
   const favRank = Number(isHome ? homeRank : awayRank);
   const favPlayed = Number(isHome ? homePlayed : awayPlayed);
 
-  // Prefer venue-split (home form for home fav, away form for away fav)
+  const transitionGate = evaluateTransitionSafety({
+    stronger: isHome ? transitionSafety?.home : transitionSafety?.away,
+    weaker: isHome ? transitionSafety?.away : transitionSafety?.home,
+    mode: "win",
+    strongerName: favName,
+    weakerName: oppName
+  });
+  if (!transitionGate.allowed) {
+    return {
+      available: false,
+      key: "no-pick",
+      redirectGoals: transitionGate.redirectGoals,
+      transitionSafety: transitionGate,
+      reasons: [transitionFailureReason(transitionGate, favName, oppName)]
+    };
+  }
+
   const favPpg = rate(
     isHome
       ? (homeVenuePpg != null ? homeVenuePpg : homePpg)
@@ -195,7 +224,7 @@ export function selectWinsBanker({
     oppGaPerGame: oppGa
   });
   if (similar) {
-    return { available: false, key: "no-pick", reasons: [similar] };
+    return { available: false, key: "no-pick", reasons: [similar], transitionSafety: transitionGate };
   }
 
   const over15 = finitePrice(prices["over-15"]);
@@ -203,13 +232,14 @@ export function selectWinsBanker({
   const oppScore = finitePrice(isHome ? prices["away-over-05"] : prices["home-over-05"]);
 
   if (over15 == null) {
-    return { available: false, key: "no-pick", reasons: ["No SportyBet Over 1.5 price"] };
+    return { available: false, key: "no-pick", reasons: ["No SportyBet Over 1.5 price"], transitionSafety: transitionGate };
   }
   if (!(over15 <= OVER15_MAX)) {
     return {
       available: false,
       key: "no-pick",
-      reasons: [`SportyBet Over 1.5 is ${over15}, not 1.20 or shorter`]
+      reasons: [`SportyBet Over 1.5 is ${over15}, not 1.20 or shorter`],
+      transitionSafety: transitionGate
     };
   }
 
@@ -280,18 +310,29 @@ export function selectWinsBanker({
     return {
       available: false,
       key: "no-pick",
-      reasons: ["Over 1.5 is short enough, but none of the extra Wins Banker filters passed"]
+      reasons: ["Over 1.5 is short enough, but none of the extra Wins Banker filters passed"],
+      transitionSafety: transitionGate
     };
   }
 
-  const required = filterRow({
-    key: "over-15",
-    label: "Match Over 1.5",
-    rule: "1.20 or shorter",
-    value: round(over15, 2),
-    passed: true,
-    required: true
-  });
+  const required = [
+    filterRow({
+      key: "transition-safety",
+      label: "Last-five transition safety",
+      rule: "Mandatory",
+      value: "Passed",
+      passed: true,
+      required: true
+    }),
+    filterRow({
+      key: "over-15",
+      label: "Match Over 1.5",
+      rule: "1.20 or shorter",
+      value: round(over15, 2),
+      passed: true,
+      required: true
+    })
+  ];
 
   const skippableFlags = (redFlags || []).filter((flag) => {
     const code = String(flag?.code || "").toUpperCase();
@@ -323,9 +364,10 @@ export function selectWinsBanker({
     opponentForm: formString(oppForm),
     favoriteForm: formString(favForm),
     formBasis: "venue-split",
+    transitionSafety: transitionGate,
     extraPassed: extraPassed.length,
     extraTotal: extras.length,
-    filters: [required, ...extras],
+    filters: [...required, ...extras],
     skippableRedFlags: skippableFlags,
     score: round(
       extraPassed.length * 18 +
@@ -334,6 +376,7 @@ export function selectWinsBanker({
       2
     ),
     reasons: [
+      "Mandatory transition safety passed: weaker concede-first/stay-down and favourite score-first/lead-hold/comeback were assessed from ordered goal events.",
       `SportyBet Over 1.5 at ${round(over15, 2)} is 1.20 or shorter.`,
       `${extraPassed.length} extra filter${extraPassed.length === 1 ? "" : "s"} passed: ${extraPassed.map((row) => row.label).join(", ")}.`,
       `Venue form used for PPG/GPG (${isHome ? "home" : "away"} recent matches).`
