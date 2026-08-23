@@ -1,4 +1,5 @@
 import { selectSplitFormPick } from "./splitFormEngine.js";
+import { applyTransitionSafetyToMarkets } from "./transitionSafetyGate.js";
 import { applyLeagueScoringGuard, classifyLeagueScoring } from "./leagueScoringPolicy.js";
 import { predictMatch as predictWithOverhaul } from "./overhaulEngine.js";
 import { predictMatch as predictWithConsensusSupport } from "./consensusSupportEngine.js";
@@ -994,7 +995,11 @@ export function predictMatch(input) {
 
   const mergedMarkets = mergeMarkets(overhaul.markets, support.markets);
   const classification = classifyPapaSenseMatch(input, overhaul);
-  const markets = auditPapaSenseMarkets(mergedMarkets, input, classification);
+  const auditedMarkets = auditPapaSenseMarkets(mergedMarkets, input, classification);
+  const transitionSafety = Object.prototype.hasOwnProperty.call(input, "transitionSafety")
+    ? applyTransitionSafetyToMarkets(auditedMarkets, input.transitionSafety, input)
+    : { markets: auditedMarkets, leakRedirect: false, audit: { enforced: false, reason: "transition-safety-input-not-supplied" } };
+  const markets = transitionSafety.markets;
   const enginePicks = buildEngineSuite(markets, overhaul, support, input, classification);
   const primaryPick = enginePicks.primary;
   const primary = primaryPick?.available === false
@@ -1077,6 +1082,7 @@ export function predictMatch(input) {
     qualified: !noBet && Boolean(primary.qualified),
     directionMode: noBet ? "no-pick" : primary.qualified ? "qualified" : "directional",
     decisionTrace,
+    transitionSafety: transitionSafety.audit,
     venuePattern: {
       ...(support.venuePattern || {}),
       resolution: classification.venue
@@ -1105,7 +1111,8 @@ export function predictMatch(input) {
       "Specialist half markets require overall, correct venue and recent evidence." ,
       "Displayed confidence uses settled-history calibration when available; otherwise it is reduced conservatively.",
       "Public explanations are separated from the technical internal audit.",
-      "Repeated and unavailable engine views are never counted as independent consensus votes."
+      "Repeated and unavailable engine views are never counted as independent consensus votes.",
+      "Before any team win/not-to-lose selection, the last-five venue-split concede-first, stay-down, score-first, lead-hold and comeback gate must pass; >80% stronger-team concession redirects only to independently qualified BTTS Yes, Over 2.5 or Over 1.5."
     ]
   };
 }
