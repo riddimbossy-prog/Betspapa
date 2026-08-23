@@ -1,0 +1,35 @@
+name: Transition Safety Check
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - name: Syntax check transition integration
+        run: |
+          node --check src/engine/transitionSafetyGate.js
+          node --check src/services/transitionSafetyService.js
+          node --check src/engine/winsBankerEngine.js
+          node --check src/services/winsBankerService.js
+          node --check src/services/predictionService.js
+          node --check src/engine/transitionEngine.js
+      - name: Run transition safety tests
+        run: node --test tests/transition-safety-gate.test.js tests/wins-banker-transition.test.js
