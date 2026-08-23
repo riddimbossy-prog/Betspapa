@@ -2,6 +2,7 @@ import { PREDICTABLE_STATUSES } from "../config.js";
 import { nextUtcDate } from "../utils/date.js";
 import { loadPreparedBoardData } from "./publicService.js";
 import { loadFixtureRiskPack } from "./fixtureRiskService.js";
+import { loadFixtureTransitionProfiles } from "./transitionSafetyService.js";
 import { loadSportyBetGoalOdds } from "../providers/sportyBetOdds.js";
 import {
   WINS_BANKER_NAME,
@@ -86,13 +87,16 @@ async function buildWinsBankers(supabase, date, { force = false } = {}) {
     if (fixture.away?.id) teamMap.set(Number(fixture.away.id), fixture.away);
   }
 
-  const [riskPack, sportyOdds] = await Promise.all([
+  const [riskPack, sportyOdds, transitionProfiles] = await Promise.all([
     loadFixtureRiskPack(supabase, raw, teamMap),
-    loadSportyBetGoalOdds(fixtures).catch(() => new Map())
+    loadSportyBetGoalOdds(fixtures).catch(() => new Map()),
+    loadFixtureTransitionProfiles(supabase, raw).catch(() => new Map())
   ]);
 
   const picks = [];
   const rejectionCounts = {};
+  let transitionRejected = 0;
+  let leakRedirected = 0;
 
   for (const fixture of fixtures) {
     const risk = riskPack.get(Number(fixture.id)) || {};
@@ -121,10 +125,13 @@ async function buildWinsBankers(supabase, date, { force = false } = {}) {
       awayVenueForm: venue.away?.form || [],
       homeLastFive: lastFive.home,
       awayLastFive: lastFive.away,
+      transitionSafety: transitionProfiles.get(Number(fixture.id)) || null,
       odds: pickLiveOdds(sportyOdds.get(Number(fixture.id))),
       redFlags: risk.redFlags || fixture.redFlags || []
     });
     if (!pick.available) {
+      if (pick.transitionSafety?.reason && pick.transitionSafety.reason !== "transition-safety-passed") transitionRejected += 1;
+      if (pick.redirectGoals) leakRedirected += 1;
       const reason = pick.reasons?.[0] || "No wins banker";
       rejectionCounts[reason] = (rejectionCounts[reason] || 0) + 1;
       continue;
@@ -142,6 +149,8 @@ async function buildWinsBankers(supabase, date, { force = false } = {}) {
     reviewedFixtures: fixtures.length,
     pickCount: picks.length,
     rejectedCount: fixtures.length - picks.length,
+    transitionRejected,
+    leakRedirected,
     rejectionCounts,
     leagueMap: buildLeagueMap(picks),
     picks

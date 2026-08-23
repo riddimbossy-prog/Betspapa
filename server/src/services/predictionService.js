@@ -8,6 +8,7 @@ import { collectRedFlags } from "./fixtureRiskService.js";
 import { dateRangeUtc } from "../utils/date.js";
 import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 import { hydrateProfilesForFixtures } from "./historyHydrationService.js";
+import { loadFixtureTransitionProfiles } from "./transitionSafetyService.js";
 import { detectSuspiciousPredictionCandidates } from "./intelligenceService.js";
 import { competitionPolicy } from "../engine/competitionPolicy.js";
 
@@ -866,6 +867,7 @@ async function predictFixture(supabase, fixture, cached) {
     earlySeason,
     topFiveClash,
     redFlags,
+    transitionSafety: cached.get("__transitionProfiles")?.get(Number(fixture.id)) || null,
     league: {
       transitionBaseline: deriveLeagueBaseline(context.htftRows),
       goals: {
@@ -943,8 +945,11 @@ export async function generatePredictionsForDate(supabase, date) {
     teams
   );
 
+  const transitionProfiles = await loadFixtureTransitionProfiles(supabase, predictable);
+
   cached.set("__teams", teams);
   cached.set("__hydrationByTeam", hydration.byTeamId);
+  cached.set("__transitionProfiles", transitionProfiles);
 
   for (const fixture of predictable) {
     try {

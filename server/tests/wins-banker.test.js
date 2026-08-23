@@ -9,6 +9,29 @@ import { totalsFromSportyMarkets } from "../src/providers/sportyBetOdds.js";
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../..");
 
+const strongTransition = {
+  ready: true,
+  played: 5,
+  covered: 5,
+  concededMatchRate: 60,
+  scoreFirstRate: 60,
+  scoreFirstWinRate: 100,
+  scoreFirstNonLossRate: 100,
+  leadHoldRate: 100,
+  concededFirst: 2,
+  comebackWinRate: 50,
+  comebackNonLossRate: 100
+};
+const weakTransition = {
+  ready: true,
+  played: 5,
+  covered: 5,
+  concedeFirstRate: 60,
+  stayDownRate: 66.7
+};
+const homeFavoriteTransitionSafety = { home: strongTransition, away: weakTransition };
+const awayFavoriteTransitionSafety = { home: weakTransition, away: strongTransition };
+
 const base = {
   homeName: "Bodø/Glimt",
   awayName: "Sandnes Ulf",
@@ -31,6 +54,7 @@ const base = {
   awayVenueForm: ["L", "D", "L", "L", "D"],
   homeLastFive: ["W", "W", "D", "W", "W"],
   awayLastFive: ["L", "D", "L", "L", "D"],
+  transitionSafety: homeFavoriteTransitionSafety,
   odds: {
     home: 1.32,
     away: 8.5,
@@ -73,6 +97,7 @@ test("wins banker still publishes when every extra filter passes", () => {
   assert.equal(pick.book, "SportyBet");
   assert.ok(pick.extraPassed >= 2);
   assert.equal(pick.formBasis, "venue-split");
+  assert.equal(pick.transitionSafety.allowed, true);
 });
 
 test("Over 1.5 at 1.20 or shorter plus one extra filter is enough", () => {
@@ -145,6 +170,7 @@ test("other red flags are skippable and do not block", () => {
 test("away favourite needs GPG above 2.2", () => {
   const pick = selectWinsBanker({
     ...base,
+    transitionSafety: awayFavoriteTransitionSafety,
     homeRank: 12,
     awayRank: 2,
     homePpg: 0.8,
@@ -176,6 +202,7 @@ test("away favourite needs GPG above 2.2", () => {
 test("away favourite with GPG 2.3 passes goals filter", () => {
   const pick = selectWinsBanker({
     ...base,
+    transitionSafety: awayFavoriteTransitionSafety,
     homeRank: 12,
     awayRank: 2,
     homePpg: 0.8,
@@ -248,6 +275,25 @@ test("top-5 rank is required (rank 5 passes, rank 6 does not as sole extra)", ()
     homeVenueGpg: 1.0
   });
   assert.equal(rank6.available, false);
+});
+
+test("transition evidence is mandatory for a wins banker", () => {
+  const pick = selectWinsBanker({ ...base, transitionSafety: null });
+  assert.equal(pick.available, false);
+  assert.equal(pick.transitionSafety.reason, "transition-evidence-incomplete");
+});
+
+test("favourite leaking in more than 80 percent redirects away from the win market", () => {
+  const pick = selectWinsBanker({
+    ...base,
+    transitionSafety: {
+      home: { ...strongTransition, concededMatchRate: 100 },
+      away: weakTransition
+    }
+  });
+  assert.equal(pick.available, false);
+  assert.equal(pick.redirectGoals, true);
+  assert.equal(pick.transitionSafety.reason, "stronger-team-leaks-over-80");
 });
 
 test("SportyBet 1X2 market 1 is parsed", () => {
