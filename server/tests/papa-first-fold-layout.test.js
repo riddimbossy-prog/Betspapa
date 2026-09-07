@@ -11,30 +11,31 @@ async function source(path) {
   return readFile(resolve(root, path), "utf8");
 }
 
-test("the site root is Papa's Pick rather than the retired home dashboard", async () => {
+test("the site root is the Flash Cover IQ board", async () => {
   const html = await source("index.html");
+  assert.match(html, /data-page="flash"/);
+  assert.match(html, /Flash — Cover IQ/);
+  assert.match(html, /Fifteen cover markets enter/);
+  assert.match(html, /aria-current="page" class="active" href="index\.html">Flash/);
+});
+
+test("Papa's Pick remains available on its own page", async () => {
+  const html = await source("papas-pick.html");
   assert.match(html, /data-page="papa-hub"/);
   assert.match(html, /data-engine="primary"/);
   assert.match(html, /data-start-page="papas-pick"/);
-  assert.match(html, /Papa’s Pick/);
-  assert.doesNotMatch(html, /data-page="dashboard"/);
-  assert.doesNotMatch(html, />Today<\/a>/);
-});
-
-test("old Papa's Pick bookmarks redirect to the new root", async () => {
-  const html = await source("papas-pick.html");
-  assert.match(html, /location\.replace\(target\)/);
-  assert.match(html, /canonical" href="https:\/\/betspapa\.com\//);
+  assert.match(html, /aria-current="page" class="active" href="papas-pick\.html">Papa’s Pick/);
 });
 
 test("mobile and Z Fold navigation exposes the four core engines plus More", async () => {
   const js = await source("assets/js/mobile-nav.v1240.js");
-  for (const tab of ["picks", "safer", "aggressive", "athena", "more"]) {
+  for (const tab of ["flash", "safer", "aggressive", "athena", "more"]) {
     assert.match(js, new RegExp(`data-bp-tab="${tab}"`));
   }
-  for (const label of ["Papa’s Pick", "Safer", "Aggressive", "Athena", "More"]) {
+  for (const label of ["Flash", "Safer", "Aggressive", "Athena", "More"]) {
     assert.match(js, new RegExp(`<small>${label}<\/small>`));
   }
+  assert.match(js, /papas-pick\.html/);
   assert.match(js, /bankers\.html/);
   assert.match(js, /results-intelligence\.html/);
   assert.match(js, /live-fixtures\.html/);
@@ -52,10 +53,12 @@ test("Fold and tablet responsive layer keeps multi-column boards", async () => {
   assert.match(css, /orientation:landscape/);
 });
 
-test("PWA launches at the Papa's Pick root", async () => {
+test("PWA launches at the Flash root and keeps a Papa's Pick shortcut", async () => {
   const manifest = JSON.parse(await source("manifest.webmanifest"));
-  assert.equal(manifest.start_url, "/?source=pwa&v=1250");
-  assert.equal(manifest.version, "1.25.0");
+  assert.equal(manifest.start_url, "/?source=pwa&v=1263");
+  assert.equal(manifest.version, "1.26.3");
+  const flash = manifest.shortcuts.find((item) => item.name === "Flash Cover IQ");
+  assert.equal(flash.url, "/?source=shortcut");
   const papa = manifest.shortcuts.find((item) => item.name === "Papa's Pick");
-  assert.equal(papa.url, "/?source=shortcut");
+  assert.equal(papa.url, "/papas-pick.html?source=shortcut");
 });

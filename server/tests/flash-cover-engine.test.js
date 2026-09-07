@@ -115,17 +115,21 @@ test("missing half-time scores are not silently treated as nil-nil", () => {
   assert.equal(pick.available, false);
 });
 
-test("Flash has a separate page, navigation entry and public API", async () => {
-  const [html, portal, mobileNav, routes] = await Promise.all([
+test("Flash is the home page, keeps its legacy URL and exposes the public API", async () => {
+  const [html, legacyFlash, papa, portal, mobileNav, routes] = await Promise.all([
+    readFile(resolve(root, "index.html"), "utf8"),
     readFile(resolve(root, "flash.html"), "utf8"),
+    readFile(resolve(root, "papas-pick.html"), "utf8"),
     readFile(resolve(root, "assets/js/portal.v1250.js"), "utf8"),
     readFile(resolve(root, "assets/js/mobile-nav.v1240.js"), "utf8"),
     readFile(resolve(root, "server/src/routes/publicRoutes.js"), "utf8")
   ]);
   assert.match(html, /data-page="flash"/);
   assert.match(html, /Cover IQ/);
+  assert.match(legacyFlash, /location\.replace\(target\)/);
+  assert.match(papa, /data-page="papa-hub"/);
   assert.match(portal, /\/api\/flash\/today/);
   assert.match(portal, /page === "flash"/);
-  assert.match(mobileNav, /flash\.html/);
+  assert.match(mobileNav, /data-bp-tab="flash"/);
   assert.match(routes, /publicRouter\.get\("\/flash\/today"/);
 });

@@ -2,8 +2,8 @@
   "id": "/",
   "name": "BetsPapa \u2014 Football Intelligence",
   "short_name": "BetsPapa",
-  "description": "BetsPapa opens on a picks-only all-engine board with PapaLock supervising the dedicated Banker section.",
-  "start_url": "/?source=pwa&v=1250",
+  "description": "BetsPapa opens on Flash Cover IQ, which evaluates 15 SportyBet cover markets and publishes one qualified selection per fixture or skips it.",
+  "start_url": "/?source=pwa&v=1263",
   "scope": "/",
   "display": "standalone",
   "display_override": [
@@ -52,7 +52,7 @@
       "name": "Flash Cover IQ",
       "short_name": "Flash",
       "description": "Open the one-selection-or-skip Flash cover-market board",
-      "url": "/flash.html?source=shortcut",
+      "url": "/?source=shortcut",
       "icons": [
         {
           "src": "/assets/images/pwa-brand-icon-192.png",
@@ -65,7 +65,7 @@
       "name": "Papa's Pick",
       "short_name": "Papa's Pick",
       "description": "Open the main all-engine match board",
-      "url": "/?source=shortcut",
+      "url": "/papas-pick.html?source=shortcut",
       "icons": [
         {
           "src": "/assets/images/pwa-brand-icon-192.png",
@@ -133,15 +133,15 @@
       "sizes": "540x960",
       "type": "image/jpeg",
       "form_factor": "narrow",
-      "label": "BetsPapa mobile prediction dashboard"
+      "label": "BetsPapa Flash Cover IQ mobile board"
     },
     {
       "src": "/assets/images/pwa-screenshot-wide.jpg",
       "sizes": "1280x720",
       "type": "image/jpeg",
       "form_factor": "wide",
-      "label": "BetsPapa football intelligence dashboard"
+      "label": "BetsPapa Flash Cover IQ football intelligence board"
     }
   ],
-  "version": "1.25.0"
+  "version": "1.26.3"
 }
