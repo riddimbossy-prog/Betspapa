@@ -96,39 +96,44 @@ function makePolicyFixture({
   };
 }
 
-test("PapaSense v1.13 converts 1/1 and 2/2 into Win Either Half", () => {
+test("PapaSense v2.1 records 1/1 and 2/2 without bypassing half-data gates", () => {
   const awayControl = predictMatch(demoFixtures[0]);
   const homeControl = predictMatch(demoFixtures[1]);
 
-  assert.equal(awayControl.papaPolicy.topHtftRoute.code, "2/2");
-  assert.equal(awayControl.primaryPrediction.key, "away-win-either-half");
-  assert.equal(homeControl.papaPolicy.topHtftRoute.code, "1/1");
-  assert.equal(homeControl.primaryPrediction.key, "home-win-either-half");
+  assert.equal(awayControl.primaryPrediction.marketPolicy.topTransition, "2/2");
+  assert.equal(homeControl.primaryPrediction.marketPolicy.topTransition, "1/1");
+  assert.equal(awayControl.markets.find((market) => market.key === "away-win-either-half").sampleGate.passed, false);
+  assert.equal(homeControl.markets.find((market) => market.key === "home-win-either-half").sampleGate.passed, false);
+  assert.notEqual(awayControl.primaryPrediction.key, "away-win-either-half");
+  assert.notEqual(homeControl.primaryPrediction.key, "home-win-either-half");
 });
 
-test("PapaSense v1.13 converts an X-led route into Draw in Either Half", () => {
+test("PapaSense v2.1 recognizes an X-led route but will not force Draw Either Half", () => {
   const prediction = predictMatch(makePolicyFixture({
     id: "draw-either-half",
     transitionCounts: { WW: 9, WD: 8, WL: 7, DW: 10, DD: 30, DL: 10, LW: 7, LD: 8, LL: 11 }
   }));
 
-  assert.equal(prediction.papaPolicy.topHtftRoute.code, "X/X");
-  assert.equal(prediction.primaryPrediction.key, "draw-either-half");
-  assert.match(prediction.papaPolicy.actions.join(" "), /Draw in Either Half/i);
+  const drawEitherHalf = prediction.markets.find((market) => market.key === "draw-either-half");
+  assert.equal(prediction.papaSenseResolution.classification, "DRAW_LOCK");
+  assert.equal(prediction.primaryPrediction.marketPolicy.topTransition, "X/X");
+  assert.equal(drawEitherHalf.htftGate.eligible, true);
+  assert.equal(drawEitherHalf.qualified, false);
+  assert.equal(prediction.primaryPrediction.key, "no-pick");
 });
 
 test("low-value Team Over 0.5 upgrades only to the same team's qualified Over 1.5", () => {
-  const prediction = predictMatch(makePolicyFixture());
+  const prediction = predictMatch(makePolicyFixture({
+    transitionCounts: { WW: 10, WD: 12, WL: 12, DW: 10, DD: 12, DL: 12, LW: 5, LD: 12, LL: 15 }
+  }));
   const lowLine = prediction.markets.find((market) => market.key === "home-over-05");
   const highLine = prediction.markets.find((market) => market.key === "home-over-15");
 
-  assert.equal(lowLine.thresholdPassed, true);
-  assert.equal(lowLine.qualified, false);
-  assert.equal(lowLine.policy.lowValueRejected, true);
+  assert.equal(lowLine.qualified, true);
   assert.equal(highLine.qualified, true);
-  assert.equal(highLine.odds, 1.65);
   assert.equal(prediction.primaryPrediction.key, "home-over-15");
-  assert.match(prediction.papaPolicy.actions.join(" "), /same team's Over 1.5 passed every statistical and value gate/i);
+  assert.equal(prediction.decisionTrace.oddsPolicy.observedPrice, 1.1);
+  assert.match(prediction.decisionTrace.oddsPolicy.reason, /independently qualified Team Over 1\.5/i);
 });
 
 test("low-value Team Over 0.5 is removed when the same-team Over 1.5 fails", () => {
@@ -140,21 +145,21 @@ test("low-value Team Over 0.5 is removed when the same-team Over 1.5 fails", () 
   const highLine = prediction.markets.find((market) => market.key === "home-over-15");
 
   assert.equal(highLine.qualified, false);
-  assert.notEqual(prediction.primaryPrediction.key, "home-over-05");
-  assert.notEqual(prediction.primaryPrediction.key, "home-over-15");
-  assert.match(prediction.papaPolicy.actions.join(" "), /no forced upgrade was made/i);
+  assert.equal(prediction.primaryPrediction.key, "no-pick");
+  assert.equal(prediction.decisionTrace.oddsPolicy.applied, true);
+  assert.match(prediction.decisionTrace.oddsPolicy.reason, /no forced upgrade was made/i);
 });
 
-test("straight-win markets enforce six overall and six relevant split wins", () => {
+test("straight-win markets expose the v2.1 overall and venue sample gate", () => {
   const input = structuredClone(demoFixtures[0]);
   const prediction = predictMatch(input);
   const awayWin = prediction.markets.find((market) => market.key === "away-win");
-  const gate = awayWin.policy.resultSampleGate;
+  const gate = awayWin.sampleGate;
 
-  assert.ok(gate.overallWins >= 6);
-  assert.ok(gate.venueWins >= 6);
-  assert.equal(gate.bothPass, true);
-  assert.ok(awayWin.policy.straightWinBehaviour);
+  assert.equal(gate.requirement.overall, 12);
+  assert.equal(gate.requirement.venue, 7);
+  assert.equal(gate.passed, true);
+  assert.ok(awayWin.htftGate);
 });
 
 test("all amended Papa's Pick markets are present", () => {

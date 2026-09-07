@@ -36,6 +36,13 @@ function teamNameStarts(selection, name) {
 }
 
 function scoreParts(fixture) {
+  const raw = [
+    fixture.fulltime_home,
+    fixture.fulltime_away,
+    fixture.halftime_home,
+    fixture.halftime_away
+  ];
+  if (raw.some((value) => value == null || value === "")) return null;
   const home = Number(fixture.fulltime_home);
   const away = Number(fixture.fulltime_away);
   const halfHome = Number(fixture.halftime_home);
@@ -82,6 +89,7 @@ export function gradeEnginePick(pick, fixture, homeName, awayName) {
     case "away-dnb": return h === a ? "VOID" : a > h ? "WIN" : "LOSS";
     case "home-win": return h > a ? "WIN" : "LOSS";
     case "away-win": return a > h ? "WIN" : "LOSS";
+    case "ft-draw": return h === a ? "WIN" : "LOSS";
     case "home-win-either-half": return hh > ha || sh > sa ? "WIN" : "LOSS";
     case "away-win-either-half": return ha > hh || sa > sh ? "WIN" : "LOSS";
     case "draw-either-half": return hh === ha || sh === sa ? "WIN" : "LOSS";
@@ -92,6 +100,8 @@ export function gradeEnginePick(pick, fixture, homeName, awayName) {
     case "ht-away": return ha > hh ? "WIN" : "LOSS";
     case "exact-htft": return selection === confirmedHtft(fixture) ? "WIN" : "LOSS";
     case "first-half-over-05": return hh + ha >= 1 ? "WIN" : "LOSS";
+    case "fh-over-05": return hh + ha >= 1 ? "WIN" : "LOSS";
+    case "fh-under-15": return hh + ha <= 1 ? "WIN" : "LOSS";
     case "first-half-over-15": return hh + ha >= 2 ? "WIN" : "LOSS";
     case "second-half-over-05": return sh + sa >= 1 ? "WIN" : "LOSS";
     case "second-half-over-15": return sh + sa >= 2 ? "WIN" : "LOSS";
@@ -101,14 +111,29 @@ export function gradeEnginePick(pick, fixture, homeName, awayName) {
     case "home-second-half-dnb": return sh === sa ? "VOID" : sh > sa ? "WIN" : "LOSS";
     case "away-second-half-dnb": return sh === sa ? "VOID" : sa > sh ? "WIN" : "LOSS";
     case "gg-yes": return h > 0 && a > 0 ? "WIN" : "LOSS";
+    case "btts-yes": return h > 0 && a > 0 ? "WIN" : "LOSS";
     case "gg-no": return h === 0 || a === 0 ? "WIN" : "LOSS";
+    case "btts-no": return h === 0 || a === 0 ? "WIN" : "LOSS";
+    case "over-05": return total >= 1 ? "WIN" : "LOSS";
     case "over-15": return total >= 2 ? "WIN" : "LOSS";
     case "over-25": return total >= 3 ? "WIN" : "LOSS";
+    case "over-35": return total >= 4 ? "WIN" : "LOSS";
+    case "under-15": return total <= 1 ? "WIN" : "LOSS";
+    case "under-25": return total <= 2 ? "WIN" : "LOSS";
     case "under-35": return total <= 3 ? "WIN" : "LOSS";
+    case "under-45": return total <= 4 ? "WIN" : "LOSS";
+    case "total-2-3": return total >= 2 && total <= 3 ? "WIN" : "LOSS";
     case "home-over-05": return h >= 1 ? "WIN" : "LOSS";
     case "away-over-05": return a >= 1 ? "WIN" : "LOSS";
     case "home-over-15": return h >= 2 ? "WIN" : "LOSS";
     case "away-over-15": return a >= 2 ? "WIN" : "LOSS";
+    case "home-under-15": return h <= 1 ? "WIN" : "LOSS";
+    case "away-under-15": return a <= 1 ? "WIN" : "LOSS";
+    case "home-clean-sheet": return a === 0 ? "WIN" : "LOSS";
+    case "away-clean-sheet": return h === 0 ? "WIN" : "LOSS";
+    case "first-half-or-match-home": return hh > ha || h > a ? "WIN" : "LOSS";
+    case "first-half-or-match-draw": return hh === ha || h === a ? "WIN" : "LOSS";
+    case "first-half-or-match-away": return ha > hh || a > h ? "WIN" : "LOSS";
     case "favourite-over-15": {
       const goals = teamNameStarts(selection, homeName)
         ? h
@@ -126,7 +151,7 @@ export function gradeEnginePick(pick, fixture, homeName, awayName) {
   }
 }
 
-function gradeMarket(key, prediction, fixture, homeName, awayName) {
+export function gradeMarket(key, prediction, fixture, homeName, awayName) {
   return gradeEnginePick(
     { key, selection: prediction.primary_selection },
     fixture,

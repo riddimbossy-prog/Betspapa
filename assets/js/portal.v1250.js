@@ -428,11 +428,39 @@
   }
 
   function leagueClimateMarkup(item) {
-    return "";
+    const climate = item?.leagueScoring || item?.engine?.leagueScoring || null;
+    const label = String(climate?.label || "").toLowerCase();
+    if (!['high', 'low'].includes(label)) return "";
+    const direction = String(climate?.trend?.direction || climate?.direction || "").toLowerCase();
+    const text = label === "high" ? "HIGH SCORING" : "LOW SCORING";
+    return `<span class="league-climate-chip ${escapeHtml(label)} ${escapeHtml(direction)}">${text}</span>`;
   }
 
   function riskFlagMarkup(item, pick = null, extraClass = "") {
-    return "";
+    const raw = [
+      ...(item?.redFlags || []),
+      item?.earlySeason,
+      item?.topFiveClash,
+      item?.leagueGoalsFlag,
+      pick?.leagueGoalsFlag,
+      ...(pick?.redFlags || [])
+    ].filter(Boolean);
+    const seen = new Set();
+    const flags = raw.filter((flag) => {
+      const key = typeof flag === "string"
+        ? flag
+        : flag.code || flag.label || flag.reason || JSON.stringify(flag);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    if (!flags.length) return "";
+    const classes = ["early-season-flag", extraClass].filter(Boolean).join(" ");
+    return flags.slice(0, 3).map((flag) => {
+      const label = typeof flag === "string" ? flag : flag.label || flag.code || "RED FLAG";
+      const reason = typeof flag === "string" ? flag : flag.reason || label;
+      return `<span class="${escapeHtml(classes)}" title="${escapeHtml(reason)}">🚩 ${escapeHtml(label)}</span>`;
+    }).join("");
   }
 
   function hasRedFlag(item, pick = null) {
@@ -662,9 +690,10 @@
     const market = hubPickUnavailable(pick) ? "" : (pick?.market || "");
     const score = "";
     const disabled = !pick ? "disabled" : "";
-    return `<button class="hub-engine-row engine-${escapeHtml(key)} ${escapeHtml(state.className)}" data-hub-engine="${escapeHtml(key)}" data-fixture-id="${escapeHtml(item.fixtureId)}" type="button" ${disabled}>
+    const flagged = hasRedFlag(item, pick);
+    return `<button class="hub-engine-row engine-${escapeHtml(key)} ${escapeHtml(state.className)} ${flagged ? "flagged" : ""}" data-hub-engine="${escapeHtml(key)}" data-fixture-id="${escapeHtml(item.fixtureId)}" type="button" ${disabled}>
       <span class="hub-engine-name"><i></i><b>${escapeHtml(meta.name)}</b></span>
-      <span class="hub-engine-pick"><strong>${escapeHtml(selection)}</strong><small>${escapeHtml(market)}</small></span>
+      <span class="hub-engine-pick"><strong>${escapeHtml(selection)}</strong><small>${escapeHtml(market)}</small>${riskFlagMarkup(item, pick, "chip")}</span>
     </button>`;
   }
 
@@ -985,8 +1014,12 @@
           <div class="pick-team">${logoMarkup(item.home)}<span>${escapeHtml(item.home?.name || "Home")}</span></div>
           <div class="pick-team">${logoMarkup(item.away)}<span>${escapeHtml(item.away?.name || "Away")}</span></div>
         </div>
-        <span class="pick-badge consensus-grade">Banker</span>
+        <div class="consensus-grade-row">
+          <span class="pick-badge consensus-grade">${escapeHtml(item.papaLockGrade || "Banker")}</span>
+          <strong>${Number(item.confirmationFamilies || 0)} confirmation families</strong>
+        </div>
         <strong class="pick-selection">${escapeHtml(item.selection)}</strong>
+        <div class="banker-votes">${bankerEngineChips(item)}</div>
         <div class="pick-bottom">
           <span>${escapeHtml(item.market || "")}</span>
         </div>
@@ -1004,7 +1037,13 @@
       <div class="explanation-box consensus-verdict">
         <span class="eyebrow">${escapeHtml(item.market || "Pick")}</span>
         <h3>${escapeHtml(item.selection)}</h3>
-      </div>`;
+        <p>${escapeHtml(item.publicExplanation || item.explanation || "PapaLock's independent confirmation families agree on this protected market.")}</p>
+      </div>
+      <section class="consensus-dialog-section">
+        <h3>Confirmation families</h3>
+        <div class="dialog-engine-votes">${bankerEngineChips(item)}</div>
+      </section>
+      ${(item.reasons || []).length ? `<section class="consensus-dialog-section"><h3>Audit passed</h3><ul>${item.reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul></section>` : ""}`;
   }
 
   function renderConsensusBankers(payload) {
@@ -1385,6 +1424,165 @@
     dateInput.onchange = () => loadWinsBankers();
     $("#refreshButton")?.addEventListener("click", () => loadWinsBankers());
     await loadWinsBankers();
+  }
+
+  function flashPercent(value, digits = 0) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return "—";
+    const percent = number <= 1 ? number * 100 : number;
+    return `${percent.toFixed(digits)}%`;
+  }
+
+  function flashCard(item) {
+    const component = item.componentProbabilities || {};
+    return `<button class="flash-card" type="button" data-flash-fixture="${escapeHtml(item.fixtureId)}">
+      <div class="flash-card-top">
+        <span class="flash-tier">⚡ ${escapeHtml(item.tier || "FLASH")}</span>
+        <span>${escapeHtml(formatKickoff(item.kickoff))}</span>
+      </div>
+      <div class="flash-league">${escapeHtml(leagueText(item.league))}</div>
+      <div class="flash-teams">
+        <div>${logoMarkup(item.home)}<strong>${escapeHtml(item.home?.name || "Home")}</strong></div>
+        <span>VS</span>
+        <div>${logoMarkup(item.away)}<strong>${escapeHtml(item.away?.name || "Away")}</strong></div>
+      </div>
+      <div class="flash-market">
+        <small>${escapeHtml(item.market || item.family || "Cover market")}</small>
+        <strong>${escapeHtml(item.selection || "Yes")}</strong>
+        <b>${escapeHtml(String(item.odds || "—"))}</b>
+      </div>
+      <div class="flash-route-row">
+        <span>${escapeHtml(component.leftLabel || "Route A")} <b>${flashPercent(component.left)}</b></span>
+        <i>OR</i>
+        <span>${escapeHtml(component.rightLabel || "Route B")} <b>${flashPercent(component.right)}</b></span>
+      </div>
+      <div class="flash-signal-grid">
+        <span><small>Model</small><b>${flashPercent(item.modelProbability)}</b></span>
+        <span><small>Confidence</small><b>${flashPercent(item.confidence)}</b></span>
+        <span><small>Edge</small><b>+${flashPercent(item.edge, 1)}</b></span>
+        <span><small>Rescue</small><b>+${flashPercent(item.rescueGain, 1)}</b></span>
+      </div>
+      <div class="flash-loss"><span>Only loses when</span>${escapeHtml(item.lossCondition || "both cover routes fail.")}</div>
+      <span class="flash-open">Open decision audit →</span>
+    </button>`;
+  }
+
+  function flashDialog(item) {
+    const component = item.componentProbabilities || {};
+    const direct = item.directHitRates || {};
+    return `<div class="dialog-title flash-dialog-title">
+      <span class="eyebrow">⚡ Flash · Cover IQ</span>
+      <h2>${escapeHtml(item.home?.name || "Home")} vs ${escapeHtml(item.away?.name || "Away")}</h2>
+      <p>${escapeHtml(leagueText(item.league))} · ${escapeHtml(formatKickoff(item.kickoff))}</p>
+    </div>
+    <div class="explanation-box flash-verdict">
+      <span class="eyebrow">${escapeHtml(item.market || "Cover market")}</span>
+      <h3>${escapeHtml(item.selection || "Yes")} <b>@ ${escapeHtml(String(item.odds || "—"))}</b></h3>
+      <p>${escapeHtml(item.publicExplanation || item.explanationParagraph || "Every Flash gate cleared.")}</p>
+    </div>
+    <section class="flash-dialog-section">
+      <h3>Why the engine fired</h3>
+      <div class="flash-audit-grid">
+        <div><span>Model probability</span><strong>${flashPercent(item.modelProbability, 1)}</strong><small>Must be 75%+</small></div>
+        <div><span>Lower estimate</span><strong>${flashPercent(item.lowerEstimate, 1)}</strong><small>Must be 68%+</small></div>
+        <div><span>Confidence</span><strong>${flashPercent(item.confidence, 1)}</strong><small>Must be 80%+</small></div>
+        <div><span>Expected-value index</span><strong>${Number(item.expectedValue || 0).toFixed(2)}</strong><small>Must be 1.04+</small></div>
+      </div>
+    </section>
+    <section class="flash-dialog-section">
+      <h3>Two routes, one selection</h3>
+      <div class="flash-dialog-routes">
+        <div><span>${escapeHtml(component.leftLabel || "Route A")}</span><strong>${flashPercent(component.left, 1)}</strong></div>
+        <i>OR</i>
+        <div><span>${escapeHtml(component.rightLabel || "Route B")}</span><strong>${flashPercent(component.right, 1)}</strong></div>
+      </div>
+      <p class="flash-audit-copy">The second route adds <strong>${flashPercent(item.rescueGain, 1)}</strong> of genuine cover beyond the stronger single route.</p>
+    </section>
+    <section class="flash-dialog-section">
+      <h3>Venue evidence</h3>
+      <div class="flash-audit-grid three">
+        <div><span>Home’s last 10 at home</span><strong>${flashPercent(direct.home, 1)}</strong><small>Must be 70%+</small></div>
+        <div><span>Away’s last 10 away</span><strong>${flashPercent(direct.away, 1)}</strong><small>Must be 70%+</small></div>
+        <div><span>Combined split</span><strong>${flashPercent(direct.combined, 1)}</strong><small>Must be 75%+</small></div>
+      </div>
+    </section>
+    <div class="flash-loss dialog-loss"><span>Main losing zone</span>${escapeHtml(item.lossCondition || "Both cover routes fail.")}</div>
+    ${item.sportyBetUrl ? `<a class="flash-book-link" href="${escapeHtml(item.sportyBetUrl)}" target="_blank" rel="noopener">Open SportyBet event ↗</a>` : ""}`;
+  }
+
+  function renderFlash(payload) {
+    const picks = payload.picks || [];
+    const leagueFilter = $("#flashLeagueFilter");
+    const marketFilter = $("#flashMarketFilter");
+    const searchFilter = $("#flashSearchFilter");
+    if (leagueFilter && !leagueFilter.dataset.ready) {
+      const leagues = [...new Set(picks.map((pick) => bankerLeagueKey(pick)).filter(Boolean))];
+      leagueFilter.innerHTML = `<option value="">All leagues</option>${leagues.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")}`;
+      leagueFilter.dataset.ready = "1";
+    }
+    if (marketFilter && !marketFilter.dataset.ready) {
+      const families = [...new Set(picks.map((pick) => pick.family).filter(Boolean))];
+      marketFilter.innerHTML = `<option value="">All market families</option>${families.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")}`;
+      marketFilter.dataset.ready = "1";
+    }
+
+    $("#portalMetrics").innerHTML = [
+      `<div class="diagnostic-card"><span>Flash picks</span><strong>${picks.length}</strong></div>`,
+      `<div class="diagnostic-card"><span>Fixtures scanned</span><strong>${payload.reviewedFixtures || 0}</strong></div>`,
+      `<div class="diagnostic-card"><span>SportyBet matched</span><strong>${payload.oddsMatchedFixtures || 0}</strong></div>`,
+      `<div class="diagnostic-card"><span>Odds gate</span><strong>${payload.oddsBand?.min?.toFixed?.(2) || "1.20"}–${payload.oddsBand?.max?.toFixed?.(2) || "1.85"}</strong></div>`
+    ].join("");
+
+    const draw = () => {
+      const league = leagueFilter?.value || "";
+      const family = marketFilter?.value || "";
+      const query = (searchFilter?.value || "").trim().toLowerCase();
+      const filtered = picks.filter((item) => {
+        if (league && bankerLeagueKey(item) !== league) return false;
+        if (family && item.family !== family) return false;
+        if (query) {
+          const text = [item.home?.name, item.away?.name, bankerLeagueKey(item), item.market, item.family].join(" ").toLowerCase();
+          if (!text.includes(query)) return false;
+        }
+        return true;
+      });
+      $("#portalContent").innerHTML = filtered.length
+        ? `<div class="flash-grid">${filtered.map(flashCard).join("")}</div>`
+        : `<div class="empty-card flash-empty"><strong>SKIP</strong><span>No market cleared every Flash gate.</span><small>That is a valid engine decision, not a missing prediction.</small></div>`;
+      $$('[data-flash-fixture]').forEach((card) => {
+        card.onclick = () => {
+          const item = picks.find((pick) => String(pick.fixtureId) === card.dataset.flashFixture);
+          if (item) openDialog(flashDialog(item));
+        };
+      });
+    };
+    if (leagueFilter) leagueFilter.onchange = draw;
+    if (marketFilter) marketFilter.onchange = draw;
+    if (searchFilter) searchFilter.oninput = draw;
+    draw();
+  }
+
+  async function loadFlash({ silent = false, force = false } = {}) {
+    const dateInput = $("#dateFilter");
+    const date = dateInput.value || utcIsoDate();
+    dateInput.value = date;
+    if (!silent) setStatus("Flash is testing all 15 cover routes…", "One selection per fixture, or SKIP");
+    const forceQuery = force ? "&force=1" : "";
+    let payload = await fetchApi(`/api/flash/today?date=${encodeURIComponent(date)}${forceQuery}`, { cacheMode: force ? "no-store" : "default" });
+    if (!(payload.reviewedFixtures || 0) && payload.rolledForward && payload.date) dateInput.value = payload.date;
+    renderFlash(payload);
+    setStatus(
+      `${payload.pickCount || 0} Flash selection${Number(payload.pickCount) === 1 ? "" : "s"}`,
+      `${payload.reviewedFixtures || 0} fixtures scanned · ${payload.rejectedCount || 0} skipped · SportyBet only${payload.rolledForward ? " · next UTC date" : ""}`
+    );
+  }
+
+  async function loadFlashPage() {
+    const dateInput = $("#dateFilter");
+    dateInput.value = dateInput.value || utcIsoDate();
+    dateInput.onchange = () => loadFlash();
+    $("#refreshButton")?.addEventListener("click", () => loadFlash({ force: true }));
+    await loadFlash();
   }
 
 
@@ -1810,6 +2008,7 @@
       if (page === "bankers") await loadBankersPage();
       if (page === "goals-bankers") await loadGoalsBankersPage();
       if (page === "wins-bankers") await loadWinsBankersPage();
+      if (page === "flash") await loadFlashPage();
       if (page === "athena-picks") await loadAthenaPage();
       if (page === "results") await loadResultsPage();
       if (page === "diagnostics") await loadDiagnosticsPage();

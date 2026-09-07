@@ -12,9 +12,12 @@ test("PapaSense v2 uses the HT/FT-first catalogue across all four engines", () =
     prediction.enginePicks.primary.selection,
     prediction.primaryPrediction.selection
   );
-  for (const pick of Object.values(prediction.enginePicks)) {
+  for (const key of ["primary", "aggressive", "safer", "venue"]) {
+    const pick = prediction.enginePicks[key];
     assert.equal(pick.marketPolicy.allEnginesUseOverhaulCatalogue, true);
   }
+  assert.equal(prediction.enginePicks.form.engineKey, "form");
+  assert.equal(prediction.enginePicks.form.engineVersion, "splitform-v1.0.0");
 });
 
 test("overhaul exposes the expanded independent goal-market scores", () => {

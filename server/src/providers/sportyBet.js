@@ -5,6 +5,34 @@ const CACHE_TTL_MS = 6 * 60_000;
 const KICKOFF_WINDOW_MS = 18 * 60 * 60 * 1000;
 
 const cache = { loadedAt: 0, events: [] };
+const eventDetailCache = new Map();
+
+const FLASH_MARKET_NAMES = new Map([
+  ["1st half result or match result", "first-half-or-match"],
+  ["home team or over 2.5", "home-or-over-25"],
+  ["home or over 2.5", "home-or-over-25"],
+  ["home team or under 2.5", "home-or-under-25"],
+  ["home or under 2.5", "home-or-under-25"],
+  ["draw or over 2.5", "draw-or-over-25"],
+  ["draw or under 2.5", "draw-or-under-25"],
+  ["away team or over 2.5", "away-or-over-25"],
+  ["away or over 2.5", "away-or-over-25"],
+  ["away team or under 2.5", "away-or-under-25"],
+  ["away or under 2.5", "away-or-under-25"],
+  ["home team or gg", "home-or-gg"],
+  ["home or gg", "home-or-gg"],
+  ["home team or both teams to score", "home-or-gg"],
+  ["draw or gg", "draw-or-gg"],
+  ["draw or both teams to score", "draw-or-gg"],
+  ["away team or gg", "away-or-gg"],
+  ["away or gg", "away-or-gg"],
+  ["away team or both teams to score", "away-or-gg"],
+  ["home team or any clean sheet", "home-or-any-clean-sheet"],
+  ["home or any clean sheet", "home-or-any-clean-sheet"],
+  ["draw or any clean sheet", "draw-or-any-clean-sheet"],
+  ["away team or any clean sheet", "away-or-any-clean-sheet"],
+  ["away or any clean sheet", "away-or-any-clean-sheet"]
+]);
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -61,6 +89,39 @@ export function totalsFromSportyMarkets(markets = []) {
   return parseTotals({ markets });
 }
 
+function normaliseMarketLabel(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/both teams to score/g, "both teams to score")
+    .trim();
+}
+
+/** Parse only exact, named SportyBet Flash markets. Unknown names fail closed. */
+export function flashFromSportyMarkets(markets = []) {
+  const odds = {};
+  for (const market of markets || []) {
+    const baseKey = FLASH_MARKET_NAMES.get(normaliseMarketLabel(market?.desc));
+    if (!baseKey) continue;
+    for (const outcome of market.outcomes || []) {
+      if (outcome?.isActive === 0 || outcome?.isActive === false) continue;
+      const price = Number(outcome?.odds);
+      if (!Number.isFinite(price) || price <= 1) continue;
+      const desc = normaliseMarketLabel(outcome?.desc);
+      const id = String(outcome?.id || "");
+      if (baseKey === "first-half-or-match") {
+        if (desc === "home" || id === "1") odds["first-half-or-match-home"] = price;
+        if (desc === "draw" || id === "2") odds["first-half-or-match-draw"] = price;
+        if (desc === "away" || id === "3") odds["first-half-or-match-away"] = price;
+        continue;
+      }
+      if (desc === "yes" || id === "74") odds[baseKey] = price;
+      if (desc === "no" || id === "76") odds[`${baseKey}-no`] = price;
+    }
+  }
+  return odds;
+}
+
 function lineSuffix(specifier) {
   const line = String(specifier || "").match(/total=([0-9.]+)/i)?.[1];
   if (!line || !line.includes(".")) return null;
@@ -78,7 +139,7 @@ function writeOutcome(odds, prefix, specifier, outcome) {
 }
 
 function parseTotals(event) {
-  const odds = {};
+  const odds = flashFromSportyMarkets(event.markets || []);
   for (const market of event.markets || []) {
     const id = String(market.id);
     if (id === "1") {
@@ -157,6 +218,8 @@ function flatten(payload) {
 async function fetchPage(pageNum) {
   const base = (process.env.SPORTYBET_API_BASE || DEFAULT_BASE).replace(/\/$/, "");
   const operId = process.env.SPORTYBET_OPER_ID || "2";
+  // The compact feed discovers events through stable core markets. Flash then
+  // reads the full event market list and matches exact names, never guessed IDs.
   const url = `${base}/factsCenter/pcUpcomingEvents?sportId=sr:sport:1&marketId=1,18,29,68,19,20&pageSize=${PAGE_SIZE}&pageNum=${pageNum}`;
   const response = await fetch(url, {
     headers: {
@@ -177,6 +240,36 @@ async function fetchPage(pageNum) {
     throw new Error(payload?.message || `SportyBet page ${pageNum} rejected`);
   }
   return flatten(payload);
+}
+
+export async function loadSportyBetEventMarkets(eventId, { force = false } = {}) {
+  const key = String(eventId || "");
+  if (!key) return [];
+  const cached = eventDetailCache.get(key);
+  if (!force && cached && Date.now() - cached.loadedAt < CACHE_TTL_MS) return cached.markets;
+
+  const base = (process.env.SPORTYBET_API_BASE || DEFAULT_BASE).replace(/\/$/, "");
+  const operId = process.env.SPORTYBET_OPER_ID || "2";
+  const url = `${base}/factsCenter/event?productId=3&eventId=${encodeURIComponent(key)}`;
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      OperId: String(operId),
+      Platform: "web",
+      Referer: "https://www.sportybet.com/ng/sport/football",
+      Origin: "https://www.sportybet.com",
+      "User-Agent": "Mozilla/5.0 BetsPapaFlash"
+    },
+    signal: AbortSignal.timeout(20000)
+  });
+  if (!response.ok) throw new Error(`SportyBet event detail failed (${response.status})`);
+  const payload = await response.json();
+  if (Number(payload?.bizCode) !== 10000) {
+    throw new Error(payload?.message || "SportyBet event detail was rejected");
+  }
+  const markets = payload?.data?.markets || payload?.data?.event?.markets || [];
+  eventDetailCache.set(key, { loadedAt: Date.now(), markets });
+  return markets;
 }
 
 export async function loadSportyBetEvents({ force = false } = {}) {

@@ -318,12 +318,12 @@ test("form string keeps last-five codes", () => {
 
 test("wins banker page exists", async () => {
   const html = await readFile(resolve(root, "wins-bankers.html"), "utf8");
-  const js = await readFile(resolve(root, "assets/js/portal.v1250.js"), "utf8");
+  const js = await readFile(resolve(root, "assets/js/wins-board.v1260.js"), "utf8");
   assert.match(html, /data-page="wins-bankers"/);
-  assert.match(html, /<table class="wins-filter-table">/);
-  assert.match(html, /Required/);
-  assert.match(html, /1 or 2 extras/);
+  assert.match(html, /assets\/js\/wins-board\.v1260\.js/);
+  assert.match(html, /id="winsLeagueMap"/);
   assert.match(js, /wins-bankers\/today/);
-  assert.match(js, /wins-match-table/);
+  assert.match(js, /wins-list/);
+  assert.match(js, /wins-row/);
   assert.match(js, /winsLeagueMap/);
 });

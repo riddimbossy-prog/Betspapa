@@ -8,6 +8,13 @@
 
     const root = location.protocol === "file:" ? "" : "/";
     const file = location.pathname.replace(/\/+$/, "").split("/").pop() || "index.html";
+    const desktopNav = document.getElementById("portalNav");
+    if (desktopNav && !desktopNav.querySelector('a[href$="flash.html"]')) {
+      const flashLink = document.createElement("a");
+      flashLink.href = `${root}flash.html`;
+      flashLink.textContent = "Flash";
+      desktopNav.firstElementChild?.insertAdjacentElement("afterend", flashLink);
+    }
 
     const active = (() => {
       if (!file || file === "index.html" || file === "papas-pick.html") return "picks";
@@ -46,6 +53,7 @@
             <button class="bp-mobile-sheet-close" id="bpMobileSheetClose" type="button" aria-label="Close">×</button>
           </header>
           <div class="bp-mobile-sheet-grid">
+            <a href="${link("flash.html")}"><strong>⚡ Flash</strong><small>One Cover IQ selection—or SKIP</small></a>
             <a href="${link("bankers.html")}"><strong>Bankers</strong><small>Strong consensus selections</small></a>
             <a href="${link("goals-bankers.html")}"><strong>Total Goals Banker</strong><small>League patterns at 1.20–1.55</small></a>
             <a href="${link("wins-bankers.html")}"><strong>Wins Banker</strong><small>Top-4 favourites at 1.19–1.55</small></a>
