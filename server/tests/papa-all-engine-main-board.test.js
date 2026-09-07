@@ -8,8 +8,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../..");
 const source = (path) => readFile(resolve(root, path), "utf8");
 
-test("Papa's Pick main page exposes all engines including Split Form", async () => {
-  const html = await source("index.html");
+test("Papa's Pick page exposes all engines including Split Form", async () => {
+  const html = await source("papas-pick.html");
   assert.match(html, /data-page="papa-hub"/);
   for (const name of ["Papa’s Pick", "Safer", "Aggressive", "Venue Pattern", "Split Form", "Athena"]) {
     assert.match(html, new RegExp(name));
@@ -39,11 +39,12 @@ test("public API merges all engines for the main board", async () => {
 
 test("current PWA refreshes the picks-only all-engine and Flash assets", async () => {
   const sw = await source("sw.js");
-  assert.match(sw, /betspapa-pwa-v1262/);
+  assert.match(sw, /betspapa-pwa-v1263/);
   assert.match(sw, /portal\.v1220\.css/);
   assert.match(sw, /portal\.v1250\.js/);
   assert.match(sw, /mobile-nav\.v1240\.js/);
   assert.match(sw, /mobile-nav\.v1240\.css/);
   assert.match(sw, /form\.html/);
   assert.match(sw, /flash\.html/);
+  assert.match(sw, /papas-pick\.html/);
 });
