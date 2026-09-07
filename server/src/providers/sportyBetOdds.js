@@ -1,4 +1,6 @@
 import {
+  flashFromSportyMarkets,
+  loadSportyBetEventMarkets,
   loadSportyBetEvents,
   matchSportyBetOdds,
   nameSimilarity,
@@ -6,7 +8,13 @@ import {
   totalsFromSportyMarkets
 } from "./sportyBet.js";
 
-export { nameSimilarity, normalizeTeamName, matchSportyBetOdds, totalsFromSportyMarkets };
+export {
+  flashFromSportyMarkets,
+  nameSimilarity,
+  normalizeTeamName,
+  matchSportyBetOdds,
+  totalsFromSportyMarkets
+};
 
 export async function loadSportyBetGoalOdds(fixtures = []) {
   const map = new Map();
@@ -28,5 +36,53 @@ export async function loadSportyBetGoalOdds(fixtures = []) {
       url: hit.url
     });
   }
+  return map;
+}
+
+export async function loadSportyBetFlashOdds(fixtures = [], { concurrency = 5, force = false } = {}) {
+  const map = new Map();
+  if (!fixtures.length) return map;
+  let events = [];
+  try {
+    events = await loadSportyBetEvents({ force });
+  } catch {
+    return map;
+  }
+
+  const matched = fixtures
+    .map((fixture) => ({ fixture, hit: matchSportyBetOdds(events, fixture) }))
+    .filter((row) => row.hit?.eventId);
+  let cursor = 0;
+  async function worker() {
+    while (cursor < matched.length) {
+      const index = cursor;
+      cursor += 1;
+      const { fixture, hit } = matched[index];
+      let detailed = {};
+      try {
+        detailed = flashFromSportyMarkets(await loadSportyBetEventMarkets(hit.eventId, { force }));
+      } catch {
+        // The compact upcoming feed may already contain Flash prices. Missing
+        // detail is allowed to fall through, but the engine never guesses odds.
+      }
+      const prices = { ...(hit.odds || {}), ...detailed };
+      const hasFlash = Object.keys(prices).some((key) =>
+        key.startsWith("first-half-or-match-") ||
+        /-(?:or)-(?:over|under|gg|any-clean-sheet)/.test(key)
+      );
+      if (!hasFlash) continue;
+      map.set(Number(fixture.id), {
+        ...prices,
+        source: "sportybet",
+        book: "SportyBet",
+        eventId: hit.eventId,
+        url: hit.url
+      });
+    }
+  }
+  await Promise.all(Array.from(
+    { length: Math.max(1, Math.min(Number(concurrency) || 5, 8)) },
+    () => worker()
+  ));
   return map;
 }

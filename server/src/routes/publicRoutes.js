@@ -26,6 +26,7 @@ import { getPreparedEngineBoard, isVisibleBoardPick } from "../services/boardSna
 import { getPapaLockHistory, getPapaLockPicks, invalidatePapaLockCache } from "../services/papaLockPickService.js";
 import { getTotalGoalsBankers } from "../services/totalGoalsBankerService.js";
 import { getWinsBankers } from "../services/winsBankerService.js";
+import { getFlashPicks } from "../services/flashPickService.js";
 import { toPublicPapaLockSlate } from "../engine/papaLockBankerEngine.js";
 import { applyLeagueScoringGuard } from "../engine/leagueScoringPolicy.js";
 import { applyRedFlagsToPick, collectRedFlags } from "../services/fixtureRiskService.js";
@@ -509,6 +510,23 @@ publicRouter.get("/wins-bankers/today", async (req, res, next) => {
     res.json({
       ...slate,
       liveRefresh: { refreshed: false, skipped: true, reason: "Wins Banker prepared reader" }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+publicRouter.get("/flash/today", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.query.date || todayUtc());
+    const force = ["1", "true", "force", "reload"].includes(
+      String(req.query.force || "").toLowerCase()
+    );
+    const slate = await getFlashPicks(getSupabaseAdmin(), date, { force });
+    setPublicCache(res, slate.cached ? 60 : 20, 180);
+    res.json({
+      ...slate,
+      liveRefresh: { refreshed: false, skipped: true, reason: "Flash Cover IQ prepared reader" }
     });
   } catch (error) {
     next(error);
