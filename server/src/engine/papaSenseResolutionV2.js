@@ -626,14 +626,6 @@ function pickByKeys(markets, keys, predicate = () => true, engineKey = "primary"
 }
 
 
-function firstQualifiedByKeys(markets, keys, predicate = () => true) {
-  for (const key of keys) {
-    const market = findMarket(markets, key);
-    if (market?.qualified && predicate(market)) return market;
-  }
-  return null;
-}
-
 function decimalOdds(input, side, line = "05") {
   const sources = [input?.odds, input?.marketOdds, input?.bookmakerOdds].filter(Boolean);
   const directKeys = side === "home"
@@ -712,9 +704,7 @@ export function selectPapaSenseV2(markets, input, classification) {
     const price = decimalOdds(input, side, "05");
     if (price !== null && price < 1.2) {
       const upgrade = findMarket(markets, `${side}-over-15`);
-      const replacement = upgrade?.qualified
-        ? upgrade
-        : firstQualifiedByKeys(markets, preference.filter((key) => key !== primaryMarket.key));
+      const replacement = upgrade?.qualified ? upgrade : null;
       if (replacement) {
         oddsPolicy = {
           applied: true,
@@ -730,13 +720,25 @@ export function selectPapaSenseV2(markets, input, classification) {
             oddsPolicy
           }
         };
+      } else {
+        oddsPolicy = {
+          applied: true,
+          observedPrice: price,
+          reason: `Team Over 0.5 was priced at ${price.toFixed(2)}, below the 1.20 value floor, and the same team's Over 1.5 did not qualify, so no forced upgrade was made.`
+        };
+        primaryMarket = null;
       }
     }
   }
 
   if (!primaryMarket || engineConfidence(primaryMarket, "primary") < 0.6) {
+    const primaryNoPick = noPick("primary", "Papa's Pick", "No market passed the story, sample and confidence gates. Papa will not force a direction.", classification);
+    primaryNoPick.marketPolicy = {
+      ...(primaryNoPick.marketPolicy || {}),
+      oddsPolicy
+    };
     return {
-      primary: noPick("primary", "Papa's Pick", "No market passed the story, sample and confidence gates. Papa will not force a direction.", classification),
+      primary: primaryNoPick,
       safer: noPick("safer", "Safer", "No separate safer market passed because Papa did not publish a base pick.", classification),
       aggressive: noPick("aggressive", "Aggressive", "No aggressive upgrade passed because Papa did not publish a base pick.", classification),
       venue: selectVenue(markets, input, classification)

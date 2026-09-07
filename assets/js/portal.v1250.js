@@ -428,11 +428,39 @@
   }
 
   function leagueClimateMarkup(item) {
-    return "";
+    const climate = item?.leagueScoring || item?.engine?.leagueScoring || null;
+    const label = String(climate?.label || "").toLowerCase();
+    if (!['high', 'low'].includes(label)) return "";
+    const direction = String(climate?.trend?.direction || climate?.direction || "").toLowerCase();
+    const text = label === "high" ? "HIGH SCORING" : "LOW SCORING";
+    return `<span class="league-climate-chip ${escapeHtml(label)} ${escapeHtml(direction)}">${text}</span>`;
   }
 
   function riskFlagMarkup(item, pick = null, extraClass = "") {
-    return "";
+    const raw = [
+      ...(item?.redFlags || []),
+      item?.earlySeason,
+      item?.topFiveClash,
+      item?.leagueGoalsFlag,
+      pick?.leagueGoalsFlag,
+      ...(pick?.redFlags || [])
+    ].filter(Boolean);
+    const seen = new Set();
+    const flags = raw.filter((flag) => {
+      const key = typeof flag === "string"
+        ? flag
+        : flag.code || flag.label || flag.reason || JSON.stringify(flag);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    if (!flags.length) return "";
+    const classes = ["early-season-flag", extraClass].filter(Boolean).join(" ");
+    return flags.slice(0, 3).map((flag) => {
+      const label = typeof flag === "string" ? flag : flag.label || flag.code || "RED FLAG";
+      const reason = typeof flag === "string" ? flag : flag.reason || label;
+      return `<span class="${escapeHtml(classes)}" title="${escapeHtml(reason)}">🚩 ${escapeHtml(label)}</span>`;
+    }).join("");
   }
 
   function hasRedFlag(item, pick = null) {
@@ -662,9 +690,10 @@
     const market = hubPickUnavailable(pick) ? "" : (pick?.market || "");
     const score = "";
     const disabled = !pick ? "disabled" : "";
-    return `<button class="hub-engine-row engine-${escapeHtml(key)} ${escapeHtml(state.className)}" data-hub-engine="${escapeHtml(key)}" data-fixture-id="${escapeHtml(item.fixtureId)}" type="button" ${disabled}>
+    const flagged = hasRedFlag(item, pick);
+    return `<button class="hub-engine-row engine-${escapeHtml(key)} ${escapeHtml(state.className)} ${flagged ? "flagged" : ""}" data-hub-engine="${escapeHtml(key)}" data-fixture-id="${escapeHtml(item.fixtureId)}" type="button" ${disabled}>
       <span class="hub-engine-name"><i></i><b>${escapeHtml(meta.name)}</b></span>
-      <span class="hub-engine-pick"><strong>${escapeHtml(selection)}</strong><small>${escapeHtml(market)}</small></span>
+      <span class="hub-engine-pick"><strong>${escapeHtml(selection)}</strong><small>${escapeHtml(market)}</small>${riskFlagMarkup(item, pick, "chip")}</span>
     </button>`;
   }
 
@@ -985,8 +1014,12 @@
           <div class="pick-team">${logoMarkup(item.home)}<span>${escapeHtml(item.home?.name || "Home")}</span></div>
           <div class="pick-team">${logoMarkup(item.away)}<span>${escapeHtml(item.away?.name || "Away")}</span></div>
         </div>
-        <span class="pick-badge consensus-grade">Banker</span>
+        <div class="consensus-grade-row">
+          <span class="pick-badge consensus-grade">${escapeHtml(item.papaLockGrade || "Banker")}</span>
+          <strong>${Number(item.confirmationFamilies || 0)} confirmation families</strong>
+        </div>
         <strong class="pick-selection">${escapeHtml(item.selection)}</strong>
+        <div class="banker-votes">${bankerEngineChips(item)}</div>
         <div class="pick-bottom">
           <span>${escapeHtml(item.market || "")}</span>
         </div>
@@ -1004,7 +1037,13 @@
       <div class="explanation-box consensus-verdict">
         <span class="eyebrow">${escapeHtml(item.market || "Pick")}</span>
         <h3>${escapeHtml(item.selection)}</h3>
-      </div>`;
+        <p>${escapeHtml(item.publicExplanation || item.explanation || "PapaLock's independent confirmation families agree on this protected market.")}</p>
+      </div>
+      <section class="consensus-dialog-section">
+        <h3>Confirmation families</h3>
+        <div class="dialog-engine-votes">${bankerEngineChips(item)}</div>
+      </section>
+      ${(item.reasons || []).length ? `<section class="consensus-dialog-section"><h3>Audit passed</h3><ul>${item.reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul></section>` : ""}`;
   }
 
   function renderConsensusBankers(payload) {
