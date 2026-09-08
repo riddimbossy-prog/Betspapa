@@ -15,6 +15,7 @@ import { getErrorDetails, HttpError } from "./utils/errors.js";
 import { PAPALOCK_VERSION } from "./engine/papaLockBankerEngine.js";
 import { TOTAL_GOALS_BANKER_VERSION } from "./engine/totalGoalsBankerEngine.js";
 import { FLASH_ENGINE_VERSION } from "./engine/flashCoverEngine.js";
+import { PPG_ENGINE_VERSION } from "./engine/ppgEngine.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4173;
@@ -114,6 +115,7 @@ app.get("/", (_req, res) => {
     totalGoalsBankers: "/api/goals-bankers/today",
     winsBankers: "/api/wins-bankers/today",
     flash: "/api/flash/today",
+    ppg: "/api/ppg/today",
     legacyBankersByEngine: "/api/bankers/by-engine",
     resultsIntelligence: "/api/results/intelligence",
     adminDiagnostics: "/api/admin/diagnostics"
@@ -132,6 +134,7 @@ app.get("/api/health", async (_req, res) => {
       papaLockEngineVersion: PAPALOCK_VERSION,
       totalGoalsBankerVersion: TOTAL_GOALS_BANKER_VERSION,
       flashEngineVersion: FLASH_ENGINE_VERSION,
+      ppgEngineVersion: PPG_ENGINE_VERSION,
       database: "connected",
       leaguesCount: database.leaguesCount,
       providerKeyConfigured: Boolean(

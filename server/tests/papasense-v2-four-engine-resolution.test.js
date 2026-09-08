@@ -85,7 +85,7 @@ const stableHome = robustFixture({
 });
 
 test("v1.25.0 retains PapaSense v2.1 and uses only normal FT league history", () => {
-  assert.equal(SERVICE_VERSION, "1.25.3");
+  assert.equal(SERVICE_VERSION, "1.26.0");
   assert.equal(ENGINE_VERSION, "papasense-v2.1.2-splitform");
   assert.deepEqual([...FINISHED_PROFILE_STATUSES], ["FT"]);
 });

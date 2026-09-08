@@ -15,6 +15,13 @@
       flashLink.textContent = "Flash";
       desktopNav.prepend(flashLink);
     }
+    if (desktopNav && !desktopNav.querySelector('a[href$="ppg.html"]')) {
+      const ppgLink = document.createElement("a");
+      ppgLink.href = `${root}ppg.html`;
+      ppgLink.textContent = "PPG";
+      const liveLink = desktopNav.querySelector('a[href$="live-fixtures.html"]');
+      desktopNav.insertBefore(ppgLink, liveLink || null);
+    }
 
     const active = (() => {
       if (!file || file === "index.html" || file === "flash.html") return "flash";
@@ -57,6 +64,7 @@
             <a href="${link("bankers.html")}"><strong>Bankers</strong><small>Strong consensus selections</small></a>
             <a href="${link("goals-bankers.html")}"><strong>Total Goals Banker</strong><small>League patterns at 1.20–1.55</small></a>
             <a href="${link("wins-bankers.html")}"><strong>Wins Banker</strong><small>Top-4 favourites at 1.19–1.55</small></a>
+            <a href="${link("ppg.html")}"><strong>PPG</strong><small>Top 3 and bottom 3 split-table picks</small></a>
             <a href="${link("results-intelligence.html")}"><strong>Results</strong><small>Settled picks and engine performance</small></a>
             <a href="${link("live-fixtures.html")}"><strong>Live & Fixtures</strong><small>Fixtures, live scores and settlement</small></a>
             <a href="${link("venue-pattern.html")}"><strong>Venue Pattern</strong><small>Home venue against away behaviour</small></a>
