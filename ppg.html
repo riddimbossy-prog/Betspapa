@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+<meta content="#101827" name="theme-color"/>
+<meta content="PPG uses split home and away points-per-game tables with exact SportyBet odds." name="description"/>
+<title>PPG — BetsPapa</title>
+<link href="assets/images/favicon-64.png" rel="icon" type="image/png"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="assets/css/country-flags.v1175.css" rel="stylesheet"/>
+<link href="assets/css/portal.v1220.css" rel="stylesheet"/>
+<link href="assets/css/mobile-nav.v1240.css" rel="stylesheet"/>
+<link href="/assets/css/pwa.v1160.css" rel="stylesheet"/>
+<link href="/assets/css/ui.v151.css" rel="stylesheet"/>
+<link href="assets/css/ppg.v1264.css" rel="stylesheet"/>
+<script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="default" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="BetsPapa" name="apple-mobile-web-app-title"/>
+<link href="/manifest.webmanifest?v=1264" rel="manifest"/>
+<link href="/assets/images/pwa-brand-apple-180.png" rel="apple-touch-icon" sizes="180x180"/>
+<link href="assets/css/pitch-2026.css?v=2026" rel="stylesheet"/>
+</head>
+<body data-page="ppg">
+<div aria-live="polite" class="pwa-launch-splash" id="pwaSplash" role="status">
+<span class="pwa-splash-accessible">Launching BetsPapa PPG</span>
+</div>
+<header class="portal-header">
+<a class="portal-brand" href="index.html">
+<img alt="" src="assets/images/betspapa-papa-mark.png"/>
+<span><strong>BETS<span>PAPA</span></strong><em class="year-badge">2026</em><small>PAPA KNOWS THE GAME</small></span>
+</a>
+<nav aria-label="Primary navigation" class="portal-nav" id="portalNav"><a href="index.html">Flash</a><a href="papas-pick.html">Papa’s Pick</a><a href="bankers.html">Bankers</a><a href="goals-bankers.html">Goals Banker</a><a href="wins-bankers.html">Wins Banker</a><a aria-current="page" class="active" href="ppg.html">PPG</a><a href="athena.html">Athena</a><a href="live-fixtures.html">Live &amp; Fixtures</a><a href="results-intelligence.html">Results</a><a href="responsible.html">More</a></nav>
+<button aria-controls="portalNav" aria-expanded="false" aria-label="Open navigation" class="portal-menu" id="portalMenu" type="button">☰</button>
+</header>
+<main class="portal-main ppg-main">
+<section class="ppg-hero" aria-labelledby="ppgTitle">
+<div>
+<span class="eyebrow">BetsPapa · SportyBet only</span>
+<h1 id="ppgTitle">PPG</h1>
+<p>Split home and away points-per-game intelligence.</p>
+</div>
+<div class="ppg-hero-rule"><strong>TOP 3</strong><span>vs</span><strong>BOTTOM 3</strong></div>
+</section>
+<section class="ppg-gates" aria-label="PPG qualification rules">
+<span>Win: strong ≥ 2.00 PPG</span>
+<span>Weak: &lt; 1.00 PPG</span>
+<span>Favourite ≤ 1.55</span>
+<span>Underdog ≥ 5.00</span>
+<span>Totals: U2.5 / O1.5</span>
+</section>
+<div class="status-strip" id="portalStatus"><span>Loading PPG…</span><small></small></div>
+<div class="portal-toolbar ppg-toolbar">
+<label><span>Date</span><input id="dateFilter" type="date"/></label>
+<label><span>Market</span><select id="ppgMarketFilter"><option value="">All PPG markets</option></select></label>
+<label><span>Search</span><input id="ppgSearchFilter" placeholder="Team, league or market" type="search"/></label>
+<button id="refreshButton" type="button">Run PPG</button>
+</div>
+<section class="metric-row" id="portalMetrics"></section>
+<div class="section-title ppg-section-title">
+<div><span>Qualified board</span><h2>PPG picks</h2></div>
+<p>Only top-three and bottom-three split-table matchups can appear.</p>
+</div>
+<section class="ppg-league-map" id="ppgLeagueMap"></section>
+<div id="portalContent"></div>
+<section class="ppg-method">
+<div><b>01</b><strong>Split the table</strong><p>Home teams are ranked only on home results; away teams only on away results.</p></div>
+<div><b>02</b><strong>Find the extremes</strong><p>The engine keeps the top three and bottom three after a five-match minimum.</p></div>
+<div><b>03</b><strong>Fire one market</strong><p>PPG structure selects a win, Under 2.5 or Over 1.5, then exact SportyBet odds must exist.</p></div>
+</section>
+<footer class="portal-footer">
+<span>Sports analytics only. Predictions are not guarantees. 18+.</span>
+<div><a href="index.html">Flash</a><a href="responsible.html">Responsible Use</a></div>
+</footer>
+</main>
+<dialog class="portal-dialog" id="portalDialog">
+<div class="dialog-shell">
+<button aria-label="Close" class="dialog-close" id="portalDialogClose" type="button">×</button>
+<div id="portalDialogContent"></div>
+</div>
+</dialog>
+<script src="assets/js/country-flags.v1175.js"></script>
+<script src="assets/js/ppg.v1264.js"></script>
+<script src="assets/js/mobile-nav.v1240.js?v=1264"></script>
+<script src="/assets/js/pwa.v1160.js"></script>
+<script src="/assets/js/ui.v1170.js"></script>
+</body>
+</html>

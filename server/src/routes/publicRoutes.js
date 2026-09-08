@@ -27,6 +27,7 @@ import { getPapaLockHistory, getPapaLockPicks, invalidatePapaLockCache } from ".
 import { getTotalGoalsBankers } from "../services/totalGoalsBankerService.js";
 import { getWinsBankers } from "../services/winsBankerService.js";
 import { getFlashPicks } from "../services/flashPickService.js";
+import { getPpgPicks } from "../services/ppgPickService.js";
 import { toPublicPapaLockSlate } from "../engine/papaLockBankerEngine.js";
 import { applyLeagueScoringGuard } from "../engine/leagueScoringPolicy.js";
 import { applyRedFlagsToPick, collectRedFlags } from "../services/fixtureRiskService.js";
@@ -527,6 +528,23 @@ publicRouter.get("/flash/today", async (req, res, next) => {
     res.json({
       ...slate,
       liveRefresh: { refreshed: false, skipped: true, reason: "Flash Cover IQ prepared reader" }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+publicRouter.get("/ppg/today", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.query.date || todayUtc());
+    const force = ["1", "true", "force", "reload"].includes(
+      String(req.query.force || "").toLowerCase()
+    );
+    const slate = await getPpgPicks(getSupabaseAdmin(), date, { force });
+    setPublicCache(res, slate.cached ? 60 : 20, 180);
+    res.json({
+      ...slate,
+      liveRefresh: { refreshed: false, skipped: true, reason: "PPG SportyBet split-table reader" }
     });
   } catch (error) {
     next(error);
