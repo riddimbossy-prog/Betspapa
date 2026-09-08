@@ -10,7 +10,7 @@ const root = resolve(process.cwd(), "..");
 const source = (path) => readFile(resolve(root, path), "utf8");
 
 test("v1.25 exposes PapaLock as the dedicated public Banker engine", async () => {
-  assert.equal(SERVICE_VERSION, "1.25.0");
+  assert.equal(SERVICE_VERSION, "1.25.1");
   assert.equal(PAPALOCK_VERSION, "papalock-v1.1.0");
   const routes = await source("server/src/routes/publicRoutes.js");
   assert.match(routes, /getPapaLockPicks/);
