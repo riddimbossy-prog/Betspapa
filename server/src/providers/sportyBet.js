@@ -7,6 +7,12 @@ const KICKOFF_WINDOW_MS = 18 * 60 * 60 * 1000;
 const cache = { loadedAt: 0, events: [] };
 const eventDetailCache = new Map();
 
+const SYNTHETIC_ID_RANGES = Object.freeze({
+  fixture: { base: 1_000_000_000, span: 100_000_000 },
+  league: { base: 1_200_000_000, span: 100_000_000 },
+  team: { base: 1_400_000_000, span: 300_000_000 }
+});
+
 const FLASH_MARKET_NAMES = new Map([
   ["1st half result or match result", "first-half-or-match"],
   ["home team or over 2.5", "home-or-over-25"],
@@ -187,12 +193,33 @@ function eventKickoff(event) {
   return Number.isFinite(stamp) ? stamp : null;
 }
 
+function stableSyntheticId(namespace, value) {
+  const range = SYNTHETIC_ID_RANGES[namespace];
+  if (!range) throw new Error(`Unknown SportyBet ID namespace: ${namespace}`);
+  let hash = 2166136261;
+  for (const character of String(value || "unknown")) {
+    hash ^= character.codePointAt(0);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return -(range.base + (hash % range.span));
+}
+
+function seasonForKickoff(kickoffMs) {
+  const kickoff = new Date(kickoffMs);
+  const year = kickoff.getUTCFullYear();
+  return kickoff.getUTCMonth() >= 6 ? year : year - 1;
+}
+
 export function sportyEventRecord(event, tournamentName = "") {
   const odds = parseTotals(event);
+  const tournament = event.sport?.category?.tournament || {};
   return {
     eventId: event.eventId,
-    tournament: tournamentName || event.sport?.category?.tournament?.name || null,
+    tournamentId: tournament.id || event.tournamentId || null,
+    tournament: tournamentName || tournament.name || null,
     country: event.sport?.category?.name || null,
+    homeTeamId: event.homeTeamId || event.homeTeam?.id || null,
+    awayTeamId: event.awayTeamId || event.awayTeam?.id || null,
     home: event.homeTeamName,
     away: event.awayTeamName,
     homeKey: normalizeTeamName(event.homeTeamName),
@@ -203,6 +230,59 @@ export function sportyEventRecord(event, tournamentName = "") {
       ? `https://www.sportybet.com/ng/sport/football/event/${encodeURIComponent(event.eventId)}`
       : "https://www.sportybet.com/ng/sport/football"
   };
+}
+
+/** Convert SportyBet's upcoming catalogue into the provider shape used by syncService. */
+export function sportyBetProviderFixtures(events = [], date) {
+  const records = new Map();
+  for (const event of events || []) {
+    if (!event?.eventId || !event?.home || !event?.away || !Number.isFinite(event?.kickoffMs)) continue;
+    const kickoff = new Date(event.kickoffMs);
+    if (Number.isNaN(kickoff.getTime()) || kickoff.toISOString().slice(0, 10) !== date) continue;
+
+    const leagueIdentity = event.tournamentId || `${event.country || ""}:${event.tournament || "Unknown League"}`;
+    const homeIdentity = event.homeTeamId || `${event.country || ""}:${normalizeTeamName(event.home)}`;
+    const awayIdentity = event.awayTeamId || `${event.country || ""}:${normalizeTeamName(event.away)}`;
+    const season = seasonForKickoff(event.kickoffMs);
+    records.set(String(event.eventId), {
+      source: "sportybet",
+      sportyBetEventId: String(event.eventId),
+      fixture: {
+        id: stableSyntheticId("fixture", event.eventId),
+        date: kickoff.toISOString(),
+        status: { short: "NS" },
+        venue: { name: null }
+      },
+      league: {
+        id: stableSyntheticId("league", leagueIdentity),
+        name: event.tournament || "Unknown League",
+        country: event.country || null,
+        season,
+        logo: null,
+        // Explicit names such as Cup and Friendly are still rejected by the
+        // competition policy. Ordinary SportyBet tournaments are league play.
+        type: "League"
+      },
+      teams: {
+        home: {
+          id: stableSyntheticId("team", homeIdentity),
+          name: event.home,
+          logo: null
+        },
+        away: {
+          id: stableSyntheticId("team", awayIdentity),
+          name: event.away,
+          logo: null
+        }
+      },
+      goals: { home: null, away: null },
+      score: {
+        halftime: { home: null, away: null },
+        fulltime: { home: null, away: null }
+      }
+    });
+  }
+  return [...records.values()];
 }
 
 function flatten(payload) {
@@ -277,19 +357,26 @@ export async function loadSportyBetEvents({ force = false } = {}) {
     return cache.events;
   }
   const pages = [];
+  let successfulPages = 0;
+  let failedPages = 0;
   for (let page = 1; page <= MAX_PAGES; page += 3) {
     const chunk = [page, page + 1, page + 2].filter((value) => value <= MAX_PAGES);
     const results = await Promise.allSettled(chunk.map((num) => fetchPage(num)));
     let empty = 0;
     for (const result of results) {
-      if (result.status === "fulfilled" && result.value.length) {
-        pages.push(...result.value);
+      if (result.status === "fulfilled") {
+        successfulPages += 1;
+        if (result.value.length) pages.push(...result.value);
       } else {
+        failedPages += 1;
         empty += 1;
       }
     }
     if (empty === chunk.length) break;
     await sleep(80);
+  }
+  if (!successfulPages && failedPages) {
+    throw new Error("SportyBet upcoming catalogue is unavailable");
   }
   cache.events = pages;
   cache.loadedAt = Date.now();

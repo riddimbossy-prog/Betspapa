@@ -1,11 +1,134 @@
 import { fetchFixturesByDate, fetchLeagueFixtures } from "../providers/apiFootball.js";
+import {
+  loadSportyBetEvents,
+  nameSimilarity,
+  normalizeTeamName,
+  sportyBetProviderFixtures
+} from "../providers/sportyBet.js";
 import { resolveProviderCompetitionTypes } from "./competitionMetadataService.js";
-import { throwIfSupabaseError } from "./supabaseHelpers.js";
+import { fetchAllRows, throwIfSupabaseError } from "./supabaseHelpers.js";
 
 function uniqueBy(items, keyFn) {
   const map = new Map();
   for (const item of items) map.set(keyFn(item), item);
   return [...map.values()];
+}
+
+function normalizedCountry(value) {
+  return String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function selectNameMatch(rows, name, country = null) {
+  const target = normalizeTeamName(name);
+  if (!target) return null;
+  const countryKey = normalizedCountry(country);
+  const candidates = (rows || []).filter((row) => Number.isFinite(Number(row.external_team_id)));
+  const exact = candidates.filter((row) => normalizeTeamName(row.name) === target);
+  if (exact.length) {
+    return exact.find((row) => countryKey && normalizedCountry(row.country) === countryKey) || exact[0];
+  }
+
+  const ranked = candidates
+    .map((row) => ({
+      row,
+      similarity: nameSimilarity(name, row.name),
+      sameCountry: Boolean(countryKey && normalizedCountry(row.country) === countryKey)
+    }))
+    .filter((entry) => entry.similarity >= 0.92)
+    .sort((left, right) =>
+      Number(right.sameCountry) - Number(left.sameCountry) || right.similarity - left.similarity
+    );
+  if (!ranked.length) return null;
+  if (ranked[1] && ranked[0].similarity === ranked[1].similarity && ranked[0].sameCountry === ranked[1].sameCountry) {
+    return null;
+  }
+  return ranked[0].row;
+}
+
+function selectLeagueMatch(rows, league) {
+  const target = normalizeTeamName(league?.name);
+  const countryKey = normalizedCountry(league?.country);
+  const season = Number(league?.season);
+  const matches = (rows || []).filter((row) =>
+    Number(row.season) === season &&
+    normalizeTeamName(row.name) === target
+  );
+  return matches.find((row) => countryKey && normalizedCountry(row.country) === countryKey) || matches[0] || null;
+}
+
+function storedProviderType(value) {
+  if (value === "LEAGUE") return "League";
+  if (value === "CUP") return "Cup";
+  if (value === "FRIENDLY") return "Friendly";
+  return null;
+}
+
+/** Reuse API-Football identities already in Supabase so SportyBet fixtures retain historical profiles. */
+export function alignSportyBetReferences(providerItems, { teams = [], leagues = [] } = {}) {
+  let matchedTeams = 0;
+  let matchedLeagues = 0;
+  const response = (providerItems || []).map((item) => {
+    const home = selectNameMatch(teams, item?.teams?.home?.name, item?.league?.country);
+    const away = selectNameMatch(teams, item?.teams?.away?.name, item?.league?.country);
+    const league = selectLeagueMatch(leagues, item?.league);
+    if (home) matchedTeams += 1;
+    if (away) matchedTeams += 1;
+    if (league) matchedLeagues += 1;
+    return {
+      ...item,
+      league: league
+        ? {
+            ...item.league,
+            id: Number(league.external_league_id),
+            name: league.name || item.league.name,
+            country: league.country || item.league.country,
+            logo: league.logo_url || item.league.logo,
+            type: storedProviderType(league.competition_type) || item.league.type
+          }
+        : item.league,
+      teams: {
+        home: home
+          ? {
+              ...item.teams.home,
+              id: Number(home.external_team_id),
+              name: home.name || item.teams.home.name,
+              logo: home.logo_url || item.teams.home.logo
+            }
+          : item.teams.home,
+        away: away
+          ? {
+              ...item.teams.away,
+              id: Number(away.external_team_id),
+              name: away.name || item.teams.away.name,
+              logo: away.logo_url || item.teams.away.logo
+            }
+          : item.teams.away
+      }
+    };
+  });
+  return { response, matchedTeams, matchedLeagues };
+}
+
+async function loadStoredReferences(supabase, providerItems) {
+  const seasons = [...new Set(providerItems.map((item) => Number(item?.league?.season)).filter(Number.isFinite))];
+  const [teams, leagues] = await Promise.all([
+    fetchAllRows(() =>
+      supabase
+        .from("teams")
+        .select("id,external_team_id,name,country,logo_url")
+        .order("id", { ascending: true })
+    ),
+    seasons.length
+      ? fetchAllRows(() =>
+          supabase
+            .from("leagues")
+            .select("id,external_league_id,season,name,country,logo_url,competition_type")
+            .in("season", seasons)
+            .order("id", { ascending: true })
+        )
+      : []
+  ]);
+  return { teams, leagues };
 }
 
 function normalizeProviderFixture(item) {
@@ -165,9 +288,47 @@ export async function persistProviderFixtures(supabase, providerItems) {
 }
 
 export async function syncDate(supabase, date) {
-  const provider = await fetchFixturesByDate(date);
-  const persisted = await persistProviderFixtures(supabase, provider.response);
-  return { date, providerResults: provider.results, quota: provider.quota, ...persisted };
+  let sportyWarning = null;
+  try {
+    const events = await loadSportyBetEvents({ force: true });
+    const catalogue = sportyBetProviderFixtures(events, date);
+    if (catalogue.length) {
+      const references = await loadStoredReferences(supabase, catalogue);
+      const aligned = alignSportyBetReferences(catalogue, references);
+      const persisted = await persistProviderFixtures(supabase, aligned.response);
+      return {
+        date,
+        source: "sportybet",
+        providerResults: catalogue.length,
+        quota: null,
+        referenceMatches: {
+          teams: aligned.matchedTeams,
+          leagues: aligned.matchedLeagues
+        },
+        ...persisted
+      };
+    }
+    sportyWarning = `SportyBet returned no fixtures for ${date}`;
+  } catch (error) {
+    sportyWarning = error?.message || String(error);
+  }
+
+  try {
+    const provider = await fetchFixturesByDate(date);
+    const persisted = await persistProviderFixtures(supabase, provider.response);
+    return {
+      date,
+      source: "api-football",
+      fallbackReason: sportyWarning,
+      providerResults: provider.results,
+      quota: provider.quota,
+      ...persisted
+    };
+  } catch (error) {
+    throw new Error(
+      `SportyBet catalogue failed (${sportyWarning}); API-Football fallback failed (${error?.message || String(error)})`
+    );
+  }
 }
 
 export async function syncLeagueHistory(supabase, input) {

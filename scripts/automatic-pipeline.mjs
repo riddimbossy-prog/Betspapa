@@ -136,8 +136,13 @@ async function syncDate(date) {
   });
   const result = payload.result || {};
   console.log(
-    `Provider results: ${result.providerResults || 0} | Imported: ${result.imported || 0}`
+    `Provider: ${result.source || "unknown"} | Results: ${result.providerResults || 0} | Imported: ${result.imported || 0}`
   );
+  if (result.referenceMatches) {
+    console.log(
+      `History identity matches: ${result.referenceMatches.teams || 0} teams | ${result.referenceMatches.leagues || 0} leagues`
+    );
+  }
   if (result.quota) {
     console.log(
       `API quota remaining: ${result.quota.dailyRemaining ?? "unknown"}`

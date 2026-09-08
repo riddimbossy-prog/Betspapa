@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.25.0",
+  "version": "1.25.1",
   "private": true,
-  "description": "BetsPapa v1.25.0 adds the PapaLock Banker Engine with independent family confirmation, strict market audits and prepared banker settlement.",
+  "description": "BetsPapa v1.25.1 uses SportyBet as the primary fixture catalogue while preserving stored statistical identities.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
