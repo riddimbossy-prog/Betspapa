@@ -5,6 +5,7 @@ import {
   sportyBetProviderFixtures,
   sportyEventRecord
 } from "../src/providers/sportyBet.js";
+import { historyPackage } from "../src/services/flashPickService.js";
 import { alignSportyBetReferences } from "../src/services/syncService.js";
 
 const kickoff = Date.parse("2026-09-08T15:00:00.000Z");
@@ -109,4 +110,29 @@ test("unmatched SportyBet identities stay isolated from API-Football ID space", 
   assert.equal(aligned.matchedLeagues, 0);
   assert.ok(aligned.response[0].teams.home.id < -1_000_000_000);
   assert.ok(aligned.response[0].league.id < -1_000_000_000);
+});
+
+test("the Flash history pack carries trusted same-league results across seasons", () => {
+  const fixture = {
+    kickoff: "2026-09-08T15:00:00.000Z",
+    season: 2026,
+    league: { id: 99, external_league_id: 39, season: 2026 },
+    home: { id: 11 },
+    away: { id: 12 }
+  };
+  const rows = Array.from({ length: 5 }, (_value, index) => ({
+    league_id: 7,
+    season: 2025,
+    fixture_date: `2026-0${index + 1}-01T12:00:00.000Z`,
+    home_team_id: 11,
+    away_team_id: 20 + index,
+    halftime_home: 1,
+    halftime_away: 0,
+    fulltime_home: 2,
+    fulltime_away: 1,
+    status: "FT"
+  }));
+  const history = historyPackage(rows, fixture, new Map([[39, new Set([7, 99])]]));
+  assert.equal(history.homeGames.length, 5);
+  assert.equal(history.homeGames[0].ftHome, 2);
 });

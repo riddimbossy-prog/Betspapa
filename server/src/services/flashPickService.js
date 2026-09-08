@@ -35,16 +35,16 @@ function gameRow(row, reverse = false) {
   };
 }
 
-function historyPackage(rows, fixture) {
+export function historyPackage(rows, fixture, leagueIdsByExternal = new Map()) {
   const leagueId = Number(fixture.league?.id);
-  const season = Number(fixture.season ?? fixture.league?.season);
+  const externalLeagueId = Number(fixture.league?.external_league_id);
+  const allowedLeagueIds = leagueIdsByExternal.get(externalLeagueId) || new Set([leagueId]);
   const homeId = Number(fixture.home?.id);
   const awayId = Number(fixture.away?.id);
   const cutoff = new Date(fixture.kickoff).getTime();
   const relevant = (rows || [])
     .filter((row) =>
-      Number(row.league_id) === leagueId &&
-      Number(row.season) === season &&
+      allowedLeagueIds.has(Number(row.league_id)) &&
       new Date(row.fixture_date).getTime() < cutoff &&
       completeGame(row)
     )
@@ -82,19 +82,41 @@ function historyPackage(rows, fixture) {
 }
 
 async function loadHistoryRows(supabase, fixtures) {
-  const leagueIds = [...new Set(fixtures.map((fixture) => fixture.league?.id).filter(Boolean))];
-  const seasons = [...new Set(fixtures.map((fixture) =>
-    fixture.season ?? fixture.league?.season
-  ).filter((value) => value != null))];
-  if (!leagueIds.length || !seasons.length) return [];
-  return fetchAllRows(() =>
+  const externalLeagueIds = [...new Set(fixtures
+    .map((fixture) => Number(fixture.league?.external_league_id))
+    .filter(Number.isFinite))];
+  if (!externalLeagueIds.length) return { rows: [], leagueIdsByExternal: new Map() };
+
+  const leagueRows = await fetchAllRows(() =>
+    supabase
+      .from("leagues")
+      .select("id,external_league_id,season")
+      .in("external_league_id", externalLeagueIds)
+      .order("season", { ascending: false })
+  );
+  const leagueIdsByExternal = new Map();
+  for (const league of leagueRows) {
+    const external = Number(league.external_league_id);
+    if (!leagueIdsByExternal.has(external)) leagueIdsByExternal.set(external, new Set());
+    leagueIdsByExternal.get(external).add(Number(league.id));
+  }
+  const leagueIds = leagueRows.map((league) => league.id).filter(Boolean);
+  if (!leagueIds.length) return { rows: [], leagueIdsByExternal };
+
+  const kickoffs = fixtures.map((fixture) => new Date(fixture.kickoff).getTime()).filter(Number.isFinite);
+  const latestKickoff = Math.max(...kickoffs);
+  const historyStart = new Date(latestKickoff - 730 * 24 * 60 * 60 * 1000).toISOString();
+  const historyEnd = new Date(latestKickoff).toISOString();
+  const rows = await fetchAllRows(() =>
     supabase
       .from("fixtures")
       .select("id,league_id,season,fixture_date,home_team_id,away_team_id,fulltime_home,fulltime_away,halftime_home,halftime_away,status")
       .in("league_id", leagueIds)
-      .in("season", seasons)
+      .gte("fixture_date", historyStart)
+      .lt("fixture_date", historyEnd)
       .eq("status", "FT")
   );
+  return { rows, leagueIdsByExternal };
 }
 
 function publicPick(fixture, pick, odds, risk) {
@@ -158,11 +180,14 @@ async function buildFlashPicks(supabase, date, { force = false } = {}) {
     if (fixture.away?.id) teamMap.set(Number(fixture.away.id), fixture.away);
   }
 
-  const [rows, riskPack] = await Promise.all([
+  const [historyData, riskPack] = await Promise.all([
     loadHistoryRows(supabase, fixtures),
     loadFixtureRiskPack(supabase, rawFixtures, teamMap)
   ]);
-  const history = new Map(fixtures.map((fixture) => [Number(fixture.id), historyPackage(rows, fixture)]));
+  const history = new Map(fixtures.map((fixture) => [
+    Number(fixture.id),
+    historyPackage(historyData.rows, fixture, historyData.leagueIdsByExternal)
+  ]));
   const oddsEligible = fixtures.filter((fixture) => {
     const pack = history.get(Number(fixture.id));
     return pack?.homeGames?.length >= 5 && pack?.awayGames?.length >= 5;
