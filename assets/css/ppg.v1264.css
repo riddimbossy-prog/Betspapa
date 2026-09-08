@@ -90,7 +90,7 @@ body[data-page="ppg"] .diagnostic-card:first-child { background: var(--ppg-lime)
 .ppg-method { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 28px; }
 .ppg-method > div { padding: 18px; border-radius: 18px; background: #fff; }
 .ppg-method b { display: block; color: var(--ppg-blue); font: 800 12px "Space Grotesk", sans-serif; }
-.ppg-method strong { display: block; margin: 6px 0; }
+.ppg-method strong { display: block; margin: 6px 0; color: var(--ppg-ink); }
 .ppg-method p { margin: 0; color: var(--ppg-muted); font-size: 13px; line-height: 1.5; }
 
 .ppg-sheet { color: var(--ppg-ink); }
