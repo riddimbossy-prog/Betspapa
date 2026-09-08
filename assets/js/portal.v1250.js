@@ -1569,7 +1569,7 @@
     if (!silent) setStatus("Flash is testing all 15 cover routes…", "One selection per fixture, or SKIP");
     const forceQuery = force ? "&force=1" : "";
     let payload = await fetchApi(`/api/flash/today?date=${encodeURIComponent(date)}${forceQuery}`, { cacheMode: force ? "no-store" : "default" });
-    if (!(payload.reviewedFixtures || 0) && payload.rolledForward && payload.date) dateInput.value = payload.date;
+    if (payload.rolledForward && payload.date) dateInput.value = payload.date;
     renderFlash(payload);
     setStatus(
       `${payload.pickCount || 0} Flash selection${Number(payload.pickCount) === 1 ? "" : "s"}`,

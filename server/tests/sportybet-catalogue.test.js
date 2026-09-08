@@ -5,7 +5,7 @@ import {
   sportyBetProviderFixtures,
   sportyEventRecord
 } from "../src/providers/sportyBet.js";
-import { historyPackage } from "../src/services/flashPickService.js";
+import { chooseFlashBoard, historyPackage } from "../src/services/flashPickService.js";
 import { alignSportyBetReferences } from "../src/services/syncService.js";
 
 const kickoff = Date.parse("2026-09-08T15:00:00.000Z");
@@ -135,4 +135,17 @@ test("the Flash history pack carries trusted same-league results across seasons"
   const history = historyPackage(rows, fixture, new Map([[39, new Set([7, 99])]]));
   assert.equal(history.homeGames.length, 5);
   assert.equal(history.homeGames[0].ftHome, 2);
+});
+
+test("Flash rolls from a fully skipped today board to tomorrow's qualified slate", () => {
+  const today = { date: "2026-09-08", reviewedFixtures: 73, pickCount: 0, picks: [] };
+  const tomorrow = { date: "2026-09-09", reviewedFixtures: 54, pickCount: 1, picks: [{ fixtureId: 10 }] };
+  assert.deepEqual(chooseFlashBoard(today, tomorrow, today.date), {
+    ...tomorrow,
+    requestedDate: today.date,
+    rolledForward: true
+  });
+
+  const validToday = { ...today, pickCount: 1, picks: [{ fixtureId: 9 }] };
+  assert.equal(chooseFlashBoard(validToday, tomorrow, today.date).date, today.date);
 });

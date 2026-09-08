@@ -1,5 +1,5 @@
 export const SERVICE_NAME = "BetsPapa Prediction API";
-export const SERVICE_VERSION = "1.25.2";
+export const SERVICE_VERSION = "1.25.3";
 export const ENGINE_VERSION = "papasense-v2.1.2-splitform";
 export const ATHENA_ENGINE_VERSION = "athena-v3.1.0-specialist-half-market-guards";
 // Backward-compatible alias for older diagnostics clients.

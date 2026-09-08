@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.25.2",
+  "version": "1.25.3",
   "private": true,
-  "description": "BetsPapa v1.25.2 feeds upcoming fixtures from SportyBet and carries trusted same-league history across seasons.",
+  "description": "BetsPapa v1.25.3 serves the next qualified SportyBet Flash slate when today's strict audit is a full skip.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
