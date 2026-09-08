@@ -10,7 +10,7 @@ import {
   rankSplitTable,
   selectPpgPick
 } from "../src/engine/ppgEngine.js";
-import { choosePpgBoard } from "../src/services/ppgPickService.js";
+import { combinePpgBoards, PPG_HORIZON_DAYS } from "../src/services/ppgPickService.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../..");
@@ -126,32 +126,65 @@ test("missing SportyBet market odds fail closed", () => {
   assert.match(pick.reasons[0], /SportyBet Under 2\.5/);
 });
 
-test("PPG rolls to the next board only when it has qualified picks", () => {
-  const first = { date: "2026-09-08", reviewedFixtures: 20, pickCount: 0, picks: [] };
-  const second = { date: "2026-09-09", reviewedFixtures: 15, pickCount: 2, picks: [{}, {}] };
-  const selected = choosePpgBoard(first, second, first.date);
-  assert.equal(selected.date, second.date);
-  assert.equal(selected.rolledForward, true);
-  assert.equal(selected.requestedDate, first.date);
+test("PPG combines today plus four dates into one chronological board", () => {
+  const slates = Array.from({ length: 5 }, (_, index) => ({
+    date: `2026-09-${String(8 + index).padStart(2, "0")}`,
+    engine: PPG_ENGINE_NAME,
+    engineVersion: PPG_ENGINE_VERSION,
+    reviewedFixtures: 10 + index,
+    oddsMatchedFixtures: 8 + index,
+    pickCount: 1,
+    rejectedCount: 9 + index,
+    rejectionCounts: { "No PPG route qualified": 9 + index },
+    cached: true,
+    picks: [{
+      fixtureId: 100 + index,
+      kickoff: `2026-09-${String(8 + index).padStart(2, "0")}T15:00:00.000Z`,
+      league: { country: "Test", name: "League" },
+      score: 90 - index
+    }]
+  }));
+  const selected = combinePpgBoards(slates, slates[0].date);
+  assert.equal(PPG_HORIZON_DAYS, 5);
+  assert.equal(selected.fromDate, "2026-09-08");
+  assert.equal(selected.toDate, "2026-09-12");
+  assert.equal(selected.horizonDays, 5);
+  assert.equal(selected.pickCount, 5);
+  assert.equal(selected.days.length, 5);
+  assert.equal(selected.picks[0].boardDate, "2026-09-08");
+  assert.equal(selected.picks.at(-1).boardDate, "2026-09-12");
+  assert.equal(selected.reviewedFixtures, 60);
+  assert.equal(selected.oddsMatchedFixtures, 50);
+  assert.equal(selected.cached, true);
 });
 
-test("Betspapa exposes the PPG page, API, navigation and fresh PWA assets", async () => {
-  const [html, client, routes, server, nav, sw] = await Promise.all([
+test("Betspapa exposes the five-day PPG page, preload, API, navigation and fresh PWA assets", async () => {
+  const [html, client, routes, server, nav, workflow, preload, sw] = await Promise.all([
     source("ppg.html"),
     source("assets/js/ppg.v1264.js"),
     source("server/src/routes/publicRoutes.js"),
     source("server/src/server.js"),
     source("assets/js/mobile-nav.v1240.js"),
+    source(".github/workflows/automatic-picks.yml"),
+    source("scripts/preload-ppg-horizon.mjs"),
     source("sw.js")
   ]);
   assert.match(html, /data-page="ppg"/);
   assert.match(html, />PPG</);
+  assert.match(html, /id="ppgDayMap"/);
+  assert.match(html, /Today \+ next 4 UTC days/);
   assert.match(client, /\/api\/ppg\/today/);
+  assert.match(client, /days=5/);
+  assert.match(client, /payload\.days/);
   assert.match(routes, /publicRouter\.get\("\/ppg\/today"/);
+  assert.match(routes, /req\.query\.days/);
   assert.match(server, /ppgEngineVersion/);
   assert.match(server, /ppg: "\/api\/ppg\/today"/);
   assert.match(nav, /ppg\.html/);
-  assert.match(sw, /betspapa-pwa-v1264/);
+  assert.match(workflow, /preload-ppg-horizon\.mjs/);
+  assert.match(preload, /HORIZON_DAYS = 5/);
+  assert.match(preload, /api\/admin\/sync-date/);
+  assert.match(sw, /betspapa-pwa-v1265/);
   assert.match(sw, /ppg\.v1264\.js/);
   assert.match(sw, /ppg\.html/);
 });

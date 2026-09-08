@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
 <meta content="#101827" name="theme-color"/>
-<meta content="PPG uses split home and away points-per-game tables with exact SportyBet odds." name="description"/>
+<meta content="PPG scans five UTC days using split home and away points-per-game tables with exact SportyBet odds." name="description"/>
 <title>PPG — BetsPapa</title>
 <link href="assets/images/favicon-64.png" rel="icon" type="image/png"/>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
@@ -20,10 +20,10 @@
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="default" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="BetsPapa" name="apple-mobile-web-app-title"/>
-<link href="/manifest.webmanifest?v=1264" rel="manifest"/>
+<link href="/manifest.webmanifest?v=1265" rel="manifest"/>
 <link href="/assets/images/pwa-brand-apple-180.png" rel="apple-touch-icon" sizes="180x180"/>
 <link href="assets/css/pitch-2026.css?v=2026" rel="stylesheet"/>
-<link href="assets/css/ppg.v1264.css" rel="stylesheet"/>
+<link href="assets/css/ppg.v1264.css?v=1265" rel="stylesheet"/>
 </head>
 <body data-page="ppg">
 <div aria-live="polite" class="pwa-launch-splash" id="pwaSplash" role="status">
@@ -42,7 +42,7 @@
 <div>
 <span class="eyebrow">BetsPapa · SportyBet only</span>
 <h1 id="ppgTitle">PPG</h1>
-<p>Split home and away points-per-game intelligence.</p>
+<p>Five-day split home and away points-per-game intelligence.</p>
 </div>
 <div class="ppg-hero-rule"><strong>TOP 3</strong><span>vs</span><strong>BOTTOM 3</strong></div>
 </section>
@@ -52,10 +52,11 @@
 <span>Favourite ≤ 1.55</span>
 <span>Underdog ≥ 5.00</span>
 <span>Totals: U2.5 / O1.5</span>
+<span>Today + next 4 UTC days</span>
 </section>
 <div class="status-strip" id="portalStatus"><span>Loading PPG…</span><small></small></div>
 <div class="portal-toolbar ppg-toolbar">
-<label><span>Date</span><input id="dateFilter" type="date"/></label>
+<label><span>Start date</span><input id="dateFilter" type="date"/></label>
 <label><span>Market</span><select id="ppgMarketFilter"><option value="">All PPG markets</option></select></label>
 <label><span>Search</span><input id="ppgSearchFilter" placeholder="Team, league or market" type="search"/></label>
 <button id="refreshButton" type="button">Run PPG</button>
@@ -63,8 +64,9 @@
 <section class="metric-row" id="portalMetrics"></section>
 <div class="section-title ppg-section-title">
 <div><span>Qualified board</span><h2>PPG picks</h2></div>
-<p>Only top-three and bottom-three split-table matchups can appear.</p>
+<p>Only qualified top-three and bottom-three matchups across the five-day window can appear.</p>
 </div>
+<section aria-label="PPG match days" class="ppg-day-map" id="ppgDayMap"></section>
 <section class="ppg-league-map" id="ppgLeagueMap"></section>
 <div id="portalContent"></div>
 <section class="ppg-method">
@@ -84,8 +86,8 @@
 </div>
 </dialog>
 <script src="assets/js/country-flags.v1175.js"></script>
-<script src="assets/js/ppg.v1264.js"></script>
-<script src="assets/js/mobile-nav.v1240.js?v=1264"></script>
+<script src="assets/js/ppg.v1264.js?v=1265"></script>
+<script src="assets/js/mobile-nav.v1240.js?v=1265"></script>
 <script src="/assets/js/pwa.v1160.js"></script>
 <script src="/assets/js/ui.v1170.js"></script>
 </body>

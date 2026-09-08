@@ -537,10 +537,11 @@ publicRouter.get("/flash/today", async (req, res, next) => {
 publicRouter.get("/ppg/today", async (req, res, next) => {
   try {
     const date = assertIsoDate(req.query.date || todayUtc());
+    const days = Math.max(1, Math.min(Math.trunc(Number(req.query.days) || 5), 5));
     const force = ["1", "true", "force", "reload"].includes(
       String(req.query.force || "").toLowerCase()
     );
-    const slate = await getPpgPicks(getSupabaseAdmin(), date, { force });
+    const slate = await getPpgPicks(getSupabaseAdmin(), date, { force, days });
     setPublicCache(res, slate.cached ? 60 : 20, 180);
     res.json({
       ...slate,

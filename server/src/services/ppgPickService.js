@@ -8,12 +8,14 @@ import {
   selectPpgPick
 } from "../engine/ppgEngine.js";
 import { buildLeagueMap } from "../engine/totalGoalsBankerEngine.js";
+import { loadSportyBetEvents } from "../providers/sportyBet.js";
 import { loadSportyBetGoalOdds } from "../providers/sportyBetOdds.js";
 import { nextUtcDate } from "../utils/date.js";
-import { loadPreparedBoardData } from "./publicService.js";
+import { loadPublicFixturesForDate } from "./publicService.js";
 import { fetchAllRows } from "./supabaseHelpers.js";
 
 const CACHE_TTL_MS = 60_000;
+export const PPG_HORIZON_DAYS = 5;
 const cache = new Map();
 
 async function loadSplitHistory(supabase, fixtures) {
@@ -80,11 +82,78 @@ export function choosePpgBoard(first, second, requestedDate) {
   return first;
 }
 
-export async function getPpgPicks(supabase, date, { force = false } = {}) {
-  const first = await buildPpgPicks(supabase, date, { force });
-  if (first.pickCount > 0) return first;
-  const second = await buildPpgPicks(supabase, nextUtcDate(date), { force });
-  return choosePpgBoard(first, second, date);
+function dateSequence(startDate, days) {
+  const dates = [startDate];
+  while (dates.length < days) dates.push(nextUtcDate(dates.at(-1)));
+  return dates;
+}
+
+export function combinePpgBoards(slates, requestedDate) {
+  const boards = (slates || []).filter(Boolean);
+  const picks = boards
+    .flatMap((slate) => (slate.picks || []).map((pick) => ({
+      ...pick,
+      boardDate: slate.date
+    })))
+    .sort((left, right) =>
+      new Date(left.kickoff || 0) - new Date(right.kickoff || 0) ||
+      Number(right.score || 0) - Number(left.score || 0)
+    );
+  const rejectionCounts = boards.reduce((combined, slate) => {
+    for (const [reason, count] of Object.entries(slate.rejectionCounts || {})) {
+      combined[reason] = (combined[reason] || 0) + Number(count || 0);
+    }
+    return combined;
+  }, {});
+  const fromDate = boards[0]?.date || requestedDate;
+  const toDate = boards.at(-1)?.date || requestedDate;
+
+  return {
+    date: requestedDate,
+    requestedDate,
+    fromDate,
+    toDate,
+    horizonDays: boards.length,
+    generatedAt: new Date().toISOString(),
+    engine: boards[0]?.engine || PPG_ENGINE_NAME,
+    engineVersion: boards[0]?.engineVersion || PPG_ENGINE_VERSION,
+    rules: boards[0]?.rules || {},
+    reviewedFixtures: boards.reduce((sum, slate) => sum + Number(slate.reviewedFixtures || 0), 0),
+    oddsMatchedFixtures: boards.reduce((sum, slate) => sum + Number(slate.oddsMatchedFixtures || 0), 0),
+    pickCount: picks.length,
+    rejectedCount: boards.reduce((sum, slate) => sum + Number(slate.rejectedCount || 0), 0),
+    rejectionCounts,
+    dayCount: boards.length,
+    days: boards.map((slate) => ({
+      date: slate.date,
+      reviewedFixtures: Number(slate.reviewedFixtures || 0),
+      oddsMatchedFixtures: Number(slate.oddsMatchedFixtures || 0),
+      pickCount: Number(slate.pickCount || 0),
+      rejectedCount: Number(slate.rejectedCount || 0)
+    })),
+    leagueMap: buildLeagueMap(picks),
+    picks,
+    cached: boards.length > 0 && boards.every((slate) => slate.cached)
+  };
+}
+
+export async function getPpgPicks(supabase, date, {
+  force = false,
+  days = PPG_HORIZON_DAYS
+} = {}) {
+  const safeDays = Math.max(
+    1,
+    Math.min(Math.trunc(Number(days) || PPG_HORIZON_DAYS), PPG_HORIZON_DAYS)
+  );
+  const dates = dateSequence(date, safeDays);
+
+  // Warm the shared SportyBet catalogue before parallel date reads so the
+  // five-day request performs one provider fetch instead of one per date.
+  await loadSportyBetEvents({ force }).catch(() => []);
+  const slates = await Promise.all(
+    dates.map((boardDate) => buildPpgPicks(supabase, boardDate, { force }))
+  );
+  return combinePpgBoards(slates, date);
 }
 
 async function buildPpgPicks(supabase, date, { force = false } = {}) {
@@ -93,8 +162,7 @@ async function buildPpgPicks(supabase, date, { force = false } = {}) {
     return { ...cached.value, cached: true };
   }
 
-  const board = await loadPreparedBoardData(supabase, date);
-  const fixtures = (board.fixtures || []).filter((fixture) =>
+  const fixtures = (await loadPublicFixturesForDate(supabase, date)).filter((fixture) =>
     PREDICTABLE_STATUSES.has(fixture.status)
   );
   const [history, sportyOdds] = await Promise.all([

@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.26.0",
+  "version": "1.26.1",
   "private": true,
-  "description": "BetsPapa v1.26.0 adds the SportyBet-backed PPG split-table engine and board.",
+  "description": "BetsPapa v1.26.1 loads the SportyBet-backed PPG board across five UTC days.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

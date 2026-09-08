@@ -22,6 +22,15 @@
     }).format(date);
   }
 
+  function formatBoardDate(value) {
+    if (!value) return "Date pending";
+    const date = new Date(`${value}T00:00:00.000Z`);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return new Intl.DateTimeFormat(undefined, {
+      weekday: "short", day: "2-digit", month: "short"
+    }).format(date);
+  }
+
   function logoMarkup(team) {
     if (team?.logo_url) return `<img src="${escapeHtml(team.logo_url)}" alt="" loading="lazy">`;
     const initials = String(team?.name || "?")
@@ -51,7 +60,7 @@
     return `<button type="button" class="ppg-row" data-fixture="${escapeHtml(item.fixtureId)}" style="animation-delay:${Math.min(index, 8) * 50}ms">
       <span class="ppg-route">${escapeHtml(item.route === "top-3-v-bottom-3" ? "WIN" : item.route === "bottom-3-pair" ? "U2.5" : "O1.5")}</span>
       <span class="ppg-crests">${logoMarkup(item.home)}${logoMarkup(item.away)}</span>
-      <span class="ppg-copy"><strong>${escapeHtml(item.home?.name || "Home")} <i>vs</i> ${escapeHtml(item.away?.name || "Away")}</strong><small>${escapeHtml(leagueText(item.league))} · ${escapeHtml(formatKickoff(item.kickoff))}</small></span>
+      <span class="ppg-copy"><strong>${escapeHtml(item.home?.name || "Home")} <i>vs</i> ${escapeHtml(item.away?.name || "Away")}</strong><small>${escapeHtml(formatBoardDate(item.boardDate))} · ${escapeHtml(leagueText(item.league))} · ${escapeHtml(formatKickoff(item.kickoff))}</small></span>
       <span class="ppg-pick"><small>${escapeHtml(item.selection)}</small><b>${escapeHtml(item.odds ?? "—")}</b></span>
       <span class="ppg-chevron" aria-hidden="true">›</span>
     </button>`;
@@ -60,7 +69,7 @@
   function dialogMarkup(item) {
     const split = item.splitTable || {};
     return `<div class="ppg-sheet">
-      <p class="ppg-kicker">PPG · ${escapeHtml(leagueText(item.league))}</p>
+      <p class="ppg-kicker">PPG · ${escapeHtml(formatBoardDate(item.boardDate))} · ${escapeHtml(leagueText(item.league))}</p>
       <h2>${escapeHtml(item.selection)}</h2>
       <p>${escapeHtml(formatKickoff(item.kickoff))}</p>
       <div class="ppg-matchup">
@@ -94,9 +103,9 @@
 
   async function fetchBoard(date, force = false) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 25000);
+    const timer = setTimeout(() => controller.abort(), 60000);
     try {
-      const response = await fetch(`${API}/api/ppg/today?date=${encodeURIComponent(date)}${force ? "&force=1" : ""}`, {
+      const response = await fetch(`${API}/api/ppg/today?date=${encodeURIComponent(date)}&days=5${force ? "&force=1" : ""}`, {
         headers: { Accept: "application/json" },
         cache: force ? "no-store" : "default",
         signal: controller.signal
@@ -112,15 +121,25 @@
     const picks = payload.picks || [];
     const market = $("#ppgMarketFilter");
     const search = $("#ppgSearchFilter");
+    const dayMap = $("#ppgDayMap");
     const leagueMap = $("#ppgLeagueMap");
+    let day = "";
     let league = "";
 
     $("#portalMetrics").innerHTML = [
       `<div class="diagnostic-card"><span>PPG picks</span><strong>${picks.length}</strong></div>`,
+      `<div class="diagnostic-card"><span>UTC days</span><strong>${payload.horizonDays || 0}</strong></div>`,
       `<div class="diagnostic-card"><span>Fixtures read</span><strong>${payload.reviewedFixtures || 0}</strong></div>`,
       `<div class="diagnostic-card"><span>SportyBet matched</span><strong>${payload.oddsMatchedFixtures || 0}</strong></div>`,
-      `<div class="diagnostic-card"><span>Rejected</span><strong>${payload.rejectedCount || 0}</strong></div>`
     ].join("");
+
+    const days = Array.isArray(payload.days) ? payload.days : [];
+    if (dayMap) {
+      dayMap.innerHTML = days.length
+        ? [`<button type="button" class="active" data-day="">All 5 days <b>${picks.length}</b></button>`]
+          .concat(days.map((item) => `<button type="button" data-day="${escapeHtml(item.date)}"><span>${escapeHtml(formatBoardDate(item.date))}</span><b>${item.pickCount || 0}</b></button>`)).join("")
+        : "";
+    }
 
     const markets = [...new Set(picks.map((item) => item.selection).filter(Boolean))];
     if (market) market.innerHTML = `<option value="">All PPG markets</option>${markets.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")}`;
@@ -137,6 +156,7 @@
       const query = (search?.value || "").trim().toLowerCase();
       const marketValue = market?.value || "";
       const filtered = picks.filter((item) => {
+        if (day && item.boardDate !== day) return false;
         if (league && leagueText(item.league) !== league) return false;
         if (marketValue && item.selection !== marketValue) return false;
         return !query || [item.home?.name, item.away?.name, leagueText(item.league), item.selection]
@@ -145,10 +165,13 @@
       leagueMap?.querySelectorAll("[data-league]").forEach((button) => {
         button.classList.toggle("active", button.dataset.league === league);
       });
+      dayMap?.querySelectorAll("[data-day]").forEach((button) => {
+        button.classList.toggle("active", button.dataset.day === day);
+      });
       const content = $("#portalContent");
       content.innerHTML = filtered.length
         ? `<div class="ppg-list">${filtered.map(rowMarkup).join("")}</div>`
-        : `<div class="empty-card">No match clears every PPG split-table and SportyBet gate for this board.</div>`;
+        : `<div class="empty-card">No match clears every PPG split-table and SportyBet gate for this five-day view.</div>`;
       content.querySelectorAll(".ppg-row").forEach((button) => {
         button.addEventListener("click", () => {
           const item = filtered.find((row) => String(row.fixtureId) === button.dataset.fixture);
@@ -163,6 +186,12 @@
         draw();
       });
     });
+    dayMap?.querySelectorAll("[data-day]").forEach((button) => {
+      button.addEventListener("click", () => {
+        day = button.dataset.day === day ? "" : button.dataset.day;
+        draw();
+      });
+    });
     if (market) market.onchange = draw;
     if (search) search.oninput = draw;
     draw();
@@ -172,14 +201,13 @@
     const dateInput = $("#dateFilter");
     const date = dateInput.value || utcIsoDate();
     dateInput.value = date;
-    setStatus("Scanning split home and away tables…");
+    setStatus("Scanning five UTC days of split home and away tables…");
     try {
       const payload = await fetchBoard(date, force);
-      if (payload.date && payload.date !== date) dateInput.value = payload.date;
       render(payload);
       setStatus(
         `${payload.pickCount || 0} PPG pick${Number(payload.pickCount) === 1 ? "" : "s"}`,
-        `${payload.reviewedFixtures || 0} fixtures · ${payload.oddsMatchedFixtures || 0} SportyBet matches${payload.rolledForward ? " · next UTC date" : ""}`
+        `${payload.fromDate || date} to ${payload.toDate || date} · ${payload.reviewedFixtures || 0} fixtures · ${payload.oddsMatchedFixtures || 0} SportyBet matches`
       );
     } catch (error) {
       setStatus("Could not load PPG", error.message);

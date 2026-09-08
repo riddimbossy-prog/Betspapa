@@ -183,6 +183,26 @@ function publicFixture(fixture, teamMap, leagueMap, settlement = null) {
   };
 }
 
+export async function loadPublicFixturesForDate(supabase, date) {
+  const { start, end } = dateRangeUtc(date);
+  const fixtures = await fetchAllRows(() =>
+    supabase
+      .from("fixtures")
+      .select("*")
+      .gte("fixture_date", start)
+      .lt("fixture_date", end)
+      .order("fixture_date", { ascending: true })
+  );
+  if (!fixtures.length) return [];
+
+  const entityMaps = await loadEntityMaps(supabase, fixtures);
+  return fixtures
+    .filter((fixture) =>
+      competitionPolicy(entityMaps.leagueMap.get(fixture.league_id) || {}).eligible
+    )
+    .map((fixture) => publicFixture(fixture, entityMaps.teamMap, entityMaps.leagueMap));
+}
+
 export async function listFixtures(supabase, date) {
   const { start, end } = dateRangeUtc(date);
   const fixtures = await fetchAllRows(() =>
