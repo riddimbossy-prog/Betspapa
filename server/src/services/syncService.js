@@ -49,11 +49,19 @@ function selectLeagueMatch(rows, league) {
   const target = normalizeTeamName(league?.name);
   const countryKey = normalizedCountry(league?.country);
   const season = Number(league?.season);
-  const matches = (rows || []).filter((row) =>
-    Number(row.season) === season &&
-    normalizeTeamName(row.name) === target
-  );
-  return matches.find((row) => countryKey && normalizedCountry(row.country) === countryKey) || matches[0] || null;
+  const matches = (rows || [])
+    .filter((row) =>
+      Number(row.season) <= season &&
+      normalizeTeamName(row.name) === target
+    )
+    .sort((left, right) => {
+      const leftCountry = Boolean(countryKey && normalizedCountry(left.country) === countryKey);
+      const rightCountry = Boolean(countryKey && normalizedCountry(right.country) === countryKey);
+      return Number(rightCountry) - Number(leftCountry) ||
+        Number(Number(right.season) === season) - Number(Number(left.season) === season) ||
+        Number(right.season) - Number(left.season);
+    });
+  return matches[0] || null;
 }
 
 function storedProviderType(value) {
@@ -111,6 +119,7 @@ export function alignSportyBetReferences(providerItems, { teams = [], leagues = 
 
 async function loadStoredReferences(supabase, providerItems) {
   const seasons = [...new Set(providerItems.map((item) => Number(item?.league?.season)).filter(Number.isFinite))];
+  const latestSeason = seasons.length ? Math.max(...seasons) : null;
   const [teams, leagues] = await Promise.all([
     fetchAllRows(() =>
       supabase
@@ -118,12 +127,12 @@ async function loadStoredReferences(supabase, providerItems) {
         .select("id,external_team_id,name,country,logo_url")
         .order("id", { ascending: true })
     ),
-    seasons.length
+    latestSeason != null
       ? fetchAllRows(() =>
           supabase
             .from("leagues")
             .select("id,external_league_id,season,name,country,logo_url,competition_type")
-            .in("season", seasons)
+            .lte("season", latestSeason)
             .order("id", { ascending: true })
         )
       : []

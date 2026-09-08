@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.25.1",
+  "version": "1.25.2",
   "private": true,
-  "description": "BetsPapa v1.25.1 uses SportyBet as the primary fixture catalogue while preserving stored statistical identities.",
+  "description": "BetsPapa v1.25.2 feeds upcoming fixtures from SportyBet and carries trusted same-league history across seasons.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
