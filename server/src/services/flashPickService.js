@@ -146,11 +146,20 @@ function publicPick(fixture, pick, odds, risk) {
 
 export async function getFlashPicks(supabase, date, { force = false } = {}) {
   const first = await buildFlashPicks(supabase, date, { force });
-  if (first.reviewedFixtures > 0) return first;
+  if (first.pickCount > 0) return first;
   const rolled = nextUtcDate(date);
   const second = await buildFlashPicks(supabase, rolled, { force });
-  if (second.reviewedFixtures > 0) {
-    return { ...second, requestedDate: date, rolledForward: true };
+  return chooseFlashBoard(first, second, date);
+}
+
+export function chooseFlashBoard(first, second, requestedDate) {
+  if (first?.pickCount > 0) return first;
+  if (second?.pickCount > 0) {
+    return { ...second, requestedDate, rolledForward: true };
+  }
+  if (first?.reviewedFixtures > 0) return first;
+  if (second?.reviewedFixtures > 0) {
+    return { ...second, requestedDate, rolledForward: true };
   }
   return first;
 }
