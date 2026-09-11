@@ -330,7 +330,7 @@ export function selectVisaPick({
     const selection = doubleChance
       ? strongIsHome ? `${homeName} or Draw (1X)` : `${awayName} or Draw (X2)`
       : `${strongName} Draw No Bet`;
-    const explanation = `${weakName} carries a ${percentage(mismatch.weak.lossRate)}% loss grade and ${strongName} is below 40% losses. Because ${strongName} won fewer than 60%, Visa protects the draw instead of forcing a straight win.`;
+    const explanation = `${weakName} carries an ${percentage(mismatch.weak.lossRate)}% loss grade and ${strongName} is below 40% losses. Because ${strongName} won fewer than 60%, Visa protects the draw instead of forcing a straight win.`;
     return approvedPick({
       key: protectionKey,
       family: doubleChance ? "Double Chance" : "Draw No Bet",
