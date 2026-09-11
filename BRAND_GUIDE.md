@@ -7,7 +7,15 @@
 **Mascot:** 3D caricature — red trucker hat, clear glasses, mustache, red shearling jacket  
 **Personality:** Experienced, sharp, colourful, trustworthy.
 
-## Screens 2026 palette
+## Screens 2026 — the live site
+
+The public GitHub Pages site is the phone-app UI, not the old portal chrome.
+
+- App shell: `index.html` + `assets/css/screens-app.css` + `assets/js/screens-app.js`
+- Live engines still run at `https://api.betspapa.com`
+- Tabs: Fixtures, Flash, Slip, Papa (Bankers / Athena / Goals / Wins / Visa)
+
+## Palette
 
 - Pink canvas: `#F6C6D8`
 - Cream surface: `#FFF7F4`
@@ -24,9 +32,7 @@
 
 ## Asset usage
 
-- `assets/images/betspapa-papa-mark.png` — circular Papa mark (header, PWA, favicon)
-- `assets/images/logo-papa.png` — same mark
-- `assets/images/papa-square.png` — square portrait
-- `assets/images/icon-192.png` and `icon-512.png` — PWA icons
-- `assets/images/betspapa-social-card.jpg` — social sharing preview
-- `assets/css/papa-screens.css` — live visual system (load last)
+- `assets/images/logo-papa.png` — circular Papa mark
+- `assets/images/papa-square.png` — Papa portrait
+- `assets/images/betspapa-papa-mark.png` — header / PWA
+- `assets/images/betspapa-social-card.jpg` — social sharing

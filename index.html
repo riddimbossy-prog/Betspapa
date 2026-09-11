@@ -2,90 +2,34 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<meta content="#F6C6D8" name="theme-color"/>
-<meta content="Flash Cover IQ tests 15 SportyBet cover markets and publishes one qualified selection per fixture—or SKIP." name="description"/>
-<title>Flash — Cover IQ | BetsPapa</title>
-<link href="assets/images/favicon-64.png" rel="icon" type="image/png"/>
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="theme-color" content="#F6C6D8"/>
+<meta name="description" content="Pastel football boards, Flash Cover IQ and Papa’s engines."/>
+<title>BetsPapa — Papa knows the game</title>
+<link rel="icon" type="image/png" href="/assets/images/favicon-64.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
-<link href="assets/css/country-flags.v1175.css" rel="stylesheet"/>
-<link href="assets/css/portal.v1220.css" rel="stylesheet"/>
-<link href="assets/css/mobile-nav.v1240.css" rel="stylesheet"/>
-<link href="/assets/css/pwa.v1160.css" rel="stylesheet"/>
-<link href="/assets/css/ui.v151.css" rel="stylesheet"/>
-<link href="assets/css/pitch-2026.css?v=2026" rel="stylesheet"/>
-<link href="assets/css/flash.v1260.css" rel="stylesheet"/>
-<script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
-<meta content="yes" name="mobile-web-app-capable"/>
-<meta content="yes" name="apple-mobile-web-app-capable"/>
-<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
-<meta content="BetsPapa" name="apple-mobile-web-app-title"/>
-<link href="/manifest.webmanifest?v=1263" rel="manifest"/>
-<link href="/assets/images/pwa-brand-apple-180.png" rel="apple-touch-icon" sizes="180x180"/>
-<link href="https://betspapa.com/" rel="canonical"/>
-<link href="assets/css/papa-screens.css?v=20260912" rel="stylesheet"/>
+<link rel="manifest" href="/manifest.webmanifest?v=20260912b"/>
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/images/pwa-brand-apple-180.png"/>
+<link rel="canonical" href="https://betspapa.com/"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="BetsPapa"/>
+<meta property="og:title" content="BetsPapa"/>
+<meta property="og:description" content="Papa knows the game."/>
+<meta property="og:image" content="https://betspapa.com/assets/images/betspapa-social-card.jpg"/>
+<link rel="stylesheet" href="/assets/css/screens-app.css?v=20260912b"/>
+<script>window.BETSPAPA_API_URL="https://api.betspapa.com";window.BETSPAPA_START="home";</script>
 </head>
-<body data-page="flash">
-<div aria-live="polite" class="pwa-launch-splash" id="pwaSplash" role="status">
-<span class="pwa-splash-accessible">Launching BetsPapa Flash</span>
-</div>
-<header class="portal-header">
-<a class="portal-brand" href="index.html">
-<img alt="" src="assets/images/betspapa-papa-mark.png"/>
-<span><strong>BETS<span>PAPA</span></strong><em class="year-badge">2026</em><small>PAPA KNOWS THE GAME</small></span>
-</a>
-<nav aria-label="Primary navigation" class="portal-nav" id="portalNav"><a aria-current="page" class="active" href="index.html">Flash</a><a href="papas-pick.html">Papa’s Pick</a><a href="bankers.html">Bankers</a><a href="goals-bankers.html">Goals Banker</a><a href="wins-bankers.html">Wins Banker</a><a href="athena.html">Athena</a><a href="live-fixtures.html">Live &amp; Fixtures</a><a href="results-intelligence.html">Results</a><a href="responsible.html">More</a></nav>
-<button aria-controls="portalNav" aria-expanded="false" aria-label="Open navigation" class="portal-menu" id="portalMenu" type="button">☰</button>
-</header>
-<main class="portal-main flash-main">
-<section class="flash-hero" aria-labelledby="flashTitle">
-<div class="flash-hero-mark" aria-hidden="true"></div>
-<div class="flash-hero-copy">
-<span>Cover IQ · SportyBet only</span>
-<h1 id="flashTitle">FLASH</h1>
-<p>Papa only ships the clean ones. Fifteen cover markets enter. One qualified selection leaves — or SKIP.</p>
-</div>
-<div class="flash-hero-rule"><strong>ONE PICK</strong><span>OR SKIP</span></div>
-</section>
-<section class="flash-gates" aria-label="Flash qualification gates">
-<span>Model ≥ 75%</span><span>Split hit ≥ 75%</span><span>Confidence ≥ 80</span><span>EV ≥ 1.04</span><span>Odds 1.20–1.85</span>
-</section>
-<div class="status-strip" id="portalStatus"><span>Loading Flash…</span><small></small></div>
-<div class="portal-toolbar flash-toolbar">
-<label><span>Date</span><input id="dateFilter" type="date"/></label>
-<label><span>League</span><select id="flashLeagueFilter"><option value="">All leagues</option></select></label>
-<label><span>Market family</span><select id="flashMarketFilter"><option value="">All market families</option></select></label>
-<label><span>Search</span><input id="flashSearchFilter" placeholder="Team, league or market" type="search"/></label>
-<button id="refreshButton" type="button">Run Flash again</button>
-</div>
-<section class="metric-row" id="portalMetrics"></section>
-<div class="section-title flash-section-title">
-<div><span>Qualified board</span><h2>Today’s Flash decisions</h2></div>
-<p>Tap a selection to inspect the probability, value, venue-split and losing-zone audit.</p>
-</div>
-<div id="portalContent"></div>
-<section class="flash-method">
-<div><b>01</b><strong>Read the matchup</strong><p>Last 10 home matches, last 10 away matches, league scoring and optional head-to-head context.</p></div>
-<div><b>02</b><strong>Price every route</strong><p>Model each OR market as a true joint event and remove the paired Yes/No bookmaker margin.</p></div>
-<div><b>03</b><strong>Fire or skip</strong><p>Publish the single strongest survivor only after every data, probability, rescue, price and value gate clears.</p></div>
-</section>
-<footer class="portal-footer">
-<span>Sports analytics only. Predictions are not guarantees. 18+.</span>
-<div><a href="responsible.html">Responsible Use</a><a href="privacy.html">Privacy</a></div>
-</footer>
-</main>
-<dialog class="portal-dialog" id="portalDialog">
-<div class="dialog-shell">
-<button aria-label="Close" class="dialog-close" id="portalDialogClose" type="button">×</button>
-<div id="portalDialogContent"></div>
-</div>
-</dialog>
-<script src="assets/js/country-flags.v1175.js"></script>
-<script src="assets/js/portal.v1250.js?v=flash1263"></script>
-<script src="assets/js/mobile-nav.v1240.js?v=flash1263"></script>
-<script src="/assets/js/pwa.v1160.js"></script>
-<script src="/assets/js/ui.v1170.js"></script>
+<body>
+<div id="app"></div>
+<script src="/assets/js/screens-app.js?v=20260912b"></script>
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(function () {});
+}
+</script>
 </body>
 </html>

@@ -2,8 +2,8 @@
   "id": "/",
   "name": "BetsPapa \u2014 Football Intelligence",
   "short_name": "BetsPapa",
-  "description": "BetsPapa opens on Flash Cover IQ, which evaluates 15 SportyBet cover markets and publishes one qualified selection per fixture or skips it.",
-  "start_url": "/?source=pwa&v=1291",
+  "description": "Papa knows the game. Flash Cover IQ, PapaLock bankers and live pastel match boards.",
+  "start_url": "/?source=pwa&v=20260912b",
   "scope": "/",
   "display": "standalone",
   "display_override": [
