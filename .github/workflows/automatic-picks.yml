@@ -70,7 +70,7 @@ jobs:
         run: |
           node scripts/automatic-pipeline.mjs
 
-      - name: Preload five-day PPG fixture horizon
+      - name: Preload seven-day fixture horizon
         shell: bash
         run: |
           node scripts/preload-ppg-horizon.mjs

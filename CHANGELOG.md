@@ -3,6 +3,7 @@
 - Added seven date tabs to the Visa board, beginning with today by default.
 - Added a week-start control so readers can run any seven-date window.
 - Added `/api/visa/week`, which loads fixtures, strict split history and SportyBet prices once for the full range.
+- Extended the automatic fixture preload from five to seven dates and warmed the Visa week after every successful run.
 - Each tab reports approved picks and every fixture reviewed for that date.
 - Kept `/api/visa/today` available for existing consumers.
 

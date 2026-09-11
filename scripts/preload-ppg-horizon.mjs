@@ -5,7 +5,8 @@ const API_BASE = String(
 ).replace(/\/+$/, "");
 const ADMIN_SECRET = String(process.env.ADMIN_SYNC_SECRET || "").trim();
 const CUSTOM_DATE = String(process.env.PIPELINE_DATE || "").trim();
-const HORIZON_DAYS = 5;
+const HORIZON_DAYS = 7;
+const PPG_HORIZON_DAYS = 5;
 const REQUEST_TIMEOUT_MS = Math.max(
   30000,
   Math.min(Number(process.env.REQUEST_TIMEOUT_MS || 180000), 600000)
@@ -22,7 +23,7 @@ function isoDate(date) {
 
 function assertDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    throw new Error(`Invalid PPG start date: ${value}. Use YYYY-MM-DD.`);
+    throw new Error(`Invalid fixture-horizon start date: ${value}. Use YYYY-MM-DD.`);
   }
   const parsed = new Date(`${value}T00:00:00.000Z`);
   if (Number.isNaN(parsed.getTime()) || isoDate(parsed) !== value) {
@@ -80,7 +81,7 @@ function compactError(error) {
 }
 
 async function main() {
-  console.log("\n=== Preload PPG five-day SportyBet horizon ===");
+  console.log("\n=== Preload seven-day fixture and SportyBet horizon ===");
   console.log(`API: ${API_BASE}`);
   console.log(`Dates: ${dates[0]} through ${dates.at(-1)}`);
 
@@ -108,22 +109,36 @@ async function main() {
   }
 
   const board = await request(
-    `/api/ppg/today?date=${encodeURIComponent(startDate)}&days=${HORIZON_DAYS}&force=1`,
+    `/api/ppg/today?date=${encodeURIComponent(startDate)}&days=${PPG_HORIZON_DAYS}&force=1`,
     { admin: false, timeoutMs: 300000 }
   );
   console.log(
     `PPG board: ${board.pickCount || 0} picks | ${board.reviewedFixtures || 0} fixtures | ${board.oddsMatchedFixtures || 0} SportyBet matches`
   );
 
+  const visa = await request(
+    `/api/visa/week?start=${encodeURIComponent(startDate)}&days=${HORIZON_DAYS}&force=1`,
+    { admin: false, timeoutMs: 300000 }
+  );
+  if (Number(visa.dayCount || 0) !== HORIZON_DAYS || visa.days?.length !== HORIZON_DAYS) {
+    throw new Error("Visa did not return the complete seven-day board.");
+  }
+  console.log(
+    `Visa week: ${visa.totals?.pickCount || 0} picks | ${visa.totals?.reviewedFixtures || 0} fixtures | ${visa.totals?.oddsMatchedFixtures || 0} SportyBet matches`
+  );
+
   const successfulDates = results.filter((result) => result.ok).length;
-  if (!successfulDates && !Number(board.reviewedFixtures || 0)) {
-    throw new Error("No PPG fixtures could be loaded for the five-day horizon.");
+  if (!successfulDates && !Number(board.reviewedFixtures || 0) && !Number(visa.totals?.reviewedFixtures || 0)) {
+    throw new Error("No fixtures could be loaded for the seven-day horizon.");
+  }
+  if (successfulDates !== HORIZON_DAYS) {
+    throw new Error(`Only ${successfulDates}/${HORIZON_DAYS} fixture dates synced successfully.`);
   }
 
-  console.log(`PPG horizon ready: ${successfulDates}/${HORIZON_DAYS} dates synced.`);
+  console.log(`Seven-day horizon ready: ${successfulDates}/${HORIZON_DAYS} dates synced.`);
 }
 
 main().catch((error) => {
-  console.error(`\nPPG HORIZON PRELOAD FAILED\n${compactError(error)}`);
+  console.error(`\nSEVEN-DAY HORIZON PRELOAD FAILED\n${compactError(error)}`);
   process.exit(1);
 });

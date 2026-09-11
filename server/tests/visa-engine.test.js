@@ -235,8 +235,8 @@ test("SportyBet Visa parser reads exact core and protection prices", () => {
   assert.equal(odds["away-dnb"], 2.7);
 });
 
-test("Betspapa exposes the Visa page, API, navigation and fresh PWA assets", async () => {
-  const [html, client, css, routes, server, nav, sw, manifest] = await Promise.all([
+test("Betspapa exposes the Visa page, weekly preload, API, navigation and fresh PWA assets", async () => {
+  const [html, client, css, routes, server, nav, sw, manifest, preload, workflow] = await Promise.all([
     source("visa.html"),
     source("assets/js/visa.v1270.js"),
     source("assets/css/visa.v1270.css"),
@@ -244,7 +244,9 @@ test("Betspapa exposes the Visa page, API, navigation and fresh PWA assets", asy
     source("server/src/server.js"),
     source("assets/js/mobile-nav.v1240.js"),
     source("sw.js"),
-    source("manifest.webmanifest")
+    source("manifest.webmanifest"),
+    source("scripts/preload-ppg-horizon.mjs"),
+    source(".github/workflows/automatic-picks.yml")
   ]);
   assert.match(html, /data-page="visa"/);
   assert.match(html, /Loss grades: 60 · 80 · 100/);
@@ -264,4 +266,7 @@ test("Betspapa exposes the Visa page, API, navigation and fresh PWA assets", asy
   assert.match(sw, /visa\.v1270\.js/);
   assert.match(sw, /visa\.html/);
   assert.match(manifest, /"version": "1\.28\.0"/);
+  assert.match(preload, /HORIZON_DAYS = 7/);
+  assert.match(preload, /\/api\/visa\/week/);
+  assert.match(workflow, /Preload seven-day fixture horizon/);
 });
