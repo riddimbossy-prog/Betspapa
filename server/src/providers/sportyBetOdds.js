@@ -112,14 +112,12 @@ export async function loadSportyBetVisaOdds(fixtures = [], { concurrency = 5, fo
       try {
         detailed = visaFromSportyMarkets(await loadSportyBetEventMarkets(hit.eventId, { force }));
       } catch {
-        // Core 1X2, totals and GG prices may still exist in the compact feed.
-        // Protection routes fail closed if their exact event prices are absent.
+        // Core 1X2 and totals prices may still exist in the compact feed.
+        // Every Visa route still fails closed when its exact price is absent.
       }
       const prices = { ...(hit.odds || {}), ...detailed };
-      const hasVisaPrice = [
-        "home", "away", "over-15", "btts-yes",
-        "home-or-draw", "draw-or-away", "home-dnb", "away-dnb"
-      ].some((key) => Number(prices[key]) > 1);
+      const hasVisaPrice = ["home", "away", "over-25"]
+        .some((key) => Number(prices[key]) > 1);
       if (!hasVisaPrice) continue;
       map.set(Number(fixture.id), {
         ...prices,

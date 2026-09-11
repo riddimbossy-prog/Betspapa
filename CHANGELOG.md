@@ -1,3 +1,13 @@
+# v1.29.0 — Visa v2 Rules
+
+- Added venue split-table ranks to every Visa decision.
+- Added Top 3 Win Bankers at exact SportyBet odds of 1.52 or shorter when the opponent is outside the top six.
+- Added the Bottom 3 Away, Away Loss and Home Power win routes.
+- Added Over 2.5 when a 2.2+ scoring average and a 2.2+ conceding average are present, excluding top-five pairs and bottom-three pairs.
+- Added a Sure Visa tag when both Away Loss triggers or both Home Power triggers pass.
+- Updated all seven daily tabs, route filters, cards and decision files for the new rule evidence.
+- Kept one exact SportyBet selection per fixture and fail-closed handling for missing prices or incomplete data.
+
 # v1.28.0 — Visa Seven-Day Board
 
 - Added seven date tabs to the Visa board, beginning with today by default.

@@ -187,6 +187,12 @@ body[data-page="visa"] .diagnostic-card:first-child { background: var(--visa-min
   animation: visa-rise 0.38s ease forwards;
 }
 .visa-card:hover { border-color: rgba(15, 107, 85, 0.25); box-shadow: 0 22px 42px -30px rgba(15, 107, 85, 0.4); }
+.visa-card-sure {
+  border-color: rgba(232, 180, 79, 0.72);
+  background: linear-gradient(145deg, #fffef9 70%, rgba(232, 180, 79, 0.14));
+  box-shadow: 0 22px 46px -32px rgba(143, 93, 0, 0.5);
+}
+.visa-card-sure .visa-stamp { border-color: var(--visa-gold); background: #fff5d6; color: #8f5d00; }
 .visa-card-head,
 .visa-card-meta,
 .visa-card-decision,
@@ -225,7 +231,7 @@ body[data-page="visa"] .diagnostic-card:first-child { background: var(--visa-min
 .visa-team-identity strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .visa-team-identity small { color: var(--visa-muted); font-size: 12px; text-transform: uppercase; }
 .visa-team-identity strong { margin-top: 1px; font-size: 14px; }
-.visa-grade-numbers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 9px; }
+.visa-grade-numbers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 9px; }
 .visa-grade-numbers span { display: block; padding: 6px 7px; border-radius: 8px; background: rgba(255, 255, 255, 0.65); }
 .visa-grade-numbers small,
 .visa-grade-numbers b { display: block; }
@@ -270,6 +276,7 @@ body[data-page="visa"] .portal-dialog { background: rgba(4, 18, 16, 0.72); }
 .visa-sheet-head h2 i { color: #98a29f; font-style: normal; font-weight: 500; }
 .visa-sheet-head p { margin: 0; color: var(--visa-muted); font-size: 13px; }
 .visa-sheet-head > strong { flex: 0 0 auto; margin-top: 5px; padding: 7px 9px; border: 2px solid var(--visa-red); color: var(--visa-red); font: 700 12px "Space Mono", monospace; transform: rotate(-3deg); }
+.visa-sheet-sure .visa-sheet-head > strong { border-color: var(--visa-gold); background: #fff5d6; color: #8f5d00; }
 .visa-sheet-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 20px; }
 .visa-sheet-side { padding: 15px; border: 1px solid rgba(7, 28, 25, 0.07); border-radius: 17px; }
 .visa-sheet-team { display: flex; align-items: center; gap: 9px; min-width: 0; }
@@ -352,6 +359,7 @@ body[data-page="visa"] .portal-dialog { background: rgba(4, 18, 16, 0.72); }
   .visa-card-meta { align-items: start; flex-direction: column; gap: 2px; }
   .visa-card-meta time { flex: 0 1 auto; }
   .visa-grade-numbers { gap: 4px; }
+  .visa-grade-numbers { grid-template-columns: repeat(2, 1fr); }
   .visa-grade-numbers span { padding: 6px 5px; }
   .visa-card > p { min-height: 0; }
   .visa-sheet { padding: 18px 13px; }

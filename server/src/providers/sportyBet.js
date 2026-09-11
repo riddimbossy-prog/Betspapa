@@ -135,7 +135,7 @@ function compactOutcomeLabel(value) {
     .replace(/[^a-z0-9-]/g, "");
 }
 
-/** Parse the exact SportyBet prices used by Visa. Unknown protection markets fail closed. */
+/** Parse the exact SportyBet 1X2 and totals prices used by Visa. */
 export function visaFromSportyMarkets(markets = []) {
   const odds = totalsFromSportyMarkets(markets);
   for (const market of markets || []) {

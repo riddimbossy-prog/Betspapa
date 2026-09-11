@@ -1,3 +1,7 @@
+## v1.29.0 Visa v2 Rules
+
+Visa now runs five explicit routes: Top 3 Win at SportyBet odds of 1.52 or shorter against an opponent outside the top six; Home Win against a bottom-three away side when the home side is outside the bottom six; Away Loss; Home Power; and Over 2.5. The last two venue triggers in either the Away Loss or Home Power route must both pass to receive the Sure Visa tag. Every fixture still returns one exact SportyBet selection or no visa across the existing seven-date board. See `BETSPAPA_V1_29_0_VISA_V2.md`.
+
 ## v1.28.0 Visa Seven-Day Board
 
 Visa now evaluates one rolling week in a single batch and displays seven keyboard-accessible date tabs. Each tab reports its approved picks and total fixtures reviewed; changing the week-start date runs the following seven dates. The daily endpoint remains available, and `/api/visa/week` supplies the complete weekly board. See `BETSPAPA_V1_28_0_VISA_WEEK.md`.

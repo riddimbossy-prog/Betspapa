@@ -3,7 +3,7 @@
   "name": "BetsPapa \u2014 Football Intelligence",
   "short_name": "BetsPapa",
   "description": "BetsPapa opens on Flash Cover IQ, which evaluates 15 SportyBet cover markets and publishes one qualified selection per fixture or skips it.",
-  "start_url": "/?source=pwa&v=1280",
+  "start_url": "/?source=pwa&v=1290",
   "scope": "/",
   "display": "standalone",
   "display_override": [
@@ -103,7 +103,7 @@
     {
       "name": "Visa Engine",
       "short_name": "Visa",
-      "description": "Open strict last-five split-form 60/80/100 Visa decisions",
+      "description": "Open Visa v2 split-rank, venue-power and Over 2.5 decisions",
       "url": "/visa.html?source=shortcut",
       "icons": [
         {
@@ -156,5 +156,5 @@
       "label": "BetsPapa Flash Cover IQ football intelligence board"
     }
   ],
-  "version": "1.28.0"
+  "version": "1.29.0"
 }

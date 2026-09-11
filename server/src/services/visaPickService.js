@@ -1,14 +1,19 @@
 import { PREDICTABLE_STATUSES } from "../config.js";
 import {
+  VISA_AWAY_LOSS_RATE_MIN,
+  VISA_CONCEDE_AVG_MIN,
   VISA_ENGINE_NAME,
   VISA_ENGINE_VERSION,
-  VISA_FATAL_LOSS_MIN,
-  VISA_GOAL_RATE_MIN,
-  VISA_LOW_LOSS_MAX,
+  VISA_HOME_SCORE_AVG_MIN,
+  VISA_HOME_WIN_RATE_MIN,
   VISA_MIN_MATCHES,
-  VISA_WIN_MIN,
+  VISA_MIN_SPLIT_PLAYED,
+  VISA_MIN_SPLIT_TABLE,
+  VISA_SCORE_AVG_MIN,
+  VISA_WIN_ODDS_MAX,
   selectVisaPick
 } from "../engine/visaEngine.js";
+import { rankSplitTable } from "../engine/ppgEngine.js";
 import { buildLeagueMap } from "../engine/totalGoalsBankerEngine.js";
 import { loadSportyBetVisaOdds } from "../providers/sportyBetOdds.js";
 import { loadPublicFixturesForDate } from "./publicService.js";
@@ -77,6 +82,24 @@ export function venueHistoryForFixture(rows = [], fixture = {}) {
   };
 }
 
+/** Resolve the home-only and away-only league positions at this fixture's kickoff. */
+export function splitStandingsForFixture(rows = [], fixture = {}) {
+  const leagueId = Number(fixture.league?.id);
+  const season = Number(fixture.season ?? fixture.league?.season);
+  const cutoff = new Date(fixture.kickoff).getTime();
+  const options = {
+    leagueId: Number.isFinite(leagueId) ? leagueId : undefined,
+    season: Number.isFinite(season) ? season : undefined,
+    cutoff
+  };
+  const homeTable = rankSplitTable(rows, { ...options, venue: "home" });
+  const awayTable = rankSplitTable(rows, { ...options, venue: "away" });
+  return {
+    homeStanding: homeTable.find((row) => Number(row.teamId) === Number(fixture.home?.id)) || {},
+    awayStanding: awayTable.find((row) => Number(row.teamId) === Number(fixture.away?.id)) || {}
+  };
+}
+
 async function loadVenueHistory(supabase, fixtures) {
   const leagueIds = [...new Set(fixtures
     .map((fixture) => Number(fixture.league?.id))
@@ -124,6 +147,8 @@ function buildVisaSlate(date, fixtures, histories, sportyOdds) {
       awayName: fixture.away?.name || "Away",
       homeGames: history.homeGames || [],
       awayGames: history.awayGames || [],
+      homeStanding: history.homeStanding || {},
+      awayStanding: history.awayStanding || {},
       odds
     });
     if (!pick.available) {
@@ -153,11 +178,19 @@ function buildVisaSlate(date, fixtures, histories, sportyOdds) {
     engineVersion: VISA_ENGINE_VERSION,
     rules: {
       splitWindow: VISA_MIN_MATCHES,
-      lossGrades: [60, 80, 100],
-      fatalLossMin: VISA_FATAL_LOSS_MIN,
-      lowLossMaxExclusive: VISA_LOW_LOSS_MAX,
-      dualWinMin: VISA_WIN_MIN,
-      goalEvidenceMin: VISA_GOAL_RATE_MIN,
+      splitTableMinimum: VISA_MIN_SPLIT_TABLE,
+      splitPlayedMinimum: VISA_MIN_SPLIT_PLAYED,
+      winBankerTopRank: 3,
+      winBankerOddsMax: VISA_WIN_ODDS_MAX,
+      winBankerOpponentOutsideTop: 6,
+      awayOpponentBottomRank: 3,
+      homeOutsideBottomRank: 6,
+      over25ScoreAverageMin: VISA_SCORE_AVG_MIN,
+      over25ConcedeAverageMin: VISA_CONCEDE_AVG_MIN,
+      awayLossRateMin: VISA_AWAY_LOSS_RATE_MIN,
+      homeScoreAverageMin: VISA_HOME_SCORE_AVG_MIN,
+      homeWinRateMinExclusive: VISA_HOME_WIN_RATE_MIN,
+      dualTriggerSureVisa: true,
       onePickPerFixture: true
     },
     reviewedFixtures: fixtures.length,
@@ -180,10 +213,23 @@ async function loadVisaSlates(supabase, dates, { force = false } = {}) {
   })));
   const fixtures = fixtureGroups.flatMap((group) => group.fixtures);
   const historyRows = await loadVenueHistory(supabase, fixtures);
-  const histories = new Map(fixtures.map((fixture) => [
-    Number(fixture.id),
-    venueHistoryForFixture(historyRows, fixture)
-  ]));
+  const competitionRows = new Map();
+  for (const row of historyRows) {
+    const key = `${Number(row.league_id)}:${Number(row.season)}`;
+    if (!competitionRows.has(key)) competitionRows.set(key, []);
+    competitionRows.get(key).push(row);
+  }
+  const histories = new Map(fixtures.map((fixture) => {
+    const key = `${Number(fixture.league?.id)}:${Number(fixture.season ?? fixture.league?.season)}`;
+    const rows = competitionRows.get(key) || [];
+    return [
+      Number(fixture.id),
+      {
+        ...venueHistoryForFixture(rows, fixture),
+        ...splitStandingsForFixture(rows, fixture)
+      }
+    ];
+  }));
   const oddsEligible = fixtures.filter((fixture) => {
     const history = histories.get(Number(fixture.id));
     return history?.homeGames?.length >= VISA_MIN_MATCHES &&

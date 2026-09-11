@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.28.0",
+  "version": "1.29.0",
   "private": true,
-  "description": "BetsPapa v1.28.0 runs the strict split-form Visa Engine across a seven-day board.",
+  "description": "BetsPapa v1.29.0 runs Visa v2 split-rank, venue-power and Over 2.5 routes across a seven-day board.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

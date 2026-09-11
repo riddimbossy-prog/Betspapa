@@ -52,6 +52,20 @@
     return `${Math.round(number <= 1 ? number * 100 : number)}%`;
   }
 
+  function decimal(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number.toFixed(2) : "—";
+  }
+
+  function standingLabel(side) {
+    const standing = side?.splitStanding || {};
+    const rank = Number(standing.rank);
+    const tableSize = Number(standing.tableSize);
+    return Number.isFinite(rank) && Number.isFinite(tableSize)
+      ? `#${rank}/${tableSize}`
+      : "Rank —";
+  }
+
   function formatKickoff(value) {
     if (!value) return "Time pending";
     const date = new Date(value);
@@ -90,28 +104,30 @@
 
   function teamGradeMarkup(team, side, venue) {
     return `<div class="visa-team-grade ${gradeClass(side)}">
-      <div class="visa-team-identity">${logoMarkup(team)}<span><small>${escapeHtml(venue)} split</small><strong>${escapeHtml(team?.name || venue)}</strong></span></div>
+      <div class="visa-team-identity">${logoMarkup(team)}<span><small>${escapeHtml(venue)} split · ${escapeHtml(standingLabel(side))}</small><strong>${escapeHtml(team?.name || venue)}</strong></span></div>
       <div class="visa-grade-numbers">
-        <span><small>Loss</small><b>${percent(side?.lossRate)}</b></span>
+        <span><small>GF avg</small><b>${escapeHtml(decimal(side?.gfAverage))}</b></span>
+        <span><small>GA avg</small><b>${escapeHtml(decimal(side?.gaAverage))}</b></span>
         <span><small>Win</small><b>${percent(side?.winRate)}</b></span>
-        <span><small>W-D-L</small><b>${escapeHtml(`${side?.wins || 0}-${side?.draws || 0}-${side?.losses || 0}`)}</b></span>
+        <span><small>Loss</small><b>${percent(side?.lossRate)}</b></span>
       </div>
-      <div class="visa-team-form"><b>${escapeHtml(side?.lossBand || "UNAVAILABLE")}</b>${formMarkup(side?.form)}</div>
+      <div class="visa-team-form"><b>${escapeHtml(`${side?.wins || 0}-${side?.draws || 0}-${side?.losses || 0} W-D-L`)}</b>${formMarkup(side?.form)}</div>
     </div>`;
   }
 
   function routeIcon(route) {
-    if (route === "loss-denial") return "✕";
-    if (route === "protected-loss-denial") return "◇";
-    if (route === "dual-win-gg") return "⇄";
-    if (route === "dual-loss-goals") return "2+";
+    if (route === "split-top-3-win") return "#3";
+    if (route === "away-bottom-3-home-win") return "B3";
+    if (route === "away-loss-home-win") return "L";
+    if (route === "home-power-win") return "H";
+    if (route === "high-goal-over-25") return "2.5";
     return "✓";
   }
 
   function cardMarkup(item, index) {
     const home = item.homeVisa || {};
     const away = item.awayVisa || {};
-    return `<button type="button" class="visa-card" data-fixture="${escapeHtml(item.fixtureId ?? item.internalFixtureId)}" style="animation-delay:${Math.min(index, 8) * 55}ms">
+    return `<button type="button" class="visa-card${item.visaStatus === "SURE VISA" ? " visa-card-sure" : ""}" data-fixture="${escapeHtml(item.fixtureId ?? item.internalFixtureId)}" style="animation-delay:${Math.min(index, 8) * 55}ms">
       <div class="visa-card-head">
         <span class="visa-route-badge"><i>${escapeHtml(routeIcon(item.route))}</i>${escapeHtml(item.routeLabel || "APPROVED")}</span>
         <span class="visa-stamp">${escapeHtml(item.tier || "VISA APPROVED")}</span>
@@ -136,16 +152,16 @@
 
   function sideSheet(team, side, venue) {
     return `<section class="visa-sheet-side ${gradeClass(side)}">
-      <div class="visa-sheet-team">${logoMarkup(team)}<span><small>${escapeHtml(venue)} · last five</small><strong>${escapeHtml(team?.name || venue)}</strong></span></div>
+      <div class="visa-sheet-team">${logoMarkup(team)}<span><small>${escapeHtml(venue)} · ${escapeHtml(standingLabel(side))} · last five</small><strong>${escapeHtml(team?.name || venue)}</strong></span></div>
       <div class="visa-sheet-grade"><b>${escapeHtml(side?.lossBand || "NO GRADE")}</b><span>${escapeHtml(side?.winBand || "")}</span></div>
       ${formMarkup(side?.form)}
       <div class="visa-sheet-stats">
+        ${statCell("Split rank", standingLabel(side), `${side?.splitStanding?.played || 0} played`)}
         ${statCell("W-D-L", `${side?.wins || 0}-${side?.draws || 0}-${side?.losses || 0}`)}
-        ${statCell("Goals", `${side?.gf || 0}-${side?.ga || 0}`, side?.scoreline || "")}
-        ${statCell("O1.5", percent(side?.over15Rate), `${side?.over15 || 0}/5`)}
-        ${statCell("GG", percent(side?.bttsRate), `${side?.btts || 0}/5`)}
-        ${statCell("Scored", percent(side?.scoredRate), `${side?.scoredIn || 0}/5`)}
-        ${statCell("Conceded", percent(side?.concededRate), `${side?.concededIn || 0}/5`)}
+        ${statCell("Win rate", percent(side?.winRate), `${side?.wins || 0}/5`)}
+        ${statCell("Loss rate", percent(side?.lossRate), `${side?.losses || 0}/5`)}
+        ${statCell("GF average", decimal(side?.gfAverage), `${side?.gf || 0} scored`)}
+        ${statCell("GA average", decimal(side?.gaAverage), `${side?.ga || 0} conceded`)}
       </div>
     </section>`;
   }
@@ -154,7 +170,7 @@
     const home = item.homeVisa || {};
     const away = item.awayVisa || {};
     const gates = Array.isArray(item.filters) ? item.filters : [];
-    return `<article class="visa-sheet">
+    return `<article class="visa-sheet${item.visaStatus === "SURE VISA" ? " visa-sheet-sure" : ""}">
       <header class="visa-sheet-head">
         <div><span>VISA DECISION FILE</span><h2>${escapeHtml(item.home?.name || "Home")} <i>vs</i> ${escapeHtml(item.away?.name || "Away")}</h2><p>${escapeHtml(leagueText(item.league))} · ${escapeHtml(formatKickoff(item.kickoff))}</p></div>
         <strong>${escapeHtml(item.tier || "APPROVED")}</strong>
@@ -167,13 +183,13 @@
         <span>${escapeHtml(item.routeLabel || "VISA APPROVED")} · ${escapeHtml(item.market || "Market")}</span>
         <div><strong>${escapeHtml(item.selection || "—")}</strong><b>${escapeHtml(item.odds ?? "—")}</b></div>
         <p>${escapeHtml(item.publicExplanation || item.explanation || "")}</p>
-        ${item.approvedTeam ? `<small>Approved: ${escapeHtml(item.approvedTeam)}${item.deniedTeam ? ` · Denied: ${escapeHtml(item.deniedTeam)}` : ""}</small>` : ""}
+        ${item.approvedTeam ? `<small>Approved: ${escapeHtml(item.approvedTeam)}${item.deniedTeam ? ` · Opponent: ${escapeHtml(item.deniedTeam)}` : ""}</small>` : ""}
       </section>
       <section class="visa-audit">
         <header><span>Required gates</span><b>${gates.filter((row) => row.passed).length}/${gates.length} passed</b></header>
         <div>${gates.map((row) => `<div class="${row.passed ? "pass" : "fail"}"><i>${row.passed ? "✓" : "×"}</i><span><strong>${escapeHtml(row.label || row.key)}</strong><small>${escapeHtml(row.rule || "")}</small></span><b>${escapeHtml(row.value ?? "—")}</b></div>`).join("")}</div>
       </section>
-      <section class="visa-xg"><span>Goal cross-check</span><strong>${escapeHtml(Number(item.expectedGoals?.total || 0).toFixed(2))}</strong><small>Home ${escapeHtml(Number(item.expectedGoals?.home || 0).toFixed(2))} · Away ${escapeHtml(Number(item.expectedGoals?.away || 0).toFixed(2))}</small></section>
+      <section class="visa-xg"><span>Venue average check</span><strong>GF ${escapeHtml(decimal(Math.max(Number(home.gfAverage || 0), Number(away.gfAverage || 0))))}</strong><small>Highest GA ${escapeHtml(decimal(Math.max(Number(home.gaAverage || 0), Number(away.gaAverage || 0))))} · exact last-five splits</small></section>
       ${item.sportyBetUrl ? `<a class="visa-sporty" href="${escapeHtml(item.sportyBetUrl)}" target="_blank" rel="noopener">Open exact event on SportyBet ↗</a>` : ""}
     </article>`;
   }
@@ -251,7 +267,7 @@
       const selectedRoute = routeSelect?.value || activeRoute;
       const filtered = picks.filter((item) => {
         if (selectedRoute && item.route !== selectedRoute) return false;
-        return !query || [item.home?.name, item.away?.name, leagueText(item.league), item.selection, item.routeLabel]
+        return !query || [item.home?.name, item.away?.name, leagueText(item.league), item.selection, item.routeLabel, item.tier]
           .join(" ").toLowerCase().includes(query);
       });
       routeMap?.querySelectorAll("[data-route]").forEach((button) => {
@@ -345,7 +361,7 @@
     const pendingDays = weekDates(startDate).map((date) => ({ date }));
     if (!pendingDays.some((day) => day.date === activeDate)) activeDate = startDate;
     renderDateTabs(pendingDays, "Running…");
-    setStatus("Running every Visa fixture across seven dates…", "One weekly scan · strict home and away split form");
+    setStatus("Running every Visa fixture across seven dates…", "One weekly scan · split ranks, venue form and exact SportyBet prices");
     try {
       const payload = await fetchWeek(startDate, force);
       const days = Array.isArray(payload.days) ? payload.days : [];
