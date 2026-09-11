@@ -14,8 +14,37 @@
     .replaceAll(">", AMP + "gt;")
     .replaceAll('"', AMP + "quot;");
   const utcIsoDate = () => new Date().toISOString().slice(0, 10);
+  const WEEK_LENGTH = 7;
+  let currentWeek = null;
+  let weekStartDate = utcIsoDate();
+  let activeDate = weekStartDate;
   const leagueText = (league) => window.BetsPapaFlags?.leagueText(league) ||
     [league?.country, league?.name].filter(Boolean).join(" · ") || "Competition";
+
+  function validIsoDate(value) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))) return false;
+    const date = new Date(`${value}T00:00:00.000Z`);
+    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  }
+
+  function addUtcDays(date, offset) {
+    const value = new Date(`${date}T00:00:00.000Z`);
+    value.setUTCDate(value.getUTCDate() + offset);
+    return value.toISOString().slice(0, 10);
+  }
+
+  function weekDates(startDate) {
+    return Array.from({ length: WEEK_LENGTH }, (_, offset) => addUtcDays(startDate, offset));
+  }
+
+  function calendarLabel(date, options) {
+    return new Intl.DateTimeFormat(undefined, { timeZone: "UTC", ...options })
+      .format(new Date(`${date}T12:00:00.000Z`));
+  }
+
+  function longDateLabel(date) {
+    return calendarLabel(date, { weekday: "long", day: "numeric", month: "long" });
+  }
 
   function percent(value) {
     const number = Number(value);
@@ -164,13 +193,13 @@
     if (!dialog.open) dialog.showModal();
   }
 
-  async function fetchBoard(date, force = false) {
+  async function fetchWeek(startDate, force = false) {
     let lastError = null;
     for (const base of API_BASES) {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 30000);
+      const timer = setTimeout(() => controller.abort(), 60000);
       try {
-        const response = await fetch(`${base}/api/visa/today?date=${encodeURIComponent(date)}${force ? "&force=1" : ""}`, {
+        const response = await fetch(`${base}/api/visa/week?start=${encodeURIComponent(startDate)}&days=${WEEK_LENGTH}${force ? "&force=1" : ""}`, {
           headers: { Accept: "application/json" },
           cache: force ? "no-store" : "default",
           signal: controller.signal
@@ -192,6 +221,12 @@
     const search = $("#visaSearchFilter");
     const routeMap = $("#visaRouteMap");
     let activeRoute = "";
+    const boardTitle = $("#visaBoardTitle");
+    if (boardTitle) {
+      boardTitle.textContent = payload.date === utcIsoDate()
+        ? "Today’s Visa decisions"
+        : `${longDateLabel(payload.date)} decisions`;
+    }
 
     $("#portalMetrics").innerHTML = [
       `<div class="diagnostic-card"><span>Approved</span><strong>${picks.length}</strong></div>`,
@@ -249,20 +284,86 @@
     draw();
   }
 
+  function renderDateTabs(days, stateLabel = "") {
+    const tabs = $("#visaDateTabs");
+    if (!tabs) return;
+    tabs.innerHTML = days.map((day) => {
+      const date = day.date;
+      const selected = date === activeDate;
+      const dayName = date === utcIsoDate()
+        ? "Today"
+        : calendarLabel(date, { weekday: "short" });
+      const dateName = calendarLabel(date, { day: "numeric", month: "short" });
+      const pickCount = Number(day.pickCount || 0);
+      const gameCount = Number(day.reviewedFixtures || 0);
+      const status = stateLabel || `${pickCount} pick${pickCount === 1 ? "" : "s"} · ${gameCount} games`;
+      return `<button aria-controls="portalContent" aria-selected="${selected}" class="visa-date-tab${selected ? " active" : ""}" data-date="${escapeHtml(date)}" id="visa-tab-${escapeHtml(date)}" role="tab" tabindex="${selected ? "0" : "-1"}" type="button">
+        <span>${escapeHtml(dayName)}</span><strong>${escapeHtml(dateName)}</strong><small>${escapeHtml(status)}</small>
+      </button>`;
+    }).join("");
+
+    const buttons = [...tabs.querySelectorAll("[data-date]")];
+    buttons.forEach((button, index) => {
+      button.addEventListener("click", () => selectDate(button.dataset.date));
+      button.addEventListener("keydown", (event) => {
+        let targetIndex = null;
+        if (event.key === "ArrowRight") targetIndex = (index + 1) % buttons.length;
+        if (event.key === "ArrowLeft") targetIndex = (index - 1 + buttons.length) % buttons.length;
+        if (event.key === "Home") targetIndex = 0;
+        if (event.key === "End") targetIndex = buttons.length - 1;
+        if (targetIndex == null) return;
+        event.preventDefault();
+        selectDate(buttons[targetIndex].dataset.date, true);
+      });
+    });
+  }
+
+  function selectDate(date, focusTab = false) {
+    const slate = currentWeek?.days?.find((day) => day.date === date);
+    if (!slate) return;
+    activeDate = date;
+    renderDateTabs(currentWeek.days);
+    $("#portalContent")?.setAttribute("aria-labelledby", `visa-tab-${date}`);
+    render(slate);
+    setStatus(
+      `${slate.pickCount || 0} Visa approval${Number(slate.pickCount) === 1 ? "" : "s"} for ${longDateLabel(date)}`,
+      `${slate.reviewedFixtures || 0} fixtures · ${slate.historyQualifiedFixtures || 0} split-ready · ${slate.oddsMatchedFixtures || 0} SportyBet matches`
+    );
+    const url = new URL(window.location.href);
+    url.searchParams.set("start", currentWeek.startDate);
+    url.searchParams.set("date", date);
+    window.history.replaceState({}, "", url);
+    if (focusTab) $(`#visa-tab-${date}`)?.focus();
+  }
+
   async function load(force = false) {
-    const dateInput = $("#dateFilter");
-    const date = dateInput?.value || utcIsoDate();
-    if (dateInput) dateInput.value = date;
-    setStatus("Checking strict home and away split applications…", "Five completed venue matches are mandatory");
+    const startInput = $("#dateFilter");
+    const startDate = validIsoDate(startInput?.value) ? startInput.value : weekStartDate;
+    weekStartDate = startDate;
+    currentWeek = null;
+    if (startInput) startInput.value = startDate;
+    const pendingDays = weekDates(startDate).map((date) => ({ date }));
+    if (!pendingDays.some((day) => day.date === activeDate)) activeDate = startDate;
+    renderDateTabs(pendingDays, "Running…");
+    setStatus("Running every Visa fixture across seven dates…", "One weekly scan · strict home and away split form");
     try {
-      const payload = await fetchBoard(date, force);
-      render(payload);
-      setStatus(
-        `${payload.pickCount || 0} Visa approval${Number(payload.pickCount) === 1 ? "" : "s"}`,
-        `${payload.reviewedFixtures || 0} fixtures · ${payload.historyQualifiedFixtures || 0} split-ready · ${payload.oddsMatchedFixtures || 0} SportyBet matches`
-      );
+      const payload = await fetchWeek(startDate, force);
+      const days = Array.isArray(payload.days) ? payload.days : [];
+      if (days.length !== WEEK_LENGTH) throw new Error("Visa did not return all seven dates");
+      currentWeek = { ...payload, days };
+      if (!days.some((day) => day.date === activeDate)) activeDate = days[0].date;
+      const totals = payload.totals || {};
+      const summary = $("#visaWeekSummary");
+      if (summary) {
+        summary.textContent = `${totals.pickCount || 0} approvals · ${totals.reviewedFixtures || 0} fixtures checked · ${calendarLabel(payload.startDate, { day: "numeric", month: "short" })}–${calendarLabel(payload.endDate, { day: "numeric", month: "short", year: "numeric" })}`;
+      }
+      selectDate(activeDate);
     } catch (error) {
       setStatus("Could not load Visa", error?.message || String(error));
+      renderDateTabs(pendingDays, "Unavailable");
+      const summary = $("#visaWeekSummary");
+      if (summary) summary.textContent = "Weekly run unavailable";
+      $("#portalMetrics").innerHTML = "";
       $("#portalContent").innerHTML = `<div class="empty-card visa-empty"><strong>CONNECTION HELD</strong><span>${escapeHtml(error?.message || error)}</span></div>`;
     }
   }
@@ -283,10 +384,20 @@
     closeDialog();
   });
   $("#refreshButton")?.addEventListener("click", () => load(true));
-  const dateInput = $("#dateFilter");
-  if (dateInput) {
-    dateInput.value = utcIsoDate();
-    dateInput.addEventListener("change", () => load());
+  const query = new URLSearchParams(window.location.search);
+  const requestedStart = query.get("start");
+  const requestedDate = query.get("date");
+  weekStartDate = validIsoDate(requestedStart) ? requestedStart : utcIsoDate();
+  activeDate = validIsoDate(requestedDate) ? requestedDate : weekStartDate;
+  const startInput = $("#dateFilter");
+  if (startInput) {
+    startInput.value = weekStartDate;
+    startInput.addEventListener("change", () => {
+      if (!validIsoDate(startInput.value)) return;
+      weekStartDate = startInput.value;
+      activeDate = weekStartDate;
+      load();
+    });
   }
   load();
 })();

@@ -15,7 +15,24 @@ import { loadPublicFixturesForDate } from "./publicService.js";
 import { fetchAllRows } from "./supabaseHelpers.js";
 
 const CACHE_TTL_MS = 60_000;
-const cache = new Map();
+const dailyCache = new Map();
+const weekCache = new Map();
+
+export function visaWeekDates(startDate, days = 7) {
+  const requestedDays = Math.trunc(Number(days));
+  const dayCount = Number.isFinite(requestedDays)
+    ? Math.max(1, Math.min(requestedDays, 7))
+    : 7;
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  if (Number.isNaN(start.getTime()) || start.toISOString().slice(0, 10) !== startDate) {
+    throw new RangeError("Visa week start must be a valid ISO date");
+  }
+  return Array.from({ length: dayCount }, (_, offset) => {
+    const date = new Date(start);
+    date.setUTCDate(date.getUTCDate() + offset);
+    return date.toISOString().slice(0, 10);
+  });
+}
 
 function completeGame(row) {
   return row?.fulltime_home != null && row?.fulltime_away != null &&
@@ -96,27 +113,7 @@ function publicPick(fixture, pick, odds) {
   };
 }
 
-export async function getVisaPicks(supabase, date, { force = false } = {}) {
-  const cached = cache.get(date);
-  if (!force && cached && Date.now() - cached.createdAt < CACHE_TTL_MS) {
-    return { ...cached.value, cached: true };
-  }
-
-  const fixtures = (await loadPublicFixturesForDate(supabase, date)).filter((fixture) =>
-    PREDICTABLE_STATUSES.has(fixture.status)
-  );
-  const historyRows = await loadVenueHistory(supabase, fixtures);
-  const histories = new Map(fixtures.map((fixture) => [
-    Number(fixture.id),
-    venueHistoryForFixture(historyRows, fixture)
-  ]));
-  const oddsEligible = fixtures.filter((fixture) => {
-    const history = histories.get(Number(fixture.id));
-    return history?.homeGames?.length >= VISA_MIN_MATCHES &&
-      history?.awayGames?.length >= VISA_MIN_MATCHES;
-  });
-  const sportyOdds = await loadSportyBetVisaOdds(oddsEligible, { force }).catch(() => new Map());
-
+function buildVisaSlate(date, fixtures, histories, sportyOdds) {
   const picks = [];
   const rejectionCounts = {};
   for (const fixture of fixtures) {
@@ -141,7 +138,15 @@ export async function getVisaPicks(supabase, date, { force = false } = {}) {
     Number(right.score || 0) - Number(left.score || 0) ||
     new Date(left.kickoff || 0) - new Date(right.kickoff || 0)
   );
-  const value = {
+  const historyQualifiedFixtures = fixtures.filter((fixture) => {
+    const history = histories.get(Number(fixture.id));
+    return history?.homeGames?.length >= VISA_MIN_MATCHES &&
+      history?.awayGames?.length >= VISA_MIN_MATCHES;
+  });
+  const oddsMatchedFixtures = fixtures.filter((fixture) =>
+    sportyOdds.has(Number(fixture.id))
+  );
+  return {
     date,
     generatedAt: new Date().toISOString(),
     engine: VISA_ENGINE_NAME,
@@ -156,14 +161,84 @@ export async function getVisaPicks(supabase, date, { force = false } = {}) {
       onePickPerFixture: true
     },
     reviewedFixtures: fixtures.length,
-    historyQualifiedFixtures: oddsEligible.length,
-    oddsMatchedFixtures: sportyOdds.size,
+    historyQualifiedFixtures: historyQualifiedFixtures.length,
+    oddsMatchedFixtures: oddsMatchedFixtures.length,
     pickCount: picks.length,
     rejectedCount: fixtures.length - picks.length,
     rejectionCounts,
     leagueMap: buildLeagueMap(picks),
     picks
   };
-  cache.set(date, { createdAt: Date.now(), value });
+}
+
+async function loadVisaSlates(supabase, dates, { force = false } = {}) {
+  const fixtureGroups = await Promise.all(dates.map(async (date) => ({
+    date,
+    fixtures: (await loadPublicFixturesForDate(supabase, date)).filter((fixture) =>
+      PREDICTABLE_STATUSES.has(fixture.status)
+    )
+  })));
+  const fixtures = fixtureGroups.flatMap((group) => group.fixtures);
+  const historyRows = await loadVenueHistory(supabase, fixtures);
+  const histories = new Map(fixtures.map((fixture) => [
+    Number(fixture.id),
+    venueHistoryForFixture(historyRows, fixture)
+  ]));
+  const oddsEligible = fixtures.filter((fixture) => {
+    const history = histories.get(Number(fixture.id));
+    return history?.homeGames?.length >= VISA_MIN_MATCHES &&
+      history?.awayGames?.length >= VISA_MIN_MATCHES;
+  });
+  const sportyOdds = await loadSportyBetVisaOdds(oddsEligible, { force }).catch(() => new Map());
+  const createdAt = Date.now();
+  return fixtureGroups.map(({ date, fixtures: dateFixtures }) => {
+    const value = buildVisaSlate(date, dateFixtures, histories, sportyOdds);
+    dailyCache.set(date, { createdAt, value });
+    return value;
+  });
+}
+
+export async function getVisaPicks(supabase, date, { force = false } = {}) {
+  const cached = dailyCache.get(date);
+  if (!force && cached && Date.now() - cached.createdAt < CACHE_TTL_MS) {
+    return { ...cached.value, cached: true };
+  }
+  const [value] = await loadVisaSlates(supabase, [date], { force });
+  return { ...value, cached: false };
+}
+
+export async function getVisaWeek(supabase, startDate, { days = 7, force = false } = {}) {
+  const dates = visaWeekDates(startDate, days);
+  const cacheKey = `${dates[0]}:${dates.length}`;
+  const cached = weekCache.get(cacheKey);
+  if (!force && cached && Date.now() - cached.createdAt < CACHE_TTL_MS) {
+    return { ...cached.value, cached: true };
+  }
+
+  const slates = await loadVisaSlates(supabase, dates, { force });
+  const totals = slates.reduce((summary, slate) => ({
+    reviewedFixtures: summary.reviewedFixtures + slate.reviewedFixtures,
+    historyQualifiedFixtures: summary.historyQualifiedFixtures + slate.historyQualifiedFixtures,
+    oddsMatchedFixtures: summary.oddsMatchedFixtures + slate.oddsMatchedFixtures,
+    pickCount: summary.pickCount + slate.pickCount,
+    rejectedCount: summary.rejectedCount + slate.rejectedCount
+  }), {
+    reviewedFixtures: 0,
+    historyQualifiedFixtures: 0,
+    oddsMatchedFixtures: 0,
+    pickCount: 0,
+    rejectedCount: 0
+  });
+  const value = {
+    startDate: dates[0],
+    endDate: dates.at(-1),
+    dayCount: dates.length,
+    generatedAt: new Date().toISOString(),
+    engine: VISA_ENGINE_NAME,
+    engineVersion: VISA_ENGINE_VERSION,
+    totals,
+    days: slates
+  };
+  weekCache.set(cacheKey, { createdAt: Date.now(), value });
   return { ...value, cached: false };
 }

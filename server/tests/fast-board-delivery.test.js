@@ -69,7 +69,7 @@ test("portal shows a local prepared board before the network refresh", async () 
 });
 
 test("v1.25.0 keeps the all-engine board with league-only specialist guards", () => {
-  assert.equal(SERVICE_VERSION, "1.27.0");
+  assert.equal(SERVICE_VERSION, "1.28.0");
   assert.equal(ENGINE_VERSION, "papasense-v2.1.2-splitform");
 });
 

@@ -16,13 +16,13 @@
 <link href="/assets/css/pwa.v1160.css" rel="stylesheet"/>
 <link href="/assets/css/ui.v151.css" rel="stylesheet"/>
 <link href="assets/css/pitch-2026.css?v=2026" rel="stylesheet"/>
-<link href="assets/css/visa.v1270.css?v=1270" rel="stylesheet"/>
+<link href="assets/css/visa.v1270.css?v=1280" rel="stylesheet"/>
 <script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
 <meta content="yes" name="mobile-web-app-capable"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="BetsPapa" name="apple-mobile-web-app-title"/>
-<link href="/manifest.webmanifest?v=1270" rel="manifest"/>
+<link href="/manifest.webmanifest?v=1280" rel="manifest"/>
 <link href="/assets/images/pwa-brand-apple-180.png" rel="apple-touch-icon" sizes="180x180"/>
 <link href="https://betspapa.com/visa.html" rel="canonical"/>
 </head>
@@ -60,19 +60,26 @@
 <span>One pick per match</span>
 </section>
 <div class="status-strip" id="portalStatus"><span>Checking applications…</span><small></small></div>
+<section class="visa-week-board" aria-labelledby="visaWeekTitle">
+<header class="visa-week-head">
+<div><span>Seven-day run</span><h2 id="visaWeekTitle">Visa week</h2></div>
+<p id="visaWeekSummary">Loading all seven dates…</p>
+</header>
+<div aria-label="Visa dates" class="visa-date-tabs" id="visaDateTabs" role="tablist"></div>
+</section>
 <div class="portal-toolbar visa-toolbar">
-<label><span>Date</span><input id="dateFilter" type="date"/></label>
+<label><span>Week starts</span><input id="dateFilter" type="date"/></label>
 <label><span>Visa route</span><select id="visaRouteFilter"><option value="">All approved routes</option></select></label>
 <label><span>Search</span><input id="visaSearchFilter" placeholder="Team, league or selection" type="search"/></label>
-<button id="refreshButton" type="button">Run Visa</button>
+<button id="refreshButton" type="button">Run full week</button>
 </div>
 <section class="metric-row" id="portalMetrics"></section>
 <div class="section-title visa-section-title">
-<div><span>Approved board</span><h2>Today’s Visa decisions</h2></div>
+<div><span>Approved board</span><h2 id="visaBoardTitle">Visa decisions</h2></div>
 <p>Tap a match to inspect both grades, the protection decision and every required gate.</p>
 </div>
 <section aria-label="Visa route filters" class="visa-route-map" id="visaRouteMap"></section>
-<div id="portalContent"></div>
+<div aria-live="polite" id="portalContent" role="tabpanel"></div>
 <section class="visa-method">
 <div><b>01</b><strong>Grade the split</strong><p>The home team supplies only its last five home results. The away team supplies only its last five away results.</p></div>
 <div><b>02</b><strong>Verify the route</strong><p>Win and loss grades open the route; scoring, conceding, totals and exact SportyBet prices must then confirm it.</p></div>
@@ -90,8 +97,8 @@
 </div>
 </dialog>
 <script src="assets/js/country-flags.v1175.js"></script>
-<script src="assets/js/visa.v1270.js?v=1270"></script>
-<script src="assets/js/mobile-nav.v1240.js?v=1270"></script>
+<script src="assets/js/visa.v1270.js?v=1280"></script>
+<script src="assets/js/mobile-nav.v1240.js?v=1280"></script>
 <script src="/assets/js/pwa.v1160.js"></script>
 <script src="/assets/js/ui.v1170.js"></script>
 </body>

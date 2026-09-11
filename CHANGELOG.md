@@ -1,3 +1,11 @@
+# v1.28.0 — Visa Seven-Day Board
+
+- Added seven date tabs to the Visa board, beginning with today by default.
+- Added a week-start control so readers can run any seven-date window.
+- Added `/api/visa/week`, which loads fixtures, strict split history and SportyBet prices once for the full range.
+- Each tab reports approved picks and every fixture reviewed for that date.
+- Kept `/api/visa/today` available for existing consumers.
+
 ## v1.25.2 — Split Form engine
 
 - Added Split Form as an independent engine. It does not copy Papa, Safer, Aggressive, Venue or Athena.

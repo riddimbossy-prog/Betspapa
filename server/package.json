@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.27.0",
+  "version": "1.28.0",
   "private": true,
-  "description": "BetsPapa v1.27.0 adds the strict last-five split-form Visa Engine.",
+  "description": "BetsPapa v1.28.0 runs the strict split-form Visa Engine across a seven-day board.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

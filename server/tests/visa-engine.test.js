@@ -12,7 +12,7 @@ import {
   summarizeVisaForm,
   winGrade
 } from "../src/engine/visaEngine.js";
-import { venueHistoryForFixture } from "../src/services/visaPickService.js";
+import { venueHistoryForFixture, visaWeekDates } from "../src/services/visaPickService.js";
 import { visaFromSportyMarkets } from "../src/providers/sportyBetOdds.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -38,6 +38,20 @@ test("Visa has a stable public identity and exact 60/80/100 grades", () => {
   assert.equal(winGrade(0.6), 60);
   assert.equal(winGrade(0.8), 80);
   assert.equal(winGrade(1), 100);
+});
+
+test("Visa week supplies exactly seven ordered dates across month and year boundaries", () => {
+  assert.deepEqual(visaWeekDates("2026-12-29"), [
+    "2026-12-29",
+    "2026-12-30",
+    "2026-12-31",
+    "2027-01-01",
+    "2027-01-02",
+    "2027-01-03",
+    "2027-01-04"
+  ]);
+  assert.equal(visaWeekDates("2026-09-11", 20).length, 7);
+  assert.throws(() => visaWeekDates("2026-02-30"), /valid ISO date/);
 });
 
 test("Visa summarises the last five only", () => {
@@ -234,15 +248,20 @@ test("Betspapa exposes the Visa page, API, navigation and fresh PWA assets", asy
   ]);
   assert.match(html, /data-page="visa"/);
   assert.match(html, /Loss grades: 60 · 80 · 100/);
-  assert.match(client, /\/api\/visa\/today/);
+  assert.match(html, /id="visaDateTabs"/);
+  assert.match(html, /Week starts/);
+  assert.match(client, /\/api\/visa\/week/);
+  assert.match(client, /WEEK_LENGTH = 7/);
   assert.match(client, /homeVisa/);
   assert.match(css, /max-width: 470px/);
   assert.match(routes, /publicRouter\.get\("\/visa\/today"/);
+  assert.match(routes, /publicRouter\.get\("\/visa\/week"/);
   assert.match(server, /visaEngineVersion/);
   assert.match(server, /visa: "\/api\/visa\/today"/);
+  assert.match(server, /visaWeek: "\/api\/visa\/week"/);
   assert.match(nav, /visa\.html/);
-  assert.match(sw, /betspapa-pwa-v1270/);
+  assert.match(sw, /betspapa-pwa-v1280/);
   assert.match(sw, /visa\.v1270\.js/);
   assert.match(sw, /visa\.html/);
-  assert.match(manifest, /"version": "1\.27\.0"/);
+  assert.match(manifest, /"version": "1\.28\.0"/);
 });

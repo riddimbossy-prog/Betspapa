@@ -28,7 +28,7 @@ import { getTotalGoalsBankers } from "../services/totalGoalsBankerService.js";
 import { getWinsBankers } from "../services/winsBankerService.js";
 import { getFlashPicks } from "../services/flashPickService.js";
 import { getPpgPicks } from "../services/ppgPickService.js";
-import { getVisaPicks } from "../services/visaPickService.js";
+import { getVisaPicks, getVisaWeek } from "../services/visaPickService.js";
 import { toPublicPapaLockSlate } from "../engine/papaLockBankerEngine.js";
 import { applyLeagueScoringGuard } from "../engine/leagueScoringPolicy.js";
 import { applyRedFlagsToPick, collectRedFlags } from "../services/fixtureRiskService.js";
@@ -564,6 +564,24 @@ publicRouter.get("/visa/today", async (req, res, next) => {
     res.json({
       ...slate,
       liveRefresh: { refreshed: false, skipped: true, reason: "Visa strict split-form reader" }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+publicRouter.get("/visa/week", async (req, res, next) => {
+  try {
+    const startDate = assertIsoDate(req.query.start || todayUtc());
+    const days = Math.max(1, Math.min(Math.trunc(Number(req.query.days) || 7), 7));
+    const force = ["1", "true", "force", "reload"].includes(
+      String(req.query.force || "").toLowerCase()
+    );
+    const week = await getVisaWeek(getSupabaseAdmin(), startDate, { days, force });
+    setPublicCache(res, week.cached ? 60 : 20, 180);
+    res.json({
+      ...week,
+      liveRefresh: { refreshed: false, skipped: true, reason: "Visa seven-day split-form reader" }
     });
   } catch (error) {
     next(error);

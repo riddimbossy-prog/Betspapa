@@ -118,6 +118,7 @@ app.get("/", (_req, res) => {
     flash: "/api/flash/today",
     ppg: "/api/ppg/today",
     visa: "/api/visa/today",
+    visaWeek: "/api/visa/week",
     legacyBankersByEngine: "/api/bankers/by-engine",
     resultsIntelligence: "/api/results/intelligence",
     adminDiagnostics: "/api/admin/diagnostics"

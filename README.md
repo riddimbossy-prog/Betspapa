@@ -1,3 +1,7 @@
+## v1.28.0 Visa Seven-Day Board
+
+Visa now evaluates one rolling week in a single batch and displays seven keyboard-accessible date tabs. Each tab reports its approved picks and total fixtures reviewed; changing the week-start date runs the following seven dates. The daily endpoint remains available, and `/api/visa/week` supplies the complete weekly board. See `BETSPAPA_V1_28_0_VISA_WEEK.md`.
+
 ## v1.27.0 Visa Engine
 
 Visa is now available at `/visa.html`. It grades the home team's last five home matches against the away team's last five away matches at 60%, 80% and 100%; protects draw-heavy loss mismatches; and requires separate goal evidence before GG or Over 1.5 can be published. It returns one exact SportyBet selection per fixture or no visa. No database migration is required. See `BETSPAPA_V1_27_0_VISA_ENGINE.md`.

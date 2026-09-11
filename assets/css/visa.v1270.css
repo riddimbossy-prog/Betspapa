@@ -103,6 +103,40 @@ body[data-page="visa"] .empty-card {
   box-shadow: 0 18px 36px -32px rgba(7, 28, 25, 0.65);
 }
 body[data-page="visa"] .status-strip span { color: var(--visa-ink); }
+.visa-week-board {
+  margin: 12px 0;
+  padding: 15px;
+  border: 1px solid rgba(7, 28, 25, 0.07);
+  border-radius: 19px;
+  background: var(--visa-card);
+  box-shadow: 0 18px 36px -32px rgba(7, 28, 25, 0.65);
+}
+.visa-week-head { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-bottom: 11px; }
+.visa-week-head span { color: var(--visa-green); font: 800 12px "Space Grotesk", sans-serif; letter-spacing: 0.13em; text-transform: uppercase; }
+.visa-week-head h2 { margin: 2px 0 0; color: var(--visa-ink); font: 700 20px "Space Grotesk", sans-serif; }
+.visa-week-head p { margin: 0; color: var(--visa-muted); font-size: 14px; text-align: right; }
+.visa-date-tabs { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.visa-date-tab {
+  min-width: 0;
+  padding: 10px 7px;
+  border: 1px solid rgba(7, 28, 25, 0.08);
+  border-radius: 13px;
+  background: #f4f6f2;
+  color: var(--visa-muted);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+.visa-date-tab:hover { border-color: rgba(15, 107, 85, 0.35); transform: translateY(-1px); }
+.visa-date-tab:focus-visible { outline: 3px solid rgba(15, 107, 85, 0.25); outline-offset: 2px; }
+.visa-date-tab span,
+.visa-date-tab strong,
+.visa-date-tab small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.visa-date-tab span { font: 700 12px "Space Grotesk", sans-serif; text-transform: uppercase; }
+.visa-date-tab strong { margin-top: 2px; color: var(--visa-ink); font: 700 16px "Space Grotesk", sans-serif; }
+.visa-date-tab small { margin-top: 4px; font-size: 12px; }
+.visa-date-tab.active { border-color: var(--visa-green); background: var(--visa-green); color: rgba(255, 255, 255, 0.72); box-shadow: 0 10px 24px -16px rgba(15, 107, 85, 0.85); }
+.visa-date-tab.active strong { color: #fff; }
 .visa-toolbar { grid-template-columns: 165px minmax(180px, 0.8fr) minmax(230px, 1.3fr) auto; }
 body[data-page="visa"] .portal-toolbar label span { color: var(--visa-muted); }
 body[data-page="visa"] .portal-toolbar input,
@@ -287,6 +321,9 @@ body[data-page="visa"] .portal-dialog { background: rgba(4, 18, 16, 0.72); }
 
 @media (max-width: 900px) {
   body[data-page="visa"] .portal-nav { background: var(--visa-card); }
+  .visa-date-tabs { display: flex; margin-right: -15px; padding-right: 15px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
+  .visa-date-tabs::-webkit-scrollbar { display: none; }
+  .visa-date-tab { min-width: 126px; flex: 0 0 126px; scroll-snap-align: start; }
   .visa-toolbar { grid-template-columns: 1fr 1fr; }
   .visa-toolbar label:nth-child(3) { grid-column: 1 / -1; }
   .visa-grid { grid-template-columns: 1fr; }
@@ -298,6 +335,8 @@ body[data-page="visa"] .portal-dialog { background: rgba(4, 18, 16, 0.72); }
   .visa-passport-mark { width: 102px; margin-right: -14px; }
   .visa-passport-mark small { display: none; }
   .visa-gates { margin-right: -0.5rem; }
+  .visa-week-head { align-items: start; flex-direction: column; gap: 4px; }
+  .visa-week-head p { text-align: left; }
   .visa-method { grid-template-columns: 1fr; }
   .visa-sheet-sides { grid-template-columns: 1fr; }
 }
