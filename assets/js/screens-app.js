@@ -208,6 +208,7 @@
     const split = p.directHitRates?.combined ? Math.round(p.directHitRates.combined * 100) : null;
     return {
       id,
+      key: p.key || p.market || engine,
       engine,
       kickoff: p.kickoff,
       home, away,
@@ -233,11 +234,12 @@
     };
   }
 
-  function mergeById(list) {
+  function mergeByKey(list, keyFn) {
     const map = new Map();
     for (const item of list) {
-      if (!item?.id) continue;
-      if (!map.has(item.id)) map.set(item.id, item);
+      const k = keyFn(item);
+      if (!k || map.has(k)) continue;
+      map.set(k, item);
     }
     return [...map.values()];
   }
@@ -271,9 +273,12 @@
       .concat(got.flash0?.picks || [])
       .concat(got.flash1?.picks || [])
       .map((p) => pickFromEngine(p, "FLASH"));
-    state.flash = mergeById(flashPicks);
+    state.flash = mergeByKey(flashPicks, (p) => `${p.id}::${p.key}`);
 
-    const flashMap = new Map(state.flash.map((p) => [p.id, p]));
+    const flashMap = new Map();
+    for (const p of state.flash) {
+      if (!flashMap.has(p.id)) flashMap.set(p.id, p);
+    }
     const fx = []
       .concat(got.fixtures0?.fixtures || [])
       .concat(got.fixtures1?.fixtures || [])
@@ -281,7 +286,7 @@
         const extra = flashMap.get(fid(f));
         return normalizeFixture(f, extra ? { flash: extra, venueForm: extra, expectedGoals: extra, probs: extra.probs } : null);
       });
-    state.fixtures = mergeById(fx).sort((a, b) => String(a.kickoff).localeCompare(String(b.kickoff)));
+    state.fixtures = mergeByKey(fx, (m) => m.id).sort((a, b) => String(a.kickoff).localeCompare(String(b.kickoff)));
 
     state.bankers = (got.bankers?.picks || []).map((p) => pickFromEngine(p, "BANKERS"));
     state.athena = (got.athena?.picks || []).map((p) => pickFromEngine(p, "ATHENA"));
@@ -366,13 +371,19 @@
 
   function matchById(id) {
     const fx = state.fixtures.find((m) => m.id === String(id));
+    const flashList = state.flash.filter((p) => p.id === String(id));
     if (fx) {
-      const fl = state.flash.find((p) => p.id === String(id));
-      if (fl) fx.flash = fl;
+      if (flashList.length) {
+        fx.flash = flashList[0];
+        fx.flashList = flashList;
+      }
       return fx;
     }
-    const fl = state.flash.find((p) => p.id === String(id));
-    if (fl) return flashAsMatch(fl);
+    if (flashList.length) {
+      const m = flashAsMatch(flashList[0]);
+      m.flashList = flashList;
+      return m;
+    }
     const boards = [...state.bankers, ...state.athena, ...state.goals, ...state.wins, ...state.visa];
     const p = boards.find((x) => x.id === String(id));
     return p ? flashAsMatch(p) : null;
@@ -382,13 +393,15 @@
     const raw = (location.hash || "").replace(/^#/, "");
     const parts = raw.split("/").filter(Boolean);
     if (!parts.length) {
-      if (!location.hash && START && START !== "home") return { name: START, id: null };
+      if (!location.hash && START && START !== "home" && START !== "slip") return { name: START, id: null };
       return { name: "home", id: null };
     }
     if (parts[0] === "match" && parts[1]) return { name: "match", id: decodeURIComponent(parts[1]) };
+    if (parts[0] === "slip") return { name: "flash", id: null };
     return { name: parts[0], id: null };
   }
   function go(name, id) {
+    if (name === "slip") name = "flash";
     const hash = name === "home" ? "#/" : name === "match" ? `#/match/${encodeURIComponent(id)}` : `#/${name}`;
     if (location.hash !== hash) location.hash = hash;
     else {
@@ -431,16 +444,14 @@
   }
 
   function navHtml(active) {
-    const count = state.slip.picks.length;
     const items = [
       { name: "home", label: "Fixtures", icon: ICO.list },
       { name: "flash", label: "Flash", icon: ICO.zap },
-      { name: "slip", label: "Slip", icon: ICO.ticket },
       { name: "papa", label: "Papa", icon: `<img src="${LOGO}" alt="">` },
     ];
     return `<nav class="nav" aria-label="Primary"><div class="nav-bar">${items.map((it) => {
       const on = active === it.name || (active === "match" && it.name === "home") || (["bankers","athena","goals","wins","visa","results","legal"].includes(active) && it.name === "papa");
-      return `<button type="button" class="nav-item${on ? " on" : ""}" data-go="${it.name}">${it.icon}<span>${it.label}</span>${it.name === "slip" && count ? `<span class="nav-count">${count}</span>` : ""}</button>`;
+      return `<button type="button" class="nav-item${on ? " on" : ""}" data-go="${it.name}">${it.icon}<span>${it.label}</span></button>`;
     }).join("")}</div></nav>`;
   }
 
@@ -530,6 +541,7 @@
       { key: "away", name: m.away.short, odd: odds.away },
     ];
     const engine = m.flash;
+    const flashList = m.flashList || (engine ? [engine] : []);
     return `<div class="view view-pink">
       <header class="pad" style="display:flex;align-items:center;justify-content:space-between">
         ${nested ? `<img class="brand-mark" src="${LOGO}" alt="">` : `<button class="icon-btn" data-go="home" aria-label="Back">${ICO.back}</button>`}
@@ -555,29 +567,27 @@
             <p class="font-cond" style="max-width:40%;font-size:13px;text-transform:uppercase;text-align:right">${esc(m.away.name)}</p>
           </div>
         </div>
-        ${engine ? `<div class="card tone-${m.tone}" style="margin-top:12px">
-          <p class="eyebrow">${esc(engine.tier)} · ${esc(engine.market)}</p>
-          <p class="font-display" style="font-size:32px;line-height:1;margin-top:4px">${esc(engine.selection)}</p>
-          <p class="lede" style="max-width:none">${esc(engine.note)}</p>
+        ${flashList.map((fp) => `<div class="card tone-${m.tone}" style="margin-top:12px">
+          <p class="eyebrow">${esc(fp.tier)} · ${esc(fp.market)}</p>
+          <p class="font-display" style="font-size:32px;line-height:1;margin-top:4px">${esc(fp.selection)}</p>
+          <p class="lede" style="max-width:none">${esc(fp.note)}</p>
           <div class="metrics">
-            <div class="metric"><b>${engine.model || "—"}%</b><span>MODEL</span></div>
-            <div class="metric"><b>${engine.splitHit != null ? engine.splitHit + "%" : "—"}</b><span>HIT</span></div>
-            <div class="metric"><b>${engine.confidence || "—"}</b><span>CONF</span></div>
-            <div class="metric"><b>${engine.ev ? engine.ev.toFixed(2) : "—"}</b><span>EV</span></div>
+            <div class="metric"><b>${fp.model || "—"}%</b><span>MODEL</span></div>
+            <div class="metric"><b>${fp.splitHit != null ? fp.splitHit + "%" : "—"}</b><span>HIT</span></div>
+            <div class="metric"><b>${fp.confidence || "—"}</b><span>CONF</span></div>
+            <div class="metric"><b>${fp.ev ? fp.ev.toFixed(2) : formatOdd(fp.odd)}</b><span>${fp.ev ? "EV" : "ODD"}</span></div>
           </div>
-        </div>` : ""}
+        </div>`).join("")}
       </div>
       <div class="sticky-cta">
         ${state.chooserOpen ? `<div class="chooser">${outcomes.map((o) => `<button type="button" class="choice pressable${state.pickSel === o.key ? " on" : ""}" data-sel="${o.key}"><small>${esc(o.name)}</small><b>${formatOdd(o.odd)}</b></button>`).join("")}</div>` : ""}
-        <button type="button" class="cta" id="lockBtn">${!state.chooserOpen ? "CHOOSE THE WINNER" : state.pickSel ? "LOCK THIS PICK" : "PICK 1 · X · 2"}</button>
-        ${state.pickSel ? `<p style="text-align:center;margin-top:6px;font-size:11px;color:rgb(17 17 17 / 0.55)">${esc(outcomes.find((o)=>o.key===state.pickSel)?.name || "")} · ${formatOdd(outcomes.find((o)=>o.key===state.pickSel)?.odd)} · from ${formatGhs(1)}</p>` : ""}
+        <button type="button" class="cta" id="lockBtn">${state.chooserOpen ? "1 · X · 2" : "CHOOSE THE WINNER"}</button>
       </div>
     </div>`;
   }
 
   function engineCard(p) {
     const k = kickParts(p.kickoff);
-    const locked = onSlip(p.id, p.engine || "pick");
     const odd = p.odd;
     return `<article class="card tone-${p.tone}">
       <div class="card-top">
@@ -587,7 +597,7 @@
       <a href="#/match/${encodeURIComponent(p.id)}" style="display:block;margin-top:8px">
         <p class="font-cond" style="font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:rgb(17 17 17 / 0.6)">${esc(p.home.short)} vs ${esc(p.away.short)}</p>
         <p class="font-display" style="font-size:36px;line-height:1;margin-top:2px">${esc(p.selection || p.market)}</p>
-        <p class="lede" style="max-width:none">${esc(p.market)}${p.routeLabel ? " · " + esc(p.routeLabel) : p.tier ? " · " + esc(p.tier) : ""}</p>
+        <p class="lede" style="max-width:none">${esc(p.market)}${p.routeLabel ? " · " + esc(p.routeLabel) : p.tier ? " · " + esc(p.tier) : ""} · ${formatOdd(odd)}</p>
       </a>
       <div class="metrics">
         <div class="metric"><b>${p.model ? p.model + "%" : "—"}</b><span>MODEL</span></div>
@@ -595,10 +605,6 @@
         <div class="metric"><b>${p.confidence || "—"}</b><span>CONF</span></div>
         <div class="metric"><b>${p.ev ? p.ev.toFixed(2) : formatOdd(odd)}</b><span>${p.ev ? "EV" : "ODD"}</span></div>
       </div>
-      <button type="button" class="btn-ink pressable" style="height:40px;margin-top:12px;font-size:12px" data-add="${encodeURIComponent(JSON.stringify({
-        matchId: p.id, market: p.engine || "pick", selection: p.selection, label: p.selection || p.market,
-        detail: `${p.home.abbr} vs ${p.away.abbr} · ${p.engine}`, odd: odd || 1.01,
-      }))}">${locked ? `ON SLIP · ${formatOdd(odd || 1.01)}` : `ADD · ${formatOdd(odd || 1.01)}`}</button>
     </article>`;
   }
 
@@ -606,7 +612,7 @@
     const list = state.flash;
     return `<div class="view view-pink">
       <div class="view-scroll">
-        ${headerBrand("COVER IQ", { title: "FLASH", sub: "PICKS", lede: "Model ≥ 75 · split-hit ≥ 75 · confidence ≥ 80 · EV ≥ 1.04. Papa only ships the clean ones." })}
+        ${headerBrand("COVER IQ", { title: "FLASH", sub: "PICKS", lede: "Every Cover IQ market that clears the gates ships. Model ≥ 75 · split-hit ≥ 75 · confidence ≥ 80 · EV ≥ 1.04." })}
         <div class="stack stagger">
           ${state.loading ? `<div class="skel"></div><div class="skel"></div>` : ""}
           ${!state.loading && !list.length ? `<div class="empty"><h2>SKIP</h2><p>No Flash pick cleared the gates. Papa would rather ship nothing than a dirty board.</p></div>` : ""}
@@ -729,7 +735,6 @@
     switch (route.name) {
       case "flash": return renderFlash();
       case "papa": return renderPapa();
-      case "slip": return renderSlip();
       case "bankers": return renderBoard("BANKERS", "LOCKS", "PapaLock consensus. Elite and Prime only.", state.bankers);
       case "athena": return renderBoard("ATHENA", "SWING", "Half-goal and swing-resolution board.", state.athena);
       case "goals": return renderBoard("GOALS", "BANKER", "Total-goals locks.", state.goals);
@@ -792,21 +797,7 @@
     }));
     const lockBtn = document.getElementById("lockBtn");
     if (lockBtn) lockBtn.addEventListener("click", () => {
-      const m = matchById(state.route.id) || featuredMatch();
-      if (!m) return;
-      if (!state.chooserOpen) { state.chooserOpen = true; render(); return; }
-      if (!state.pickSel) return;
-      const probs = m.probs || m.flash?.probs || { home: 40, draw: 28, away: 32 };
-      const odds = { home: oddsFromProb(probs.home), draw: oddsFromProb(probs.draw), away: oddsFromProb(probs.away) };
-      const label = state.pickSel === "home" ? m.home.short : state.pickSel === "away" ? m.away.short : "Draw";
-      addPick({
-        matchId: m.id,
-        market: "1x2",
-        selection: state.pickSel,
-        label,
-        detail: `${m.home.abbr} vs ${m.away.abbr} · ${kickParts(m.kickoff).date}`,
-        odd: odds[state.pickSel],
-      });
+      if (!state.chooserOpen) { state.chooserOpen = true; render(); }
     });
     const stake = document.getElementById("stakeInput");
     if (stake) stake.addEventListener("change", () => {

@@ -205,11 +205,12 @@ async function buildFlashPicks(supabase, date, { force = false } = {}) {
 
   const picks = [];
   const rejectionCounts = {};
+  let rejectedFixtures = 0;
   for (const fixture of fixtures) {
     const pack = history.get(Number(fixture.id)) || {};
     const risk = riskPack.get(Number(fixture.id)) || {};
     const odds = sportyOdds.get(Number(fixture.id)) || {};
-    const pick = selectFlashPick({
+    const result = selectFlashPick({
       homeName: fixture.home?.name || "Home",
       awayName: fixture.away?.name || "Away",
       homeGames: pack.homeGames || [],
@@ -219,12 +220,17 @@ async function buildFlashPicks(supabase, date, { force = false } = {}) {
       odds,
       redFlags: risk.redFlags || fixture.redFlags || []
     });
-    if (!pick.available) {
-      const reason = pick.reasons?.[0] || "No Flash market passed every gate";
+    if (!result.available) {
+      const reason = result.reasons?.[0] || "No Flash market passed every gate";
       rejectionCounts[reason] = (rejectionCounts[reason] || 0) + 1;
+      rejectedFixtures += 1;
       continue;
     }
-    picks.push(publicPick(fixture, pick, odds, risk));
+    const bundle = Array.isArray(result.picks) && result.picks.length ? result.picks : [result];
+    for (const item of bundle) {
+      const { picks: _ignored, ...clean } = item;
+      picks.push(publicPick(fixture, clean, odds, risk));
+    }
   }
 
   picks.sort((left, right) =>
@@ -240,7 +246,7 @@ async function buildFlashPicks(supabase, date, { force = false } = {}) {
     reviewedFixtures: fixtures.length,
     oddsMatchedFixtures: sportyOdds.size,
     pickCount: picks.length,
-    rejectedCount: fixtures.length - picks.length,
+    rejectedCount: rejectedFixtures,
     rejectionCounts,
     leagueMap: buildLeagueMap(picks),
     picks

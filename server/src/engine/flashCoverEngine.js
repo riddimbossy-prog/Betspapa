@@ -1,5 +1,5 @@
 export const FLASH_ENGINE_NAME = "Flash — Cover IQ";
-export const FLASH_ENGINE_VERSION = "flash-cover-iq-v1.0.0";
+export const FLASH_ENGINE_VERSION = "flash-cover-iq-v1.1.0";
 export const FLASH_ODDS_MIN = 1.2;
 export const FLASH_ODDS_MAX = 1.85;
 export const FLASH_MODEL_MIN = 0.75;
@@ -546,15 +546,11 @@ export function selectFlashPick({
     });
   }
 
-  const winner = passed[0];
-  const runner = passed[1];
-  if (runner && Math.abs(winner.confidence - runner.confidence) < 2) {
-    return noPick(
-      `Flash withheld the match because ${winner.market} and ${runner.market} were separated by less than two confidence points.`,
-      { winner, runner, expectedGoals: { home: model.lambdaHome, away: model.lambdaAway } }
-    );
-  }
+  const picks = passed.map((winner) => qualifyFlashMarket(winner, model, quality, h2hGames.length, passed.length));
+  return { ...picks[0], picks };
+}
 
+function qualifyFlashMarket(winner, model, quality, h2hCount, candidateCount) {
   const left = winner.componentProbabilities;
   const explanation = `${winner.market} has two independently supported routes: ${left.leftLabel} ${Math.round(left.left * 100)}% and ${left.rightLabel} ${Math.round(left.right * 100)}%. The combined split evidence hit ${Math.round(winner.combinedDirect * 100)}%.`;
   return {
@@ -598,8 +594,8 @@ export function selectFlashPick({
       version: FLASH_ENGINE_VERSION,
       expectedGoals: { home: round(model.lambdaHome), away: round(model.lambdaAway) },
       dataConfidence: round(quality * 100, 1),
-      candidateCount: passed.length,
-      h2hWeightApplied: h2hGames.length >= 3
+      candidateCount,
+      h2hWeightApplied: h2hCount >= 3
     }
   };
 }

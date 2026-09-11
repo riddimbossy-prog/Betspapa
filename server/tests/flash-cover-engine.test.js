@@ -28,7 +28,7 @@ const splitGames = scorelines.map(([ftHome, ftAway], index) => ({
 
 test("Flash exposes exactly the 15 requested markets", () => {
   assert.equal(FLASH_ENGINE_NAME, "Flash — Cover IQ");
-  assert.equal(FLASH_ENGINE_VERSION, "flash-cover-iq-v1.0.0");
+  assert.equal(FLASH_ENGINE_VERSION, "flash-cover-iq-v1.1.0");
   assert.equal(FLASH_MARKETS.length, 15);
   assert.equal(new Set(FLASH_MARKETS.map((market) => market.key)).size, 15);
   assert.ok(FLASH_MARKETS.some((market) => market.market === "1st Half Result or Match Result"));
@@ -69,6 +69,25 @@ test("SportyBet parser reads exact Flash Yes/No and three-way prices", () => {
   });
 });
 
+test("Flash publishes every market that clears the gates", () => {
+  const pick = selectFlashPick({
+    homeGames: splitGames,
+    awayGames: splitGames,
+    league: { homeGoals: 1.6, awayGoals: 1.3 },
+    odds: {
+      "home-or-over-25": 1.55,
+      "home-or-over-25-no": 2.35,
+      "home-or-gg": 1.48,
+      "home-or-gg-no": 2.55
+    }
+  });
+  assert.equal(pick.available, true);
+  assert.ok(Array.isArray(pick.picks));
+  assert.ok(pick.picks.length >= 1);
+  const keys = new Set(pick.picks.map((row) => row.key));
+  assert.equal(keys.size, pick.picks.length);
+});
+
 test("Flash fires one qualified market when every gate clears", () => {
   const pick = selectFlashPick({
     homeGames: splitGames,
@@ -86,6 +105,8 @@ test("Flash fires one qualified market when every gate clears", () => {
   assert.ok(pick.directHitRates.away >= 0.7);
   assert.ok(pick.rescueGain >= 0.1);
   assert.ok(pick.confidence >= 80);
+  assert.ok(Array.isArray(pick.picks));
+  assert.equal(pick.picks.length, 1);
 });
 
 test("Flash skips paired markets without the matching No price", () => {
@@ -124,10 +145,10 @@ test("Flash is the home page, keeps its legacy URL and exposes the public API", 
     readFile(resolve(root, "assets/js/mobile-nav.v1240.js"), "utf8"),
     readFile(resolve(root, "server/src/routes/publicRoutes.js"), "utf8")
   ]);
-  assert.match(html, /data-page="flash"/);
-  assert.match(html, /Cover IQ/);
-  assert.match(legacyFlash, /location\.replace\(target\)/);
-  assert.match(papa, /data-page="papa-hub"/);
+  assert.match(html, /BETSPAPA_START="home"/);
+  assert.match(html, /screens-app/);
+  assert.match(legacyFlash, /BETSPAPA_START="flash"/);
+  assert.match(papa, /BETSPAPA_START="papa"/);
   assert.match(portal, /\/api\/flash\/today/);
   assert.match(portal, /page === "flash"/);
   assert.match(mobileNav, /data-bp-tab="flash"/);

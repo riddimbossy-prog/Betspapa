@@ -1,6 +1,6 @@
 # Flash — Cover IQ v1
 
-Flash is a separate BetsPapa decision engine and page. For each upcoming fixture it evaluates only the 15 SportyBet markets listed below, publishes at most one selection, and otherwise returns `SKIP`.
+Flash is a separate BetsPapa decision engine and page. For each upcoming fixture it evaluates the 15 SportyBet markets listed below and publishes **every** selection that clears the gates. Fixtures with no survivor return `SKIP`.
 
 ## Market catalogue
 
@@ -20,7 +20,7 @@ These are OR markets. Flash calculates the probability of the joint event direct
 4. Fetch the matched SportyBet event and parse markets by exact displayed name. A missing or inactive price is never estimated.
 5. Remove bookmaker margin using the paired Yes/No prices, or all three prices for the 1st Half Result or Match Result market when available.
 6. Test all 15 choices against the component, direct-hit, model, rescue, agreement, price, value, lower-bound, and confidence gates.
-7. Rank survivors and publish the strongest one. If two are separated by less than two confidence points, withhold the fixture as ambiguous.
+7. Rank survivors and publish every market that cleared. Close confidence scores no longer withhold the fixture.
 
 ## Hard gates
 
