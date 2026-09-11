@@ -1,3 +1,12 @@
+# Visa v2.1 — Top-Four Split Protection
+
+- Expanded the split win route from the top three to the top four.
+- Kept the 1.52 maximum price for a straight Top 4 Win against a bottom-three or outside-top-six opponent.
+- Added exact SportyBet DNB for a top-four team facing a competitive top-six opponent.
+- Mirrored Bottom 3 Loss so a bottom-three home or away team is opposed.
+- Added a hard skip when both relevant split teams are bottom three.
+- Restored seven selectable Visa dates inside the current Screens phone UI.
+
 # v1.29.1 — Away 2.2 Market Correction
 
 - Changed the 2.2+ away goals-against route from Home Win to Home Team to Score 2+.

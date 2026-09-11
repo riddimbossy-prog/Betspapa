@@ -1,6 +1,7 @@
 import { PREDICTABLE_STATUSES } from "../config.js";
 import {
   VISA_AWAY_LOSS_RATE_MIN,
+  VISA_COMPETITIVE_RANK_MAX,
   VISA_CONCEDE_AVG_MIN,
   VISA_ENGINE_NAME,
   VISA_ENGINE_VERSION,
@@ -10,6 +11,7 @@ import {
   VISA_MIN_SPLIT_PLAYED,
   VISA_MIN_SPLIT_TABLE,
   VISA_SCORE_AVG_MIN,
+  VISA_TOP_RANK_MAX,
   VISA_WIN_ODDS_MAX,
   selectVisaPick
 } from "../engine/visaEngine.js";
@@ -180,11 +182,14 @@ function buildVisaSlate(date, fixtures, histories, sportyOdds) {
       splitWindow: VISA_MIN_MATCHES,
       splitTableMinimum: VISA_MIN_SPLIT_TABLE,
       splitPlayedMinimum: VISA_MIN_SPLIT_PLAYED,
-      winBankerTopRank: 3,
+      winBankerTopRank: VISA_TOP_RANK_MAX,
       winBankerOddsMax: VISA_WIN_ODDS_MAX,
-      winBankerOpponentOutsideTop: 6,
-      awayOpponentBottomRank: 3,
-      homeOutsideBottomRank: 6,
+      competitiveOpponentTopRank: VISA_COMPETITIVE_RANK_MAX,
+      competitiveOpponentMarket: "draw-no-bet",
+      winOpponentOutsideTop: VISA_COMPETITIVE_RANK_MAX,
+      bottomOpponentRank: 3,
+      bottomOpponentSides: ["home", "away"],
+      bottomThreeConflict: "skip",
       over25ScoreAverageMin: VISA_SCORE_AVG_MIN,
       over25ConcedeAverageMin: VISA_CONCEDE_AVG_MIN,
       awayConcedeMarket: "home-over-15",

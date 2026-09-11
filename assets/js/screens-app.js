@@ -30,6 +30,8 @@
     goals: [],
     wins: [],
     visa: [],
+    visaWeek: [],
+    visaDate: null,
     loading: true,
     error: null,
     slip: loadSlip(),
@@ -219,6 +221,7 @@
       confidence: Math.round(Number(p.confidence) || Number(p.score) || 0),
       ev: Number(p.expectedValue) || 0,
       tier: p.tier || p.papaLockGrade || engine,
+      routeLabel: p.routeLabel || "",
       note: p.publicExplanation || p.explanationParagraph || (p.reasons && p.reasons[0]) || "",
       form: {
         home: (p.venueForm?.home?.form || []).slice(-5),
@@ -254,7 +257,7 @@
       ["athena", `/api/athena/today?date=${d0}`],
       ["goals", `/api/goals-bankers/today?date=${d0}`],
       ["wins", `/api/wins-bankers/today?date=${d0}`],
-      ["visa", `/api/visa/today?date=${d0}`],
+      ["visaWeek", `/api/visa/week?start=${d0}&days=7`],
     ];
     const got = {};
     await Promise.all(
@@ -284,7 +287,15 @@
     state.athena = (got.athena?.picks || []).map((p) => pickFromEngine(p, "ATHENA"));
     state.goals = (got.goals?.picks || []).map((p) => pickFromEngine(p, "GOALS"));
     state.wins = (got.wins?.picks || []).map((p) => pickFromEngine(p, "WINS"));
-    state.visa = (got.visa?.picks || got.visa?.items || []).map((p) => pickFromEngine(p, "VISA"));
+    state.visaWeek = (Array.isArray(got.visaWeek?.days) ? got.visaWeek.days : []).map((day) => ({
+      date: day.date,
+      reviewedFixtures: Number(day.reviewedFixtures) || 0,
+      picks: (day.picks || day.items || []).map((p) => pickFromEngine(p, "VISA")),
+    }));
+    state.visaDate = state.visaWeek.some((day) => day.date === state.visaDate)
+      ? state.visaDate
+      : state.visaWeek[0]?.date || d0;
+    state.visa = state.visaWeek.find((day) => day.date === state.visaDate)?.picks || [];
 
     if (!state.fixtures.length && !state.flash.length) {
       state.error = "Papa's board is still warming up. Pull again in a moment.";
@@ -362,7 +373,7 @@
     }
     const fl = state.flash.find((p) => p.id === String(id));
     if (fl) return flashAsMatch(fl);
-    const boards = [...state.bankers, ...state.athena, ...state.goals, ...state.wins];
+    const boards = [...state.bankers, ...state.athena, ...state.goals, ...state.wins, ...state.visa];
     const p = boards.find((x) => x.id === String(id));
     return p ? flashAsMatch(p) : null;
   }
@@ -576,7 +587,7 @@
       <a href="#/match/${encodeURIComponent(p.id)}" style="display:block;margin-top:8px">
         <p class="font-cond" style="font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:rgb(17 17 17 / 0.6)">${esc(p.home.short)} vs ${esc(p.away.short)}</p>
         <p class="font-display" style="font-size:36px;line-height:1;margin-top:2px">${esc(p.selection || p.market)}</p>
-        <p class="lede" style="max-width:none">${esc(p.market)}${p.tier ? " · " + esc(p.tier) : ""}</p>
+        <p class="lede" style="max-width:none">${esc(p.market)}${p.routeLabel ? " · " + esc(p.routeLabel) : p.tier ? " · " + esc(p.tier) : ""}</p>
       </a>
       <div class="metrics">
         <div class="metric"><b>${p.model ? p.model + "%" : "—"}</b><span>MODEL</span></div>
@@ -613,6 +624,31 @@
           ${state.loading ? `<div class="skel"></div>` : ""}
           ${!state.loading && !list.length ? `<div class="empty"><h2>NO LOCKS</h2><p>Nothing qualified on this board yet.</p></div>` : ""}
           ${list.map(engineCard).join("")}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderVisa() {
+    const activeDay = state.visaWeek.find((day) => day.date === state.visaDate);
+    const tabs = state.visaWeek.map((day) => {
+      const date = new Date(`${day.date}T12:00:00.000Z`);
+      const label = `${WEEK[date.getUTCDay()]} ${date.getUTCDate()} ${MONTHS[date.getUTCMonth()].slice(0, 3)}`;
+      return `<button type="button" class="tab${day.date === state.visaDate ? " on" : ""}" data-visa-date="${esc(day.date)}" role="tab" aria-selected="${day.date === state.visaDate}">${esc(label)} · ${day.picks.length}</button>`;
+    }).join("");
+    return `<div class="view view-pink">
+      <div class="view-scroll">
+        ${headerBrand("PAPA'S ENGINE", {
+          title: "VISA",
+          sub: "SPLIT",
+          lede: "Top 4 win against weaker splits. Top 4 vs a competitive top-six team becomes DNB. Bottom 3 is opposed."
+        })}
+        <div class="tabs" role="tablist" aria-label="Visa dates">${tabs}</div>
+        ${activeDay ? `<p class="eyebrow" style="margin-top:8px">${activeDay.picks.length} PICKS · ${activeDay.reviewedFixtures} GAMES CHECKED</p>` : ""}
+        <div class="stack stagger">
+          ${state.loading ? `<div class="skel"></div>` : ""}
+          ${!state.loading && !state.visa.length ? `<div class="empty"><h2>NO VISA</h2><p>No selection cleared the exact split-rank and SportyBet gates for this date.</p></div>` : ""}
+          ${state.visa.map(engineCard).join("")}
         </div>
       </div>
     </div>`;
@@ -698,7 +734,7 @@
       case "athena": return renderBoard("ATHENA", "SWING", "Half-goal and swing-resolution board.", state.athena);
       case "goals": return renderBoard("GOALS", "BANKER", "Total-goals locks.", state.goals);
       case "wins": return renderBoard("WINS", "BANKER", "Win-market locks.", state.wins);
-      case "visa": return renderBoard("VISA", "SPLIT", "Split-rank venue power and Over 2.5.", state.visa);
+      case "visa": return renderVisa();
       case "match": return renderMatch(matchById(route.id), nested);
       default: return renderFixtures();
     }
@@ -736,6 +772,11 @@
     document.querySelectorAll("[data-go]").forEach((el) => el.addEventListener("click", () => go(el.getAttribute("data-go"))));
     document.querySelectorAll("[data-tab]").forEach((el) => el.addEventListener("click", () => {
       state.tab = el.getAttribute("data-tab");
+      render();
+    }));
+    document.querySelectorAll("[data-visa-date]").forEach((el) => el.addEventListener("click", () => {
+      state.visaDate = el.getAttribute("data-visa-date");
+      state.visa = state.visaWeek.find((day) => day.date === state.visaDate)?.picks || [];
       render();
     }));
     document.querySelectorAll("[data-sel]").forEach((el) => el.addEventListener("click", () => {

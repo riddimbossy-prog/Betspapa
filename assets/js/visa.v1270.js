@@ -116,6 +116,9 @@
   }
 
   function routeIcon(route) {
+    if (route === "split-top-4-win") return "#4";
+    if (route === "split-top-4-dnb") return "DNB";
+    if (route === "bottom-3-opponent-win") return "B3";
     if (route === "split-top-3-win") return "#3";
     if (route === "away-bottom-3-home-win") return "B3";
     if (route === "away-concede-home-two") return "2+";

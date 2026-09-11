@@ -1,3 +1,7 @@
+## Visa v2.1 Top-Four Split Protection
+
+Visa now promotes every qualified split top-four team. It selects Win at an exact SportyBet price of 1.52 or shorter against a bottom-three or outside-top-six opponent; against another competitive top-six split team it uses the exact Draw No Bet price. A bottom-three team is opposed whether it is home or away, while bottom-three-versus-bottom-three is skipped. The phone UI keeps all seven Visa date tabs.
+
 ## v1.29.1 Away 2.2 Market Correction
 
 An away team conceding 2.2+ goals per away match now sends Visa to **Home Team to Score 2+** using the exact SportyBet home-team Over 1.5 price. It no longer selects Home Win from that defensive-average signal. The separate 80% away-loss route still selects Home Win, while both signals together tag Home to Score 2+ as Sure Visa.

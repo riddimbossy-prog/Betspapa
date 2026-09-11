@@ -1,10 +1,12 @@
 export const VISA_ENGINE_NAME = "Visa";
-export const VISA_ENGINE_VERSION = "visa-v2.0.1";
+export const VISA_ENGINE_VERSION = "visa-v2.1.0";
 export const VISA_WINDOW = 5;
 export const VISA_MIN_MATCHES = 5;
 export const VISA_MIN_SPLIT_PLAYED = 5;
 export const VISA_MIN_SPLIT_TABLE = 7;
 export const VISA_WIN_ODDS_MAX = 1.52;
+export const VISA_TOP_RANK_MAX = 4;
+export const VISA_COMPETITIVE_RANK_MAX = 6;
 export const VISA_CONCEDE_AVG_MIN = 2.2;
 export const VISA_SCORE_AVG_MIN = 2.2;
 export const VISA_HOME_SCORE_AVG_MIN = 2.3;
@@ -145,7 +147,9 @@ export function normaliseVisaStanding(standing = {}, venue = null) {
     venue: standing.venue || venue,
     qualified: valid,
     top3: valid && rank <= 3,
+    top4: valid && rank <= VISA_TOP_RANK_MAX,
     top5: valid && rank <= 5,
+    top6: valid && rank <= VISA_COMPETITIVE_RANK_MAX,
     outsideTop6: valid && rank > 6,
     bottom3: valid && rank >= tableSize - 2,
     bottom6: valid && rank >= tableSize - 5
@@ -290,6 +294,27 @@ function resultSelection({ side, teamName, opponentName, odds, route, routeLabel
   });
 }
 
+function dnbSelection({ side, teamName, opponentName, odds, score, home, away, expected, explanation, audit }) {
+  return approvedPick({
+    key: `${side}-dnb`,
+    family: "Draw No Bet",
+    market: "Draw No Bet",
+    selection: `${teamName} Draw No Bet`,
+    odds,
+    route: "split-top-4-dnb",
+    routeLabel: "TOP 4 DNB",
+    score,
+    home,
+    away,
+    expected,
+    explanation,
+    reasons: [explanation],
+    audit,
+    approvedTeam: teamName,
+    deniedTeam: opponentName
+  });
+}
+
 function homeTwoGoalsSelection({ homeName, odds, score, home, away, expected, explanation, audit, sureVisa = false }) {
   return approvedPick({
     key: "home-over-15",
@@ -330,6 +355,8 @@ export function selectVisaPick({
   const ranksReady = homeRank.qualified && awayRank.qualified;
   const homeOdds = price(odds, "home");
   const awayOdds = price(odds, "away");
+  const homeDnbOdds = price(odds, "home-dnb");
+  const awayDnbOdds = price(odds, "away-dnb");
   const homeOver15Odds = price(odds, "home-over-15");
   const over25Odds = price(odds, "over-25");
   const awayConcede = historiesReady && away.gaAverage >= VISA_CONCEDE_AVG_MIN;
@@ -380,6 +407,142 @@ export function selectVisaPick({
     hold("The Home Power route reached Sure Visa, but the exact SportyBet home-win price is missing.", audit);
   }
 
+  // Split top four is the main rank route. A top-six opponent is competitive,
+  // so the top-four side is protected with DNB instead of being forced to win.
+  const splitRankCandidates = [
+    {
+      side: "home", teamName: homeName, opponentName: awayName,
+      standing: homeRank, opponent: awayRank, winOdds: homeOdds, dnbOdds: homeDnbOdds
+    },
+    {
+      side: "away", teamName: awayName, opponentName: homeName,
+      standing: awayRank, opponent: homeRank, winOdds: awayOdds, dnbOdds: awayDnbOdds
+    }
+  ].sort((left, right) =>
+    Number(left.standing.rank || 999) - Number(right.standing.rank || 999) ||
+    Number(right.standing.ppg || 0) - Number(left.standing.ppg || 0) ||
+    Number(left.dnbOdds || left.winOdds || 999) - Number(right.dnbOdds || right.winOdds || 999) ||
+    (left.side === "home" ? -1 : 1)
+  );
+
+  for (const candidate of splitRankCandidates) {
+    if (!ranksReady || !candidate.standing.top4) continue;
+
+    const competitiveOpponent = candidate.opponent.top6 && !candidate.opponent.bottom3;
+    if (competitiveOpponent) {
+      const audit = [
+        gate("split-top-4", `${candidate.teamName} split rank`, "Top 4 · 5+ played", rankLabel(candidate.standing), true),
+        gate("competitive-opponent", `${candidate.opponentName} split rank`, "Top 6 = competitive", rankLabel(candidate.opponent), true),
+        gate("sportybet-dnb", "SportyBet Draw No Bet", "Exact active price required", candidate.dnbOdds ?? "Missing", candidate.dnbOdds != null)
+      ];
+      if (candidate.dnbOdds != null) {
+        const explanation = `${candidate.teamName} is top four at ${rankLabel(candidate.standing)}, but ${candidate.opponentName} is a competitive top-six split team at ${rankLabel(candidate.opponent)}. Visa protects the top-four side with Draw No Bet.`;
+        return dnbSelection({
+          side: candidate.side,
+          teamName: candidate.teamName,
+          opponentName: candidate.opponentName,
+          odds: candidate.dnbOdds,
+          score: 0.86 + (VISA_TOP_RANK_MAX + 1 - candidate.standing.rank) * 0.015,
+          home,
+          away,
+          expected,
+          explanation,
+          audit
+        });
+      }
+      hold(`The Top 4 DNB route qualified for ${candidate.teamName}, but its exact SportyBet Draw No Bet price is missing.`, audit);
+      continue;
+    }
+
+    const oddsPass = candidate.winOdds != null && candidate.winOdds <= VISA_WIN_ODDS_MAX;
+    const audit = [
+      gate("split-top-4", `${candidate.teamName} split rank`, "Top 4 · 5+ played", rankLabel(candidate.standing), true),
+      gate("non-competitive-opponent", `${candidate.opponentName} split rank`, "Bottom 3 or outside top 6", rankLabel(candidate.opponent), candidate.opponent.bottom3 || candidate.opponent.outsideTop6),
+      gate("win-odds-cap", "SportyBet win odds", "1.52 or shorter", candidate.winOdds ?? "Missing", oddsPass)
+    ];
+    if (oddsPass) {
+      const opponentProfile = candidate.opponent.bottom3 ? "bottom three" : "outside the top six";
+      const explanation = `${candidate.teamName} is top four at ${rankLabel(candidate.standing)}, ${candidate.opponentName} is ${opponentProfile} at ${rankLabel(candidate.opponent)}, and the exact win price is ${candidate.winOdds.toFixed(2)}.`;
+      return resultSelection({
+        side: candidate.side,
+        teamName: candidate.teamName,
+        opponentName: candidate.opponentName,
+        odds: candidate.winOdds,
+        route: "split-top-4-win",
+        routeLabel: "TOP 4 WIN",
+        score: 0.86 + (VISA_TOP_RANK_MAX + 1 - candidate.standing.rank) * 0.02 +
+          Math.max(0, VISA_WIN_ODDS_MAX - candidate.winOdds) * 0.08,
+        home,
+        away,
+        expected,
+        explanation,
+        audit
+      });
+    }
+    hold(
+      candidate.winOdds == null
+        ? `The Top 4 Win route qualified for ${candidate.teamName}, but its exact SportyBet price is missing.`
+        : `${candidate.teamName}'s ${candidate.winOdds.toFixed(2)} price is above the 1.52 Win Banker limit.`,
+      audit
+    );
+  }
+
+  // A bottom-three split team is opposed whether it is home or away. When both
+  // sides are bottom three, the route is contradictory and must be skipped.
+  if (ranksReady && homeRank.bottom3 && awayRank.bottom3) {
+    const audit = [
+      gate("home-bottom-3", `${homeName} home split rank`, "Bottom 3", rankLabel(homeRank), true),
+      gate("away-bottom-3", `${awayName} away split rank`, "Bottom 3", rankLabel(awayRank), true),
+      gate("bottom-3-conflict", "Bottom-three conflict", "Only one side may be opposed", "Both sides", false)
+    ];
+    hold("Both teams are bottom three on their relevant splits, so Visa will not tell both sides to lose.", audit);
+  } else if (ranksReady) {
+    const bottomCandidate = homeRank.bottom3
+      ? {
+          losingName: homeName,
+          losingStanding: homeRank,
+          side: "away",
+          teamName: awayName,
+          opponentName: homeName,
+          odds: awayOdds
+        }
+      : awayRank.bottom3
+        ? {
+            losingName: awayName,
+            losingStanding: awayRank,
+            side: "home",
+            teamName: homeName,
+            opponentName: awayName,
+            odds: homeOdds
+          }
+        : null;
+    if (bottomCandidate) {
+      const audit = [
+        gate("split-bottom-3", `${bottomCandidate.losingName} split rank`, "Bottom 3", rankLabel(bottomCandidate.losingStanding), true),
+        gate("opponent-not-bottom-3", `${bottomCandidate.teamName} split rank`, "Not bottom 3", rankLabel(bottomCandidate.side === "home" ? homeRank : awayRank), true),
+        gate("sportybet-opponent-win", "SportyBet opponent win", "Exact active price required", bottomCandidate.odds ?? "Missing", bottomCandidate.odds != null)
+      ];
+      if (bottomCandidate.odds != null) {
+        const explanation = `${bottomCandidate.losingName} is bottom three at ${rankLabel(bottomCandidate.losingStanding)}, so Visa opposes it with ${bottomCandidate.teamName} Win.`;
+        return resultSelection({
+          side: bottomCandidate.side,
+          teamName: bottomCandidate.teamName,
+          opponentName: bottomCandidate.opponentName,
+          odds: bottomCandidate.odds,
+          route: "bottom-3-opponent-win",
+          routeLabel: "BOTTOM 3 LOSS",
+          score: 0.86,
+          home,
+          away,
+          expected,
+          explanation,
+          audit
+        });
+      }
+      hold(`The Bottom 3 Loss route qualified against ${bottomCandidate.losingName}, but the exact SportyBet opponent-win price is missing.`, audit);
+    }
+  }
+
   // A 2.2+ away GA average points to home scoring output, not the match result.
   if (awayConcede) {
     const audit = [
@@ -394,54 +557,6 @@ export function selectVisaPick({
       });
     }
     hold("The Away 2.2 route qualified, but the exact SportyBet home-team Over 1.5 price is missing.", audit);
-  }
-
-  // Win Banker: top three on the relevant split table, opponent outside the top six, price 1.52 or shorter.
-  const splitWinCandidates = [
-    { side: "home", teamName: homeName, opponentName: awayName, standing: homeRank, opponent: awayRank, odds: homeOdds },
-    { side: "away", teamName: awayName, opponentName: homeName, standing: awayRank, opponent: homeRank, odds: awayOdds }
-  ];
-  for (const candidate of splitWinCandidates) {
-    if (!ranksReady || !candidate.standing.top3 || !candidate.opponent.outsideTop6) continue;
-    const oddsPass = candidate.odds != null && candidate.odds <= VISA_WIN_ODDS_MAX;
-    const audit = [
-      gate("split-top-3", `${candidate.teamName} split rank`, "Top 3 · 5+ played", rankLabel(candidate.standing), true),
-      gate("opponent-outside-top-6", `${candidate.opponentName} split rank`, "Outside top 6", rankLabel(candidate.opponent), true),
-      gate("win-odds-cap", "SportyBet win odds", "1.52 or shorter", candidate.odds ?? "Missing", oddsPass)
-    ];
-    if (oddsPass) {
-      const explanation = `${candidate.teamName} is ${rankLabel(candidate.standing)} on the ${candidate.standing.venue} split, ${candidate.opponentName} is outside the top six at ${rankLabel(candidate.opponent)}, and the exact win price is ${candidate.odds.toFixed(2)}.`;
-      return resultSelection({
-        side: candidate.side, teamName: candidate.teamName, opponentName: candidate.opponentName, odds: candidate.odds,
-        route: "split-top-3-win", routeLabel: "TOP 3 WIN",
-        score: 0.84 + (4 - candidate.standing.rank) * 0.025 + Math.max(0, VISA_WIN_ODDS_MAX - candidate.odds) * 0.08,
-        home, away, expected, explanation, audit
-      });
-    }
-    hold(
-      candidate.odds == null
-        ? `The Top 3 Win route qualified for ${candidate.teamName}, but its exact SportyBet price is missing.`
-        : `${candidate.teamName}'s ${candidate.odds.toFixed(2)} price is above the 1.52 Win Banker limit.`,
-      audit
-    );
-  }
-
-  // Bottom-three away opponent against a home team outside the bottom six.
-  if (ranksReady && awayRank.bottom3 && !homeRank.bottom6) {
-    const audit = [
-      gate("away-bottom-3", `${awayName} away split rank`, "Bottom 3", rankLabel(awayRank), true),
-      gate("home-outside-bottom-6", `${homeName} home split rank`, "Not bottom 6", rankLabel(homeRank), true),
-      gate("sportybet-home", "SportyBet home win", "Exact active price required", homeOdds ?? "Missing", homeOdds != null)
-    ];
-    if (homeOdds != null) {
-      const explanation = `${awayName} is bottom three away at ${rankLabel(awayRank)}, while ${homeName} is outside the bottom six at home (${rankLabel(homeRank)}).`;
-      return resultSelection({
-        side: "home", teamName: homeName, opponentName: awayName, odds: homeOdds,
-        route: "away-bottom-3-home-win", routeLabel: "BOTTOM 3 AWAY", score: 0.86,
-        home, away, expected, explanation, audit
-      });
-    }
-    hold("The Bottom 3 Away route qualified, but the exact SportyBet home-win price is missing.", audit);
   }
 
   // The separate 80% away-loss trigger still points to the home match result.
@@ -529,7 +644,7 @@ export function selectVisaPick({
     gate("split-tables", "Venue split tables", `${VISA_MIN_SPLIT_TABLE}+ teams and ${VISA_MIN_SPLIT_PLAYED}+ played`, `${rankLabel(homeRank)} / ${rankLabel(awayRank)}`, ranksReady)
   ];
   return noPick(
-    "No Visa v2 route qualified: Top 3 Win, Bottom 3 Away, Away 2.2 GA, Away 80% Loss, Home Power and Over 2.5 all stayed below their required gates.",
+    "No Visa v2 route qualified: Top 4 Win/DNB, Bottom 3 Loss, Away 2.2 GA, Away 80% Loss, Home Power and Over 2.5 all stayed below their required gates.",
     home,
     away,
     expected,

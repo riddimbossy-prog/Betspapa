@@ -59,7 +59,7 @@ function visa(overrides = {}) {
 
 test("Visa v2 keeps the public identity and exact 60/80/100 display grades", () => {
   assert.equal(VISA_ENGINE_NAME, "Visa");
-  assert.equal(VISA_ENGINE_VERSION, "visa-v2.0.1");
+  assert.equal(VISA_ENGINE_VERSION, "visa-v2.1.0");
   assert.equal(lossGrade(0.6), 60);
   assert.equal(lossGrade(0.8), 80);
   assert.equal(lossGrade(1), 100);
@@ -96,6 +96,9 @@ test("Visa summarises the last five only", () => {
 
 test("split standing zones use inclusive top/bottom boundaries", () => {
   assert.equal(normaliseVisaStanding(standing(3)).top3, true);
+  assert.equal(normaliseVisaStanding(standing(4)).top4, true);
+  assert.equal(normaliseVisaStanding(standing(5)).top4, false);
+  assert.equal(normaliseVisaStanding(standing(6)).top6, true);
   assert.equal(normaliseVisaStanding(standing(6)).outsideTop6, false);
   assert.equal(normaliseVisaStanding(standing(7)).outsideTop6, true);
   assert.equal(normaliseVisaStanding(standing(7)).bottom6, true);
@@ -103,22 +106,22 @@ test("split standing zones use inclusive top/bottom boundaries", () => {
   assert.equal(normaliseVisaStanding(standing(10)).bottom3, true);
 });
 
-test("Top 3 Win accepts the exact 1.52 boundary against an opponent outside the top six", () => {
+test("Top 4 Win accepts rank four at the exact 1.52 boundary against a weaker opponent", () => {
   const pick = visa({
-    homeStanding: standing(3, 12, "home"),
+    homeStanding: standing(4, 12, "home"),
     awayStanding: standing(7, 12, "away"),
     odds: { home: 1.52 }
   });
   assert.equal(pick.available, true);
   assert.equal(pick.key, "home-win");
-  assert.equal(pick.route, "split-top-3-win");
+  assert.equal(pick.route, "split-top-4-win");
   assert.equal(pick.odds, 1.52);
-  assert.equal(pick.homeVisa.splitStanding.rank, 3);
+  assert.equal(pick.homeVisa.splitStanding.rank, 4);
 });
 
-test("Top 3 Win rejects odds above 1.52 and opponents ranked sixth", () => {
+test("Top 4 Win rejects odds above 1.52", () => {
   const priceFail = visa({
-    homeStanding: standing(3, 12, "home"),
+    homeStanding: standing(4, 12, "home"),
     awayStanding: standing(7, 12, "away"),
     odds: { home: 1.53 }
   });
@@ -126,48 +129,99 @@ test("Top 3 Win rejects odds above 1.52 and opponents ranked sixth", () => {
   assert.match(priceFail.reasons[0], /above the 1\.52/i);
 
   const fractionalPriceFail = visa({
-    homeStanding: standing(3, 12, "home"),
+    homeStanding: standing(4, 12, "home"),
     awayStanding: standing(7, 12, "away"),
     odds: { home: 1.524 }
   });
   assert.equal(fractionalPriceFail.available, false);
+});
 
-  const rankFail = visa({
-    homeStanding: standing(3, 12, "home"),
+test("Top 4 against a competitive top-six split team is reduced to exact DNB", () => {
+  const pick = visa({
+    homeStanding: standing(4, 12, "home"),
+    awayStanding: standing(6, 12, "away"),
+    odds: { home: 1.4, "home-dnb": 1.22 }
+  });
+  assert.equal(pick.available, true);
+  assert.equal(pick.key, "home-dnb");
+  assert.equal(pick.selection, "Home Club Draw No Bet");
+  assert.equal(pick.market, "Draw No Bet");
+  assert.equal(pick.route, "split-top-4-dnb");
+  assert.equal(pick.odds, 1.22);
+});
+
+test("Top 4 competitive route never substitutes a straight win when DNB is missing", () => {
+  const pick = visa({
+    homeStanding: standing(4, 12, "home"),
     awayStanding: standing(6, 12, "away"),
     odds: { home: 1.4 }
   });
-  assert.equal(rankFail.available, false);
+  assert.equal(pick.available, false);
+  assert.match(pick.reasons[0], /Draw No Bet price is missing/i);
 });
 
-test("Top 3 Win mirrors correctly for the away team", () => {
+test("Top 4 DNB mirrors correctly for a competitive away side", () => {
+  const pick = visa({
+    homeStanding: standing(5, 12, "home"),
+    awayStanding: standing(3, 12, "away"),
+    odds: { away: 1.95, "away-dnb": 1.36 }
+  });
+  assert.equal(pick.available, true);
+  assert.equal(pick.key, "away-dnb");
+  assert.equal(pick.selection, "Away Club Draw No Bet");
+  assert.equal(pick.route, "split-top-4-dnb");
+});
+
+test("rank five is not promoted into the Top 4 route", () => {
+  const pick = visa({
+    homeStanding: standing(5, 12, "home"),
+    awayStanding: standing(7, 12, "away"),
+    odds: { home: 1.4 }
+  });
+  assert.equal(pick.available, false);
+});
+
+test("Top 4 Win mirrors correctly for the away team", () => {
   const pick = visa({
     homeStanding: standing(8, 12, "home"),
-    awayStanding: standing(2, 12, "away"),
+    awayStanding: standing(4, 12, "away"),
     odds: { away: 1.5 }
   });
   assert.equal(pick.available, true);
   assert.equal(pick.key, "away-win");
   assert.equal(pick.selection, "Away Club Win");
-  assert.equal(pick.route, "split-top-3-win");
+  assert.equal(pick.route, "split-top-4-win");
 });
 
-test("Bottom 3 Away selects the home team only when home is outside the bottom six", () => {
-  const approved = visa({
-    homeStanding: standing(6, 12, "home"),
-    awayStanding: standing(10, 12, "away"),
-    odds: { home: 1.88 }
-  });
-  assert.equal(approved.available, true);
-  assert.equal(approved.key, "home-win");
-  assert.equal(approved.route, "away-bottom-3-home-win");
-
-  const rejected = visa({
+test("Bottom 3 Loss opposes either the home or away bottom-three side", () => {
+  const awayBottom = visa({
     homeStanding: standing(7, 12, "home"),
     awayStanding: standing(10, 12, "away"),
     odds: { home: 1.88 }
   });
-  assert.equal(rejected.available, false);
+  assert.equal(awayBottom.available, true);
+  assert.equal(awayBottom.key, "home-win");
+  assert.equal(awayBottom.route, "bottom-3-opponent-win");
+
+  const homeBottom = visa({
+    homeStanding: standing(10, 12, "home"),
+    awayStanding: standing(7, 12, "away"),
+    odds: { away: 2.05 }
+  });
+  assert.equal(homeBottom.available, true);
+  assert.equal(homeBottom.key, "away-win");
+  assert.equal(homeBottom.selection, "Away Club Win");
+  assert.equal(homeBottom.route, "bottom-3-opponent-win");
+});
+
+test("Bottom 3 Loss skips a bottom-three versus bottom-three conflict", () => {
+  const pick = visa({
+    homeStanding: standing(10, 12, "home"),
+    awayStanding: standing(11, 12, "away"),
+    odds: { home: 1.8, away: 2.4 }
+  });
+  assert.equal(pick.available, false);
+  assert.match(pick.reasons[0], /Both teams are bottom three/i);
 });
 
 test("a 2.2 away GA average selects home to score 2+ instead of Home Win", () => {
@@ -376,7 +430,7 @@ test("Visa resolves the relevant home and away split standings at kickoff", () =
   assert.equal(split.awayStanding.played, 5);
 });
 
-test("SportyBet Visa parser reads exact 1X2 and Over 2.5 prices", () => {
+test("SportyBet Visa parser reads exact 1X2, DNB, team-total and Over 2.5 prices", () => {
   const odds = visaFromSportyMarkets([
     {
       id: 1,
@@ -394,19 +448,26 @@ test("SportyBet Visa parser reads exact 1X2 and Over 2.5 prices", () => {
       desc: "Home Team Total Goals",
       specifier: "total=1.5",
       outcomes: [{ id: 12, desc: "Over", odds: "1.62" }]
+    },
+    {
+      id: 11,
+      desc: "Draw No Bet",
+      outcomes: [{ id: 1, desc: "Home", odds: "1.24" }, { id: 3, desc: "Away", odds: "2.75" }]
     }
   ]);
   assert.equal(odds.home, 1.8);
   assert.equal(odds.away, 4.1);
   assert.equal(odds["over-25"], 1.75);
   assert.equal(odds["home-over-15"], 1.62);
+  assert.equal(odds["home-dnb"], 1.24);
+  assert.equal(odds["away-dnb"], 2.75);
 });
 
-test("Betspapa exposes Visa v2, the weekly API and fresh PWA assets", async () => {
-  const [html, client, css, routes, server, nav, sw, manifest, preload, workflow, service] = await Promise.all([
+test("Betspapa exposes Visa v2.1, seven phone-app date tabs and fresh PWA assets", async () => {
+  const [html, client, css, routes, server, nav, sw, manifest, preload, workflow, service, engine] = await Promise.all([
     source("visa.html"),
-    source("assets/js/visa.v1270.js"),
-    source("assets/css/visa.v1270.css"),
+    source("assets/js/screens-app.js"),
+    source("assets/css/screens-app.css"),
     source("server/src/routes/publicRoutes.js"),
     source("server/src/server.js"),
     source("assets/js/mobile-nav.v1240.js"),
@@ -414,34 +475,34 @@ test("Betspapa exposes Visa v2, the weekly API and fresh PWA assets", async () =
     source("manifest.webmanifest"),
     source("scripts/preload-ppg-horizon.mjs"),
     source(".github/workflows/automatic-picks.yml"),
-    source("server/src/services/visaPickService.js")
+    source("server/src/services/visaPickService.js"),
+    source("server/src/engine/visaEngine.js")
   ]);
-  assert.match(html, /data-page="visa"/);
-  assert.match(html, /Top 3 win · max 1\.52/);
-  assert.match(html, /Away GA 2\.2\+ → Home 2\+/);
-  assert.match(html, /Dual trigger = Sure Visa/);
-  assert.match(html, /id="visaDateTabs"/);
-  assert.match(html, /Week starts/);
+  assert.match(html, /BETSPAPA_START="visa"/);
+  assert.match(html, /screens-app\.js\?v=20260912c/);
   assert.match(client, /\/api\/visa\/week/);
-  assert.match(client, /WEEK_LENGTH = 7/);
-  assert.match(client, /splitStanding/);
-  assert.match(client, /SURE VISA/);
-  assert.match(css, /visa-card-sure/);
-  assert.match(css, /max-width: 470px/);
+  assert.match(client, /days=7/);
+  assert.match(client, /data-visa-date/);
+  assert.match(client, /Top 4 win against weaker splits/);
+  assert.match(client, /competitive top-six team becomes DNB/);
+  assert.match(css, /\.tabs/);
+  assert.match(css, /\.tab\.on/);
   assert.match(routes, /publicRouter\.get\("\/visa\/today"/);
   assert.match(routes, /publicRouter\.get\("\/visa\/week"/);
   assert.match(server, /visaEngineVersion/);
   assert.match(server, /visa: "\/api\/visa\/today"/);
   assert.match(server, /visaWeek: "\/api\/visa\/week"/);
   assert.match(nav, /visa\.html/);
-  assert.match(sw, /betspapa-pwa-v1291/);
-  assert.match(sw, /visa\.v1270\.js/);
-  assert.match(sw, /visa\.html/);
+  assert.match(sw, /betspapa-screens-20260912c/);
+  assert.match(sw, /screens-app\.js/);
   assert.match(manifest, /"version": "1\.29\.1"/);
   assert.match(preload, /HORIZON_DAYS = 7/);
   assert.match(preload, /\/api\/visa\/week/);
   assert.match(workflow, /Preload seven-day fixture horizon/);
   assert.match(service, /rankSplitTable/);
+  assert.match(service, /competitiveOpponentMarket: "draw-no-bet"/);
+  assert.match(engine, /split-top-4-dnb/);
+  assert.match(engine, /bottom-3-opponent-win/);
   assert.ok(
     workflow.indexOf("Preload seven-day fixture horizon") <
       workflow.indexOf("Run automatic fixture and prediction pipeline")

@@ -39,13 +39,9 @@ test("public API merges all engines for the main board", async () => {
 
 test("current PWA refreshes the picks-only all-engine and Flash assets", async () => {
   const sw = await source("sw.js");
-  assert.match(sw, /betspapa-pwa-v1291/);
-  assert.match(sw, /portal\.v1220\.css/);
-  assert.match(sw, /portal\.v1250\.js/);
-  assert.match(sw, /mobile-nav\.v1240\.js/);
-  assert.match(sw, /mobile-nav\.v1240\.css/);
-  assert.match(sw, /form\.html/);
-  assert.match(sw, /flash\.html/);
-  assert.match(sw, /ppg\.html/);
-  assert.match(sw, /papas-pick\.html/);
+  assert.match(sw, /betspapa-screens-20260912c/);
+  assert.match(sw, /screens-app\.css/);
+  assert.match(sw, /screens-app\.js/);
+  assert.match(sw, /logo-papa\.png/);
+  assert.match(sw, /papa-square\.png/);
 });
