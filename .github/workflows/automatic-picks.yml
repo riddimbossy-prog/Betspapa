@@ -65,12 +65,12 @@ jobs:
             exit 1
           fi
 
-      - name: Run automatic fixture and prediction pipeline
-        shell: bash
-        run: |
-          node scripts/automatic-pipeline.mjs
-
       - name: Preload seven-day fixture horizon
         shell: bash
         run: |
           node scripts/preload-ppg-horizon.mjs
+
+      - name: Run automatic fixture and prediction pipeline
+        shell: bash
+        run: |
+          node scripts/automatic-pipeline.mjs

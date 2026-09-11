@@ -269,4 +269,8 @@ test("Betspapa exposes the Visa page, weekly preload, API, navigation and fresh 
   assert.match(preload, /HORIZON_DAYS = 7/);
   assert.match(preload, /\/api\/visa\/week/);
   assert.match(workflow, /Preload seven-day fixture horizon/);
+  assert.ok(
+    workflow.indexOf("Preload seven-day fixture horizon") <
+      workflow.indexOf("Run automatic fixture and prediction pipeline")
+  );
 });

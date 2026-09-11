@@ -16,7 +16,7 @@ Visa now runs a rolling seven-date window instead of making the reader load each
 
 The response contains `startDate`, `endDate`, weekly totals and seven complete daily slates. The service loads the fixtures and strict venue history for the range, matches SportyBet prices once, and then evaluates every fixture under the existing Visa rules. The original `GET /api/visa/today` endpoint remains available.
 
-The automatic data workflow now synchronizes all seven dates before warming the weekly endpoint. This ensures the final two tabs receive fixture data instead of relying on the older five-day preload.
+The automatic data workflow now synchronizes all seven dates and warms the weekly endpoint before the separate PapaSense generation pipeline. This ensures the final two tabs receive fixture data even when another prediction job needs a later retry.
 
 ## Safety contract
 
