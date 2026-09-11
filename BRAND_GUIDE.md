@@ -26,9 +26,9 @@ The public GitHub Pages site is the phone-app UI, not the old portal chrome.
 
 ## Type
 
-- Display: Anton
-- Condensed UI: Oswald
-- Body: DM Sans
+- Display: Bebas Neue
+- Condensed UI: Barlow Condensed
+- Body: Barlow Condensed
 
 ## Asset usage
 
