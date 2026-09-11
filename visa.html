@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+<meta content="#071c19" name="theme-color"/>
+<meta content="Visa grades strict last-five home and away split win/loss rates, validates the goal evidence and publishes one qualified SportyBet selection per fixture or no visa." name="description"/>
+<title>Visa Engine — BetsPapa</title>
+<link href="assets/images/favicon-64.png" rel="icon" type="image/png"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<link href="assets/css/country-flags.v1175.css" rel="stylesheet"/>
+<link href="assets/css/portal.v1220.css" rel="stylesheet"/>
+<link href="assets/css/mobile-nav.v1240.css" rel="stylesheet"/>
+<link href="/assets/css/pwa.v1160.css" rel="stylesheet"/>
+<link href="/assets/css/ui.v151.css" rel="stylesheet"/>
+<link href="assets/css/pitch-2026.css?v=2026" rel="stylesheet"/>
+<link href="assets/css/visa.v1270.css?v=1270" rel="stylesheet"/>
+<script>window.BETSPAPA_API_URL="https://api.betspapa.com";</script>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="BetsPapa" name="apple-mobile-web-app-title"/>
+<link href="/manifest.webmanifest?v=1270" rel="manifest"/>
+<link href="/assets/images/pwa-brand-apple-180.png" rel="apple-touch-icon" sizes="180x180"/>
+<link href="https://betspapa.com/visa.html" rel="canonical"/>
+</head>
+<body data-page="visa">
+<div aria-live="polite" class="pwa-launch-splash" id="pwaSplash" role="status">
+<span class="pwa-splash-accessible">Launching BetsPapa Visa</span>
+</div>
+<header class="portal-header">
+<a class="portal-brand" href="index.html">
+<img alt="" src="assets/images/betspapa-papa-mark.png"/>
+<span><strong>BETS<span>PAPA</span></strong><em class="year-badge">2026</em><small>PAPA KNOWS THE GAME</small></span>
+</a>
+<nav aria-label="Primary navigation" class="portal-nav" id="portalNav"><a href="index.html">Flash</a><a href="papas-pick.html">Papa’s Pick</a><a href="bankers.html">Bankers</a><a href="goals-bankers.html">Goals Banker</a><a href="wins-bankers.html">Wins Banker</a><a href="ppg.html">PPG</a><a aria-current="page" class="active" href="visa.html">Visa</a><a href="athena.html">Athena</a><a href="live-fixtures.html">Live &amp; Fixtures</a><a href="results-intelligence.html">Results</a><a href="responsible.html">More</a></nav>
+<button aria-controls="portalNav" aria-expanded="false" aria-label="Open navigation" class="portal-menu" id="portalMenu" type="button">☰</button>
+</header>
+<main class="portal-main visa-main">
+<section class="visa-hero" aria-labelledby="visaTitle">
+<div class="visa-hero-copy">
+<span class="visa-kicker">BetsPapa · Strict split form</span>
+<h1 id="visaTitle">VISA</h1>
+<p>Every fixture applies. Only a fully verified route is approved.</p>
+</div>
+<div aria-hidden="true" class="visa-passport-mark">
+<span>BP</span>
+<b>APPROVED</b>
+<small>ONE PICK OR SKIP</small>
+</div>
+</section>
+<section class="visa-gates" aria-label="Visa qualification rules">
+<span>Last 5 home vs last 5 away</span>
+<span>Loss grades: 60 · 80 · 100</span>
+<span>Low loss: strictly below 40%</span>
+<span>Win approval: 60%+</span>
+<span>Goals require goal evidence</span>
+<span>One pick per match</span>
+</section>
+<div class="status-strip" id="portalStatus"><span>Checking applications…</span><small></small></div>
+<div class="portal-toolbar visa-toolbar">
+<label><span>Date</span><input id="dateFilter" type="date"/></label>
+<label><span>Visa route</span><select id="visaRouteFilter"><option value="">All approved routes</option></select></label>
+<label><span>Search</span><input id="visaSearchFilter" placeholder="Team, league or selection" type="search"/></label>
+<button id="refreshButton" type="button">Run Visa</button>
+</div>
+<section class="metric-row" id="portalMetrics"></section>
+<div class="section-title visa-section-title">
+<div><span>Approved board</span><h2>Today’s Visa decisions</h2></div>
+<p>Tap a match to inspect both grades, the protection decision and every required gate.</p>
+</div>
+<section aria-label="Visa route filters" class="visa-route-map" id="visaRouteMap"></section>
+<div id="portalContent"></div>
+<section class="visa-method">
+<div><b>01</b><strong>Grade the split</strong><p>The home team supplies only its last five home results. The away team supplies only its last five away results.</p></div>
+<div><b>02</b><strong>Verify the route</strong><p>Win and loss grades open the route; scoring, conceding, totals and exact SportyBet prices must then confirm it.</p></div>
+<div><b>03</b><strong>Stamp or refuse</strong><p>Visa publishes one selection. A missing price, weak goal case or unclear comparison receives no visa.</p></div>
+</section>
+<footer class="portal-footer">
+<span>Sports analytics only. Predictions are not guarantees. 18+.</span>
+<div><a href="index.html">Flash</a><a href="responsible.html">Responsible Use</a></div>
+</footer>
+</main>
+<dialog class="portal-dialog" id="portalDialog">
+<div class="dialog-shell visa-dialog-shell">
+<button aria-label="Close" class="dialog-close" id="portalDialogClose" type="button">×</button>
+<div id="portalDialogContent"></div>
+</div>
+</dialog>
+<script src="assets/js/country-flags.v1175.js"></script>
+<script src="assets/js/visa.v1270.js?v=1270"></script>
+<script src="assets/js/mobile-nav.v1240.js?v=1270"></script>
+<script src="/assets/js/pwa.v1160.js"></script>
+<script src="/assets/js/ui.v1170.js"></script>
+</body>
+</html>

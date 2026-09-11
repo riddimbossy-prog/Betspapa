@@ -1,4 +1,4 @@
-const CACHE_NAME = "betspapa-pwa-v1265";
+const CACHE_NAME = "betspapa-pwa-v1270";
 const OFFLINE_URL = "/offline.html";
 
 const CORE_ASSETS = [
@@ -13,13 +13,16 @@ const CORE_ASSETS = [
   "/assets/css/wins-board.v1260.css",
   "/assets/css/flash.v1260.css",
   "/assets/css/ppg.v1264.css",
+  "/assets/css/visa.v1270.css",
   "/assets/js/portal.v1250.js",
   "/assets/js/mobile-nav.v1240.js",
   "/assets/js/ppg.v1264.js",
+  "/assets/js/visa.v1270.js",
   "/form.html",
   "/papas-pick.html",
   "/flash.html",
   "/ppg.html",
+  "/visa.html",
   "/assets/images/pwa-brand-icon-192.png",
   "/assets/images/pwa-brand-icon-512.png",
   "/assets/images/pwa-brand-maskable-192.png",

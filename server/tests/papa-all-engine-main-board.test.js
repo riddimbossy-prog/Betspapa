@@ -39,7 +39,7 @@ test("public API merges all engines for the main board", async () => {
 
 test("current PWA refreshes the picks-only all-engine and Flash assets", async () => {
   const sw = await source("sw.js");
-  assert.match(sw, /betspapa-pwa-v1265/);
+  assert.match(sw, /betspapa-pwa-v1270/);
   assert.match(sw, /portal\.v1220\.css/);
   assert.match(sw, /portal\.v1250\.js/);
   assert.match(sw, /mobile-nav\.v1240\.js/);

@@ -688,3 +688,11 @@
 - Added public live fixtures and predictions endpoints.
 - Connected the royal-purple frontend to `api.betspapa.com` with demo fallback.
 - Expanded automated tests from five to seven.
+# v1.27.0 — Visa Engine
+
+- Added `/visa.html` and `/api/visa/today`.
+- Added strict last-five home/away split grading at 60%, 80% and 100%.
+- Added straight-win, protected result, validated GG and validated Over 1.5 routes.
+- Added exact SportyBet Double Chance and Draw No Bet parsing for protected decisions.
+- Added responsive decision audits and PWA navigation/cache integration.
+- Added regression coverage for every route, strict boundaries, venue isolation and public wiring.

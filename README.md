@@ -1,3 +1,7 @@
+## v1.27.0 Visa Engine
+
+Visa is now available at `/visa.html`. It grades the home team's last five home matches against the away team's last five away matches at 60%, 80% and 100%; protects draw-heavy loss mismatches; and requires separate goal evidence before GG or Over 1.5 can be published. It returns one exact SportyBet selection per fixture or no visa. No database migration is required. See `BETSPAPA_V1_27_0_VISA_ENGINE.md`.
+
 ## v1.25.0 PapaLock Banker Engine
 
 The Banker section is now populated by PapaLock, a dedicated supervisor that counts Papa, Safer and Aggressive as one PapaSense family, then checks Venue Pattern and Athena independently. It requires two independent families, 12 overall matches, eight venue matches and recent-six evidence, chooses the safest common market, and publishes at most three Prime or Elite bankers per day. Run `supabase/BETSPAPA_V1_25_0_PAPALOCK_BANKER_ENGINE.sql` before enabling persistence and settlement. See `PAPALOCK_BANKER_ENGINE_V1.md`.

@@ -128,6 +128,49 @@ export function flashFromSportyMarkets(markets = []) {
   return odds;
 }
 
+function compactOutcomeLabel(value) {
+  return normaliseMarketLabel(value)
+    .replace(/\s*(?:\/|\bor\b)\s*/g, "-")
+    .replace(/\s+/g, "")
+    .replace(/[^a-z0-9-]/g, "");
+}
+
+/** Parse the exact SportyBet prices used by Visa. Unknown protection markets fail closed. */
+export function visaFromSportyMarkets(markets = []) {
+  const odds = totalsFromSportyMarkets(markets);
+  for (const market of markets || []) {
+    const label = normaliseMarketLabel(market?.desc);
+    const isDoubleChance = label === "double chance";
+    const isDrawNoBet = label === "draw no bet" || label === "draw no bet - regular time";
+    if (!isDoubleChance && !isDrawNoBet) continue;
+
+    for (const outcome of market.outcomes || []) {
+      if (outcome?.isActive === 0 || outcome?.isActive === false) continue;
+      const price = Number(outcome?.odds);
+      if (!Number.isFinite(price) || price <= 1) continue;
+      const outcomeLabel = compactOutcomeLabel(outcome?.desc);
+
+      if (isDoubleChance) {
+        if (["1x", "home-draw", "homeordraw"].includes(outcomeLabel)) {
+          odds["home-or-draw"] = price;
+        }
+        if (["x2", "draw-away", "draworaway"].includes(outcomeLabel)) {
+          odds["draw-or-away"] = price;
+        }
+        continue;
+      }
+
+      if (outcomeLabel === "home" || String(outcome?.id || "") === "1") {
+        odds["home-dnb"] = price;
+      }
+      if (outcomeLabel === "away" || String(outcome?.id || "") === "3") {
+        odds["away-dnb"] = price;
+      }
+    }
+  }
+  return odds;
+}
+
 function lineSuffix(specifier) {
   const line = String(specifier || "").match(/total=([0-9.]+)/i)?.[1];
   if (!line || !line.includes(".")) return null;

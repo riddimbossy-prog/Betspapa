@@ -22,6 +22,13 @@
       const liveLink = desktopNav.querySelector('a[href$="live-fixtures.html"]');
       desktopNav.insertBefore(ppgLink, liveLink || null);
     }
+    if (desktopNav && !desktopNav.querySelector('a[href$="visa.html"]')) {
+      const visaLink = document.createElement("a");
+      visaLink.href = `${root}visa.html`;
+      visaLink.textContent = "Visa";
+      const athenaLink = desktopNav.querySelector('a[href$="athena.html"]');
+      desktopNav.insertBefore(visaLink, athenaLink || null);
+    }
 
     const active = (() => {
       if (!file || file === "index.html" || file === "flash.html") return "flash";
@@ -65,6 +72,7 @@
             <a href="${link("goals-bankers.html")}"><strong>Total Goals Banker</strong><small>League patterns at 1.20–1.55</small></a>
             <a href="${link("wins-bankers.html")}"><strong>Wins Banker</strong><small>Top-4 favourites at 1.19–1.55</small></a>
             <a href="${link("ppg.html")}"><strong>PPG</strong><small>Top 3 and bottom 3 split-table picks</small></a>
+            <a href="${link("visa.html")}"><strong>Visa</strong><small>60/80/100 strict split-form grading</small></a>
             <a href="${link("results-intelligence.html")}"><strong>Results</strong><small>Settled picks and engine performance</small></a>
             <a href="${link("live-fixtures.html")}"><strong>Live & Fixtures</strong><small>Fixtures, live scores and settlement</small></a>
             <a href="${link("venue-pattern.html")}"><strong>Venue Pattern</strong><small>Home venue against away behaviour</small></a>
