@@ -12,8 +12,8 @@
     "minimal-ui"
   ],
   "orientation": "any",
-  "background_color": "#f4f1ea",
-  "theme_color": "#1e4dff",
+  "background_color": "#f6c6d8",
+  "theme_color": "#F6C6D8",
   "categories": [
     "sports",
     "news",
@@ -77,7 +77,7 @@
     {
       "name": "PapaLock Bankers",
       "short_name": "Bankers",
-      "description": "Open the PapaLock Banker Engine’s independently audited selections",
+      "description": "Open the PapaLock Banker Engine\u2019s independently audited selections",
       "url": "/bankers.html?source=shortcut",
       "icons": [
         {

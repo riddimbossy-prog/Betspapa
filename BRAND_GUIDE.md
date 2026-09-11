@@ -4,28 +4,29 @@
 
 **Brand:** BetsPapa  
 **Tagline:** Papa Knows the Game  
-**Mascot:** The wise Papa football analyst  
+**Mascot:** 3D caricature — red trucker hat, clear glasses, mustache, red shearling jacket  
 **Personality:** Experienced, sharp, colourful, trustworthy.
 
-## Daylight palette
+## Screens 2026 palette
 
-- Cream canvas: `#f4f1ea`
-- White surface: `#ffffff`
-- Ink: `#141821`
-- Muted: `#5c6573`
-- Cobalt: `#1e4dff`
-- Coral: `#ff4d2e`
-- Mint win: `#0f9f6e`
+- Pink canvas: `#F6C6D8`
+- Cream surface: `#FFF7F4`
+- Ink: `#111111`
+- Papa red: `#E11D2E`
+- CTA orange: `#FF4A1A`
+- Card tones: pink `#F4B6CE`, blue `#7EB6F0`, mint `#9EE8BC`, gold `#F0C94A`, lilac `#C4B4F5`, peach `#FFB38A`, sky `#9FD6F2`
 
 ## Type
 
-- Display: Syne
-- Body: Outfit
+- Display: Anton
+- Condensed UI: Oswald
+- Body: DM Sans
 
 ## Asset usage
 
-- `assets/branding/betspapa-official-logo.png` — original approved master logo.
-- `assets/images/betspapa-logo.webp` — optimized website hero logo.
-- `assets/images/betspapa-papa-mark.png` — compact header and navigation mark.
-- `assets/images/icon-192.png` and `icon-512.png` — PWA icons.
-- `assets/images/betspapa-social-card.jpg` — social sharing preview.
+- `assets/images/betspapa-papa-mark.png` — circular Papa mark (header, PWA, favicon)
+- `assets/images/logo-papa.png` — same mark
+- `assets/images/papa-square.png` — square portrait
+- `assets/images/icon-192.png` and `icon-512.png` — PWA icons
+- `assets/images/betspapa-social-card.jpg` — social sharing preview
+- `assets/css/papa-screens.css` — live visual system (load last)

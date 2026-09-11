@@ -1,0 +1,467 @@
+/* BetsPapa screens 2026 — pastel football cards, Papa mark, bold condensed type */
+
+:root {
+  --bg: #f6c6d8;
+  --bg2: #f8d4e2;
+  --panel: #fff7f4;
+  --panel2: #ffeef4;
+  --purple: #e11d2e;
+  --gold: #ff4a1a;
+  --green: #0f9f6e;
+  --red: #e11d2e;
+  --text: #111111;
+  --muted: #5c5c5c;
+  --line: rgba(17, 17, 17, 0.1);
+  --shadow: 0 10px 28px -12px rgb(17 17 17 / 0.22);
+  --bp-bg: #f6c6d8;
+  --bp-bg-soft: #f8d4e2;
+  --bp-surface: #fff7f4;
+  --bp-surface-2: #ffeef4;
+  --bp-surface-3: rgba(255, 74, 26, 0.12);
+  --bp-line: rgba(17, 17, 17, 0.1);
+  --bp-line-strong: rgba(17, 17, 17, 0.18);
+  --bp-text: #111111;
+  --bp-muted: #5c5c5c;
+  --bp-purple: #e11d2e;
+  --bp-purple-2: #e11d2e;
+  --bp-gold: #ff4a1a;
+  --bp-green: #0f9f6e;
+  --bp-red: #e11d2e;
+  --bp-amber: #f0c94a;
+  --bp-blue: #7eb6f0;
+  --bp-shadow: 0 10px 28px -12px rgb(17 17 17 / 0.22);
+  --accent: #ff4a1a;
+  --accent-glow: rgba(255, 74, 26, 0.18);
+  --ink: #111111;
+  --cream: #fff7f4;
+  --papa: #e11d2e;
+  --cta: #ff4a1a;
+  --tone-pink: #f4b6ce;
+  --tone-blue: #7eb6f0;
+  --tone-mint: #9ee8bc;
+  --tone-gold: #f0c94a;
+  --tone-lilac: #c4b4f5;
+  --tone-peach: #ffb38a;
+  --tone-sky: #9fd6f2;
+}
+
+html {
+  color-scheme: light;
+  background: #f6c6d8 !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+body,
+body.has-bp-mobile-nav {
+  background: #f6c6d8 !important;
+  color: #111111 !important;
+  font-family: "DM Sans", Outfit, system-ui, sans-serif !important;
+}
+body::before { display: none !important; }
+
+a { color: inherit; }
+
+/* Header */
+.topbar,
+.portal-header,
+.content-header-v150,
+.account-header {
+  height: 68px !important;
+  min-height: 68px !important;
+  border-bottom: 1px solid rgba(17, 17, 17, 0.08) !important;
+  background: rgba(255, 247, 244, 0.92) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(16px);
+  color: #111 !important;
+}
+.portal-brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.portal-brand img,
+.account-brand img {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 50% !important;
+  background: #fff7f4 !important;
+  box-shadow: 0 0 0 2px #fff7f4, 0 0 0 4px #e11d2e !important;
+  object-fit: cover !important;
+}
+.portal-brand strong,
+.account-brand strong,
+.content-header-v150 strong {
+  color: #111 !important;
+  font-family: Anton, "Oswald", Impact, sans-serif !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.02em !important;
+  font-size: 28px !important;
+  line-height: 0.9 !important;
+}
+.portal-brand strong span,
+.account-brand strong span,
+.content-header-v150 strong span {
+  color: #e11d2e !important;
+}
+.portal-brand small {
+  color: #5c5c5c !important;
+  letter-spacing: 0.16em !important;
+  font-family: Oswald, sans-serif !important;
+  font-weight: 600 !important;
+}
+.year-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #111 !important;
+  color: #fff7f4 !important;
+  font: 700 10px Oswald, sans-serif !important;
+  letter-spacing: 0.08em;
+  vertical-align: 3px;
+}
+
+.portal-nav a,
+.desktop-nav a,
+.account-header-links a {
+  color: #5c5c5c !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  font-family: Oswald, sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  border-radius: 999px !important;
+  padding: 8px 12px !important;
+}
+.portal-nav a:hover,
+.desktop-nav a:hover {
+  color: #111 !important;
+  background: #f6c6d8 !important;
+}
+.portal-nav a.active,
+.desktop-nav a.active {
+  color: #fff7f4 !important;
+  background: #111 !important;
+  box-shadow: none !important;
+}
+.portal-menu,
+.icon-button,
+.mobile-menu {
+  color: #111 !important;
+  background: #f6c6d8 !important;
+  border-color: transparent !important;
+  border-radius: 14px !important;
+}
+
+@media (max-width: 800px) {
+  .portal-nav {
+    background: #fff7f4 !important;
+    border: 1px solid rgba(17, 17, 17, 0.1) !important;
+    color: #111 !important;
+  }
+}
+
+/* Flash hero */
+.flash-hero {
+  border: 0 !important;
+  border-radius: 28px !important;
+  background: #f4b6ce !important;
+  box-shadow: var(--shadow) !important;
+  color: #111 !important;
+}
+.flash-hero::after { display: none !important; }
+.flash-hero-mark {
+  background: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+  width: 88px !important;
+  border-radius: 50% !important;
+  overflow: hidden;
+  background-image: url("/assets/images/betspapa-papa-mark.png") !important;
+  background-size: cover !important;
+  background-position: center !important;
+  font-size: 0 !important;
+}
+.flash-hero-copy span,
+.flash-section-title span {
+  color: rgba(17, 17, 17, 0.5) !important;
+  font: 700 12px Oswald, sans-serif !important;
+  letter-spacing: 0.2em !important;
+}
+.flash-hero-copy h1 {
+  color: #111 !important;
+  font-family: Anton, Impact, sans-serif !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.01em !important;
+}
+.flash-hero-copy p { color: rgba(17, 17, 17, 0.65) !important; }
+.flash-hero-rule {
+  border-left-color: rgba(17, 17, 17, 0.12) !important;
+}
+.flash-hero-rule strong { color: #111 !important; font-family: Anton, sans-serif !important; }
+.flash-hero-rule span { color: #e11d2e !important; }
+
+.flash-gates span {
+  background: #fff7f4 !important;
+  color: #111 !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  font-family: Oswald, sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* Cards */
+.pick-card,
+.processing-card,
+.no-pick-card {
+  border: 0 !important;
+  border-radius: 28px !important;
+  color: #111 !important;
+  background: #f4b6ce !important;
+  box-shadow: var(--shadow) !important;
+  min-height: 0 !important;
+}
+.pick-card:hover {
+  transform: translateY(-2px) scale(0.995);
+  border-color: transparent !important;
+}
+.portal-grid .pick-card:nth-child(7n + 1),
+.engine-block .pick-card:nth-child(7n + 1) { background: #f4b6ce !important; }
+.portal-grid .pick-card:nth-child(7n + 2),
+.engine-block .pick-card:nth-child(7n + 2) { background: #7eb6f0 !important; }
+.portal-grid .pick-card:nth-child(7n + 3),
+.engine-block .pick-card:nth-child(7n + 3) { background: #9ee8bc !important; }
+.portal-grid .pick-card:nth-child(7n + 4),
+.engine-block .pick-card:nth-child(7n + 4) { background: #f0c94a !important; }
+.portal-grid .pick-card:nth-child(7n + 5),
+.engine-block .pick-card:nth-child(7n + 5) { background: #c4b4f5 !important; }
+.portal-grid .pick-card:nth-child(7n + 6),
+.engine-block .pick-card:nth-child(7n + 6) { background: #ffb38a !important; }
+.portal-grid .pick-card:nth-child(7n + 7),
+.engine-block .pick-card:nth-child(7n + 7) { background: #9fd6f2 !important; }
+
+.pick-meta { color: rgba(17, 17, 17, 0.55) !important; font-family: Oswald, sans-serif !important; letter-spacing: 0.08em; }
+.pick-team { color: #111 !important; font-family: Oswald, sans-serif !important; text-transform: uppercase; }
+.pick-selection {
+  color: #111 !important;
+  font-family: Anton, Impact, sans-serif !important;
+  font-size: 28px !important;
+  letter-spacing: 0.01em !important;
+  line-height: 0.9 !important;
+}
+.pick-badge {
+  color: #111 !important;
+  border: 0 !important;
+  background: rgba(255, 247, 244, 0.7) !important;
+  font-family: Oswald, sans-serif !important;
+  letter-spacing: 0.1em !important;
+}
+.pick-bottom { color: #111 !important; }
+.pick-bottom b { color: #111 !important; font-family: Anton, sans-serif !important; font-size: 22px !important; }
+
+.pick-team img,
+.team-fallback {
+  border-radius: 50% !important;
+  background: #111 !important;
+  color: #fff7f4 !important;
+}
+
+/* Metrics / toolbar / status */
+.portal-hero,
+.engine-block,
+.lf-hero,
+.lf-board-shell,
+.admin-login,
+.diagnostic-card,
+.metric {
+  background: #fff7f4 !important;
+  border: 0 !important;
+  color: #111 !important;
+  border-radius: 24px !important;
+  box-shadow: var(--shadow);
+}
+.portal-hero h1,
+.engine-block-head h2,
+.section-title h2,
+.lf-hero h1,
+.dialog-title h2 {
+  font-family: Anton, Impact, sans-serif !important;
+  color: #111 !important;
+  letter-spacing: 0.01em !important;
+  line-height: 0.86 !important;
+}
+.eyebrow,
+.lf-eyebrow {
+  color: #e11d2e !important;
+  font-family: Oswald, sans-serif !important;
+  letter-spacing: 0.16em !important;
+}
+.portal-hero p,
+.section-title p,
+.metric span,
+.metric small { color: #5c5c5c !important; }
+.metric strong {
+  font-family: Anton, sans-serif !important;
+  color: #111 !important;
+}
+
+.portal-toolbar input,
+.portal-toolbar select,
+.lf-filter-bar input,
+.lf-filter-bar select,
+.lf-date-control input,
+.admin-login input {
+  background: #fff7f4 !important;
+  color: #111 !important;
+  border: 1px solid rgba(17, 17, 17, 0.12) !important;
+  border-radius: 14px !important;
+}
+.portal-toolbar button,
+.gold-action,
+.lf-today-button,
+#refreshButton,
+#liveRefreshButton,
+.flash-toolbar button {
+  background: #ff4a1a !important;
+  color: #1a0500 !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  font-family: Oswald, sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+.status-strip {
+  background: #fff7f4 !important;
+  border: 0 !important;
+  color: #111 !important;
+}
+
+/* Live fixtures */
+.lf-main { color: #111; }
+.lf-hero {
+  background: #f4b6ce !important;
+}
+.lf-hero h1 { font-family: Anton, sans-serif !important; }
+.lf-summary-grid button,
+.lf-state-tabs button {
+  background: #fff7f4 !important;
+  color: #111 !important;
+  border: 0 !important;
+  border-radius: 18px !important;
+}
+.lf-summary-grid button.active,
+.lf-state-tabs button.active {
+  background: #111 !important;
+  color: #fff7f4 !important;
+}
+.lf-fixture-grid > * {
+  background: #7eb6f0 !important;
+  border: 0 !important;
+  border-radius: 24px !important;
+  color: #111 !important;
+  box-shadow: var(--shadow);
+}
+.lf-fixture-grid > *:nth-child(7n + 1) { background: #f4b6ce !important; }
+.lf-fixture-grid > *:nth-child(7n + 2) { background: #7eb6f0 !important; }
+.lf-fixture-grid > *:nth-child(7n + 3) { background: #9ee8bc !important; }
+.lf-fixture-grid > *:nth-child(7n + 4) { background: #f0c94a !important; }
+.lf-fixture-grid > *:nth-child(7n + 5) { background: #c4b4f5 !important; }
+.lf-fixture-grid > *:nth-child(7n + 6) { background: #ffb38a !important; }
+.lf-fixture-grid > *:nth-child(7n + 7) { background: #9fd6f2 !important; }
+
+/* Dialogs */
+.portal-dialog,
+.lf-match-dialog {
+  background: #fff7f4 !important;
+  color: #111 !important;
+  border: 0 !important;
+  border-radius: 28px !important;
+}
+.portal-dialog::backdrop,
+.lf-match-dialog::backdrop {
+  background: rgba(17, 17, 17, 0.45) !important;
+}
+.dialog-close,
+.lf-dialog-close {
+  background: #f6c6d8 !important;
+  color: #111 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+}
+.explanation-box {
+  background: #f6c6d8 !important;
+  border-left-color: #e11d2e !important;
+  color: #111 !important;
+}
+.reason-columns section {
+  background: #f6c6d8 !important;
+  border: 0 !important;
+  color: #111 !important;
+}
+
+/* Tables */
+.portal-table {
+  background: #fff7f4 !important;
+  color: #111 !important;
+}
+.portal-table th { color: #5c5c5c !important; }
+.portal-table td { color: #111 !important; }
+.outcome.WIN { color: #0f9f6e !important; }
+.outcome.LOSS { color: #e11d2e !important; }
+.outcome.VOID { color: #b45309 !important; }
+
+/* Footer */
+.portal-footer {
+  color: #5c5c5c !important;
+  border-top-color: rgba(17, 17, 17, 0.1) !important;
+}
+.portal-footer a:hover { color: #e11d2e !important; }
+
+/* Mobile nav */
+.bp-mobile-nav {
+  background: #111 !important;
+  color: #fff7f4 !important;
+  border: 0 !important;
+  border-radius: 28px !important;
+  box-shadow: 0 30px 70px -20px rgb(17 17 17 / 0.4) !important;
+}
+.bp-mobile-nav a,
+.bp-mobile-nav button { color: rgba(255, 247, 244, 0.55) !important; }
+.bp-mobile-nav a.active,
+.bp-mobile-nav button.active {
+  color: #1a0500 !important;
+  background: #ff4a1a !important;
+  box-shadow: none !important;
+}
+.bp-mobile-sheet {
+  background: #fff7f4 !important;
+  color: #111 !important;
+}
+.bp-mobile-sheet a {
+  background: #f6c6d8 !important;
+  color: #111 !important;
+  border-radius: 18px !important;
+}
+
+/* Engine tints stay pastel, not neon */
+body[data-engine] .portal-hero {
+  background: #fff7f4 !important;
+  border: 0 !important;
+}
+
+.empty-card {
+  background: #fff7f4 !important;
+  border: 0 !important;
+  color: #5c5c5c !important;
+  border-radius: 24px !important;
+}
+
+.pwa-launch-splash {
+  background: #f6c6d8 !important;
+  color: #111 !important;
+}
