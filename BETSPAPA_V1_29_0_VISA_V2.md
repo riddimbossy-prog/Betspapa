@@ -14,12 +14,16 @@ Visa v2 evaluates every fixture on the existing rolling seven-day board. It buil
    - The home team is outside the bottom six on its home split.
    - The exact SportyBet Home Win price is present.
 
-3. **Away Loss**
-   - The away team concedes at least 2.2 goals per away match, or it has lost at least 80% of its last five away matches.
-   - Either trigger qualifies Home Win.
-   - When both triggers pass, the pick is tagged **Sure Visa**.
+3. **Away 2.2 GA**
+   - The away team concedes at least 2.2 goals per away match.
+   - The selection is Home Team to Score 2+ using the exact SportyBet home-team Over 1.5 price.
 
-4. **Home Power**
+4. **Away 80% Loss**
+   - The away team has lost at least 80% of its last five away matches.
+   - This separate trigger qualifies Home Win.
+   - When the 2.2 GA and 80% loss signals both pass, Home Team to Score 2+ is tagged **Sure Visa**.
+
+5. **Home Power**
    - The home team scores at least 2.3 goals per home match, or it has won more than 80% of its last five home matches.
    - Either trigger qualifies Home Win.
    - When both triggers pass, the pick is tagged **Sure Visa**.
@@ -34,6 +38,6 @@ Visa v2 evaluates every fixture on the existing rolling seven-day board. It buil
 
 ## Selection order and safety
 
-Dual-trigger Sure Visa wins are checked first, followed by Top 3 Win, Bottom 3 Away, single-trigger Away Loss, single-trigger Home Power, and Over 2.5. This keeps one deterministic selection per fixture. A missing exact price, insufficient venue history or an unverified rank condition cannot be replaced with invented data.
+Dual-trigger Sure Visa selections are checked first, followed by Away 2.2 GA, Top 3 Win, Bottom 3 Away, Away 80% Loss, single-trigger Home Power, and Over 2.5. This keeps one deterministic selection per fixture. A missing exact price, insufficient venue history or an unverified rank condition cannot be replaced with invented data.
 
 “Sure Visa” describes a complete two-trigger rule match; it is not a guarantee of a sporting result. No database migration is required.

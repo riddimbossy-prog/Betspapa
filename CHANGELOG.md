@@ -1,3 +1,10 @@
+# v1.29.1 — Away 2.2 Market Correction
+
+- Changed the 2.2+ away goals-against route from Home Win to Home Team to Score 2+.
+- Added the exact SportyBet home-team Over 1.5 price to Visa odds matching.
+- Kept an 80% away-loss rate as a separate Home Win route.
+- When both signals pass, Home Team to Score 2+ receives the Sure Visa tag.
+
 # v1.29.0 — Visa v2 Rules
 
 - Added venue split-table ranks to every Visa decision.

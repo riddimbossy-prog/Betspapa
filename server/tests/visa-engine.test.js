@@ -59,7 +59,7 @@ function visa(overrides = {}) {
 
 test("Visa v2 keeps the public identity and exact 60/80/100 display grades", () => {
   assert.equal(VISA_ENGINE_NAME, "Visa");
-  assert.equal(VISA_ENGINE_VERSION, "visa-v2.0.0");
+  assert.equal(VISA_ENGINE_VERSION, "visa-v2.0.1");
   assert.equal(lossGrade(0.6), 60);
   assert.equal(lossGrade(0.8), 80);
   assert.equal(lossGrade(1), 100);
@@ -170,11 +170,14 @@ test("Bottom 3 Away selects the home team only when home is outside the bottom s
   assert.equal(rejected.available, false);
 });
 
-test("Away Loss route qualifies from a 2.2 away GA average by itself", () => {
+test("a 2.2 away GA average selects home to score 2+ instead of Home Win", () => {
   const away = games([[1, 3], [2, 2], [1, 3], [1, 2], [2, 1]]);
-  const pick = visa({ awayGames: away, odds: { home: 1.75 } });
+  const pick = visa({ awayGames: away, odds: { home: 1.75, "home-over-15": 1.68 } });
   assert.equal(pick.available, true);
-  assert.equal(pick.route, "away-loss-home-win");
+  assert.equal(pick.key, "home-over-15");
+  assert.equal(pick.selection, "Home Club to Score 2+");
+  assert.equal(pick.route, "away-concede-home-two");
+  assert.equal(pick.odds, 1.68);
   assert.equal(pick.sureVisa, false);
   assert.equal(pick.awayVisa.gaAverage, 2.2);
 });
@@ -188,15 +191,24 @@ test("Away Loss route qualifies from an 80% away loss rate by itself", () => {
   assert.equal(pick.awayVisa.lossRate, 0.8);
 });
 
-test("Away Loss route becomes Sure Visa only when both triggers pass", () => {
+test("2.2 away GA plus 80% away losses makes home to score 2+ Sure Visa", () => {
   const away = games([[0, 3], [1, 2], [0, 3], [1, 3], [1, 1]]);
-  const pick = visa({ awayGames: away, odds: { home: 1.72, "over-25": 1.6 } });
+  const pick = visa({ awayGames: away, odds: { home: 1.72, "home-over-15": 1.59 } });
   assert.equal(pick.available, true);
-  assert.equal(pick.route, "away-loss-home-win");
+  assert.equal(pick.key, "home-over-15");
+  assert.equal(pick.selection, "Home Club to Score 2+");
+  assert.equal(pick.route, "away-concede-home-two");
   assert.equal(pick.visaStatus, "SURE VISA");
   assert.equal(pick.tier, "SURE VISA");
   assert.equal(pick.awayVisa.lossRate, 0.8);
   assert.ok(pick.awayVisa.gaAverage >= 2.2);
+});
+
+test("the 2.2 route never substitutes Home Win when its team-total price is missing", () => {
+  const away = games([[1, 3], [2, 2], [1, 3], [1, 2], [2, 1]]);
+  const pick = visa({ awayGames: away, odds: { home: 1.75 } });
+  assert.equal(pick.available, false);
+  assert.match(pick.reasons[0], /home-team Over 1\.5 price is missing/i);
 });
 
 test("Home Power qualifies from a 2.3+ scoring average or a win rate above 80%", () => {
@@ -376,11 +388,18 @@ test("SportyBet Visa parser reads exact 1X2 and Over 2.5 prices", () => {
       desc: "Total Goals",
       specifier: "total=2.5",
       outcomes: [{ id: 12, desc: "Over", odds: "1.75" }]
+    },
+    {
+      id: 19,
+      desc: "Home Team Total Goals",
+      specifier: "total=1.5",
+      outcomes: [{ id: 12, desc: "Over", odds: "1.62" }]
     }
   ]);
   assert.equal(odds.home, 1.8);
   assert.equal(odds.away, 4.1);
   assert.equal(odds["over-25"], 1.75);
+  assert.equal(odds["home-over-15"], 1.62);
 });
 
 test("Betspapa exposes Visa v2, the weekly API and fresh PWA assets", async () => {
@@ -399,6 +418,7 @@ test("Betspapa exposes Visa v2, the weekly API and fresh PWA assets", async () =
   ]);
   assert.match(html, /data-page="visa"/);
   assert.match(html, /Top 3 win · max 1\.52/);
+  assert.match(html, /Away GA 2\.2\+ → Home 2\+/);
   assert.match(html, /Dual trigger = Sure Visa/);
   assert.match(html, /id="visaDateTabs"/);
   assert.match(html, /Week starts/);
@@ -414,10 +434,10 @@ test("Betspapa exposes Visa v2, the weekly API and fresh PWA assets", async () =
   assert.match(server, /visa: "\/api\/visa\/today"/);
   assert.match(server, /visaWeek: "\/api\/visa\/week"/);
   assert.match(nav, /visa\.html/);
-  assert.match(sw, /betspapa-pwa-v1290/);
+  assert.match(sw, /betspapa-pwa-v1291/);
   assert.match(sw, /visa\.v1270\.js/);
   assert.match(sw, /visa\.html/);
-  assert.match(manifest, /"version": "1\.29\.0"/);
+  assert.match(manifest, /"version": "1\.29\.1"/);
   assert.match(preload, /HORIZON_DAYS = 7/);
   assert.match(preload, /\/api\/visa\/week/);
   assert.match(workflow, /Preload seven-day fixture horizon/);

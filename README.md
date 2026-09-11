@@ -1,3 +1,7 @@
+## v1.29.1 Away 2.2 Market Correction
+
+An away team conceding 2.2+ goals per away match now sends Visa to **Home Team to Score 2+** using the exact SportyBet home-team Over 1.5 price. It no longer selects Home Win from that defensive-average signal. The separate 80% away-loss route still selects Home Win, while both signals together tag Home to Score 2+ as Sure Visa.
+
 ## v1.29.0 Visa v2 Rules
 
 Visa now runs five explicit routes: Top 3 Win at SportyBet odds of 1.52 or shorter against an opponent outside the top six; Home Win against a bottom-three away side when the home side is outside the bottom six; Away Loss; Home Power; and Over 2.5. The last two venue triggers in either the Away Loss or Home Power route must both pass to receive the Sure Visa tag. Every fixture still returns one exact SportyBet selection or no visa across the existing seven-date board. See `BETSPAPA_V1_29_0_VISA_V2.md`.

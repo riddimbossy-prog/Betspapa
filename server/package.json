@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.29.0",
+  "version": "1.29.1",
   "private": true,
-  "description": "BetsPapa v1.29.0 runs Visa v2 split-rank, venue-power and Over 2.5 routes across a seven-day board.",
+  "description": "BetsPapa v1.29.1 routes a 2.2+ away GA average to Home to Score 2+ in Visa v2.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

@@ -118,6 +118,7 @@
   function routeIcon(route) {
     if (route === "split-top-3-win") return "#3";
     if (route === "away-bottom-3-home-win") return "B3";
+    if (route === "away-concede-home-two") return "2+";
     if (route === "away-loss-home-win") return "L";
     if (route === "home-power-win") return "H";
     if (route === "high-goal-over-25") return "2.5";

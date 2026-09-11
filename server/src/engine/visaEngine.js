@@ -1,5 +1,5 @@
 export const VISA_ENGINE_NAME = "Visa";
-export const VISA_ENGINE_VERSION = "visa-v2.0.0";
+export const VISA_ENGINE_VERSION = "visa-v2.0.1";
 export const VISA_WINDOW = 5;
 export const VISA_MIN_MATCHES = 5;
 export const VISA_MIN_SPLIT_PLAYED = 5;
@@ -290,6 +290,27 @@ function resultSelection({ side, teamName, opponentName, odds, route, routeLabel
   });
 }
 
+function homeTwoGoalsSelection({ homeName, odds, score, home, away, expected, explanation, audit, sureVisa = false }) {
+  return approvedPick({
+    key: "home-over-15",
+    family: "Team Total Goals",
+    market: "Home Team Total Goals",
+    selection: `${homeName} to Score 2+`,
+    odds,
+    route: "away-concede-home-two",
+    routeLabel: "AWAY 2.2 GA",
+    score,
+    home,
+    away,
+    expected,
+    explanation,
+    reasons: [explanation],
+    audit,
+    sureVisa,
+    approvedTeam: homeName
+  });
+}
+
 /** Select one Visa v2 market from venue form, venue split ranks and exact SportyBet prices. */
 export function selectVisaPick({
   homeName = "Home",
@@ -309,6 +330,7 @@ export function selectVisaPick({
   const ranksReady = homeRank.qualified && awayRank.qualified;
   const homeOdds = price(odds, "home");
   const awayOdds = price(odds, "away");
+  const homeOver15Odds = price(odds, "home-over-15");
   const over25Odds = price(odds, "over-25");
   const awayConcede = historiesReady && away.gaAverage >= VISA_CONCEDE_AVG_MIN;
   const awayLoses = historiesReady && away.lossRate >= VISA_AWAY_LOSS_RATE_MIN;
@@ -329,17 +351,16 @@ export function selectVisaPick({
     const audit = [
       gate("away-ga", `${awayName} away GA average`, `${VISA_CONCEDE_AVG_MIN.toFixed(1)} or higher`, away.gaAverage.toFixed(2), true),
       gate("away-loss", `${awayName} away loss rate`, "80% or higher", `${percentage(away.lossRate)}%`, true),
-      gate("sportybet-home", "SportyBet home win", "Exact active price required", homeOdds ?? "Missing", homeOdds != null)
+      gate("sportybet-home-two", "SportyBet home team Over 1.5", "Exact active price required", homeOver15Odds ?? "Missing", homeOver15Odds != null)
     ];
-    if (homeOdds != null) {
-      const explanation = `${awayName} concedes ${away.gaAverage.toFixed(2)} goals per away match and has lost ${away.losses}/5 away. Both loss-route triggers passed, so ${homeName} Win is tagged Sure Visa.`;
-      return resultSelection({
-        side: "home", teamName: homeName, opponentName: awayName, odds: homeOdds,
-        route: "away-loss-home-win", routeLabel: "AWAY LOSS", score: 0.97,
+    if (homeOver15Odds != null) {
+      const explanation = `${awayName} concedes ${away.gaAverage.toFixed(2)} goals per away match and has lost ${away.losses}/5 away. Both triggers passed, so ${homeName} to Score 2+ is tagged Sure Visa.`;
+      return homeTwoGoalsSelection({
+        homeName, odds: homeOver15Odds, score: 0.97,
         home, away, expected, explanation, audit, sureVisa: true
       });
     }
-    hold("The Away Loss route reached Sure Visa, but the exact SportyBet home-win price is missing.", audit);
+    hold("The Away 2.2 route reached Sure Visa, but the exact SportyBet home-team Over 1.5 price is missing.", audit);
   }
 
   if (homeScores && homeWins) {
@@ -357,6 +378,22 @@ export function selectVisaPick({
       });
     }
     hold("The Home Power route reached Sure Visa, but the exact SportyBet home-win price is missing.", audit);
+  }
+
+  // A 2.2+ away GA average points to home scoring output, not the match result.
+  if (awayConcede) {
+    const audit = [
+      gate("away-ga", `${awayName} away GA average`, `${VISA_CONCEDE_AVG_MIN.toFixed(1)} or higher`, away.gaAverage.toFixed(2), true),
+      gate("sportybet-home-two", "SportyBet home team Over 1.5", "Exact active price required", homeOver15Odds ?? "Missing", homeOver15Odds != null)
+    ];
+    if (homeOver15Odds != null) {
+      const explanation = `${awayName} concedes ${away.gaAverage.toFixed(2)} goals per away match, qualifying ${homeName} to Score 2+.`;
+      return homeTwoGoalsSelection({
+        homeName, odds: homeOver15Odds, score: 0.86,
+        home, away, expected, explanation, audit
+      });
+    }
+    hold("The Away 2.2 route qualified, but the exact SportyBet home-team Over 1.5 price is missing.", audit);
   }
 
   // Win Banker: top three on the relevant split table, opponent outside the top six, price 1.52 or shorter.
@@ -407,24 +444,17 @@ export function selectVisaPick({
     hold("The Bottom 3 Away route qualified, but the exact SportyBet home-win price is missing.", audit);
   }
 
-  // Either away-loss trigger qualifies; both were already promoted to Sure Visa above.
-  if (awayConcede || awayLoses) {
-    const audit = [];
-    if (awayConcede) {
-      audit.push(gate("away-ga", `${awayName} away GA average`, `${VISA_CONCEDE_AVG_MIN.toFixed(1)} or higher`, away.gaAverage.toFixed(2), true));
-    }
-    if (awayLoses) {
-      audit.push(gate("away-loss", `${awayName} away loss rate`, "80% or higher", `${percentage(away.lossRate)}%`, true));
-    }
+  // The separate 80% away-loss trigger still points to the home match result.
+  if (awayLoses) {
+    const audit = [
+      gate("away-loss", `${awayName} away loss rate`, "80% or higher", `${percentage(away.lossRate)}%`, true)
+    ];
     audit.push(gate("sportybet-home", "SportyBet home win", "Exact active price required", homeOdds ?? "Missing", homeOdds != null));
     if (homeOdds != null) {
-      const trigger = awayConcede
-        ? `${awayName} concedes ${away.gaAverage.toFixed(2)} goals per away match`
-        : `${awayName} has lost ${away.losses}/5 away matches`;
-      const explanation = `${trigger}, qualifying the Away Loss route for ${homeName} Win.`;
+      const explanation = `${awayName} has lost ${away.losses}/5 away matches, qualifying the Away Loss route for ${homeName} Win.`;
       return resultSelection({
         side: "home", teamName: homeName, opponentName: awayName, odds: homeOdds,
-        route: "away-loss-home-win", routeLabel: "AWAY LOSS", score: awayConcede ? 0.84 : 0.82,
+        route: "away-loss-home-win", routeLabel: "AWAY 80% LOSS", score: 0.82,
         home, away, expected, explanation, audit
       });
     }
@@ -499,7 +529,7 @@ export function selectVisaPick({
     gate("split-tables", "Venue split tables", `${VISA_MIN_SPLIT_TABLE}+ teams and ${VISA_MIN_SPLIT_PLAYED}+ played`, `${rankLabel(homeRank)} / ${rankLabel(awayRank)}`, ranksReady)
   ];
   return noPick(
-    "No Visa v2 route qualified: Top 3 Win, Bottom 3 Away, Away Loss, Home Power and Over 2.5 all stayed below their required gates.",
+    "No Visa v2 route qualified: Top 3 Win, Bottom 3 Away, Away 2.2 GA, Away 80% Loss, Home Power and Over 2.5 all stayed below their required gates.",
     home,
     away,
     expected,

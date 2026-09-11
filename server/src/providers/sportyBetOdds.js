@@ -116,7 +116,7 @@ export async function loadSportyBetVisaOdds(fixtures = [], { concurrency = 5, fo
         // Every Visa route still fails closed when its exact price is absent.
       }
       const prices = { ...(hit.odds || {}), ...detailed };
-      const hasVisaPrice = ["home", "away", "over-25"]
+      const hasVisaPrice = ["home", "away", "home-over-15", "over-25"]
         .some((key) => Number(prices[key]) > 1);
       if (!hasVisaPrice) continue;
       map.set(Number(fixture.id), {
