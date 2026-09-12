@@ -1,4 +1,4 @@
-const CACHE_NAME = "betspapa-screens-20260912h";
+const CACHE_NAME = "betspapa-screens-20260912i";
 const OFFLINE_URL = "/offline.html";
 
 const CORE_ASSETS = [

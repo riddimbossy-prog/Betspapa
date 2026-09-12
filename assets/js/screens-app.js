@@ -15,6 +15,7 @@
     list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
     zap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
     ticket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V9z"/><path d="M13 5v14"/></svg>',
+    orbit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M10.4 21.9a10 10 0 0 0 9.5-9.5"/><path d="M13.6 2.1a10 10 0 0 0-9.5 9.5"/></svg>',
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>',
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6L6 18M6 6l12 12"/></svg>',
   };
@@ -31,6 +32,7 @@
     visa: [],
     visaWeek: [],
     visaDate: null,
+    monika: [],
     sporty: [],
     loading: true,
     error: null,
@@ -288,6 +290,7 @@
     return 0;
   }
   function overlayPick(p) {
+    if (p.betExplorerUrl) return p;
     const ev = findSporty(p);
     if (!ev) {
       p.sportyBetUrl = ghanaUrl(p.sportyBetUrl, p.sportyBetEventId);
@@ -332,6 +335,8 @@
       probs: xg.home || xg.away ? matchProbs(xg.home, xg.away) : null,
       sportyBetEventId: p.sportyBetEventId || "",
       sportyBetUrl: ghanaUrl(p.sportyBetUrl, p.sportyBetEventId),
+      betExplorerUrl: p.betExplorerUrl || "",
+      odds: p.odds1x2 || p.odds || null,
       matchState: p.matchState || {},
     };
   }
@@ -368,6 +373,11 @@
     state.visa = state.visaWeek.find((day) => day.date === state.visaDate)?.picks || [];
   }
 
+  function applyMonika(slate) {
+    state.monika = (slate?.picks || []).map((p) => pickFromEngine(p, "MONIKA")).filter(priced);
+    return state.monika;
+  }
+
   async function bootData() {
     state.loading = true;
     state.error = null;
@@ -375,17 +385,19 @@
     const d0 = todayUtc();
     const d1 = addDays(d0, 1);
 
-    const [fl0, fl1, visaWeek, sporty] = await Promise.all([
+    const [fl0, fl1, visaWeek, sporty, monika] = await Promise.all([
       getJson(`/api/flash/today?date=${d0}`).catch((err) => ({ error: String(err && err.message || err) })),
       getJson(`/api/flash/today?date=${d1}`).catch((err) => ({ error: String(err && err.message || err) })),
       getJson(`/api/visa/week?start=${d0}&days=7`).catch((err) => ({ error: String(err && err.message || err) })),
       getJson(`/api/sportybet/upcoming`).catch(() => ({ events: [] })),
+      getJson(`/api/monika/today`).catch(() => ({ picks: [] })),
     ]);
     state.sporty = Array.isArray(sporty?.events) ? sporty.events : [];
     applyFlash(fl0, fl1);
     applyVisaWeek(visaWeek);
+    applyMonika(monika);
     state.loading = false;
-    if (!state.flash.length && !state.visa.length) {
+    if (!state.flash.length && !state.visa.length && !state.monika.length) {
       state.error = "Papa's tips are still warming up.";
     }
     render();
@@ -424,7 +436,7 @@
   function matchById(id) {
     const fx = state.fixtures.find((m) => m.id === String(id));
     const flashList = state.flash.filter((p) => p.id === String(id));
-    const boards = [...state.bankers, ...state.athena, ...state.goals, ...state.wins, ...state.visa];
+    const boards = [...state.bankers, ...state.athena, ...state.goals, ...state.wins, ...state.visa, ...state.monika];
     const extra = boards.filter((x) => x.id === String(id));
     const attach = (base, list) => {
       const have = new Set((list || []).map((p) => p.key));
@@ -452,7 +464,7 @@
     if (parts[0] === "match" && parts[1]) return { name: "match", id: decodeURIComponent(parts[1]) };
     if (parts[0] === "slip" || parts[0] === "watchlist") return { name: "flash", id: null };
     if (parts[0] === "home" || parts[0] === "fixtures") return { name: "papa", id: null };
-    const known = ["papa","flash","visa","bankers","athena","goals","wins"];
+    const known = ["papa","flash","visa","monika","bankers","athena","goals","wins"];
     if (!known.includes(parts[0])) return { name: "papa", id: null };
     return { name: parts[0], id: null };
   }
@@ -487,6 +499,7 @@
     const items = [
       { name: "visa", label: "Visa", icon: ICO.ticket },
       { name: "flash", label: "Flash", icon: ICO.zap },
+      { name: "monika", label: "Monika", icon: ICO.orbit },
       { name: "papa", label: "Papa", icon: `<img src="${PAPA}" alt="">` },
     ];
     return `<nav class="nav" aria-label="Primary"><div class="nav-bar">${items.map((it) => {
@@ -527,7 +540,12 @@
     const flashList = m.flashList || (engine ? [engine] : []);
     const formH = (m.form?.home && m.form.home.length) ? m.form.home : (engine?.form?.home || []);
     const formA = (m.form?.away && m.form.away.length) ? m.form.away : (engine?.form?.away || []);
-    const betUrl = flashList.find((fp) => fp.sportyBetUrl)?.sportyBetUrl || engine?.sportyBetUrl || "";
+    const betUrl = flashList.find((fp) => fp.betExplorerUrl)?.betExplorerUrl
+      || flashList.find((fp) => fp.sportyBetUrl)?.sportyBetUrl
+      || engine?.betExplorerUrl
+      || engine?.sportyBetUrl
+      || "";
+    const cta = /betexplorer\.com/.test(betUrl) ? "OPEN ON BETEXPLORER" : "OPEN ON SPORTYBET";
     return `<div class="view view-pink">
       <header class="pad" style="display:flex;align-items:center;justify-content:space-between">
         ${nested ? `<img class="brand-mark" src="${LOGO}" alt="">` : `<button class="icon-btn" data-go="back" aria-label="Back">${ICO.back}</button>`}
@@ -558,7 +576,7 @@
         ${flashList.map((fp) => `<div class="card tone-${m.tone}" style="margin-top:12px">
           <p class="eyebrow">${esc(fp.tier)} · ${esc(fp.market)}</p>
           <p class="font-display" style="font-size:32px;line-height:1;margin-top:4px">${esc(pickTitle(fp))}</p>
-          <p class="lede" style="max-width:none">${esc(fp.market)} · SportyBet ${formatOdd(fp.odd)}</p>
+          <p class="lede" style="max-width:none">${esc(fp.market)} · ${/betexplorer/.test(fp.betExplorerUrl || "") ? "BetExplorer" : "SportyBet"} ${formatOdd(fp.odd)}</p>
           <div class="metrics">
             <div class="metric"><b>${formatOdd(fp.odd)}</b><span>ODD</span></div>
             <div class="metric"><b>${fp.model ? fp.model + "%" : "—"}</b><span>MODEL</span></div>
@@ -567,7 +585,7 @@
           </div>
         </div>`).join("")}
       </div>
-      ${betUrl ? `<div class="sticky-cta"><a class="cta" href="${esc(betUrl)}" target="_blank" rel="noopener">OPEN ON SPORTYBET</a></div>` : ""}
+      ${betUrl ? `<div class="sticky-cta"><a class="cta" href="${esc(betUrl)}" target="_blank" rel="noopener">${cta}</a></div>` : ""}
     </div>`;
   }
 
@@ -582,7 +600,7 @@
       <a href="#/match/${encodeURIComponent(p.id)}" style="display:block;margin-top:8px">
         <p class="font-cond" style="font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:rgb(17 17 17 / 0.6)">${esc(p.home.short)} vs ${esc(p.away.short)}</p>
         <p class="font-display" style="font-size:36px;line-height:1;margin-top:2px">${esc(pickTitle(p))}</p>
-        <p class="lede" style="max-width:none">${esc(p.engine || p.market)} · SportyBet ${formatOdd(odd)}</p>
+        <p class="lede" style="max-width:none">${esc(p.engine || p.market)} · ${p.betExplorerUrl ? "BetExplorer" : "SportyBet"} ${formatOdd(odd)}</p>
       </a>
       <div class="metrics">
         <div class="metric"><b>${formatOdd(odd)}</b><span>ODD</span></div>
@@ -591,6 +609,20 @@
         <div class="metric"><b>${p.confidence || "—"}</b><span>CONF</span></div>
       </div>
     </article>`;
+  }
+
+  function renderMonika() {
+    const list = state.monika;
+    return `<div class="view view-pink">
+      <div class="view-scroll">
+        ${headerBrand("DECISION TREE", { title: "MONIKA", sub: "TIPS" })}
+        <div class="stack stagger">
+          ${state.loading ? `<div class="skel"></div><div class="skel"></div>` : ""}
+          ${!state.loading && !list.length ? `<div class="empty"><h2>NO MONIKA</h2><p>No BetExplorer price cleared the tree.</p></div>` : ""}
+          ${list.map(engineCard).join("")}
+        </div>
+      </div>
+    </div>`;
   }
 
   function renderFlash() {
@@ -640,10 +672,11 @@
   }
 
   function renderPapa() {
+    const monikaHome = (state.monika || []).filter((p) => Number(p.confidence) >= 90);
     const tips = []
+      .concat(monikaHome.map((p) => ({ ...p, engine: p.engine || "MONIKA" })))
       .concat(state.flash.map((p) => ({ ...p, engine: p.engine || "FLASH" })))
-      .concat(state.visa.map((p) => ({ ...p, engine: p.engine || "VISA" })))
-      .concat(state.bankers.map((p) => ({ ...p, engine: p.engine || "BANKERS" })));
+      .concat(state.visa.map((p) => ({ ...p, engine: p.engine || "VISA" })));
     return `<div class="view view-ink">
       <div class="view-scroll">
         <div class="papa-hero" style="height:200px">
@@ -656,13 +689,13 @@
           <p class="display" style="color:var(--papa)">TIPS</p>
         </div>
         <div class="metrics pad-x" style="grid-template-columns:repeat(3,1fr);margin-top:8px">
+          <div class="metric" style="background:rgb(255 247 244 / 0.1);color:#fff7f4"><b>${monikaHome.length}</b><span>MONIKA</span></div>
           <div class="metric" style="background:rgb(255 247 244 / 0.1);color:#fff7f4"><b>${state.flash.length}</b><span>FLASH</span></div>
           <div class="metric" style="background:rgb(255 247 244 / 0.1);color:#fff7f4"><b>${state.visa.length}</b><span>VISA</span></div>
-          <div class="metric" style="background:rgb(255 247 244 / 0.1);color:#fff7f4"><b>${state.bankers.length}</b><span>LOCKS</span></div>
         </div>
         <div class="stack">
           ${state.loading ? `<div class="skel"></div>` : ""}
-          ${!state.loading && !tips.length ? `<div class="empty"><h2>NO TIPS</h2><p>Waiting on SportyBet prices.</p></div>` : ""}
+          ${!state.loading && !tips.length ? `<div class="empty"><h2>NO TIPS</h2><p>Waiting on live prices.</p></div>` : ""}
           ${tips.map(engineCard).join("")}
         </div>
       </div>
@@ -672,6 +705,7 @@
   function viewFor(route, nested) {
     switch (route.name) {
       case "flash": return renderFlash();
+      case "monika": return renderMonika();
       case "papa": return renderPapa();
       case "bankers": return renderBoard("BANKERS", "LOCKS", "", state.bankers);
       case "athena": return renderBoard("ATHENA", "SWING", "", state.athena);

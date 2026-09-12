@@ -30,6 +30,7 @@ import { getFlashPicks } from "../services/flashPickService.js";
 import { getPpgPicks } from "../services/ppgPickService.js";
 import { getVisaPicks, getVisaWeek } from "../services/visaPickService.js";
 import { loadSportyBetEvents } from "../providers/sportyBet.js";
+import { getMonikaPicks } from "../services/monikaPickService.js";
 import { toPublicPapaLockSlate } from "../engine/papaLockBankerEngine.js";
 import { applyLeagueScoringGuard } from "../engine/leagueScoringPolicy.js";
 import { applyRedFlagsToPick, collectRedFlags } from "../services/fixtureRiskService.js";
@@ -513,6 +514,22 @@ publicRouter.get("/wins-bankers/today", async (req, res, next) => {
     res.json({
       ...slate,
       liveRefresh: { refreshed: false, skipped: true, reason: "Wins Banker prepared reader" }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+publicRouter.get("/monika/today", async (req, res, next) => {
+  try {
+    const force = ["1", "true", "force", "reload"].includes(
+      String(req.query.force || "").toLowerCase()
+    );
+    const slate = await getMonikaPicks({ force });
+    setPublicCache(res, slate.cached ? 60 : 20, 180);
+    res.json({
+      ...slate,
+      liveRefresh: { refreshed: false, skipped: true, reason: "Monika BetExplorer decision tree" }
     });
   } catch (error) {
     next(error);
