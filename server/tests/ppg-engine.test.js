@@ -186,6 +186,6 @@ test("Betspapa exposes the five-day PPG page, preload, API, navigation and fresh
   assert.match(preload, /PPG_HORIZON_DAYS = 5/);
   assert.match(preload, /\/api\/visa\/week/);
   assert.match(preload, /api\/admin\/sync-date/);
-  assert.match(sw, /betspapa-screens-20260912f/);
+  assert.match(sw, /betspapa-screens-20260912h/);
   assert.match(sw, /screens-app\.js/);
 });

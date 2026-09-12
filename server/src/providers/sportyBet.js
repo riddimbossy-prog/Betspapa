@@ -1,4 +1,4 @@
-const DEFAULT_BASE = "https://www.sportybet.com/api/ng";
+const DEFAULT_BASE = "https://www.sportybet.com/api/gh";
 const PAGE_SIZE = 100;
 const MAX_PAGES = 12;
 const CACHE_TTL_MS = 6 * 60_000;
@@ -218,6 +218,16 @@ function parseTotals(event) {
       for (const outcome of market.outcomes || []) writeOutcome(odds, "away", market.specifier, outcome);
       continue;
     }
+    if (id === "11") {
+      for (const outcome of market.outcomes || []) {
+        const price = Number(outcome.odds);
+        if (!Number.isFinite(price) || price <= 1) continue;
+        const desc = String(outcome.desc || "").toLowerCase();
+        if (String(outcome.id) === "1" || desc === "home") odds["home-dnb"] = price;
+        if (String(outcome.id) === "3" || desc === "away") odds["away-dnb"] = price;
+      }
+      continue;
+    }
     if (id === "29") {
       for (const outcome of market.outcomes || []) {
         const price = Number(outcome.odds);
@@ -270,8 +280,8 @@ export function sportyEventRecord(event, tournamentName = "") {
     kickoffMs: eventKickoff(event),
     odds,
     url: event.eventId
-      ? `https://www.sportybet.com/ng/sport/football/event/${encodeURIComponent(event.eventId)}`
-      : "https://www.sportybet.com/ng/sport/football"
+      ? `https://www.sportybet.com/gh/sport/football/event/${encodeURIComponent(event.eventId)}`
+      : "https://www.sportybet.com/gh/sport/football"
   };
 }
 
@@ -340,16 +350,16 @@ function flatten(payload) {
 
 async function fetchPage(pageNum) {
   const base = (process.env.SPORTYBET_API_BASE || DEFAULT_BASE).replace(/\/$/, "");
-  const operId = process.env.SPORTYBET_OPER_ID || "2";
+  const operId = process.env.SPORTYBET_OPER_ID || "3";
   // The compact feed discovers events through stable core markets. Flash then
   // reads the full event market list and matches exact names, never guessed IDs.
-  const url = `${base}/factsCenter/pcUpcomingEvents?sportId=sr:sport:1&marketId=1,18,29,68,19,20&pageSize=${PAGE_SIZE}&pageNum=${pageNum}`;
+  const url = `${base}/factsCenter/pcUpcomingEvents?sportId=sr:sport:1&marketId=1,18,29,11,68,19,20&pageSize=${PAGE_SIZE}&pageNum=${pageNum}`;
   const response = await fetch(url, {
     headers: {
       Accept: "application/json",
       OperId: String(operId),
       Platform: "web",
-      Referer: "https://www.sportybet.com/ng/sport/football",
+      Referer: "https://www.sportybet.com/gh/sport/football",
       Origin: "https://www.sportybet.com",
       "User-Agent": "Mozilla/5.0 BetsPapaGoalsBanker"
     },
@@ -372,14 +382,14 @@ export async function loadSportyBetEventMarkets(eventId, { force = false } = {})
   if (!force && cached && Date.now() - cached.loadedAt < CACHE_TTL_MS) return cached.markets;
 
   const base = (process.env.SPORTYBET_API_BASE || DEFAULT_BASE).replace(/\/$/, "");
-  const operId = process.env.SPORTYBET_OPER_ID || "2";
+  const operId = process.env.SPORTYBET_OPER_ID || "3";
   const url = `${base}/factsCenter/event?productId=3&eventId=${encodeURIComponent(key)}`;
   const response = await fetch(url, {
     headers: {
       Accept: "application/json",
       OperId: String(operId),
       Platform: "web",
-      Referer: "https://www.sportybet.com/ng/sport/football",
+      Referer: "https://www.sportybet.com/gh/sport/football",
       Origin: "https://www.sportybet.com",
       "User-Agent": "Mozilla/5.0 BetsPapaFlash"
     },

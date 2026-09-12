@@ -29,6 +29,7 @@ import { getWinsBankers } from "../services/winsBankerService.js";
 import { getFlashPicks } from "../services/flashPickService.js";
 import { getPpgPicks } from "../services/ppgPickService.js";
 import { getVisaPicks, getVisaWeek } from "../services/visaPickService.js";
+import { loadSportyBetEvents } from "../providers/sportyBet.js";
 import { toPublicPapaLockSlate } from "../engine/papaLockBankerEngine.js";
 import { applyLeagueScoringGuard } from "../engine/leagueScoringPolicy.js";
 import { applyRedFlagsToPick, collectRedFlags } from "../services/fixtureRiskService.js";
@@ -512,6 +513,33 @@ publicRouter.get("/wins-bankers/today", async (req, res, next) => {
     res.json({
       ...slate,
       liveRefresh: { refreshed: false, skipped: true, reason: "Wins Banker prepared reader" }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+publicRouter.get("/sportybet/upcoming", async (req, res, next) => {
+  try {
+    const force = ["1", "true", "force", "reload"].includes(
+      String(req.query.force || "").toLowerCase()
+    );
+    const events = await loadSportyBetEvents({ force });
+    setPublicCache(res, 60, 180);
+    res.json({
+      source: "sportybet",
+      generatedAt: new Date().toISOString(),
+      count: events.length,
+      events: events.map((event) => ({
+        eventId: event.eventId,
+        home: event.home,
+        away: event.away,
+        kickoff: Number.isFinite(event.kickoffMs) ? new Date(event.kickoffMs).toISOString() : null,
+        tournament: event.tournament,
+        country: event.country,
+        odds: event.odds,
+        url: event.url
+      }))
     });
   } catch (error) {
     next(error);

@@ -31,6 +31,7 @@
     visa: [],
     visaWeek: [],
     visaDate: null,
+    sporty: [],
     loading: true,
     error: null,
     tabTouched: false,
@@ -218,6 +219,90 @@
     };
   }
 
+  function ghanaUrl(url, eventId) {
+    if (eventId) return `https://www.sportybet.com/gh/sport/football/event/${encodeURIComponent(eventId)}`;
+    const u = String(url || "");
+    if (u.includes("sportybet.com")) return u.replace("/ng/", "/gh/");
+    return "https://www.sportybet.com/gh/sport/football";
+  }
+  function normName(value) {
+    return String(value || "")
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/&/g, "and")
+      .replace(/\b(fc|cf|sc|afc|cfc|fk|if|bk|sk|ac|as|ss|ud|cd|rcd|rc|club|de|the|women|u17|u18|u19|u20|u21|u23|reserves)\b/g, "")
+      .replace(/[^a-z0-9]/g, "");
+  }
+  function namesAlign(a, b) {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    return a.includes(b) || b.includes(a);
+  }
+  function findSporty(p) {
+    const list = state.sporty || [];
+    if (p.sportyBetEventId) {
+      const hit = list.find((ev) => ev.eventId === p.sportyBetEventId);
+      if (hit) return hit;
+    }
+    const home = normName(p.home && p.home.name);
+    const away = normName(p.away && p.away.name);
+    const kick = Date.parse(p.kickoff || 0);
+    let best = null;
+    let bestScore = 0;
+    for (const ev of list) {
+      const eh = normName(ev.home);
+      const ea = normName(ev.away);
+      const ok = namesAlign(home, eh) && namesAlign(away, ea);
+      const rev = namesAlign(home, ea) && namesAlign(away, eh);
+      if (!ok && !rev) continue;
+      let score = ok ? 80 : 50;
+      const evKick = Date.parse(ev.kickoff || 0);
+      if (Number.isFinite(kick) && Number.isFinite(evKick)) {
+        const delta = Math.abs(kick - evKick);
+        if (delta > 18 * 3600 * 1000) continue;
+        score += Math.max(0, 20 - delta / 3600000);
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        best = ev;
+      }
+    }
+    return best;
+  }
+  function liveOdd(odds, key, selection) {
+    if (!odds) return 0;
+    const k = String(key || "").toLowerCase();
+    const sel = String(selection || "").toLowerCase();
+    if (Number(odds[key]) > 1) return Number(odds[key]);
+    if (Number(odds[k]) > 1) return Number(odds[k]);
+    if (k.includes("home-over") || /score 2\+|over 1\.5/.test(sel)) return Number(odds["home-over-15"]) || 0;
+    if (k.includes("away-over")) return Number(odds["away-over-15"]) || 0;
+    if (k === "home" || /home win/.test(sel)) return Number(odds.home) || 0;
+    if (k === "away" || /away win/.test(sel)) return Number(odds.away) || 0;
+    if (k.includes("dnb") && /home/.test(k + sel)) return Number(odds["home-dnb"]) || 0;
+    if (k.includes("dnb") && /away/.test(k + sel)) return Number(odds["away-dnb"]) || 0;
+    if (k.includes("over-25") || /over 2\.5/.test(sel)) return Number(odds["over-25"]) || 0;
+    if (k.includes("under-25") || /under 2\.5/.test(sel)) return Number(odds["under-25"]) || 0;
+    if (k.includes("gg") || /both teams/.test(sel)) return Number(odds["btts-yes"]) || 0;
+    return 0;
+  }
+  function overlayPick(p) {
+    const ev = findSporty(p);
+    if (!ev) {
+      p.sportyBetUrl = ghanaUrl(p.sportyBetUrl, p.sportyBetEventId);
+      return p;
+    }
+    const live = liveOdd(ev.odds, p.key, p.selection || p.market);
+    p.sportyBetEventId = ev.eventId;
+    p.sportyBetUrl = ghanaUrl(ev.url, ev.eventId);
+    if (live > 1) p.odd = live;
+    if (ev.odds) p.odds = ev.odds;
+    return p;
+  }
+  function overlayList(list) {
+    return (list || []).map(overlayPick).filter(priced);
+  }
   function pickFromEngine(p, engine) {
     const home = teamOf(p.home);
     const away = teamOf(p.away);
@@ -245,7 +330,8 @@
       note: p.publicExplanation || p.explanationParagraph || (p.reasons && p.reasons[0]) || "",
       form: formOf(p.form || p.venueForm),
       probs: xg.home || xg.away ? matchProbs(xg.home, xg.away) : null,
-      sportyBetUrl: p.sportyBetUrl || "",
+      sportyBetEventId: p.sportyBetEventId || "",
+      sportyBetUrl: ghanaUrl(p.sportyBetUrl, p.sportyBetEventId),
       matchState: p.matchState || {},
     };
   }
@@ -266,6 +352,7 @@
       .concat(fl1?.picks || [])
       .map((p) => pickFromEngine(p, "FLASH"));
     state.flash = mergeByKey(flashPicks, (p) => `${p.id}::${p.key}`).filter(priced);
+    state.flash = overlayList(state.flash);
     return state.flash;
   }
 
@@ -273,7 +360,7 @@
     state.visaWeek = (Array.isArray(week?.days) ? week.days : []).map((day) => ({
       date: day.date,
       reviewedFixtures: Number(day.reviewedFixtures) || 0,
-      picks: (day.picks || day.items || []).map((p) => pickFromEngine(p, "VISA")).filter(priced),
+      picks: overlayList((day.picks || day.items || []).map((p) => pickFromEngine(p, "VISA"))),
     }));
     state.visaDate = state.visaWeek.some((day) => day.date === state.visaDate)
       ? state.visaDate
@@ -288,11 +375,13 @@
     const d0 = todayUtc();
     const d1 = addDays(d0, 1);
 
-    const [fl0, fl1, visaWeek] = await Promise.all([
+    const [fl0, fl1, visaWeek, sporty] = await Promise.all([
       getJson(`/api/flash/today?date=${d0}`).catch((err) => ({ error: String(err && err.message || err) })),
       getJson(`/api/flash/today?date=${d1}`).catch((err) => ({ error: String(err && err.message || err) })),
       getJson(`/api/visa/week?start=${d0}&days=7`).catch((err) => ({ error: String(err && err.message || err) })),
+      getJson(`/api/sportybet/upcoming`).catch(() => ({ events: [] })),
     ]);
+    state.sporty = Array.isArray(sporty?.events) ? sporty.events : [];
     applyFlash(fl0, fl1);
     applyVisaWeek(visaWeek);
     state.loading = false;
@@ -307,10 +396,10 @@
       getJson(`/api/goals-bankers/today?date=${d0}`).catch((err) => ({ error: String(err && err.message || err) })),
       getJson(`/api/wins-bankers/today?date=${d0}`).catch((err) => ({ error: String(err && err.message || err) })),
     ]);
-    state.bankers = (bankers?.picks || []).map((p) => pickFromEngine(p, "BANKERS")).filter(priced);
-    state.athena = (athena?.picks || []).map((p) => pickFromEngine(p, "ATHENA")).filter(priced);
-    state.goals = (goals?.picks || []).map((p) => pickFromEngine(p, "GOALS")).filter(priced);
-    state.wins = (wins?.picks || []).map((p) => pickFromEngine(p, "WINS")).filter(priced);
+    state.bankers = overlayList((bankers?.picks || []).map((p) => pickFromEngine(p, "BANKERS")));
+    state.athena = overlayList((athena?.picks || []).map((p) => pickFromEngine(p, "ATHENA")));
+    state.goals = overlayList((goals?.picks || []).map((p) => pickFromEngine(p, "GOALS")));
+    state.wins = overlayList((wins?.picks || []).map((p) => pickFromEngine(p, "WINS")));
     if (state.flash.length || state.visa.length || state.bankers.length) state.error = null;
     render();
   }
@@ -325,6 +414,7 @@
       tone: p.tone,
       form: p.form,
       probs: p.probs,
+      odds: p.odds || null,
       flash: p,
       matchState: p.matchState || {},
       venue: "",
@@ -457,9 +547,14 @@
           <div style="display:flex;justify-content:space-between;gap:8px;margin-top:8px">
             <p class="font-cond" style="max-width:40%;font-size:13px;text-transform:uppercase">${esc(m.home.name)}</p>
             <p class="eyebrow" style="text-align:center">${esc(lg)}</p>
-            <p class="font-cond" style="max-width:40%;font-size:13px;text-transform:uppercase;text-align:right">${esc(m.away.name)}</p>
+            <p className="font-cond" style="max-width:40%;font-size:13px;text-transform:uppercase;text-align:right">${esc(m.away.name)}</p>
           </div>
         </div>
+        ${m.odds && Number(m.odds.home) > 1 ? `<div class="metrics" style="margin-top:12px">
+          <div class="metric"><b>${formatOdd(m.odds.home)}</b><span>${esc(m.home.abbr)}</span></div>
+          <div class="metric"><b>${formatOdd(m.odds.draw)}</b><span>DRAW</span></div>
+          <div class="metric"><b>${formatOdd(m.odds.away)}</b><span>${esc(m.away.abbr)}</span></div>
+        </div>` : ""}
         ${flashList.map((fp) => `<div class="card tone-${m.tone}" style="margin-top:12px">
           <p class="eyebrow">${esc(fp.tier)} · ${esc(fp.market)}</p>
           <p class="font-display" style="font-size:32px;line-height:1;margin-top:4px">${esc(pickTitle(fp))}</p>

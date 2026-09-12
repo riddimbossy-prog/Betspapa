@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 
 import {
   sportyBetProviderFixtures,
-  sportyEventRecord
+  sportyEventRecord,
+  totalsFromSportyMarkets
 } from "../src/providers/sportyBet.js";
 import { chooseFlashBoard, historyPackage } from "../src/services/flashPickService.js";
 import { alignSportyBetReferences } from "../src/services/syncService.js";
@@ -41,6 +42,16 @@ test("SportyBet events become stable upcoming provider fixtures for the requeste
   assert.equal(fixture.league.name, "Premier League");
   assert.equal(fixture.league.season, 2026);
   assert.equal(fixture.teams.home.name, "Man City");
+  assert.match(
+    sportyEventRecord({
+      eventId: "sr:match:12345",
+      estimateStartTime: kickoff,
+      homeTeamName: "Man City",
+      awayTeamName: "Arsenal FC",
+      markets: []
+    }).url,
+    /sportybet\.com\/gh\/sport\/football\/event/
+  );
   assert.ok(fixture.fixture.id < 0);
   assert.ok(fixture.league.id < 0);
   assert.ok(fixture.teams.home.id < 0);
@@ -135,6 +146,39 @@ test("the Flash history pack carries trusted same-league results across seasons"
   const history = historyPackage(rows, fixture, new Map([[39, new Set([7, 99])]]));
   assert.equal(history.homeGames.length, 5);
   assert.equal(history.homeGames[0].ftHome, 2);
+});
+
+test("compact SportyBet feed parses 1X2, totals and draw-no-bet into live overlay keys", () => {
+  const odds = totalsFromSportyMarkets([
+    {
+      id: 1,
+      outcomes: [
+        { id: 1, desc: "Home", odds: "1.72" },
+        { id: 2, desc: "Draw", odds: "3.40" },
+        { id: 3, desc: "Away", odds: "4.80" }
+      ]
+    },
+    {
+      id: 18,
+      specifier: "total=2.5",
+      outcomes: [
+        { id: 12, desc: "Over", odds: "1.90" },
+        { id: 13, desc: "Under", odds: "1.95" }
+      ]
+    },
+    {
+      id: 11,
+      desc: "Draw No Bet",
+      outcomes: [
+        { id: 1, desc: "Home", odds: "1.28" },
+        { id: 3, desc: "Away", odds: "3.55" }
+      ]
+    }
+  ]);
+  assert.equal(odds.home, 1.72);
+  assert.equal(odds["over-25"], 1.90);
+  assert.equal(odds["home-dnb"], 1.28);
+  assert.equal(odds["away-dnb"], 3.55);
 });
 
 test("Flash rolls from a fully skipped today board to tomorrow's qualified slate", () => {
