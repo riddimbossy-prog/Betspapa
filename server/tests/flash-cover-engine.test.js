@@ -145,7 +145,7 @@ test("Flash is the home page, keeps its legacy URL and exposes the public API", 
     readFile(resolve(root, "assets/js/mobile-nav.v1240.js"), "utf8"),
     readFile(resolve(root, "server/src/routes/publicRoutes.js"), "utf8")
   ]);
-  assert.match(html, /BETSPAPA_START="home"/);
+  assert.match(html, /BETSPAPA_START="papa"/);
   assert.match(html, /screens-app/);
   assert.match(legacyFlash, /BETSPAPA_START="flash"/);
   assert.match(papa, /BETSPAPA_START="papa"/);
