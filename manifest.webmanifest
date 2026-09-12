@@ -3,7 +3,7 @@
   "name": "BetsPapa \u2014 Football Intelligence",
   "short_name": "BetsPapa",
   "description": "Papa knows the game. Flash Cover IQ, PapaLock bankers and live pastel match boards.",
-  "start_url": "/?source=pwa&v=20260912b",
+  "start_url": "/?source=pwa&v=20260912e",
   "scope": "/",
   "display": "standalone",
   "display_override": [
@@ -51,8 +51,8 @@
     {
       "name": "Flash Cover IQ",
       "short_name": "Flash",
-      "description": "Open the one-selection-or-skip Flash cover-market board",
-      "url": "/?source=shortcut",
+      "description": "Open every Cover IQ market that cleared the gates",
+      "url": "/flash.html?source=shortcut",
       "icons": [
         {
           "src": "/assets/images/pwa-brand-icon-192.png",

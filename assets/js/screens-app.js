@@ -9,7 +9,6 @@
   const WEEK = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
   const LOGO = "/assets/images/logo-papa.png";
   const PAPA = "/assets/images/papa-square.png";
-  const SLIP_KEY = "betspapa-slip";
   const PALETTE = ["#C8102E","#034694","#111111","#0B6E4F","#6CABDD","#E30613","#1B458F","#670E36","#132257","#DA291C","#0057B8","#241F20"];
 
   const ICO = {
@@ -34,23 +33,43 @@
     visaDate: null,
     loading: true,
     error: null,
-    slip: loadSlip(),
+    tabTouched: false,
+    returnTo: "home",
     toast: null,
     toastTimer: 0,
     pickSel: null,
     chooserOpen: false,
   };
 
-  function loadSlip() {
-    try {
-      const raw = JSON.parse(localStorage.getItem(SLIP_KEY) || "{}");
-      return { picks: Array.isArray(raw.picks) ? raw.picks : [], stake: Number(raw.stake) || 20 };
-    } catch {
-      return { picks: [], stake: 20 };
-    }
+  function pct(v) {
+    const n = Number(v);
+    if (!Number.isFinite(n) || n <= 0) return 0;
+    return Math.round(n <= 1.5 ? n * 100 : n);
   }
-  function saveSlip() {
-    localStorage.setItem(SLIP_KEY, JSON.stringify(state.slip));
+  function pickTitle(p) {
+    const sel = String(p?.selection || "").trim();
+    const market = String(p?.market || "").trim();
+    if (!sel || /^(yes|no)$/i.test(sel)) return market || sel || "PICK";
+    return sel;
+  }
+  function formOf(src) {
+    if (!src) return { home: [], away: [] };
+    if (Array.isArray(src.home) || Array.isArray(src.away)) {
+      return { home: (src.home || []).slice(-5), away: (src.away || []).slice(-5) };
+    }
+    return {
+      home: (src.home?.form || src.form?.home || []).slice(-5),
+      away: (src.away?.form || src.form?.away || []).slice(-5),
+    };
+  }
+  function leagueRank(m) {
+    const n = String(m?.league?.name || "").toLowerCase();
+    const c = String(m?.league?.country || "").toLowerCase();
+    if (n === "premier league" && c === "england") return 0;
+    if (c === "ghana" || /ghana premier/i.test(n)) return 1;
+    if (n === "la liga" && /spain/i.test(c)) return 2;
+    if (n === "championship" && c === "england") return 3;
+    return 8;
   }
 
   function esc(s) {
@@ -163,7 +182,7 @@
 
   async function getJson(path) {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 18000);
+    const t = setTimeout(() => ctrl.abort(), 22000);
     try {
       const res = await fetch(`${API}${path}`, { headers: { Accept: "application/json" }, signal: ctrl.signal });
       if (!res.ok) throw new Error(`${res.status}`);
@@ -179,8 +198,7 @@
     const league = leagueOf(f.league);
     const id = fid(f);
     const xg = extras?.expectedGoals || f.expectedGoals || {};
-    const formH = extras?.venueForm?.home?.form || f.venueForm?.home?.form || [];
-    const formA = extras?.venueForm?.away?.form || f.venueForm?.away?.form || [];
+    const form = formOf(extras?.form || extras?.venueForm || f.venueForm);
     const probs = extras?.probs || (xg.home || xg.away ? matchProbs(xg.home, xg.away) : null);
     return {
       id,
@@ -190,10 +208,11 @@
       venue: f.venue?.name || f.venue || "",
       home, away, league,
       tone: toneFor(id || home.name),
-      form: { home: formH.slice(-5), away: formA.slice(-5) },
+      form,
       probs,
       odds: extras?.odds || null,
       flash: extras?.flash || null,
+      flashList: extras?.flashList || (extras?.flash ? [extras.flash] : []),
       enginePick: extras?.enginePick || null,
       raw: f,
     };
@@ -204,8 +223,8 @@
     const away = teamOf(p.away);
     const id = fid(p);
     const xg = p.internalAudit?.expectedGoals || p.expectedGoals || {};
-    const model = Math.round((Number(p.modelProbability) || Number(p.confidence) || Number(p.score) || 0) * (Number(p.modelProbability) <= 1 ? 100 : 1));
-    const split = p.directHitRates?.combined ? Math.round(p.directHitRates.combined * 100) : null;
+    const model = pct(p.modelProbability || p.confidence || p.score);
+    const split = p.directHitRates?.combined != null ? pct(p.directHitRates.combined) : null;
     return {
       id,
       key: p.key || p.market || engine,
@@ -217,17 +236,14 @@
       market: p.market || p.family || "Pick",
       selection: p.selection || p.consensusOutcome || "",
       odd: Number(p.odds) || 0,
-      model: model || Math.round(Number(p.confidence) || 0),
+      model,
       splitHit: split,
-      confidence: Math.round(Number(p.confidence) || Number(p.score) || 0),
+      confidence: pct(p.confidence || p.score),
       ev: Number(p.expectedValue) || 0,
       tier: p.tier || p.papaLockGrade || engine,
       routeLabel: p.routeLabel || "",
       note: p.publicExplanation || p.explanationParagraph || (p.reasons && p.reasons[0]) || "",
-      form: {
-        home: (p.venueForm?.home?.form || []).slice(-5),
-        away: (p.venueForm?.away?.form || []).slice(-5),
-      },
+      form: formOf(p.form || p.venueForm),
       probs: xg.home || xg.away ? matchProbs(xg.home, xg.away) : null,
       sportyBetUrl: p.sportyBetUrl || "",
       matchState: p.matchState || {},
@@ -244,55 +260,84 @@
     return [...map.values()];
   }
 
+  function applyFixtures(fx0, fx1, flashPicks) {
+    const flashLists = new Map();
+    for (const p of flashPicks) {
+      const list = flashLists.get(p.id) || [];
+      list.push(p);
+      flashLists.set(p.id, list);
+    }
+    const fx = []
+      .concat(fx0?.fixtures || [])
+      .concat(fx1?.fixtures || [])
+      .map((f) => {
+        const id = fid(f);
+        const list = flashLists.get(id) || [];
+        return normalizeFixture(f, list.length ? { flash: list[0], flashList: list, form: list[0].form, probs: list[0].probs } : null);
+      });
+    state.fixtures = mergeByKey(fx, (m) => m.id).sort((a, b) => {
+      const rank = leagueRank(a) - leagueRank(b);
+      return rank || String(a.kickoff).localeCompare(String(b.kickoff));
+    });
+  }
+
+  function applyFlash(fl0, fl1) {
+    const flashPicks = []
+      .concat(fl0?.picks || [])
+      .concat(fl1?.picks || [])
+      .map((p) => pickFromEngine(p, "FLASH"));
+    state.flash = mergeByKey(flashPicks, (p) => `${p.id}::${p.key}`);
+    return state.flash;
+  }
+
+  function pickDefaultTab() {
+    if (state.tabTouched) return;
+    const tabs = leagueTabs();
+    const epl = tabs.find((t) => t.name === "EPL");
+    const ghana = tabs.find((t) => t.name === "GHANA");
+    state.tab = (epl || ghana || tabs[0])?.key || "all";
+  }
+
   async function bootData() {
     state.loading = true;
     state.error = null;
     render();
     const d0 = todayUtc();
     const d1 = addDays(d0, 1);
-    const jobs = [
-      ["fixtures0", `/api/fixtures/today?date=${d0}&refresh=skip`],
-      ["fixtures1", `/api/fixtures/today?date=${d1}&refresh=skip`],
-      ["flash0", `/api/flash/today?date=${d0}`],
-      ["flash1", `/api/flash/today?date=${d1}`],
-      ["bankers", `/api/bankers/today?date=${d0}`],
-      ["athena", `/api/athena/today?date=${d0}`],
-      ["goals", `/api/goals-bankers/today?date=${d0}`],
-      ["wins", `/api/wins-bankers/today?date=${d0}`],
-      ["visaWeek", `/api/visa/week?start=${d0}&days=7`],
-    ];
-    const got = {};
-    await Promise.all(
-      jobs.map(async ([key, path]) => {
-        try { got[key] = await getJson(path); }
-        catch (err) { got[key] = { error: String(err && err.message || err) }; }
-      }),
-    );
 
-    const flashPicks = []
-      .concat(got.flash0?.picks || [])
-      .concat(got.flash1?.picks || [])
-      .map((p) => pickFromEngine(p, "FLASH"));
-    state.flash = mergeByKey(flashPicks, (p) => `${p.id}::${p.key}`);
+    const [fx0, fx1] = await Promise.all([
+      getJson(`/api/fixtures/today?date=${d0}&refresh=skip`).catch((err) => ({ error: String(err && err.message || err) })),
+      getJson(`/api/fixtures/today?date=${d1}&refresh=skip`).catch((err) => ({ error: String(err && err.message || err) })),
+    ]);
+    applyFixtures(fx0, fx1, []);
+    state.loading = false;
+    if (!state.fixtures.length) state.error = "Papa's board is still warming up. Pull again in a moment.";
+    pickDefaultTab();
+    render();
 
-    const flashMap = new Map();
-    for (const p of state.flash) {
-      if (!flashMap.has(p.id)) flashMap.set(p.id, p);
-    }
-    const fx = []
-      .concat(got.fixtures0?.fixtures || [])
-      .concat(got.fixtures1?.fixtures || [])
-      .map((f) => {
-        const extra = flashMap.get(fid(f));
-        return normalizeFixture(f, extra ? { flash: extra, venueForm: extra, expectedGoals: extra, probs: extra.probs } : null);
-      });
-    state.fixtures = mergeByKey(fx, (m) => m.id).sort((a, b) => String(a.kickoff).localeCompare(String(b.kickoff)));
+    const [fl0, fl1] = await Promise.all([
+      getJson(`/api/flash/today?date=${d0}`).catch((err) => ({ error: String(err && err.message || err) })),
+      getJson(`/api/flash/today?date=${d1}`).catch((err) => ({ error: String(err && err.message || err) })),
+    ]);
+    applyFlash(fl0, fl1);
+    applyFixtures(fx0, fx1, state.flash);
+    if (state.fixtures.length || state.flash.length) state.error = null;
+    else if (!state.error) state.error = "Papa's board is still warming up. Pull again in a moment.";
+    render();
 
-    state.bankers = (got.bankers?.picks || []).map((p) => pickFromEngine(p, "BANKERS"));
-    state.athena = (got.athena?.picks || []).map((p) => pickFromEngine(p, "ATHENA"));
-    state.goals = (got.goals?.picks || []).map((p) => pickFromEngine(p, "GOALS"));
-    state.wins = (got.wins?.picks || []).map((p) => pickFromEngine(p, "WINS"));
-    state.visaWeek = (Array.isArray(got.visaWeek?.days) ? got.visaWeek.days : []).map((day) => ({
+    const side = await Promise.all([
+      getJson(`/api/bankers/today?date=${d0}`).catch((err) => ({ error: String(err && err.message || err) })),
+      getJson(`/api/athena/today?date=${d0}`).catch((err) => ({ error: String(err && err.message || err) })),
+      getJson(`/api/goals-bankers/today?date=${d0}`).catch((err) => ({ error: String(err && err.message || err) })),
+      getJson(`/api/wins-bankers/today?date=${d0}`).catch((err) => ({ error: String(err && err.message || err) })),
+      getJson(`/api/visa/week?start=${d0}&days=7`).catch((err) => ({ error: String(err && err.message || err) })),
+    ]);
+    const [bankers, athena, goals, wins, visaWeek] = side;
+    state.bankers = (bankers?.picks || []).map((p) => pickFromEngine(p, "BANKERS"));
+    state.athena = (athena?.picks || []).map((p) => pickFromEngine(p, "ATHENA"));
+    state.goals = (goals?.picks || []).map((p) => pickFromEngine(p, "GOALS"));
+    state.wins = (wins?.picks || []).map((p) => pickFromEngine(p, "WINS"));
+    state.visaWeek = (Array.isArray(visaWeek?.days) ? visaWeek.days : []).map((day) => ({
       date: day.date,
       reviewedFixtures: Number(day.reviewedFixtures) || 0,
       picks: (day.picks || day.items || []).map((p) => pickFromEngine(p, "VISA")),
@@ -301,13 +346,6 @@
       ? state.visaDate
       : state.visaWeek[0]?.date || d0;
     state.visa = state.visaWeek.find((day) => day.date === state.visaDate)?.picks || [];
-
-    if (!state.fixtures.length && !state.flash.length) {
-      state.error = "Papa's board is still warming up. Pull again in a moment.";
-    }
-    state.loading = false;
-    const leagues = leagueTabs();
-    if (!leagues.some((l) => l.key === state.tab)) state.tab = leagues[0]?.key || "all";
     render();
   }
 
@@ -321,9 +359,9 @@
     }
     const all = [...counts.values()];
     const prefer = (pred) => all.filter(pred).sort((a, b) => b.count - a.count);
-    const epl = prefer((l) => /premier league/i.test(l.name) && /england|united kingdom/i.test(l.country));
-    const ghana = prefer((l) => /ghana/i.test(l.country) || /ghana/i.test(l.name));
-    const spain = prefer((l) => /la liga|laliga/i.test(l.name) || (/spain/i.test(l.country) && /primera|la liga/i.test(l.name)));
+    const epl = prefer((l) => /^premier league$/i.test(l.name) && /^england$/i.test(l.country));
+    const ghana = prefer((l) => /^ghana$/i.test(l.country) || /ghana premier/i.test(l.name));
+    const spain = prefer((l) => /^la liga$/i.test(l.name) && /spain/i.test(l.country));
     const used = new Set([...epl, ...ghana, ...spain].map((l) => l.key));
     const rest = all.filter((l) => !used.has(l.key) && l.count >= 3).sort((a, b) => b.count - a.count).slice(0, 6);
     const tabs = [{ key: "all", name: "ALL", country: "", count: state.fixtures.length }];
@@ -342,8 +380,10 @@
   }
 
   function fixturesForTab() {
-    if (state.tab === "all") return state.fixtures;
-    return state.fixtures.filter((m) => `${m.league.country}|${m.league.name}` === state.tab);
+    const list = state.tab === "all"
+      ? state.fixtures.slice()
+      : state.fixtures.filter((m) => `${m.league.country}|${m.league.name}` === state.tab);
+    return list;
   }
 
   function featuredMatch() {
@@ -372,21 +412,20 @@
   function matchById(id) {
     const fx = state.fixtures.find((m) => m.id === String(id));
     const flashList = state.flash.filter((p) => p.id === String(id));
-    if (fx) {
-      if (flashList.length) {
-        fx.flash = flashList[0];
-        fx.flashList = flashList;
-      }
-      return fx;
-    }
-    if (flashList.length) {
-      const m = flashAsMatch(flashList[0]);
-      m.flashList = flashList;
-      return m;
-    }
     const boards = [...state.bankers, ...state.athena, ...state.goals, ...state.wins, ...state.visa];
-    const p = boards.find((x) => x.id === String(id));
-    return p ? flashAsMatch(p) : null;
+    const extra = boards.filter((x) => x.id === String(id));
+    const attach = (base, list) => {
+      const have = new Set((list || []).map((p) => p.key));
+      const merged = (list || []).slice();
+      for (const p of extra) if (!have.has(p.key)) merged.push(p);
+      base.flashList = merged;
+      if (merged.length) base.flash = merged[0];
+      return base;
+    };
+    if (fx) return attach(fx, flashList.length ? flashList : fx.flashList);
+    if (flashList.length) return attach(flashAsMatch(flashList[0]), flashList);
+    if (extra.length) return attach(flashAsMatch(extra[0]), extra);
+    return null;
   }
 
   function parseHash() {
@@ -397,11 +436,15 @@
       return { name: "home", id: null };
     }
     if (parts[0] === "match" && parts[1]) return { name: "match", id: decodeURIComponent(parts[1]) };
-    if (parts[0] === "slip") return { name: "flash", id: null };
+    if (parts[0] === "slip" || parts[0] === "watchlist") return { name: "flash", id: null };
+    const known = ["home","flash","papa","bankers","athena","goals","wins","visa"];
+    if (!known.includes(parts[0])) return { name: "home", id: null };
     return { name: parts[0], id: null };
   }
   function go(name, id) {
-    if (name === "slip") name = "flash";
+    if (name === "slip" || name === "watchlist") name = "flash";
+    if (name === "back") name = state.returnTo || "home";
+    if (name !== "match") state.returnTo = name === "home" ? "home" : name;
     const hash = name === "home" ? "#/" : name === "match" ? `#/match/${encodeURIComponent(id)}` : `#/${name}`;
     if (location.hash !== hash) location.hash = hash;
     else {
@@ -409,8 +452,7 @@
       state.chooserOpen = false;
       state.pickSel = null;
       render();
-      const pane = document.getElementById("mainPane");
-      if (pane) pane.querySelector(".view-scroll")?.scrollTo(0, 0);
+      document.getElementById("mainPane")?.querySelector(".view-scroll")?.scrollTo(0, 0);
     }
   }
   window.addEventListener("hashchange", () => {
@@ -418,7 +460,9 @@
     state.chooserOpen = false;
     state.pickSel = null;
     render();
+    document.getElementById("mainPane")?.querySelector(".view-scroll")?.scrollTo(0, 0);
   });
+  window.matchMedia("(min-width: 900px)").addEventListener("change", () => render());
 
   function toast(title, detail) {
     state.toast = { title, detail };
@@ -427,27 +471,11 @@
     state.toastTimer = setTimeout(() => { state.toast = null; render(); }, 2400);
   }
 
-  function addPick(pick) {
-    const rest = state.slip.picks.filter((p) => !(p.matchId === pick.matchId && p.market === pick.market));
-    state.slip.picks = [...rest, pick];
-    saveSlip();
-    toast("Locked on the slip", `${pick.label} @ ${formatOdd(pick.odd)}`);
-    render();
-  }
-  function removePick(matchId, market) {
-    state.slip.picks = state.slip.picks.filter((p) => !(p.matchId === matchId && p.market === market));
-    saveSlip();
-    render();
-  }
-  function onSlip(matchId, market) {
-    return state.slip.picks.some((p) => p.matchId === matchId && p.market === market);
-  }
-
   function navHtml(active) {
     const items = [
       { name: "home", label: "Fixtures", icon: ICO.list },
       { name: "flash", label: "Flash", icon: ICO.zap },
-      { name: "papa", label: "Papa", icon: `<img src="${LOGO}" alt="">` },
+      { name: "papa", label: "Papa", icon: `<img src="${PAPA}" alt="">` },
     ];
     return `<nav class="nav" aria-label="Primary"><div class="nav-bar">${items.map((it) => {
       const on = active === it.name || (active === "match" && it.name === "home") || (["bankers","athena","goals","wins","visa","results","legal"].includes(active) && it.name === "papa");
@@ -502,7 +530,7 @@
 
   function renderFixtures() {
     const tabs = leagueTabs();
-    const list = fixturesForTab().slice(0, 40);
+    const list = fixturesForTab();
     const titles = titleForTab();
     return `<div class="view view-cream">
       <div class="view-scroll">
@@ -516,9 +544,11 @@
           <div class="tabs">${tabs.map((t) => `<button type="button" class="tab${t.key === state.tab ? " on" : ""}" data-tab="${esc(t.key)}">${esc(t.name)}</button>`).join("")}</div>
         </header>
         <div class="stack stagger">
+          ${state.error && !list.length ? `<div class="empty"><h2>WAIT</h2><p>${esc(state.error)}</p><button class="btn-ink" style="margin:16px auto 0;width:auto;padding:0 20px;height:44px" data-retry="1">RETRY</button></div>` : ""}
           ${state.loading ? `<div class="skel"></div><div class="skel"></div><div class="skel"></div>` : ""}
-          ${!state.loading && !list.length ? `<div class="empty"><h2>NO MATCHES</h2><p>Nothing in this league yet. Try another tab.</p></div>` : ""}
-          ${list.map(matchCard).join("")}
+          ${!state.loading && !list.length && !state.error ? `<div class="empty"><h2>NO MATCHES</h2><p>Nothing in this league yet. Try another tab.</p></div>` : ""}
+          ${list.slice(0, 80).map(matchCard).join("")}
+          ${list.length > 80 ? `<p class="lede" style="text-align:center">${list.length - 80} more kickoffs sit behind these 80.</p>` : ""}
         </div>
       </div>
     </div>`;
@@ -542,17 +572,20 @@
     ];
     const engine = m.flash;
     const flashList = m.flashList || (engine ? [engine] : []);
+    const formH = (m.form?.home && m.form.home.length) ? m.form.home : (engine?.form?.home || []);
+    const formA = (m.form?.away && m.form.away.length) ? m.form.away : (engine?.form?.away || []);
+    const betUrl = flashList.find((fp) => fp.sportyBetUrl)?.sportyBetUrl || engine?.sportyBetUrl || "";
     return `<div class="view view-pink">
       <header class="pad" style="display:flex;align-items:center;justify-content:space-between">
-        ${nested ? `<img class="brand-mark" src="${LOGO}" alt="">` : `<button class="icon-btn" data-go="home" aria-label="Back">${ICO.back}</button>`}
+        ${nested ? `<img class="brand-mark" src="${LOGO}" alt="">` : `<button class="icon-btn" data-go="back" aria-label="Back">${ICO.back}</button>`}
         <img class="brand-mark" src="${LOGO}" alt="BetsPapa" style="outline:2px solid var(--cream)">
       </header>
       <div class="view-scroll" style="padding:4px 20px 8px">
         <p class="eyebrow">PAST GAMES</p>
         <h1 class="display" style="font-size:46px;max-width:13ch">${esc(headline)}</h1>
         <div style="margin-top:16px;display:flex;flex-direction:column;gap:6px">
-          ${formDots(m.form?.home || engine?.form?.home, m.home.abbr)}
-          ${formDots(m.form?.away || engine?.form?.away, m.away.abbr)}
+          ${formDots(formH, m.home.abbr)}
+          ${formDots(formA, m.away.abbr)}
         </div>
         ${probs ? `<div class="prob"><div class="prob-track"><div class="prob-h" style="width:${probs.home}%"></div><div class="prob-d" style="width:${probs.draw}%"></div><div class="prob-a" style="width:${probs.away}%"></div></div>
           <div class="prob-stats"><div><strong>${probs.home}%</strong><span>${esc(m.home.abbr)}</span></div><div><strong>${probs.draw}%</strong><span>DRAW</span></div><div><strong>${probs.away}%</strong><span>${esc(m.away.abbr)}</span></div></div></div>` : ""}
@@ -569,7 +602,7 @@
         </div>
         ${flashList.map((fp) => `<div class="card tone-${m.tone}" style="margin-top:12px">
           <p class="eyebrow">${esc(fp.tier)} · ${esc(fp.market)}</p>
-          <p class="font-display" style="font-size:32px;line-height:1;margin-top:4px">${esc(fp.selection)}</p>
+          <p class="font-display" style="font-size:32px;line-height:1;margin-top:4px">${esc(pickTitle(fp))}</p>
           <p class="lede" style="max-width:none">${esc(fp.note)}</p>
           <div class="metrics">
             <div class="metric"><b>${fp.model || "—"}%</b><span>MODEL</span></div>
@@ -581,7 +614,8 @@
       </div>
       <div class="sticky-cta">
         ${state.chooserOpen ? `<div class="chooser">${outcomes.map((o) => `<button type="button" class="choice pressable${state.pickSel === o.key ? " on" : ""}" data-sel="${o.key}"><small>${esc(o.name)}</small><b>${formatOdd(o.odd)}</b></button>`).join("")}</div>` : ""}
-        <button type="button" class="cta" id="lockBtn">${state.chooserOpen ? "1 · X · 2" : "CHOOSE THE WINNER"}</button>
+        <button type="button" class="cta" id="lockBtn">${state.chooserOpen ? (state.pickSel ? outcomes.find((o) => o.key === state.pickSel)?.name || "1 · X · 2" : "1 · X · 2") : "CHOOSE THE WINNER"}</button>
+        ${betUrl ? `<a class="btn-ink" href="${esc(betUrl)}" target="_blank" rel="noopener" style="margin-top:8px">OPEN ON SPORTYBET</a>` : ""}
       </div>
     </div>`;
   }
@@ -596,7 +630,7 @@
       </div>
       <a href="#/match/${encodeURIComponent(p.id)}" style="display:block;margin-top:8px">
         <p class="font-cond" style="font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:rgb(17 17 17 / 0.6)">${esc(p.home.short)} vs ${esc(p.away.short)}</p>
-        <p class="font-display" style="font-size:36px;line-height:1;margin-top:2px">${esc(p.selection || p.market)}</p>
+        <p class="font-display" style="font-size:36px;line-height:1;margin-top:2px">${esc(pickTitle(p))}</p>
         <p class="lede" style="max-width:none">${esc(p.market)}${p.routeLabel ? " · " + esc(p.routeLabel) : p.tier ? " · " + esc(p.tier) : ""} · ${formatOdd(odd)}</p>
       </a>
       <div class="metrics">
@@ -615,7 +649,7 @@
         ${headerBrand("COVER IQ", { title: "FLASH", sub: "PICKS", lede: "Every Cover IQ market that clears the gates ships. Model ≥ 75 · split-hit ≥ 75 · confidence ≥ 80 · EV ≥ 1.04." })}
         <div class="stack stagger">
           ${state.loading ? `<div class="skel"></div><div class="skel"></div>` : ""}
-          ${!state.loading && !list.length ? `<div class="empty"><h2>SKIP</h2><p>No Flash pick cleared the gates. Papa would rather ship nothing than a dirty board.</p></div>` : ""}
+          ${!state.loading && !list.length ? `<div class="empty"><h2>NO FLASH</h2><p>No Cover IQ market cleared the gates yet. Papa would rather ship nothing than a dirty board.</p></div>` : ""}
           ${list.map(engineCard).join("")}
         </div>
       </div>
@@ -701,36 +735,6 @@
     </div>`;
   }
 
-  function renderSlip() {
-    const picks = state.slip.picks;
-    const combined = picks.reduce((a, p) => a * (Number(p.odd) || 1), 1);
-    const returns = state.slip.stake * (picks.length ? combined : 0);
-    return `<div class="view view-cream">
-      <div class="view-scroll">
-        ${headerBrand("YOUR TICKET", { title: "SLIP", sub: String(picks.length).padStart(2, "0") + " LEGS" })}
-        <div class="stack">
-          ${!picks.length ? `<div class="empty"><h2>EMPTY</h2><p>Lock a winner from fixtures or grab a Flash pick.</p><button class="btn-ink" style="margin:20px auto 0;width:auto;padding:0 20px;height:44px;font-size:12px" data-go="flash">OPEN FLASH</button></div>` : picks.map((p) => `<div class="slip-row">
-            <a href="#/match/${encodeURIComponent(p.matchId)}" style="flex:1;min-width:0">
-              <p class="font-cond" style="font-size:15px;text-transform:uppercase">${esc(p.label)}</p>
-              <p class="lede" style="margin:0">${esc(p.detail)}</p>
-            </a>
-            <p class="odd">${formatOdd(p.odd)}</p>
-            <button class="kill" data-del="${esc(p.matchId)}|${esc(p.market)}" aria-label="Remove">${ICO.x}</button>
-          </div>`).join("")}
-          <label class="stake-box"><span class="eyebrow">STAKE · GHS</span>
-            <input id="stakeInput" type="number" min="1" max="5000" value="${esc(state.slip.stake)}">
-          </label>
-          <div class="sum-grid">
-            <div class="sum-box ink"><span>COMBINED</span><b>${picks.length ? formatOdd(combined) : "—"}</b></div>
-            <div class="sum-box cta"><span>RETURNS</span><b>${picks.length ? formatGhs(returns) : "—"}</b></div>
-          </div>
-          <button class="btn-ink" id="confirmSlip" ${picks.length ? "" : "disabled"}>CONFIRM TICKET</button>
-          <p style="text-align:center;font-size:11px;color:rgb(17 17 17 / 0.45)">18+ · Demo ticket · Gamble responsibly</p>
-        </div>
-      </div>
-    </div>`;
-  }
-
   function viewFor(route, nested) {
     switch (route.name) {
       case "flash": return renderFlash();
@@ -777,6 +781,7 @@
     document.querySelectorAll("[data-go]").forEach((el) => el.addEventListener("click", () => go(el.getAttribute("data-go"))));
     document.querySelectorAll("[data-tab]").forEach((el) => el.addEventListener("click", () => {
       state.tab = el.getAttribute("data-tab");
+      state.tabTouched = true;
       render();
     }));
     document.querySelectorAll("[data-visa-date]").forEach((el) => el.addEventListener("click", () => {
@@ -788,30 +793,10 @@
       state.pickSel = el.getAttribute("data-sel");
       render();
     }));
-    document.querySelectorAll("[data-add]").forEach((el) => el.addEventListener("click", () => {
-      try { addPick(JSON.parse(decodeURIComponent(el.getAttribute("data-add")))); } catch {}
-    }));
-    document.querySelectorAll("[data-del]").forEach((el) => el.addEventListener("click", () => {
-      const [id, market] = (el.getAttribute("data-del") || "").split("|");
-      removePick(id, market);
-    }));
+    document.querySelectorAll("[data-retry]").forEach((el) => el.addEventListener("click", () => bootData()));
     const lockBtn = document.getElementById("lockBtn");
     if (lockBtn) lockBtn.addEventListener("click", () => {
       if (!state.chooserOpen) { state.chooserOpen = true; render(); }
-    });
-    const stake = document.getElementById("stakeInput");
-    if (stake) stake.addEventListener("change", () => {
-      state.slip.stake = Math.max(1, Math.min(5000, Number(stake.value) || 1));
-      saveSlip();
-      render();
-    });
-    const confirm = document.getElementById("confirmSlip");
-    if (confirm) confirm.addEventListener("click", () => {
-      if (!state.slip.picks.length) return;
-      toast("Ticket noted", `${state.slip.picks.length} legs · demo slip, no real money.`);
-      state.slip.picks = [];
-      saveSlip();
-      render();
     });
   }
 

@@ -13,7 +13,7 @@ The public GitHub Pages site is the phone-app UI, not the old portal chrome.
 
 - App shell: `index.html` + `assets/css/screens-app.css` + `assets/js/screens-app.js`
 - Live engines still run at `https://api.betspapa.com`
-- Tabs: Fixtures, Flash, Slip, Papa (Bankers / Athena / Goals / Wins / Visa)
+- Tabs: Fixtures, Flash, Papa (Bankers / Athena / Goals / Wins / Visa)
 
 ## Palette
 
