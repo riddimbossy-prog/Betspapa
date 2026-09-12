@@ -17,7 +17,7 @@ test("Monika is wired through the phone app, public API and PWA cache", async ()
     source("sw.js"),
     source("assets/css/screens-app.css")
   ]);
-  assert.match(html, /screens-app\.js\?v=20260912j/);
+  assert.match(html, /screens-app\.js\?v=20260912k/);
   assert.match(client, /\/api\/monika\/today/);
   assert.match(client, /function renderMonika/);
   assert.match(client, /name: "monika"/);
@@ -27,9 +27,15 @@ test("Monika is wired through the phone app, public API and PWA cache", async ()
   assert.match(client, /Club identity/);
   assert.match(client, /applyMonika/);
   assert.match(client, /if \(p\.betExplorerUrl\) return p;/);
+  assert.match(client, /function groupTips/);
+  assert.match(client, /function marketFamily/);
+  assert.match(client, /function groupedCards/);
+  assert.match(client, /TODAY ·/);
+  assert.match(client, /banker-chip/);
+  assert.match(client, /BANKER/);
   assert.match(routes, /publicRouter\.get\("\/monika\/today"/);
   assert.match(server, /monika: "\/api\/monika\/today"/);
   assert.match(server, /monikaEngineVersion/);
-  assert.match(sw, /betspapa-screens-20260912j/);
+  assert.match(sw, /betspapa-screens-20260912k/);
   assert.match(css, /min-width: 56px/);
 });

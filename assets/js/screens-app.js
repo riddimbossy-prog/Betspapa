@@ -123,6 +123,81 @@
     return Number(p?.odd) > 1;
   }
 
+  const MARKET_RANK = { "1X2": 0, "DOUBLE CHANCE": 1, "DRAW NO BET": 2, OVER: 3, UNDER: 4, BTTS: 5 };
+
+  function marketFamily(p) {
+    const blob = `${p.market || ""} ${p.selection || p.pick || ""}`.toLowerCase();
+    if (/double chance|\bdc\b/.test(blob)) return "DOUBLE CHANCE";
+    if (/draw no bet|\bdnb\b/.test(blob)) return "DRAW NO BET";
+    if (/btts|both teams|\bgg\b/.test(blob)) return "BTTS";
+    if (/under/.test(blob)) return "UNDER";
+    if (/over|2\+|score 2/.test(blob)) return "OVER";
+    if (/1x2|\bwin\b|moneyline/.test(blob)) return "1X2";
+    return String(p.market || "PICK").toUpperCase();
+  }
+  function isBanker(p) {
+    return Number(p.confidence) >= 90 || Number(p.splitHit) >= 90 || Number(p.step) === 1 || /^Step 1/.test(p.note || "");
+  }
+  function dayHeading(iso) {
+    const k = kickParts(iso);
+    const date = String(iso || "").slice(0, 10);
+    const today = todayUtc();
+    const tomorrow = addDays(today, 1);
+    if (date === today) return `TODAY · ${k.weekday} ${k.day} ${k.monthShort}`;
+    if (date === tomorrow) return `TOMORROW · ${k.weekday} ${k.day} ${k.monthShort}`;
+    return `${k.weekday} ${k.day} ${k.monthShort}`;
+  }
+  function compareTips(a, b) {
+    const da = String(a.kickoff || "").slice(0, 10);
+    const db = String(b.kickoff || "").slice(0, 10);
+    if (da !== db) return da.localeCompare(db);
+    const ma = marketFamily(a);
+    const mb = marketFamily(b);
+    const ra = MARKET_RANK[ma] ?? 50;
+    const rb = MARKET_RANK[mb] ?? 50;
+    if (ra !== rb) return ra - rb;
+    if (ma !== mb) return ma.localeCompare(mb);
+    const bank = Number(isBanker(b)) - Number(isBanker(a));
+    if (bank) return bank;
+    if (Number(b.confidence) !== Number(a.confidence)) return Number(b.confidence) - Number(a.confidence);
+    return String(a.kickoff || "").localeCompare(String(b.kickoff || ""));
+  }
+  function groupTips(list) {
+    const sorted = (list || []).slice().sort(compareTips);
+    const days = [];
+    for (const row of sorted) {
+      const date = String(row.kickoff || "").slice(0, 10) || "open";
+      const market = marketFamily(row);
+      let day = days[days.length - 1];
+      if (!day || day.date !== date) {
+        day = { date, label: dayHeading(row.kickoff), markets: [] };
+        days.push(day);
+      }
+      let bucket = day.markets[day.markets.length - 1];
+      if (!bucket || bucket.market !== market) {
+        bucket = { market, items: [] };
+        day.markets.push(bucket);
+      }
+      bucket.items.push(row);
+    }
+    return days;
+  }
+  function groupedCards(list) {
+    return groupTips(list).map((day) => {
+      const n = day.markets.reduce((sum, mk) => sum + mk.items.length, 0);
+      return `<section class="day-block">
+        <div class="day-head">
+          <h2 class="display day-title">${esc(day.label)}</h2>
+          <p class="day-count">${n}</p>
+        </div>
+        ${day.markets.map((mk) => `<div class="market-block">
+          <p class="market-head">${esc(mk.market)} · ${mk.items.length}</p>
+          ${mk.items.map(engineCard).join("")}
+        </div>`).join("")}
+      </section>`;
+    }).join("");
+  }
+
   function poisson(l, k) {
     if (l <= 0) return k === 0 ? 1 : 0;
     let p = Math.exp(-l);
@@ -587,7 +662,7 @@
           <div style="display:flex;justify-content:space-between;gap:8px;margin-top:8px">
             <p class="font-cond" style="max-width:40%;font-size:13px;text-transform:uppercase">${esc(m.home.name)}</p>
             <p class="eyebrow" style="text-align:center">${esc(lg)}</p>
-            <p className="font-cond" style="max-width:40%;font-size:13px;text-transform:uppercase;text-align:right">${esc(m.away.name)}</p>
+            <p class="font-cond" style="max-width:40%;font-size:13px;text-transform:uppercase;text-align:right">${esc(m.away.name)}</p>
           </div>
         </div>
         ${m.odds && Number(m.odds.home) > 1 ? `<div class="metrics" style="margin-top:12px">
@@ -618,7 +693,10 @@
     return `<article class="card tone-${p.tone}">
       <div class="card-top">
         <div class="badges">${badge(p.home)}${badge(p.away)}</div>
-        <p class="card-date">${esc(k.weekday)} ${esc(k.time)}</p>
+        <div class="card-meta">
+          ${isBanker(p) ? `<span class="banker-chip">BANKER</span>` : ""}
+          <p class="card-date">${esc(k.weekday)} ${esc(k.time)}</p>
+        </div>
       </div>
       <a href="#/match/${encodeURIComponent(p.id)}" style="display:block;margin-top:8px">
         <p class="font-cond" style="font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:rgb(17 17 17 / 0.6)">${esc(p.home.short)} vs ${esc(p.away.short)}</p>
@@ -642,7 +720,7 @@
         <div class="stack stagger">
           ${state.loading ? `<div class="skel"></div><div class="skel"></div>` : ""}
           ${!state.loading && !list.length ? `<div class="empty"><h2>NO MONIKA</h2><p>No BetExplorer price cleared the tree.</p></div>` : ""}
-          ${list.map(engineCard).join("")}
+          ${groupedCards(list)}
         </div>
       </div>
     </div>`;
@@ -656,7 +734,7 @@
         <div class="stack stagger">
           ${state.loading ? `<div class="skel"></div><div class="skel"></div>` : ""}
           ${!state.loading && !list.length ? `<div class="empty"><h2>NO FLASH</h2><p>No SportyBet price cleared the gates.</p></div>` : ""}
-          ${list.map(engineCard).join("")}
+          ${groupedCards(list)}
         </div>
       </div>
     </div>`;
@@ -669,7 +747,7 @@
         <div class="stack stagger">
           ${state.loading ? `<div class="skel"></div>` : ""}
           ${!state.loading && !list.length ? `<div class="empty"><h2>NO LOCKS</h2><p>Nothing qualified on this board yet.</p></div>` : ""}
-          ${list.map(engineCard).join("")}
+          ${groupedCards(list)}
         </div>
       </div>
     </div>`;
@@ -688,7 +766,7 @@
         <div class="stack stagger">
           ${state.loading ? `<div class="skel"></div>` : ""}
           ${!state.loading && !state.visa.length ? `<div class="empty"><h2>NO VISA</h2><p>No SportyBet Visa tip today.</p></div>` : ""}
-          ${state.visa.map(engineCard).join("")}
+          ${groupedCards(state.visa)}
         </div>
       </div>
     </div>`;
@@ -719,7 +797,7 @@
         <div class="stack">
           ${state.loading ? `<div class="skel"></div>` : ""}
           ${!state.loading && !tips.length ? `<div class="empty"><h2>NO TIPS</h2><p>Waiting on live prices.</p></div>` : ""}
-          ${tips.map(engineCard).join("")}
+          ${groupedCards(tips)}
         </div>
       </div>
     </div>`;

@@ -233,6 +233,57 @@ p { text-wrap: pretty; margin: 0; }
   color: color-mix(in srgb, var(--ink) 55%, transparent);
   white-space: nowrap;
 }
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.banker-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--cream);
+  font-family: var(--font-cond);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.day-block { display: flex; flex-direction: column; gap: 16px; }
+.day-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.day-title {
+  font-size: 32px;
+  margin-top: 0;
+  line-height: 1;
+}
+.day-count {
+  font-family: var(--font-cond);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: color-mix(in srgb, var(--ink) 40%, transparent);
+}
+.market-block { display: flex; flex-direction: column; gap: 10px; }
+.market-head {
+  font-family: var(--font-cond);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 50%, transparent);
+}
+.view-ink .day-title { color: var(--cream); }
+.view-ink .day-count,
+.view-ink .market-head { color: rgb(255 247 244 / 0.45); }
 .live-dot {
   display: inline-block;
   width: 8px; height: 8px;
