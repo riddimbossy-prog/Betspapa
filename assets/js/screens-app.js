@@ -331,6 +331,9 @@
       tier: p.tier || p.papaLockGrade || engine,
       routeLabel: p.routeLabel || "",
       note: p.publicExplanation || p.explanationParagraph || (p.reasons && p.reasons[0]) || "",
+      why: p.why || p.publicExplanation || "",
+      step: p.step || null,
+      trigger: p.trigger || "",
       form: formOf(p.form || p.venueForm),
       probs: xg.home || xg.away ? matchProbs(xg.home, xg.away) : null,
       sportyBetEventId: p.sportyBetEventId || "",
@@ -522,6 +525,22 @@
     </header>`;
   }
 
+  function whyHtml(fp) {
+    const steps = { 1: "Club identity", 2: "Favourite price", 3: "Draw odds", 4: "League floor" };
+    const step = Number(fp.step) || Number(String(fp.note || "").match(/Step (\d)/)?.[1]) || 0;
+    let why = fp.why || "";
+    if (!why && fp.note && !/^Step \d/.test(fp.note)) why = fp.note;
+    if (!why && step && fp.trigger) why = `${steps[step] || "Monika"}. ${fp.trigger}. Priced at ${formatOdd(fp.odd)}.`;
+    if (!why && fp.engine === "FLASH" && fp.model) why = `Cover IQ cleared ${fp.market}. Model ${fp.model}% at ${formatOdd(fp.odd)}.`;
+    if (!why && fp.engine === "VISA" && fp.model) why = `Visa split-form route. Model ${fp.model}% at ${formatOdd(fp.odd)}.`;
+    if (!why) return "";
+    const kicker = step && steps[step] ? `Step ${step} · ${steps[step]}` : (fp.engine || fp.tier || "Why");
+    return `<div style="margin-top:10px;background:rgb(255 247 244 / 0.65);border-radius:16px;padding:10px 12px">
+      <p class="eyebrow">${esc(kicker)}</p>
+      <p class="lede" style="max-width:none;margin-top:4px;color:rgb(17 17 17 / 0.8)">${esc(why)}</p>
+    </div>`;
+  }
+
   function formDots(form, label) {
     const bits = (form && form.length ? form : ["-", "-", "-", "-", "-"]).slice(-5);
     return `<div class="form-row"><span class="form-lab">${esc(label)}</span><div class="badges">${bits.map((r) => `<span class="dot ${esc(r)}">${esc(r)}</span>`).join("")}</div></div>`;
@@ -540,6 +559,8 @@
     const flashList = m.flashList || (engine ? [engine] : []);
     const formH = (m.form?.home && m.form.home.length) ? m.form.home : (engine?.form?.home || []);
     const formA = (m.form?.away && m.form.away.length) ? m.form.away : (engine?.form?.away || []);
+    const hasForm = (formH && formH.length) || (formA && formA.length);
+    const lead = flashList[0] || engine;
     const betUrl = flashList.find((fp) => fp.betExplorerUrl)?.betExplorerUrl
       || flashList.find((fp) => fp.sportyBetUrl)?.sportyBetUrl
       || engine?.betExplorerUrl
@@ -553,10 +574,11 @@
       </header>
       <div class="view-scroll" style="padding:4px 20px 8px">
         <h1 class="display" style="font-size:46px;max-width:13ch">${esc(headline)}</h1>
-        <div style="margin-top:16px;display:flex;flex-direction:column;gap:6px">
+        ${lead ? whyHtml(lead) : ""}
+        ${hasForm ? `<div style="margin-top:16px;display:flex;flex-direction:column;gap:6px">
           ${formDots(formH, m.home.abbr)}
           ${formDots(formA, m.away.abbr)}
-        </div>
+        </div>` : ""}
         <div class="match-sheet">
           <div class="brand-row"><img class="brand-mark" src="${LOGO}" alt="" style="width:28px;height:28px"><p class="eyebrow">${esc(k.day)} ${esc(k.monthShort)}</p></div>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px">
@@ -574,9 +596,10 @@
           <div class="metric"><b>${formatOdd(m.odds.away)}</b><span>${esc(m.away.abbr)}</span></div>
         </div>` : ""}
         ${flashList.map((fp) => `<div class="card tone-${m.tone}" style="margin-top:12px">
-          <p class="eyebrow">${esc(fp.tier)} · ${esc(fp.market)}</p>
+          <p class="eyebrow">${esc(fp.engine || fp.tier)} · ${esc(fp.market)}</p>
           <p class="font-display" style="font-size:32px;line-height:1;margin-top:4px">${esc(pickTitle(fp))}</p>
           <p class="lede" style="max-width:none">${esc(fp.market)} · ${/betexplorer/.test(fp.betExplorerUrl || "") ? "BetExplorer" : "SportyBet"} ${formatOdd(fp.odd)}</p>
+          ${whyHtml(fp)}
           <div class="metrics">
             <div class="metric"><b>${formatOdd(fp.odd)}</b><span>ODD</span></div>
             <div class="metric"><b>${fp.model ? fp.model + "%" : "—"}</b><span>MODEL</span></div>

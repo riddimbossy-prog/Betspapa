@@ -144,11 +144,101 @@ function totalsKey(fixture, want) {
   if (want === "over-15" && priceOf(fixture, "over-25") > 1) return "over-25";
   return direct > 1 ? want : null;
 }
+const MONIKA_STEP_LABEL = {
+  1: "Club identity",
+  2: "Favourite price",
+  3: "Draw odds",
+  4: "League floor"
+};
+function oddTxt(n) {
+  return n > 1 ? n.toFixed(2) : "\u2014";
+}
+function clubFromTrigger(trigger) {
+  return String(trigger || "").replace(/\s+(ML|DC|BTTS|Over 1\.5|Over 2\.5|home DC|home fav DC|league phase)$/i, "").trim();
+}
+function explainMonikaPick(pick) {
+  const league = pick.league || "this league";
+  const price = oddTxt(pick.odds);
+  const favOdd = pick.homeOdd && pick.awayOdd ? Math.min(pick.homeOdd, pick.awayOdd) : 0;
+  const favName = pick.homeOdd && pick.awayOdd && pick.homeOdd <= pick.awayOdd ? pick.home : pick.away;
+  const club = clubFromTrigger(pick.trigger);
+  const t = pick.trigger || "";
+  if (pick.step === 1) {
+    if (/UCL/i.test(t)) {
+      return `Champions League league-phase profile. Every priced UCL game takes DC 12 at ${price}.`;
+    }
+    if (pick.key === "over-25" && /1\.5/.test(t)) {
+      return `${club} is a ${league} identity club. Tree wants Over 1.5; BetExplorer only lists 2.5, so this publishes Over 2.5 at ${price}.`;
+    }
+    if (/BTTS/i.test(t) || pick.key === "btts-yes") {
+      return `${club} is a ${league} identity club. First priced market is BTTS Yes at ${price}.`;
+    }
+    if (/Over/i.test(pick.selection) || pick.key.startsWith("over")) {
+      return `${club} is a ${league} identity club. Tree takes ${pick.selection} at ${price}.`;
+    }
+    if (/DC|Double Chance/i.test(t + pick.market)) {
+      return `${club} is a ${league} identity club. Tree takes Double Chance at ${price}.`;
+    }
+    if (/DNB|Draw No Bet/i.test(t + pick.market)) {
+      return `${club} is a ${league} identity club. Tree takes Draw No Bet at ${price}.`;
+    }
+    return `${club} is a ${league} identity club. Tree takes the moneyline at ${price}.`;
+  }
+  if (pick.step === 2) {
+    if (/fade ML/i.test(t)) {
+      return `Heavy favourite in ${league} at ${oddTxt(favOdd)}. Tree fades the moneyline and takes Double Chance at ${price}.`;
+    }
+    if (/road DC/i.test(t)) {
+      return `Away favourite in ${league} at ${oddTxt(pick.awayOdd)}. Tree takes the away Double Chance at ${price}.`;
+    }
+    if (/home fav DC|home heavy fav DC/i.test(t)) {
+      return `Home favourite in ${league} at ${oddTxt(pick.homeOdd)}. Tree takes home Double Chance at ${price}.`;
+    }
+    if (/fade away fav|fade road fav/i.test(t)) {
+      return `Away favourite in ${league} at ${oddTxt(pick.awayOdd)}. Tree fades the road price and takes home Double Chance at ${price}.`;
+    }
+    if (/fade home fav/i.test(t)) {
+      return `Home favourite in ${league} at ${oddTxt(pick.homeOdd)}. Tree fades that price and takes away Double Chance at ${price}.`;
+    }
+    if (/away DNB/i.test(t)) {
+      return `Away favourite in ${league} at ${oddTxt(pick.awayOdd)}. Tree takes away Draw No Bet at ${price}.`;
+    }
+    if (/ML|moneyline|Win/i.test(t + pick.selection)) {
+      return `${favName} is the ${league} favourite at ${oddTxt(favOdd)}. Price sits inside the moneyline corridor, so the tree takes the win at ${price}.`;
+    }
+    return `${league} favourite-price corridor. ${pick.selection} at ${price}.`;
+  }
+  if (pick.step === 3) {
+    if (pick.key === "under-25" || /Under 2\.5/i.test(t)) {
+      return `Draw odds compressed at ${oddTxt(pick.drawOdd)} in ${league}. Low-total profile takes Under 2.5 at ${price}.`;
+    }
+    if (/DC 12/i.test(t)) {
+      return `Draw odds inflated at ${oddTxt(pick.drawOdd)} in ${league}. Tree takes DC 12 at ${price}.`;
+    }
+    if (/inflated draw|Over/i.test(t + pick.selection)) {
+      return `Draw odds at ${oddTxt(pick.drawOdd)} in ${league}. High-total profile takes ${pick.selection} at ${price}.`;
+    }
+    return `${league} totals profile. Tree takes ${pick.selection} at ${price}.`;
+  }
+  if (/DC 12 floor/i.test(t)) {
+    return `${league} league floor. Tree takes DC 12 at ${price}.`;
+  }
+  if (/home DNB/i.test(t)) {
+    return `Home favourite in ${league} at ${oddTxt(pick.homeOdd)}. Floor market is Draw No Bet at ${price}.`;
+  }
+  if (/home DC/i.test(t)) {
+    return `${league} floor. Tree takes home Double Chance at ${price}.`;
+  }
+  if (/Over/i.test(pick.selection)) {
+    return `${league} totals floor. Tree takes ${pick.selection} at ${price}.`;
+  }
+  return `Step ${pick.step} floor in ${league}. ${pick.selection} at ${price}.`;
+}
 function emit(fixture, step, built) {
   if (!built) return null;
   const odd = priceOf(fixture, built.key);
   if (!(odd > 1)) return null;
-  return {
+  const pick = {
     fixtureId: fixture.id,
     home: fixture.home,
     away: fixture.away,
@@ -167,8 +257,11 @@ function emit(fixture, step, built) {
     strike: built.confidence,
     step,
     trigger: built.trigger,
-    note: `Step ${step} \xB7 ${built.trigger}`
+    note: `Step ${step} \xB7 ${built.trigger}`,
+    why: ""
   };
+  pick.why = explainMonikaPick(pick);
+  return pick;
 }
 function clubPick(side, name, kind, confidence, trigger) {
   if (kind === "ml") {
@@ -508,6 +601,8 @@ function runMonika(fixtures) {
 export {
   MONIKA_ENGINE_NAME,
   MONIKA_ENGINE_VERSION,
+  MONIKA_STEP_LABEL,
+  explainMonikaPick,
   matchCompetition,
   namesMatch,
   normName,
