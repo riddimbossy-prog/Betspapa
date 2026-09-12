@@ -46,6 +46,6 @@ test("Banker page presents PapaLock grades and uses the v1.25 assets", async () 
   assert.match(html, /papalock-elite/);
   assert.match(js, /papalock-bankers:v1250/);
   assert.match(js, /confirmation families/i);
-  assert.match(sw, /betspapa-screens-20260912k/);
+  assert.match(sw, /betspapa-screens-20260912l/);
   assert.match(sw, /screens-app\.css/);
 });

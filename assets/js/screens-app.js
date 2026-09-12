@@ -157,10 +157,12 @@
     const rb = MARKET_RANK[mb] ?? 50;
     if (ra !== rb) return ra - rb;
     if (ma !== mb) return ma.localeCompare(mb);
+    const ka = String(a.kickoff || "");
+    const kb = String(b.kickoff || "");
+    if (ka !== kb) return ka.localeCompare(kb);
     const bank = Number(isBanker(b)) - Number(isBanker(a));
     if (bank) return bank;
-    if (Number(b.confidence) !== Number(a.confidence)) return Number(b.confidence) - Number(a.confidence);
-    return String(a.kickoff || "").localeCompare(String(b.kickoff || ""));
+    return Number(b.confidence) - Number(a.confidence);
   }
   function groupTips(list) {
     const sorted = (list || []).slice().sort(compareTips);
@@ -168,6 +170,7 @@
     for (const row of sorted) {
       const date = String(row.kickoff || "").slice(0, 10) || "open";
       const market = marketFamily(row);
+      const time = kickParts(row.kickoff).time;
       let day = days[days.length - 1];
       if (!day || day.date !== date) {
         day = { date, label: dayHeading(row.kickoff), markets: [] };
@@ -175,24 +178,38 @@
       }
       let bucket = day.markets[day.markets.length - 1];
       if (!bucket || bucket.market !== market) {
-        bucket = { market, items: [] };
+        bucket = { market, times: [] };
         day.markets.push(bucket);
       }
-      bucket.items.push(row);
+      let slot = bucket.times[bucket.times.length - 1];
+      if (!slot || slot.time !== time) {
+        slot = { time, items: [] };
+        bucket.times.push(slot);
+      }
+      slot.items.push(row);
     }
     return days;
   }
+  function marketSize(mk) {
+    return (mk.times || []).reduce((n, slot) => n + slot.items.length, 0);
+  }
   function groupedCards(list) {
     return groupTips(list).map((day) => {
-      const n = day.markets.reduce((sum, mk) => sum + mk.items.length, 0);
+      const n = day.markets.reduce((sum, mk) => sum + marketSize(mk), 0);
       return `<section class="day-block">
         <div class="day-head">
           <h2 class="display day-title">${esc(day.label)}</h2>
           <p class="day-count">${n}</p>
         </div>
         ${day.markets.map((mk) => `<div class="market-block">
-          <p class="market-head">${esc(mk.market)} · ${mk.items.length}</p>
-          ${mk.items.map(engineCard).join("")}
+          <p class="market-head">${esc(mk.market)} · ${marketSize(mk)}</p>
+          ${mk.times.map((slot) => `<div class="time-block">
+            <div class="time-head">
+              <p class="time-title">${esc(slot.time)}</p>
+              <p class="time-count">${slot.items.length}</p>
+            </div>
+            ${slot.items.map(engineCard).join("")}
+          </div>`).join("")}
         </div>`).join("")}
       </section>`;
     }).join("");

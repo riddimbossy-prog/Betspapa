@@ -32,34 +32,40 @@ function compareTips(a, b) {
   const rb = MARKET_RANK[mb] ?? 50;
   if (ra !== rb) return ra - rb;
   if (ma !== mb) return ma.localeCompare(mb);
+  const ka = String(a.kickoff || "");
+  const kb = String(b.kickoff || "");
+  if (ka !== kb) return ka.localeCompare(kb);
   const bank = Number(isBanker(b)) - Number(isBanker(a));
   if (bank) return bank;
-  if (Number(b.confidence) !== Number(a.confidence)) return Number(b.confidence) - Number(a.confidence);
-  return String(a.kickoff || "").localeCompare(String(b.kickoff || ""));
+  return Number(b.confidence) - Number(a.confidence);
 }
 
-test("screens app groups tips by day, market and banker", () => {
+test("screens app groups tips by day, market, kickoff and banker", () => {
   assert.match(client, /function groupTips/);
   assert.match(client, /function groupedCards/);
   assert.match(client, /banker-chip/);
   assert.match(client, /TODAY · \$\{k\.weekday\}/);
+  assert.match(client, /time-title/);
+  assert.match(client, /kickParts\(row\.kickoff\)\.time/);
   assert.match(client, /groupedCards\(tips\)/);
   assert.match(client, /groupedCards\(list\)/);
   assert.match(client, /groupedCards\(state\.visa\)/);
 });
 
-test("compareTips orders day then market then bankers", () => {
+test("compareTips orders day then market then kickoff then bankers", () => {
   const rows = [
     { kickoff: "2026-09-13T15:00:00.000Z", market: "1X2", selection: "Win", confidence: 70 },
     { kickoff: "2026-09-12T18:00:00.000Z", market: "Over 2.5", selection: "Over 2.5", confidence: 70 },
+    { kickoff: "2026-09-12T16:00:00.000Z", market: "Double Chance", selection: "DC", confidence: 70 },
     { kickoff: "2026-09-12T12:00:00.000Z", market: "Double Chance", selection: "DC", confidence: 70 },
-    { kickoff: "2026-09-12T16:00:00.000Z", market: "Double Chance", selection: "DC", confidence: 100 },
+    { kickoff: "2026-09-12T12:00:00.000Z", market: "Double Chance", selection: "DC lock", confidence: 100 },
   ];
   const sorted = rows.slice().sort(compareTips);
-  assert.equal(sorted[0].kickoff.slice(0, 10), "2026-09-12");
+  assert.equal(sorted[0].kickoff, "2026-09-12T12:00:00.000Z");
   assert.equal(marketFamily(sorted[0]), "DOUBLE CHANCE");
   assert.equal(isBanker(sorted[0]), true);
   assert.equal(isBanker(sorted[1]), false);
-  assert.equal(marketFamily(sorted[2]), "OVER");
-  assert.equal(sorted[3].kickoff.slice(0, 10), "2026-09-13");
+  assert.equal(sorted[2].kickoff, "2026-09-12T16:00:00.000Z");
+  assert.equal(marketFamily(sorted[3]), "OVER");
+  assert.equal(sorted[4].kickoff.slice(0, 10), "2026-09-13");
 });

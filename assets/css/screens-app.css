@@ -272,7 +272,7 @@ p { text-wrap: pretty; margin: 0; }
   letter-spacing: 0.14em;
   color: color-mix(in srgb, var(--ink) 40%, transparent);
 }
-.market-block { display: flex; flex-direction: column; gap: 10px; }
+.market-block { display: flex; flex-direction: column; gap: 12px; }
 .market-head {
   font-family: var(--font-cond);
   font-size: 11px;
@@ -281,9 +281,32 @@ p { text-wrap: pretty; margin: 0; }
   text-transform: uppercase;
   color: color-mix(in srgb, var(--ink) 50%, transparent);
 }
+.time-block { display: flex; flex-direction: column; gap: 10px; }
+.time-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.time-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.time-count {
+  font-family: var(--font-cond);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: color-mix(in srgb, var(--ink) 40%, transparent);
+}
 .view-ink .day-title { color: var(--cream); }
 .view-ink .day-count,
-.view-ink .market-head { color: rgb(255 247 244 / 0.45); }
+.view-ink .market-head,
+.view-ink .time-count { color: rgb(255 247 244 / 0.45); }
+.view-ink .time-title { color: var(--cream); }
 .live-dot {
   display: inline-block;
   width: 8px; height: 8px;

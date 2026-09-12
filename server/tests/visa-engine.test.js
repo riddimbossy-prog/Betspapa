@@ -479,7 +479,7 @@ test("Betspapa exposes Visa v2.1, seven phone-app date tabs and fresh PWA assets
     source("server/src/engine/visaEngine.js")
   ]);
   assert.match(html, /BETSPAPA_START="visa"/);
-  assert.match(html, /screens-app\.js\?v=20260912k/);
+  assert.match(html, /screens-app\.js\?v=20260912l/);
   assert.match(client, /\/api\/visa\/week/);
   assert.match(client, /days=7/);
   assert.match(client, /data-visa-date/);
@@ -499,7 +499,7 @@ test("Betspapa exposes Visa v2.1, seven phone-app date tabs and fresh PWA assets
   assert.match(server, /visaWeek: "\/api\/visa\/week"/);
   assert.match(server, /sportybetUpcoming: "\/api\/sportybet\/upcoming"/);
   assert.match(nav, /visa\.html/);
-  assert.match(sw, /betspapa-screens-20260912k/);
+  assert.match(sw, /betspapa-screens-20260912l/);
   assert.match(sw, /screens-app\.js/);
   assert.match(manifest, /"version": "1\.29\.1"/);
   assert.match(preload, /HORIZON_DAYS = 7/);
