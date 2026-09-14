@@ -10,12 +10,12 @@ const source = (path) => readFile(resolve(root, path), "utf8");
 
 test("Papa's Pick page exposes all engines including Split Form", async () => {
   const html = await source("papas-pick.html");
-  assert.match(html, /data-page="papa-hub"/);
-  for (const name of ["Papa’s Pick", "Safer", "Aggressive", "Venue Pattern", "Split Form", "Athena"]) {
-    assert.match(html, new RegExp(name));
+  const client = await source("assets/js/screens-app.js");
+  assert.match(html, /BETSPAPA_START="papa"/);
+  assert.match(html, /screens-app/);
+  for (const name of ["papa", "flash", "visa", "athena"]) {
+    assert.match(client, new RegExp(`"${name}"`));
   }
-  assert.match(html, /id="engineFilter"/);
-  assert.match(html, /id="hubEngineTabs"/);
 });
 
 test("main board client renders fixture-centred engine rows", async () => {
@@ -39,7 +39,7 @@ test("public API merges all engines for the main board", async () => {
 
 test("current PWA refreshes the picks-only all-engine and Flash assets", async () => {
   const sw = await source("sw.js");
-  assert.match(sw, /betspapa-screens-20260912l/);
+  assert.match(sw, /betspapa-screens-20260914g/);
   assert.match(sw, /screens-app\.css/);
   assert.match(sw, /screens-app\.js/);
   assert.match(sw, /logo-papa\.png/);

@@ -3,7 +3,7 @@
   "use strict";
 
   const API = window.BETSPAPA_API_URL || "https://api.betspapa.com";
-  const START = window.BETSPAPA_START || "papa";
+  const START = window.BETSPAPA_START || "goldie";
   const TONES = ["pink", "blue", "mint", "gold", "lilac", "peach", "sky"];
   const MONTHS = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
   const WEEK = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
@@ -16,12 +16,13 @@
     zap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
     ticket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V9z"/><path d="M13 5v14"/></svg>',
     orbit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M10.4 21.9a10 10 0 0 0 9.5-9.5"/><path d="M13.6 2.1a10 10 0 0 0-9.5 9.5"/></svg>',
+    gold: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9"/></svg>',
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>',
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6L6 18M6 6l12 12"/></svg>',
   };
 
   const state = {
-    route: { name: !START || START === "home" || START === "fixtures" ? "papa" : START, id: null },
+    route: { name: !START || START === "home" || START === "fixtures" ? "goldie" : START, id: null },
     tab: "all",
     fixtures: [],
     flash: [],
@@ -29,6 +30,7 @@
     athena: [],
     goals: [],
     wins: [],
+    goldie: [],
     visa: [],
     visaWeek: [],
     visaDate: null,
@@ -37,7 +39,7 @@
     loading: true,
     error: null,
     tabTouched: false,
-    returnTo: "papa",
+    returnTo: "goldie",
     toast: null,
     toastTimer: 0,
   };
@@ -136,6 +138,7 @@
     return String(p.market || "PICK").toUpperCase();
   }
   function isBanker(p) {
+    if (p.engine === "GOLDIE") return Number(p.confidence) >= 80 || Number(p.splitHit) >= 80;
     return Number(p.confidence) >= 90 || Number(p.splitHit) >= 90 || Number(p.step) === 1 || /^Step 1/.test(p.note || "");
   }
   function dayHeading(iso) {
@@ -473,6 +476,11 @@
     return state.monika;
   }
 
+  function applyGoldie(slate) {
+    state.goldie = (slate?.picks || []).map((p) => pickFromEngine(p, "GOLDIE"));
+    return state.goldie;
+  }
+
   async function bootData() {
     state.loading = true;
     state.error = null;
@@ -480,7 +488,8 @@
     const d0 = todayUtc();
     const d1 = addDays(d0, 1);
 
-    const [fl0, fl1, visaWeek, sporty, monika] = await Promise.all([
+    const [goldie, fl0, fl1, visaWeek, sporty, monika] = await Promise.all([
+      getJson(`/api/goldie/today`).catch((err) => ({ error: String(err && err.message || err), picks: [] })),
       getJson(`/api/flash/today?date=${d0}`).catch((err) => ({ error: String(err && err.message || err) })),
       getJson(`/api/flash/today?date=${d1}`).catch((err) => ({ error: String(err && err.message || err) })),
       getJson(`/api/visa/week?start=${d0}&days=7`).catch((err) => ({ error: String(err && err.message || err) })),
@@ -488,12 +497,13 @@
       getJson(`/api/monika/today`).catch(() => ({ picks: [] })),
     ]);
     state.sporty = Array.isArray(sporty?.events) ? sporty.events : [];
+    applyGoldie(goldie);
     applyFlash(fl0, fl1);
     applyVisaWeek(visaWeek);
     applyMonika(monika);
     state.loading = false;
-    if (!state.flash.length && !state.visa.length && !state.monika.length) {
-      state.error = "Papa's tips are still warming up.";
+    if (!state.goldie.length && !state.flash.length && !state.visa.length && !state.monika.length) {
+      state.error = "Goldie is still reading today's BetExplorer prices.";
     }
     render();
 
@@ -507,7 +517,7 @@
     state.athena = overlayList((athena?.picks || []).map((p) => pickFromEngine(p, "ATHENA")));
     state.goals = overlayList((goals?.picks || []).map((p) => pickFromEngine(p, "GOALS")));
     state.wins = overlayList((wins?.picks || []).map((p) => pickFromEngine(p, "WINS")));
-    if (state.flash.length || state.visa.length || state.bankers.length) state.error = null;
+    if (state.goldie.length || state.flash.length || state.visa.length || state.bankers.length) state.error = null;
     render();
   }
 
@@ -531,7 +541,7 @@
   function matchById(id) {
     const fx = state.fixtures.find((m) => m.id === String(id));
     const flashList = state.flash.filter((p) => p.id === String(id));
-    const boards = [...state.bankers, ...state.athena, ...state.goals, ...state.wins, ...state.visa, ...state.monika];
+    const boards = [...state.goldie, ...state.bankers, ...state.athena, ...state.goals, ...state.wins, ...state.visa, ...state.monika];
     const extra = boards.filter((x) => x.id === String(id));
     const attach = (base, list) => {
       const have = new Set((list || []).map((p) => p.key));
@@ -554,21 +564,21 @@
       if (!location.hash && START && START !== "home" && START !== "fixtures" && START !== "slip") {
         return { name: START, id: null };
       }
-      return { name: "papa", id: null };
+      return { name: "goldie", id: null };
     }
     if (parts[0] === "match" && parts[1]) return { name: "match", id: decodeURIComponent(parts[1]) };
     if (parts[0] === "slip" || parts[0] === "watchlist") return { name: "flash", id: null };
-    if (parts[0] === "home" || parts[0] === "fixtures") return { name: "papa", id: null };
-    const known = ["papa","flash","visa","monika","bankers","athena","goals","wins"];
-    if (!known.includes(parts[0])) return { name: "papa", id: null };
+    if (parts[0] === "home" || parts[0] === "fixtures") return { name: "goldie", id: null };
+    const known = ["goldie","papa","flash","visa","monika","bankers","athena","goals","wins"];
+    if (!known.includes(parts[0])) return { name: "goldie", id: null };
     return { name: parts[0], id: null };
   }
   function go(name, id) {
     if (name === "slip" || name === "watchlist") name = "flash";
-    if (name === "home" || name === "fixtures") name = "papa";
-    if (name === "back") name = state.returnTo || "papa";
+    if (name === "home" || name === "fixtures") name = "goldie";
+    if (name === "back") name = state.returnTo || "goldie";
     if (name !== "match") state.returnTo = name;
-    const hash = name === "papa" ? "#/" : name === "match" ? `#/match/${encodeURIComponent(id)}` : `#/${name}`;
+    const hash = name === "goldie" ? "#/" : name === "match" ? `#/match/${encodeURIComponent(id)}` : `#/${name}`;
     if (location.hash !== hash) location.hash = hash;
     else {
       state.route = { name, id: id || null };
@@ -592,14 +602,14 @@
 
   function navHtml(active) {
     const items = [
+      { name: "goldie", label: "Goldie", icon: ICO.gold },
       { name: "visa", label: "Visa", icon: ICO.ticket },
       { name: "flash", label: "Flash", icon: ICO.zap },
-      { name: "monika", label: "Monika", icon: ICO.orbit },
       { name: "papa", label: "Papa", icon: `<img src="${PAPA}" alt="">` },
     ];
     return `<nav class="nav" aria-label="Primary"><div class="nav-bar">${items.map((it) => {
       const on = active === it.name
-        || (active === "match" && (state.returnTo === it.name || (!state.returnTo && it.name === "visa")))
+        || (active === "match" && (state.returnTo === it.name || (!state.returnTo && it.name === "goldie")))
         || (["bankers","athena","goals","wins"].includes(active) && it.name === "papa");
       return `<button type="button" class="nav-item${on ? " on" : ""}" data-go="${it.name}">${it.icon}<span>${it.label}</span></button>`;
     }).join("")}</div></nav>`;
@@ -625,6 +635,7 @@
     if (!why && step && fp.trigger) why = `${steps[step] || "Monika"}. ${fp.trigger}. Priced at ${formatOdd(fp.odd)}.`;
     if (!why && fp.engine === "FLASH" && fp.model) why = `Cover IQ cleared ${fp.market}. Model ${fp.model}% at ${formatOdd(fp.odd)}.`;
     if (!why && fp.engine === "VISA" && fp.model) why = `Visa split-form route. Model ${fp.model}% at ${formatOdd(fp.odd)}.`;
+    if (!why && fp.engine === "GOLDIE") why = fp.why || `${pickTitle(fp)} is the published Goldie pick.`;
     if (!why) return "";
     const kicker = step && steps[step] ? `Step ${step} · ${steps[step]}` : (fp.engine || fp.tier || "Why");
     return `<div style="margin-top:10px;background:rgb(255 247 244 / 0.65);border-radius:16px;padding:10px 12px">
@@ -641,7 +652,7 @@
   function renderMatch(m, nested) {
     if (!m) {
       return `<div class="view view-pink"><div class="view-scroll" style="display:grid;place-items:center;padding:24px;text-align:center">
-        <div><h1 class="display">NO MATCH</h1><button class="btn-ink" style="margin-top:16px;width:auto;padding:0 20px" data-go="papa">BACK</button></div>
+        <div><h1 class="display">NO MATCH</h1><button class="btn-ink" style="margin-top:16px;width:auto;padding:0 20px" data-go="goldie">BACK</button></div>
       </div></div>`;
     }
     const k = kickParts(m.kickoff);
@@ -727,6 +738,20 @@
         <div class="metric"><b>${p.confidence || "—"}</b><span>CONF</span></div>
       </div>
     </article>`;
+  }
+
+  function renderGoldie() {
+    const list = state.goldie;
+    return `<div class="view view-pink">
+      <div class="view-scroll">
+        ${headerBrand("GOLDIE", { title: "GOLDIE", sub: "BANKERS" })}
+        <div class="stack stagger">
+          ${state.loading ? `<div class="skel"></div><div class="skel"></div>` : ""}
+          ${!state.loading && !list.length ? `<div class="empty"><h2>NO GOLDIE</h2><p>No BetExplorer fixture cleared the playbook today.</p></div>` : ""}
+          ${groupedCards(list)}
+        </div>
+      </div>
+    </div>`;
   }
 
   function renderMonika() {
@@ -822,6 +847,7 @@
 
   function viewFor(route, nested) {
     switch (route.name) {
+      case "goldie": return renderGoldie();
       case "flash": return renderFlash();
       case "monika": return renderMonika();
       case "papa": return renderPapa();
@@ -831,7 +857,7 @@
       case "wins": return renderBoard("WINS", "BANKER", "", state.wins);
       case "visa": return renderVisa();
       case "match": return renderMatch(matchById(route.id), nested);
-      default: return renderPapa();
+      default: return renderGoldie();
     }
   }
 
@@ -844,11 +870,11 @@
         <div class="wallpaper" aria-hidden="true">
           <p class="wallpaper-type" style="top:-24px;left:-16px;font-size:180px">BETS</p>
           <p class="wallpaper-type" style="top:18%;right:-32px;font-size:180px">PAPA</p>
-          <p class="wallpaper-type" style="top:48%;left:-40px;font-size:160px">FLASH</p>
+          <p class="wallpaper-type" style="top:48%;left:-40px;font-size:160px">GOLDIE</p>
           <p class="wallpaper-type" style="right:0;bottom:-20px;font-size:140px">KNOWS</p>
         </div>
         <div class="stage">
-          <div class="phone phone-list" id="listPane">${renderVisa()}</div>
+          <div class="phone phone-list" id="listPane">${renderGoldie()}</div>
           <div class="phone phone-main" id="mainPane">
             ${viewFor(route, false)}
             ${navHtml(route.name)}

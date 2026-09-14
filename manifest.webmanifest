@@ -2,8 +2,8 @@
   "id": "/",
   "name": "BetsPapa \u2014 Football Intelligence",
   "short_name": "BetsPapa",
-  "description": "Papa knows the game. Flash Cover IQ, PapaLock bankers and live pastel match boards.",
-  "start_url": "/?source=pwa&v=20260912l",
+  "description": "Papa knows the game. Goldie bankers, Flash Cover IQ, PapaLock and live pastel match boards.",
+  "start_url": "/?source=pwa&v=20260914g",
   "scope": "/",
   "display": "standalone",
   "display_override": [
@@ -48,6 +48,19 @@
     }
   ],
   "shortcuts": [
+    {
+      "name": "Goldie",
+      "short_name": "Goldie",
+      "description": "Open Goldie bankers from today's BetExplorer fixtures",
+      "url": "/?source=shortcut",
+      "icons": [
+        {
+          "src": "/assets/images/pwa-brand-icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
     {
       "name": "Flash Cover IQ",
       "short_name": "Flash",

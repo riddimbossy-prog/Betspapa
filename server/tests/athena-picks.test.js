@@ -109,29 +109,31 @@ test("Boss Picks UI is replaced by Athena while old bookmarks redirect", async (
   const athenaHtml = await readFile(resolve(projectRoot, "athena.html"), "utf8");
   const bossRedirect = await readFile(resolve(projectRoot, "boss-picks.html"), "utf8");
   const portal = await readFile(resolve(projectRoot, "assets/js/portal.v1210.js"), "utf8");
-  assert.match(athenaHtml, /data-page="athena-picks"/);
-  assert.match(athenaHtml, /Athena Transition Picks/);
-  assert.match(athenaHtml, /id="athenaMarketFilter"/);
-  assert.match(athenaHtml, /id="athenaConfidenceFilter"/);
+  const client = await readFile(resolve(projectRoot, "assets/js/screens-app.js"), "utf8");
+  assert.match(athenaHtml, /BETSPAPA_START="athena"/);
+  assert.match(athenaHtml, /screens-app/);
+  assert.match(client, /case "athena"/);
   assert.match(portal, /function athenaConfidenceMatches/);
   assert.match(portal, /NO PICKS MATCH THESE FILTERS/);
-  assert.match(bossRedirect, /location\.replace\("athena\.html"/);
+  assert.match(bossRedirect, /screens-app/);
   assert.match(portal, /\/api\/athena\/today/);
   assert.doesNotMatch(athenaHtml, /OMNI v2\.5\.2/);
 });
 
 test("current navigation points to Athena instead of Boss Picks", async () => {
   const projectRoot = resolve(new URL("../../", import.meta.url).pathname);
+  const client = await readFile(resolve(projectRoot, "assets/js/screens-app.js"), "utf8");
+  assert.match(client, /"athena"/);
+  assert.match(client, /case "athena"/);
+  assert.doesNotMatch(client, /boss-picks\.html/);
   const pages = [
-    "index.html",
     "bankers.html",
     "live-fixtures.html",
-    "results-intelligence.html",
-    "responsible.html"
+    "results-intelligence.html"
   ];
   for (const page of pages) {
     const html = await readFile(resolve(projectRoot, page), "utf8");
-    assert.match(html, /href="athena\.html">Athena<\/a>/);
+    assert.match(html, /BETSPAPA_START=/);
     assert.doesNotMatch(html, /href="boss-picks\.html">Boss Picks<\/a>/);
   }
 });

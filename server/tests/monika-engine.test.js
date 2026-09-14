@@ -74,7 +74,7 @@ test("parses BetExplorer homepage AJAX 1X2 rows", () => {
 <ul class="leagues-list" data-country="china">
 <li><a data-league-name="League One" data-country-name="China"></a></li>
 <li data-event-id="GzTest01">
-<ul class="table-main__matchInfo" data-dt="12,9,2026,15,00">
+<ul class="table-main__matchInfo" data-dt="20,9,2026,15,00">
 <div class="table-main__participantHome"><p>Guangdong GZ-Power</p></div>
 <div class="table-main__participantAway"><p>Yanbian Longding</p></div>
 <a href="/football/china/league-one/guangdong-yanbian/GzTest01/"></a>

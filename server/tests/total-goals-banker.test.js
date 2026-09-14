@@ -335,8 +335,10 @@ test("SportyBet events match BetsPapa fixtures by team names", () => {
 test("portal and page exist for Total Goals Bankers", async () => {
   const html = await readFile(resolve(root, "goals-bankers.html"), "utf8");
   const js = await readFile(resolve(root, "assets/js/portal.v1250.js"), "utf8");
-  assert.match(html, /data-page="goals-bankers"/);
+  const client = await readFile(resolve(root, "assets/js/screens-app.js"), "utf8");
+  assert.match(html, /BETSPAPA_START="goals"/);
   assert.match(js, /goals-bankers\/today/);
+  assert.match(client, /case "goals"/);
   assert.match(js, /SportyBet/);
   assert.match(js, /data-league/);
   assert.match(js, /qualifiedTeams/);

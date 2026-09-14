@@ -11,20 +11,18 @@ async function source(path) {
   return readFile(resolve(root, path), "utf8");
 }
 
-test("the site root is the Flash Cover IQ board", async () => {
+test("the site root is the Goldie playbook board", async () => {
   const html = await source("index.html");
-  assert.match(html, /data-page="flash"/);
-  assert.match(html, /Flash — Cover IQ/);
-  assert.match(html, /Fifteen cover markets enter/);
-  assert.match(html, /aria-current="page" class="active" href="index\.html">Flash/);
+  assert.match(html, /BETSPAPA_START="goldie"/);
+  assert.match(html, /screens-app/);
+  assert.match(html, /Goldie/);
 });
 
 test("Papa's Pick remains available on its own page", async () => {
   const html = await source("papas-pick.html");
-  assert.match(html, /data-page="papa-hub"/);
-  assert.match(html, /data-engine="primary"/);
-  assert.match(html, /data-start-page="papas-pick"/);
-  assert.match(html, /aria-current="page" class="active" href="papas-pick\.html">Papa’s Pick/);
+  assert.match(html, /BETSPAPA_START="papa"/);
+  assert.match(html, /screens-app/);
+  assert.match(html, /papas-pick\.html/);
 });
 
 test("mobile and Z Fold navigation exposes the four core engines plus More", async () => {
@@ -53,12 +51,14 @@ test("Fold and tablet responsive layer keeps multi-column boards", async () => {
   assert.match(css, /orientation:landscape/);
 });
 
-test("PWA launches at the Flash root and keeps a Papa's Pick shortcut", async () => {
+test("PWA launches at the Goldie root and keeps Flash and Papa shortcuts", async () => {
   const manifest = JSON.parse(await source("manifest.webmanifest"));
-  assert.equal(manifest.start_url, "/?source=pwa&v=20260912l");
+  assert.equal(manifest.start_url, "/?source=pwa&v=20260914g");
   assert.equal(manifest.version, "1.29.1");
+  const goldie = manifest.shortcuts.find((item) => item.name === "Goldie");
+  assert.equal(goldie.url, "/?source=shortcut");
   const flash = manifest.shortcuts.find((item) => item.name === "Flash Cover IQ");
-  assert.equal(flash.url, "/?source=shortcut");
+  assert.equal(flash.url, "/flash.html?source=shortcut");
   const papa = manifest.shortcuts.find((item) => item.name === "Papa's Pick");
   assert.equal(papa.url, "/papas-pick.html?source=shortcut");
 });

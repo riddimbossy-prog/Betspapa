@@ -41,11 +41,13 @@ test("PapaLock migration installs prediction, evidence, result and calibration t
 test("Banker page presents PapaLock grades and uses the v1.25 assets", async () => {
   const html = await source("bankers.html");
   const js = await source("assets/js/portal.v1250.js");
+  const client = await source("assets/js/screens-app.js");
   const sw = await source("sw.js");
-  assert.match(html, /PapaLock Banker Engine/);
-  assert.match(html, /papalock-elite/);
+  assert.match(html, /BETSPAPA_START="bankers"/);
+  assert.match(html, /screens-app/);
+  assert.match(client, /case "bankers"/);
   assert.match(js, /papalock-bankers:v1250/);
   assert.match(js, /confirmation families/i);
-  assert.match(sw, /betspapa-screens-20260912l/);
+  assert.match(sw, /betspapa-screens-20260914g/);
   assert.match(sw, /screens-app\.css/);
 });
