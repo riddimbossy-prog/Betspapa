@@ -1,3 +1,12 @@
+# v1.30.0 — Dinari totals bankers
+
+- Added Dinari, a dedicated over/under 1.5, 2.5 and 3.5 bankers engine.
+- Over 2.5: at least one team averages over 2.2 goals scored, the other not less than 1.3, draw odds over 3.60.
+- Over 1.5: a 2.2+ scorer who concedes less than 1, or both sides average not less than 1.80 scored and 1.5 conceded.
+- Under 2.5: at least one side averages under 1 scored and conceded, or both do, and draw odds are not greater than 2.90.
+- Under 3.5: a sub-1.4 scorer who concedes under 1, or both average under 1 scored and 1.2 conceded, draw odds not greater than 3.10.
+- Added `/api/dinari/today`, the Dinari screen, nav tab, and market chips.
+
 # Visa v2.1 — Top-Four Split Protection
 
 - Expanded the split win route from the top three to the top four.

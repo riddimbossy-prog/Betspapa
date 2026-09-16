@@ -1,8 +1,9 @@
-const CACHE_NAME = "betspapa-screens-20260914g";
+const CACHE_NAME = "betspapa-screens-20260916d";
 const OFFLINE_URL = "/offline.html";
 
 const CORE_ASSETS = [
   "/",
+  "/dinari.html",
   "/offline.html",
   "/manifest.webmanifest",
   "/assets/css/screens-app.css",

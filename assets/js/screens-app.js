@@ -17,6 +17,7 @@
     ticket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V9z"/><path d="M13 5v14"/></svg>',
     orbit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M10.4 21.9a10 10 0 0 0 9.5-9.5"/><path d="M13.6 2.1a10 10 0 0 0-9.5 9.5"/></svg>',
     gold: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9"/></svg>',
+    dinari: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/><path d="M8 16.5c1.2 1 2.6 1.5 4 1.5s2.8-.5 4-1.5"/></svg>',
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>',
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6L6 18M6 6l12 12"/></svg>',
   };
@@ -31,6 +32,8 @@
     goals: [],
     wins: [],
     goldie: [],
+    dinari: [],
+    dinariTab: "all",
     visa: [],
     visaWeek: [],
     visaDate: null,
@@ -138,6 +141,7 @@
     return String(p.market || "PICK").toUpperCase();
   }
   function isBanker(p) {
+    if (p.engine === "DINARI") return true;
     if (p.engine === "GOLDIE") return Number(p.confidence) >= 80 || Number(p.splitHit) >= 80;
     return Number(p.confidence) >= 90 || Number(p.splitHit) >= 90 || Number(p.step) === 1 || /^Step 1/.test(p.note || "");
   }
@@ -481,6 +485,22 @@
     return state.goldie;
   }
 
+  function applyDinari(slate) {
+    state.dinari = (slate?.picks || []).map((p) => {
+      const row = pickFromEngine(p, "DINARI");
+      row.homeGf = p.homeGf;
+      row.homeGa = p.homeGa;
+      row.awayGf = p.awayGf;
+      row.awayGa = p.awayGa;
+      row.drawOdd = p.drawOdd;
+      row.branch = p.branch;
+      row.ruleId = p.ruleId;
+      if (Number(p.odds) > 1) row.odd = Number(p.odds);
+      return row;
+    });
+    return state.dinari;
+  }
+
   async function bootData() {
     state.loading = true;
     state.error = null;
@@ -488,8 +508,9 @@
     const d0 = todayUtc();
     const d1 = addDays(d0, 1);
 
-    const [goldie, fl0, fl1, visaWeek, sporty, monika] = await Promise.all([
+    const [goldie, dinari, fl0, fl1, visaWeek, sporty, monika] = await Promise.all([
       getJson(`/api/goldie/today`).catch((err) => ({ error: String(err && err.message || err), picks: [] })),
+      getJson(`/api/dinari/today?date=${d0}`).catch((err) => ({ error: String(err && err.message || err), picks: [] })),
       getJson(`/api/flash/today?date=${d0}`).catch((err) => ({ error: String(err && err.message || err) })),
       getJson(`/api/flash/today?date=${d1}`).catch((err) => ({ error: String(err && err.message || err) })),
       getJson(`/api/visa/week?start=${d0}&days=7`).catch((err) => ({ error: String(err && err.message || err) })),
@@ -498,11 +519,12 @@
     ]);
     state.sporty = Array.isArray(sporty?.events) ? sporty.events : [];
     applyGoldie(goldie);
+    applyDinari(dinari);
     applyFlash(fl0, fl1);
     applyVisaWeek(visaWeek);
     applyMonika(monika);
     state.loading = false;
-    if (!state.goldie.length && !state.flash.length && !state.visa.length && !state.monika.length) {
+    if (!state.goldie.length && !state.dinari.length && !state.flash.length && !state.visa.length && !state.monika.length) {
       state.error = "Goldie is still reading today's BetExplorer prices.";
     }
     render();
@@ -541,7 +563,7 @@
   function matchById(id) {
     const fx = state.fixtures.find((m) => m.id === String(id));
     const flashList = state.flash.filter((p) => p.id === String(id));
-    const boards = [...state.goldie, ...state.bankers, ...state.athena, ...state.goals, ...state.wins, ...state.visa, ...state.monika];
+    const boards = [...state.goldie, ...state.dinari, ...state.bankers, ...state.athena, ...state.goals, ...state.wins, ...state.visa, ...state.monika];
     const extra = boards.filter((x) => x.id === String(id));
     const attach = (base, list) => {
       const have = new Set((list || []).map((p) => p.key));
@@ -569,7 +591,7 @@
     if (parts[0] === "match" && parts[1]) return { name: "match", id: decodeURIComponent(parts[1]) };
     if (parts[0] === "slip" || parts[0] === "watchlist") return { name: "flash", id: null };
     if (parts[0] === "home" || parts[0] === "fixtures") return { name: "goldie", id: null };
-    const known = ["goldie","papa","flash","visa","monika","bankers","athena","goals","wins"];
+    const known = ["goldie","dinari","papa","flash","visa","monika","bankers","athena","goals","wins"];
     if (!known.includes(parts[0])) return { name: "goldie", id: null };
     return { name: parts[0], id: null };
   }
@@ -603,6 +625,7 @@
   function navHtml(active) {
     const items = [
       { name: "goldie", label: "Goldie", icon: ICO.gold },
+      { name: "dinari", label: "Dinari", icon: ICO.dinari },
       { name: "visa", label: "Visa", icon: ICO.ticket },
       { name: "flash", label: "Flash", icon: ICO.zap },
       { name: "papa", label: "Papa", icon: `<img src="${PAPA}" alt="">` },
@@ -754,6 +777,81 @@
     </div>`;
   }
 
+  function dinariList() {
+    const tab = state.dinariTab || "all";
+    if (tab === "all") return state.dinari;
+    return state.dinari.filter((p) => p.key === tab);
+  }
+
+  function dinariCard(p) {
+    const k = kickParts(p.kickoff);
+    const gf = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(2) : "—";
+    return `<article class="card tone-${p.tone}">
+      <div class="card-top">
+        <div class="badges">${badge(p.home)}${badge(p.away)}</div>
+        <div class="card-meta">
+          <span class="banker-chip">BANKER</span>
+          <p class="card-date">${esc(k.weekday)} ${esc(k.time)}</p>
+        </div>
+      </div>
+      <a href="#/match/${encodeURIComponent(p.id)}" style="display:block;margin-top:8px">
+        <p class="font-cond" style="font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:rgb(17 17 17 / 0.6)">${esc(p.home.short)} vs ${esc(p.away.short)}</p>
+        <p class="font-display" style="font-size:36px;line-height:1;margin-top:2px">${esc(pickTitle(p))}</p>
+        <p class="lede" style="max-width:none">${esc(p.note || p.why || "Season averages + draw odds")}</p>
+      </a>
+      <div class="metrics">
+        <div class="metric"><b>${formatOdd(p.odd)}</b><span>OU</span></div>
+        <div class="metric"><b>${formatOdd(p.drawOdd)}</b><span>DRAW</span></div>
+        <div class="metric"><b>${gf(p.homeGf)}/${gf(p.homeGa)}</b><span>HOME GF/GA</span></div>
+        <div class="metric"><b>${gf(p.awayGf)}/${gf(p.awayGa)}</b><span>AWAY GF/GA</span></div>
+      </div>
+    </article>`;
+  }
+
+  function renderDinari() {
+    const tabs = [
+      { key: "all", label: "All" },
+      { key: "over-15", label: "O 1.5" },
+      { key: "over-25", label: "O 2.5" },
+      { key: "under-25", label: "U 2.5" },
+      { key: "under-35", label: "U 3.5" },
+    ].map((tab) => {
+      const count = tab.key === "all" ? state.dinari.length : state.dinari.filter((p) => p.key === tab.key).length;
+      return `<button type="button" class="tab${(state.dinariTab || "all") === tab.key ? " on" : ""}" data-dinari-tab="${tab.key}" role="tab" aria-selected="${(state.dinariTab || "all") === tab.key}">${esc(tab.label)} · ${count}</button>`;
+    }).join("");
+    const list = dinariList();
+    const grouped = groupTips(list).map((day) => {
+      const n = day.markets.reduce((sum, mk) => sum + marketSize(mk), 0);
+      return `<section class="day-block">
+        <div class="day-head">
+          <h2 class="display day-title">${esc(day.label)}</h2>
+          <p class="day-count">${n}</p>
+        </div>
+        ${day.markets.map((mk) => `<div class="market-block">
+          <p class="market-head">${esc(mk.market)} · ${marketSize(mk)}</p>
+          ${mk.times.map((slot) => `<div class="time-block">
+            <div class="time-head">
+              <p class="time-title">${esc(slot.time)}</p>
+              <p class="time-count">${slot.items.length}</p>
+            </div>
+            ${slot.items.map(dinariCard).join("")}
+          </div>`).join("")}
+        </div>`).join("")}
+      </section>`;
+    }).join("");
+    return `<div class="view view-pink">
+      <div class="view-scroll">
+        ${headerBrand("DINARI", { title: "DINARI", sub: "TOTALS", lede: "Over 1.5, 2.5 and under 2.5, 3.5 bankers from season scored / conceded averages and the draw price." })}
+        <div class="tabs" role="tablist" aria-label="Dinari markets">${tabs}</div>
+        <div class="stack stagger">
+          ${state.loading ? `<div class="skel"></div><div class="skel"></div>` : ""}
+          ${!state.loading && !list.length ? `<div class="empty"><h2>NO DINARI</h2><p>No fixture cleared the totals rules today.</p></div>` : ""}
+          ${grouped}
+        </div>
+      </div>
+    </div>`;
+  }
+
   function renderMonika() {
     const list = state.monika;
     return `<div class="view view-pink">
@@ -848,6 +946,7 @@
   function viewFor(route, nested) {
     switch (route.name) {
       case "goldie": return renderGoldie();
+      case "dinari": return renderDinari();
       case "flash": return renderFlash();
       case "monika": return renderMonika();
       case "papa": return renderPapa();
@@ -870,7 +969,7 @@
         <div class="wallpaper" aria-hidden="true">
           <p class="wallpaper-type" style="top:-24px;left:-16px;font-size:180px">BETS</p>
           <p class="wallpaper-type" style="top:18%;right:-32px;font-size:180px">PAPA</p>
-          <p class="wallpaper-type" style="top:48%;left:-40px;font-size:160px">GOLDIE</p>
+          <p class="wallpaper-type" style="top:48%;left:-40px;font-size:160px">${state.route.name === "dinari" ? "DINARI" : "GOLDIE"}</p>
           <p class="wallpaper-type" style="right:0;bottom:-20px;font-size:140px">KNOWS</p>
         </div>
         <div class="stage">
@@ -895,6 +994,10 @@
     document.querySelectorAll("[data-visa-date]").forEach((el) => el.addEventListener("click", () => {
       state.visaDate = el.getAttribute("data-visa-date");
       state.visa = state.visaWeek.find((day) => day.date === state.visaDate)?.picks || [];
+      render();
+    }));
+    document.querySelectorAll("[data-dinari-tab]").forEach((el) => el.addEventListener("click", () => {
+      state.dinariTab = el.getAttribute("data-dinari-tab") || "all";
       render();
     }));
     document.querySelectorAll("[data-retry]").forEach((el) => el.addEventListener("click", () => bootData()));

@@ -19,6 +19,7 @@ import { PPG_ENGINE_VERSION } from "./engine/ppgEngine.js";
 import { VISA_ENGINE_VERSION } from "./engine/visaEngine.js";
 import { MONIKA_ENGINE_VERSION } from "./engine/monikaEngine.js";
 import { GOLDIE_ENGINE_VERSION } from "./engine/goldieEngine.js";
+import { DINARI_ENGINE_VERSION } from "./engine/dinariEngine.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4173;
@@ -122,6 +123,7 @@ app.get("/", (_req, res) => {
     visa: "/api/visa/today",
     visaWeek: "/api/visa/week",
     goldie: "/api/goldie/today",
+    dinari: "/api/dinari/today",
     sportybetUpcoming: "/api/sportybet/upcoming",
     monika: "/api/monika/today",
     legacyBankersByEngine: "/api/bankers/by-engine",
@@ -146,6 +148,7 @@ app.get("/api/health", async (_req, res) => {
       visaEngineVersion: VISA_ENGINE_VERSION,
       monikaEngineVersion: MONIKA_ENGINE_VERSION,
       goldieEngineVersion: GOLDIE_ENGINE_VERSION,
+      dinariEngineVersion: DINARI_ENGINE_VERSION,
       database: "connected",
       leaguesCount: database.leaguesCount,
       providerKeyConfigured: Boolean(

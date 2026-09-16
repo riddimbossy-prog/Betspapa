@@ -3,7 +3,7 @@
   "name": "BetsPapa \u2014 Football Intelligence",
   "short_name": "BetsPapa",
   "description": "Papa knows the game. Goldie bankers, Flash Cover IQ, PapaLock and live pastel match boards.",
-  "start_url": "/?source=pwa&v=20260914g",
+  "start_url": "/?source=pwa&v=20260916d",
   "scope": "/",
   "display": "standalone",
   "display_override": [

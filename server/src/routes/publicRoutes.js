@@ -32,6 +32,7 @@ import { getVisaPicks, getVisaWeek } from "../services/visaPickService.js";
 import { loadSportyBetEvents } from "../providers/sportyBet.js";
 import { getMonikaPicks } from "../services/monikaPickService.js";
 import { getGoldiePicks } from "../services/goldiePickService.js";
+import { getDinariPicks } from "../services/dinariPickService.js";
 import { toPublicPapaLockSlate } from "../engine/papaLockBankerEngine.js";
 import { applyLeagueScoringGuard } from "../engine/leagueScoringPolicy.js";
 import { applyRedFlagsToPick, collectRedFlags } from "../services/fixtureRiskService.js";
@@ -547,6 +548,23 @@ publicRouter.get("/goldie/today", async (req, res, next) => {
     res.json({
       ...slate,
       liveRefresh: { refreshed: false, skipped: true, reason: "Goldie BetExplorer playbook" }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+publicRouter.get("/dinari/today", async (req, res, next) => {
+  try {
+    const date = assertIsoDate(req.query.date || todayUtc());
+    const force = ["1", "true", "force", "reload"].includes(
+      String(req.query.force || "").toLowerCase()
+    );
+    const slate = await getDinariPicks(getSupabaseAdmin(), date, { force });
+    setPublicCache(res, slate.cached ? 60 : 20, 300);
+    res.json({
+      ...slate,
+      liveRefresh: { refreshed: false, skipped: true, reason: "Dinari totals banker" }
     });
   } catch (error) {
     next(error);

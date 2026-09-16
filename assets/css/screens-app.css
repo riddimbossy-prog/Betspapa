@@ -394,18 +394,18 @@ p { text-wrap: pretty; margin: 0; }
 }
 .nav-item {
   position: relative;
-  min-width: 56px;
+  min-width: 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 6px 8px;
+  padding: 6px 4px;
   border-radius: 16px;
   opacity: 0.55;
   font-family: var(--font-cond);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
 }
 .nav-item.on { opacity: 1; }
 .nav-item svg { width: 20px; height: 20px; }

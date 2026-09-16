@@ -1,8 +1,8 @@
 {
   "name": "betspapa-api",
-  "version": "1.29.1",
+  "version": "1.30.0",
   "private": true,
-  "description": "BetsPapa v1.29.1 routes a 2.2+ away GA average to Home to Score 2+ in Visa v2.",
+  "description": "BetsPapa v1.30.0 adds Dinari over/under 1.5, 2.5 and 3.5 bankers.",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
